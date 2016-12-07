@@ -1,0 +1,127 @@
+%\VignetteIndexEntry{FraseR: Find RAre Splicing Evens with R}
+%\VignettePackage{FraseR}
+%\VignetteEngine{knitr::knitr}
+
+% To compile this document
+% library('knitr'); rm(list=ls()); knit('FraseR.Rnw'); system("pdflatex FraseR")
+
+\documentclass[11pt]{article}
+\usepackage{amsmath}
+\usepackage{verbatim}
+\newcommand{\fraser}{\textit{FraseR}}
+
+\comment{
+<<knitr, echo=FALSE, results="hide">>=
+library("knitr")
+opts_chunk$set(
+  tidy=FALSE,
+  dev="png",
+  fig.width=4, fig.height=4.5,
+  dpi = 300,
+  cache=FALSE,
+  message=FALSE,
+  warning=FALSE,
+  results="hide"
+)
+@ 
+
+<<style, eval=TRUE, echo=FALSE, results="verbatim">>=
+BiocStyle::latex()
+@
+
+<<loadFraseR, echo=FALSE, results="verbatim">>=
+library("FraseR")
+@
+
+
+\author{Christian Mertes$^{1}$, Julien Gagneur$^{1}$ \\[1em] 
+\small{$^{1}$ Technische Universit\"at M\"unchen, Department of Informatics, Garching, Germany} 
+}
+
+\title{FraseR: Find RAre Splicing Events with R}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+My abstract TODO
+
+\vspace{1em}
+
+% \includegraphics[width=0.8\textwidth]{Overview}
+
+% \textbf{GenoGAM version:} \Sexpr{packageVersion("GenoGAM")}
+
+\vspace{1em}
+
+\begin{center}
+\begin{tabular}{ | l | }
+\hline 
+If you use \fraser{} in published research, please cite:  \\
+\\
+Mertes, \emph{et al.}
+\textbf{Find rare splicing events in RNA-seq data} \\
+\emph{bioRxiv}\\
+\hline 
+\end{tabular}
+\end{center}
+
+\end{abstract}
+
+<<options, results="hide", echo=FALSE>>=
+options(digits=3, width=80, prompt=" ", continue=" ")
+opts_chunk$set(dev = 'pdf')
+@
+
+\newpage
+
+\tableofcontents
+
+\newpage
+
+\section{Standard workflow}
+my workflow
+
+\subsection{Counting the read}
+how to count rna splicing reads
+
+\subsection{Registering a parallel backend}
+The parallel backend is registered using the \Biocpkg{BiocParallel} package. See the documentation in \Rclass{BiocParallel} for the correct use. Also note, that \Rclass{BiocParallel} is just an interface to multiple parallel packages. For example in order to use \genogam on a cluster, the \CRANpkg{BatchJobs} package might be required. The parallel backend can be registered at anytime as \genogam{} will just call the current one. 
+
+\textbf{IMPORTANT:} According to \href{https://support.bioconductor.org/p/70196/}{this} and \href{https://stat.ethz.ch/pipermail/r-devel/2015-July/071554.html}{this} posts on the Bioconductor support page and R-devel mailing list, the most important core feature of the \emph{multicore} backend, shared memory, is compromised by Rs own garbage collecto,r resulting in a replication of the entire workspace across all cores. Given that the amount of data in memory is big it might crash the entire system. \textbf{We highly advice to register the SnowParam backend} to avoid this \textbf{if working on a multicore machine}. This way the overhead is a little bigger, but only necessary data is copied to the workers keeping memory consumption relatively low. We never experienced a higher load than 4GB per core, usually it was around 2GB on human genome.
+
+<<parallel, results="hide">>=
+library(FraseR)
+library(BiocParallel)
+
+## On multicore machines by default the number of available cores - 2 are registered
+BiocParallel::registered()[1]
+@ 
+
+For this small example we would like to assign less workers.. Check \Biocpkg{BiocParallel} for other possible backends and more options for \Rfunction{SnowParam}
+<<parallel-register, results="hide">>=
+BiocParallel::register(BiocParallel::SnowParam(workers = 4, progressbar = TRUE))
+@ 
+
+If we check the current registered backend, we see that the number of workers has changed.
+<<check, results="hide">>=
+BiocParallel::registered()[1]
+@ 
+
+\section{Acknowledgments}
+
+We thank Daniel Bader and Martin Morgan for input in the development of \fraser{}. 
+
+\section{Session Info}
+
+<<sessInfo, results="tex", echo=FALSE>>=
+toLatex(sessionInfo())
+@
+
+<<resetOptions, results="hide", echo=FALSE>>=
+options(prompt="> ", continue="+ ")
+@ 
+}
+
+\end{document}

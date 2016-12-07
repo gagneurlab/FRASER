@@ -1,0 +1,59 @@
+%\VignetteIndexEntry{FraseR: Find RAre Splicing Evens with R}
+%\VignettePackage{FraseR}
+%\VignetteEngine{knitr::knitr}
+
+% To compile this document
+% library('knitr'); rm(list=ls()); knit('FraseR.Rnw'); system("pdflatex FraseR")
+
+\documentclass[11pt]{article}
+\usepackage{amsmath}
+\usepackage{verbatim}
+\newcommand{\fraser}{\textit{FraseR}}
+
+\author{Christian Mertes$^{1}$, Julien Gagneur$^{1}$ \\[1em] 
+\small{$^{1}$ Technische Universit\"at M\"unchen, Department of Informatics, Garching, Germany} 
+}
+
+\title{FraseR: Find RAre Splicing Events with R}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+My abstract TODO
+
+\vspace{1em}
+
+\begin{center}
+\begin{tabular}{ | l | }
+\hline 
+If you use \fraser{} in published research, please cite:  \\
+\\
+Mertes, \emph{et al.}
+\textbf{Find rare splicing events in RNA-seq data} \\
+\emph{bioRxiv}\\
+\hline 
+\end{tabular}
+\end{center}
+
+\end{abstract}
+
+\newpage
+
+\tableofcontents
+
+\newpage
+
+\section{Standard workflow}
+my workflow
+
+\subsection{Counting the read}
+how to count rna splicing reads
+\section{Acknowledgments}
+
+We thank Daniel Bader and Martin Morgan for input in the development of \fraser{}. 
+
+\section{Session Info}
+
+\end{document}
