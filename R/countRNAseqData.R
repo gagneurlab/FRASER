@@ -26,6 +26,7 @@ countRNAData <- function(bamFiles, strandSpecific=FALSE,
                           BPPARAM=BPPARAM,
                           internBPPARAM=internBPPARAM
     )
+    names(countList) <- bamFiles
 
     ## merge counts
     counts <- countList
@@ -98,6 +99,58 @@ countRNAData <- function(bamFiles, strandSpecific=FALSE,
     
 
 #' 
+#' merge multiple samples into one SummarizedExperiment object
+#' 
+#' TODO: how to init non found junctions/splice sites (0L or NA)? 
+#' 
+.mergeCounts <- function(counts, BPPARAM=SerialParam()){
+  
+  # prepare range object
+  sample_names <- names(counts_bak)
+  counts <- GRangesList(counts)
+  ranges <- sort(unique(unlist(counts)))
+  mcols(ranges)$count <- NULL
+  names(ranges) <- NULL
+  
+  # merge each sample counts into the combined range object
+  sample_counts <- bplapply(1:length(counts), ranges = ranges, 
+                            counts = counts, BPPARAM=BPPARAM,
+          FUN = function(i, ranges, counts){
+                require(GenomicRanges)
+            
+                # get sample name
+                sample_name <- names(counts)[i]
+                
+                ## TODO init with NA since we dont extracted
+                # we are missing counts for junctions spliced in other samples
+                sample_count <- rep(0L, length(ranges))
+                
+                # get overlap and add counts to the corresponding ranges
+                overlaps <- findOverlaps(counts[[i]], ranges, type = "equal")
+                sample_count[overlaps@to] <- mcols(counts[[i]])$count
+                #mcols(ranges[overlaps@to,])[[sample_name]] <- mcols(counts[[i]])$count
+                
+                return(sample_count)
+          }
+  )
+  
+  # convert it to a DataFrame
+  sample_counts_df <- DataFrame(
+    matrix(unlist(sample_counts), ncol = length(sample_counts))
+  )
+  
+  # merge it with the type columen and add it to the range object
+  mcols(ranges) <- sample_counts_df
+  
+  # set correct naming 
+  colnames(mcols(ranges)) <- names(counts)
+  
+  # return the object
+  return(ranges)
+  
+}
+
+#' 
 #' 
 #' 
 count_rna_data <- function(bamFile, strandSpecific=FALSE,
@@ -145,53 +198,6 @@ count_rna_data <- function(bamFile, strandSpecific=FALSE,
 	return(sort(unlist(GRangesList(counts))))
 }
 
-
-#' 
-#' 
-#' 
-merge_counts <- function(counts){
-	
-	# prepare range object
-	counts <- GRangesList(counts)
-	ranges <- sort(unique(unlist(counts)))
-	mcols(ranges)$count <- NULL
-	names(ranges) <- NULL
-	
-	# merge each sample counts into the combined range object
-	sample_counts <- mclapply(1:length(counts), ranges = ranges, counts = counts,
-			mc.cores = 20,
-			FUN = function(i, ranges, counts){
-				
-		# get sample name
-		sample_name <- names(counts)[i]
-		
-		# init with NA since we dont extracted
-		# we are missing counts for junctions spliced in other samples
-		sample_count <- rep(as.integer(NA), length(ranges))
-		
-		# get overlap and add counts to the corresponding ranges
-		overlaps <- findOverlaps(counts[[i]], ranges, type = "equal")
-		sample_count[overlaps@to] <- mcols(counts[[i]])$count
-		#mcols(ranges[overlaps@to,])[[sample_name]] <- mcols(counts[[i]])$count
-				
-		return(sample_count)
-	})
-
-	# convert it to a DataFrame
-	sample_counts_df <- DataFrame(
-			matrix(unlist(sample_counts), ncol = length(sample_counts))
-	)
-	
-	# merge it with the type columen and add it to the range object
-	mcols(ranges) <- sample_counts_df
-	
-	# set correct naming 
-	#names(mcols(ranges)) <- names(counts)
-	
-	# return the object
-	return(ranges)
-	
-}
 
 
 #'
