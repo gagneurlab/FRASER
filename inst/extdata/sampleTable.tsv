@@ -1,0 +1,13 @@
+sampleID\tbamFile\tgroup\tgene
+sample1	extdata/bam/sample1.bam	3	TIMMDC1
+sample2	extdata/bam/sample2.bam	3	TIMMDC1
+sample3	extdata/bam/sample3.bam	1	MCOLN1
+sample4	extdata/bam/sample4.bam	2	NHDF
+sample5	extdata/bam/sample5.bam	2	NHDF
+sample6	extdata/bam/sample6.bam	2	NHDF
+sample7	extdata/bam/sample7.bam	2	NHDF
+sample8	extdata/bam/sample8.bam	2	NHDF
+sample9	extdata/bam/sample9.bam	2	NHDF
+sample10	extdata/bam/sample10.bam	2	NHDF
+sample11	extdata/bam/sample11.bam	2	NHDF
+sample12	extdata/bam/sample12.bam	2	NHDF
