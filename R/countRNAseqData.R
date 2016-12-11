@@ -10,6 +10,7 @@
 #' a RNA bam file
 #' @param bamFile A list of bamfiles
 #' @param BPPARAM A BiocParallel param object to configure the parallel backend
+#' @param strandSpecific Not yet implemented
 #' @return FraseRDataSet 
 #' @export
 #' @examples
@@ -17,24 +18,51 @@
 countRNAData <- function(bamFiles, strandSpecific=FALSE, 
                          BPPARAM=SerialParam(), internBPPARAM=SerialParam()){
    
-	## Check input
+	# Check input TODO
 
 
-    ## count splitreads first
+    # get names for the annotations
+    if(!is.null(names(bamFiles)) || any(names(bamFiles) %in% "")){
+        sample_names <- gsub(".bam$", "", names(bamFiles))
+    } else {
+        sample_names <- bamFiles
+    }
+    
+    # count splitreads first
+    message("Start counting the split reads ...")
     countList <- bplapply(bamFiles, FUN=.countSplitReads, 
                           strandSpecific=strandSpecific,
                           BPPARAM=BPPARAM,
                           internBPPARAM=internBPPARAM
     )
-    names(countList) <- bamFiles
+    names(countList) <- sample_names
+    counts <- .mergeCounts(countList, BPPARAM)
 
-    ## merge counts
-    counts <- countList
-
-    ## return it
-    return(counts)
+    # count the retained reads
+    message("Start counting the non spliced reads ...")
+    countList <- bplapply(bamFiles, FUN=.countNonSplicedReads, 
+                          strandSpecific=strandSpecific,
+                          targets=granges(counts),
+                          BPPARAM=BPPARAM,
+                          internBPPARAM=internBPPARAM
+    )
+    names(countList) <- sample_names
+    site_counts <- .mergeCounts(countList, BPPARAM)
+    mcols(site_counts)$type=as.factor(countList[[1]]$type)
+    
+    # return it
+    return(list(
+        splitReads=counts, 
+        nonSplicedReads=site_counts
+    ))
 }
 
+#'
+#' extracts the chromosomes within the given bamFile
+#' 
+.extractChromosomes <- function(bamFile){
+    names(scanBamHeader(bamFile)[[bamFile]]$target)
+}
 
 #'
 #' count all split reads in a bam file
@@ -42,7 +70,7 @@ countRNAData <- function(bamFiles, strandSpecific=FALSE,
 .countSplitReads <- function(bamFile, strandSpecific, internBPPARAM){
     
     # parallelize over chromosomes
-    chromosomes <- names(scanBamHeader(bamFile)[[bamFile]]$target)
+    chromosomes <- .extractChromosomes(bamFile)
     
     # extract the counts per chromosome
     countsList <- bplapply(chromosomes, FUN=.countSplitReadsPerChromosome,
@@ -106,7 +134,7 @@ countRNAData <- function(bamFiles, strandSpecific=FALSE,
 .mergeCounts <- function(counts, BPPARAM=SerialParam()){
   
   # prepare range object
-  sample_names <- names(counts_bak)
+  sample_names <- names(counts)
   counts <- GRangesList(counts)
   ranges <- sort(unique(unlist(counts)))
   mcols(ranges)$count <- NULL
@@ -143,7 +171,7 @@ countRNAData <- function(bamFiles, strandSpecific=FALSE,
   mcols(ranges) <- sample_counts_df
   
   # set correct naming 
-  colnames(mcols(ranges)) <- names(counts)
+  colnames(mcols(ranges)) <- sample_names
   
   # return the object
   return(ranges)
@@ -182,9 +210,6 @@ count_rna_data <- function(bamFile, strandSpecific=FALSE,
 					return(GRanges())	
 				}
 				
-				# count junctions
-				junction_counts <- count_junctions(galignment)
-				
 				# count non spliced reads @ junctions
 				non_spliced_read_counts <- count_non_spliced_reads(galignment, junction_counts, strand_specific)
 				
@@ -201,22 +226,27 @@ count_rna_data <- function(bamFile, strandSpecific=FALSE,
 
 
 #'
-#' 
+#' counts non spliced reads based on the given target (acceptor/donor) regions
 #'
-count_non_spliced_reads <- function(galignment, junctions_gr, strand_specific = TRUE){
-	
-	# dont count anything if there is nothing to count
-	if(length(junctions_gr) == 0){
-		return(junctions_gr)
-	}
-	
-	# extract donor and acceptor sites
-	splice_site_coordinates <- extract_splice_site_coordinates(junctions_gr, strand_specific)
-	
-	# count overlaps with unspliced reads
-	single_read_fragments <- galignment %>% grglist() %>% reduce()
-	mcols(splice_site_coordinates)$count <-
-			countOverlaps(splice_site_coordinates, single_read_fragments, minoverlap = 2)
+.countNonSplicedReads <- function(bamFile, targets, strandSpecific=FALSE, internBPPARAM=SerialParam()){
+    
+    
+    # extract donor and acceptor sites
+    splice_site_coordinates <- extract_splice_site_coordinates(targets, strandSpecific)
+    
+    # extract the counts per chromosome
+    countsList <- bplapply(splice_site_coordinates, bamFile=bamFile, 
+                           strandSpecific=strandSpecific,
+                           BPPARAM=internBPPARAM,
+                           FUN=function(range, bamFile, strandSpecific){
+                               single_read_fragments <- readGAlignments(bamFile, 
+                                                param=ScanBamParam(which = range)) %>% 
+                                                grglist() %>% reduce()
+                               
+                               countOverlaps(range, single_read_fragments, minoverlap = 2)
+                           }
+    )
+	mcols(splice_site_coordinates)$count <- unlist(countsList)
 	
 	return(sort(splice_site_coordinates))
 }
@@ -225,8 +255,8 @@ count_non_spliced_reads <- function(galignment, junctions_gr, strand_specific = 
 #'
 #' 
 #' 
-extract_splice_site_coordinates <- function(junctions_gr, strand_specific = TRUE){
-	if(strand_specific){
+extract_splice_site_coordinates <- function(junctions_gr, strandSpecific=FALSE){
+	if(strandSpecific){
 		splice_site_coords <- unlist(GRangesList(
 				extract_splice_site_coordinates_per_strand(junctions_gr, "+"),
 				extract_splice_site_coordinates_per_strand(junctions_gr, "-")
@@ -274,11 +304,11 @@ extract_splice_site_coordinates_per_strand <- function(junctions_gr, strand){
 	
 	# annotate donor and acceptor sites
 	if(strand == "+" | strand == "*"){
-		mcols(left_side)$type = "Acceptor"
-		mcols(right_side)$type = "Donor"
-	} else {
 		mcols(left_side)$type = "Donor"
 		mcols(right_side)$type = "Acceptor"
+	} else {
+		mcols(left_side)$type = "Acceptor"
+		mcols(right_side)$type = "Donor"
 	}
 	
 	return(sort(unlist(GRangesList(left_side, right_side))))
