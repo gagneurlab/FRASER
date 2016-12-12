@@ -32,7 +32,9 @@ setClass("FraseRSettings",
 ## Validity
 ## ========
 
-#' Validating the correct type
+##
+## Validating the correct type
+##
 
 .validateSampleDataType <- function(object) {
     if(!any(class(object@sampleData) %in% "data.table")) {
