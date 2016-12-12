@@ -8,47 +8,45 @@
 #' 
 #' This method extracts and counts the split reads from
 #' a RNA bam file
-#' @param bamFile A list of bamfiles
-#' @param BPPARAM A BiocParallel param object to configure the parallel backend
-#' @param strandSpecific Not yet implemented
+#' @param settings A FraseRSetting object with all the information 
+#'                 how and what to count
+#' @param internBPPARAM A BiocParallel param object to configure the 
+#'                      parallel backend of the internal loop
 #' @return FraseRDataSet 
 #' @export
 #' @examples
-#'   counRNAData(bamFiles)
-countRNAData <- function(bamFiles, strandSpecific=FALSE, 
-                         BPPARAM=SerialParam(), internBPPARAM=SerialParam()){
+#'   counRNAData(createTestFraseRSettings())
+countRNAData <- function(settings, internBPPARAM=SerialParam()){
    
 	# Check input TODO
+    stopifnot(class(settings) == "FraseRSettings")
+    stopifnot(!is(internBPParam, "BiocParallelParam"))
 
-
-    # get names for the annotations
-    if(!is.null(names(bamFiles)) || any(names(bamFiles) %in% "")){
-        sample_names <- gsub(".bam$", "", names(bamFiles))
-    } else {
-        sample_names <- bamFiles
-    }
-    
     # count splitreads first
     message("Start counting the split reads ...")
-    countList <- bplapply(bamFiles, FUN=.countSplitReads, 
-                          strandSpecific=strandSpecific,
-                          BPPARAM=BPPARAM,
+    countList <- bplapply(settings@sampleData[,bamFiles], 
+                          FUN=.countSplitReads, 
+                          settings=settings,
+                          BPPARAM=settings@parallel,
                           internBPPARAM=internBPPARAM
     )
-    names(countList) <- sample_names
-    counts <- .mergeCounts(countList, BPPARAM)
+    names(countList) <- settings@sampleData[,sampleIDs]
+    counts <- .mergeCounts(countList, settings@parallel)
 
     # count the retained reads
     message("Start counting the non spliced reads ...")
-    countList <- bplapply(bamFiles, FUN=.countNonSplicedReads, 
-                          strandSpecific=strandSpecific,
+    countList <- bplapply(settings@sampleData[,bamFiles], 
+                          FUN=.countNonSplicedReads, 
+                          settings=settings,
                           targets=granges(counts),
-                          BPPARAM=BPPARAM,
+                          BPPARAM=settings@parallel,
                           internBPPARAM=internBPPARAM
     )
-    names(countList) <- sample_names
-    site_counts <- .mergeCounts(countList, BPPARAM)
-    mcols(site_counts)$type=as.factor(countList[[1]]$type)
+    names(countList) <- settings@sampleData[,sampleIDs]
+    site_counts <- .mergeCounts(countList, settings@parallel)
+    mcols(site_counts)$type=factor(countList[[1]]$type, 
+                    levels = c("Acceptor", "Donor")
+    )
     
     # return it
     return(list(
@@ -61,7 +59,7 @@ countRNAData <- function(bamFiles, strandSpecific=FALSE,
 #' extracts the chromosomes within the given bamFile
 #' 
 .extractChromosomes <- function(bamFile){
-    names(scanBamHeader(bamFile)[[bamFile]]$target)
+    names(scanBamHeader(path(bamFile))[[path(bamFile)]]$target)
 }
 
 #'
@@ -520,8 +518,8 @@ calculate_zscore_splicing <- function(data, psi_type){
 	psi_val <- get_assay_as_data_table(data, psi_type)
 	
 	# z = ( x - mean ) / sd
-	rowmean <- rowMeans(psi_val, na.rm = T)
-	rowsd   <- apply(psi_val, 1, sd, na.rm = T)
+	rowmean <- rowMeans(psi_val, na.rm = TRUE)
+	rowsd   <- apply(psi_val, 1, sd, na.rm = TRUE)
 	zscores = (psi_val - rowmean) / rowsd
 	
 	# add it to the SE object
@@ -542,7 +540,7 @@ filter_junction_data <- function(data, minExpRatio = 0.8){
 	junctions <- which(rowData(data)$type == "Junction")
 	
 	# get the expression counts for each junction
-	dt <- get_assay_as_data_table(data, "counts", F)[junctions]
+	dt <- get_assay_as_data_table(data, "counts", FALSE)[junctions]
 	
 	# calculate the expression ratio per site
 	expression <- apply(dt, 1, function(x) sum(!(is.na(x) | x == 0)))
