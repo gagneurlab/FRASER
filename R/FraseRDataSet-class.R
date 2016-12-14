@@ -14,13 +14,13 @@ NULL
 setClass("FraseRDataSet",
          slots = list(
              settings        = "FraseRSettings",
-             splitReads      = "SummarizedExperiment",
-             nonSplicedReads = "SummarizedExperiment"
+             splitReads      = "RangedSummarizedExperiment",
+             nonSplicedReads = "RangedSummarizedExperiment"
          ),
          prototype = list(
              settings        = FraseRSettings(),
-             splitReads      = SummarizedExperiment(),
-             nonSplicedReads = SummarizedExperiment()
+             splitReads      = SummarizedExperiment(rowRanges=GRanges()),
+             nonSplicedReads = SummarizedExperiment(rowRanges=GRanges())
          )
 )
 
@@ -39,15 +39,15 @@ setClass("FraseRDataSet",
 }
 
 .validateSplitReadsType <- function(object) {
-    if(class(object@splitReads) != "SummarizedExperiment") {
-        return("'splitReads' must be a SummarizedExperiment object")
+    if(class(object@splitReads) != "RangedSummarizedExperiment") {
+        return("'splitReads' must be a RangedSummarizedExperiment object")
     }
     NULL
 }
 
 .validateNonSplicedReadsType <- function(object) {
-    if(class(object@nonSplicedReads) != "SummarizedExperiment") {
-        return("'nonSplicedReads' must be a SummarizedExperiment object")
+    if(class(object@nonSplicedReads) != "RangedSummarizedExperiment") {
+        return("'nonSplicedReads' must be a RangedSummarizedExperiment object")
     }
     NULL
 }

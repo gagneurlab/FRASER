@@ -62,7 +62,6 @@ countRNAData <- function(settings, internBPPARAM=SerialParam()){
         rowRanges=granges(site_counts)
     )
     
-    
     # return it
     return(
         FraseRDataSet(
@@ -161,7 +160,7 @@ countRNAData <- function(settings, internBPPARAM=SerialParam()){
   sample_counts <- bplapply(1:length(counts), ranges = ranges, 
                             counts = counts, BPPARAM=BPPARAM,
           FUN = function(i, ranges, counts){
-                require(GenomicRanges)
+                suppressPackageStartupMessages(require(FraseR))
             
                 # get sample name
                 sample_name <- names(counts)[i]
