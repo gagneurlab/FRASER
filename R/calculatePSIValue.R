@@ -1,3 +1,86 @@
+##
+## @author Christian Mertes \email{mertes@@in.tum.de}
+## 
+## This file contains all functions for calculating the PSI values
+## It calculates the PSI value for the junctions and
+## the sitePSI value for intron retention
+##
+
+#'
+#' This function calculates the PSI values for each junction
+#' based on the FraseRDataSet object
+#' 
+#' @export
+#' 
+calculatePSIValues <- function(dataset){
+    # check input
+    stopifnot(class(dataset) == "FraseRDataSet")
+    
+    # generate a data.table from granges
+    rawCountData <- dataset@splitReads
+    countData <- cbind(
+        data.table(
+            chr = as.factor(seqnames(rawCountData)),
+            start = start(rawCountData),
+            end = end(rawCountData),
+            strand = as.factor(strand(rawCountData)),
+            counts = NA
+        ),
+        as.data.table(assays(rawCountData)$rawCounts)
+    )
+    
+    # calculate 3/5' PSI for each sample
+    assays(rawCountData)$psi3 <- .calculatePSIValuePrimeSite(
+            countData=countData, psiType="3'",
+            settings=dataset@settings
+    )
+    assays(rawCountData)$psi5 <- .calculatePSIValuePrimeSite(
+            countData=countData, psiType="5'",
+            settings=dataset@settings
+    )
+    
+    dataset@splitReads <- rawCountData
+    return(dataset)
+}
+
+
+#'
+#' calculates the PSI value for the given prime site of the junction
+#' 
+.calculatePSIValuePrimeSite <- function(countData, settings, psiType){
+    
+    # convert psi type to the position of interest 
+    psiCol <- ifelse(psiType == "3'", "start", "end")
+    
+    # calculate psi value
+    psiValues <- bplapply(settings@sampleData[,sampleID],
+                          countData=countData, psiCol=psiCol,
+                          BPPARAM=settings@parallel, 
+                           FUN = function(sample, countData, psiCol){
+                               
+                               # check name, due to conversion
+                               if(grepl("^\\d+$", sample)){
+                                   sample <- paste0("X", sample)
+                               }
+                               
+                               # init psi
+                               countData[,psiValue:=as.numeric(NA)]
+                               
+                               # calculate psi value
+                               countData[,psiValue:=get(sample)/sum(get(sample), na.rm = TRUE),
+                                    by=eval(paste0("chr,", psiCol, ",strand"))
+                               ]
+                               
+                               return(countData[,psiValue])
+                           }
+    )
+    
+    # merge it and set the column names
+    df = DataFrame(matrix(unlist(psiValues), ncol = nrow(settings@sampleData)))
+    names(df) <- settings@sampleData[,sampleID] 
+    
+    return(df)
+}
 
 
 #'
@@ -57,82 +140,8 @@ calculate_intron_retaintion <- function(data){
 }
 
 
-#'
-#' 
-#' 
-calculate_psi_values <- function(count_data, BPPARAM = MulticoreParam(6, progressbar=TRUE)){
-    
-    # generate a data.table from granges
-    tmp_data <- cbind(
-        data.table(
-            chr = as.factor(seqnames(count_data)),
-            start = start(count_data),
-            end = end(count_data),
-            strand = as.factor(strand(count_data)),
-            type = rowRanges(count_data)$type,
-            counts = NA
-        ),
-        as.data.table(assays(count_data)$counts)
-    )
-    
-    # calculate 3/5' psi for each sample
-    assays(count_data)$psi3 <- calculate_x_prime_psi_values(data = tmp_data,
-                                                            samples = colData(count_data)$sample, psi_type = "3'", BPPARAM = BPPARAM
-    )
-    assays(count_data)$psi5 <- calculate_x_prime_psi_values(data = tmp_data,
-                                                            samples = colData(count_data)$sample, psi_type = "5'", BPPARAM = BPPARAM
-    )
-    
-    return(count_data)
-    
-}
 
 
-#'
-#' 
-#' 
-calculate_x_prime_psi_values <- function(data, samples, psi_type = "3'",
-                                         BPPARAM = MulticoreParam(6)){
-    
-    # convert psi type to the position of interest 
-    if(psi_type == "3'"){
-        psi_col = "start"
-    } else {
-        psi_col = "end"
-    }
-    
-    # calculate psi value
-    psi_values <- mclapply(samples, data = data, psi_col = psi_col,
-                           mc.cores = bpworkers(BPPARAM), mc.preschedule = FALSE, 
-                           FUN = function(sample, data, psi_col){
-                               
-                               # check name, du to conversion
-                               if(grepl("^\\d+$", sample)){
-                                   sample <- paste0("X", sample)
-                               }
-                               
-                               # init psi
-                               data[,psi_val:=as.numeric(NA)]
-                               
-                               # calculate psi
-                               data[type == "Junction",psi_val:=get(sample)/sum(get(sample), na.rm = TRUE),
-                                    by = eval(paste0("chr,", psi_col,",strand"))
-                                    ]
-                               
-                               return(data[,psi_val])
-                           }
-    )
-    
-    # merge it and set the column names
-    df = DataFrame(matrix(unlist(psi_values), ncol = length(samples)))
-    names(df) <- samples 
-    
-    return(df)
-    
-}
-
-
-#' 
 #' 
 #' 
 convert_dataframe_columns_to_Rle <- function(data, index2convert = 1:dim(dataframe)[2]){
