@@ -52,12 +52,25 @@ countRNAData <- function(settings, internBPPARAM=SerialParam()){
                     levels = c("Acceptor", "Donor")
     )
     
+    # create summarized objects
+    splitCounts <- SummarizedExperiment(
+        assays=list(rawCounts=mcols(counts)[settings@sampleData[,sampleID]]),
+        rowRanges=granges(counts)
+    )
+    nonSplicedCounts <- SummarizedExperiment(
+        assays=list(rawCounts=mcols(site_counts)[settings@sampleData[,sampleID]]),
+        rowRanges=granges(site_counts)
+    )
+    
+    
     # return it
-    return(FraseRDataSet(
-        settings=settings,
-        splitReads=counts, 
-        nonSplicedReads=site_counts
-    ))
+    return(
+        FraseRDataSet(
+            settings=settings,
+            splitReads=splitCounts,
+            nonSplicedReads=nonSplicedCounts
+        )
+    )
 }
 
 ##
@@ -71,7 +84,7 @@ countRNAData <- function(settings, internBPPARAM=SerialParam()){
 ## count all split reads in a bam file
 ##
 .countSplitReads <- function(bamFile, settings, internBPPARAM){
-    library(FraseR)
+    suppressPackageStartupMessages(library(FraseR))
     
     # parallelize over chromosomes
     chromosomes <- FraseR:::.extractChromosomes(bamFile)
@@ -187,7 +200,7 @@ countRNAData <- function(settings, internBPPARAM=SerialParam()){
 ## counts non spliced reads based on the given target (acceptor/donor) regions
 ## TODO: 10k chunks hardcoded currently (needs some testing and a code to)
 .countNonSplicedReads <- function(bamFile, targets, settings, internBPPARAM=SerialParam()){
-    library(FraseR)
+    suppressPackageStartupMessages(library(FraseR))
     
     # extract donor and acceptor sites
     splice_site_coordinates <- FraseR:::.extract_splice_site_coordinates(targets, settings)
