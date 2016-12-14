@@ -20,7 +20,7 @@ setClass("FraseRSettings",
         prototype = list(
                 sampleData = data.table(
                         sampleID="testSample", 
-                        bamFile=system.file("extdata", "bam", "MUC1344.bam", package="FraseR")
+                        bamFile=system.file("extdata", "bam", "sample1.bam", package="FraseR")
                 ),
                 bamParams = Rsamtools::ScanBamParam(),
                 parallel = BiocParallel::registered()[[1]],

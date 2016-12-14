@@ -53,7 +53,8 @@ countRNAData <- function(settings, internBPPARAM=SerialParam()){
     )
     
     # return it
-    return(list(
+    return(FraseRDataSet(
+        settings=settings,
         splitReads=counts, 
         nonSplicedReads=site_counts
     ))
@@ -70,12 +71,13 @@ countRNAData <- function(settings, internBPPARAM=SerialParam()){
 ## count all split reads in a bam file
 ##
 .countSplitReads <- function(bamFile, settings, internBPPARAM){
+    library(FraseR)
     
     # parallelize over chromosomes
-    chromosomes <- .extractChromosomes(bamFile)
+    chromosomes <- FraseR:::.extractChromosomes(bamFile)
     
     # extract the counts per chromosome
-    countsList <- bplapply(chromosomes, FUN=.countSplitReadsPerChromosome,
+    countsList <- bplapply(chromosomes, FUN=FraseR:::.countSplitReadsPerChromosome,
                        bamFile=bamFile, 
                        settings=settings,
                        BPPARAM=internBPPARAM
@@ -183,17 +185,21 @@ countRNAData <- function(settings, internBPPARAM=SerialParam()){
 
 ##
 ## counts non spliced reads based on the given target (acceptor/donor) regions
-##
+## TODO: 10k chunks hardcoded currently (needs some testing and a code to)
 .countNonSplicedReads <- function(bamFile, targets, settings, internBPPARAM=SerialParam()){
-    
+    library(FraseR)
     
     # extract donor and acceptor sites
-    splice_site_coordinates <- .extract_splice_site_coordinates(targets, settings)
-    mcols(splice_site_coordinates)$chunkID <-
-        chun1:length(splice_site_coordinates)
+    splice_site_coordinates <- FraseR:::.extract_splice_site_coordinates(targets, settings)
+     
+    # estimate chunk size 
+    numRangesPerChunk <- 50000
+    numChunks <- ceiling(length(splice_site_coordinates)/numRangesPerChunk)
+    chunkID <- rep(1:numChunks, each=numRangesPerChunk)[1:length(splice_site_coordinates)]
+    targetChunks <- split(splice_site_coordinates, chunkID)   
     
     # extract the counts per chromosome
-    countsList <- bplapply(splice_site_coordinates, bamFile=bamFile, 
+    countsList <- bplapply(targetChunks, bamFile=bamFile, 
                            settings=settings,
                            BPPARAM=internBPPARAM,
                            FUN=function(range, bamFile, settings){
@@ -216,12 +222,12 @@ countRNAData <- function(settings, internBPPARAM=SerialParam()){
 .extract_splice_site_coordinates <- function(junctions_gr, settings){
 	if(settings@strandSpecific){
 		splice_site_coords <- unlist(GRangesList(
-				.extract_splice_site_coordinates_per_strand(junctions_gr, "+"),
-				.extract_splice_site_coordinates_per_strand(junctions_gr, "-")
+		    FraseR:::.extract_splice_site_coordinates_per_strand(junctions_gr, "+"),
+		    FraseR:::.extract_splice_site_coordinates_per_strand(junctions_gr, "-")
 		))
 	} else { 
 		strand(junctions_gr) <- "*"
-		splice_site_coords <- .extract_splice_site_coordinates_per_strand(junctions_gr, "*")
+		splice_site_coords <- FraseR:::.extract_splice_site_coordinates_per_strand(junctions_gr, "*")
 	}
 	
 	return(sort(unique(splice_site_coords)))
