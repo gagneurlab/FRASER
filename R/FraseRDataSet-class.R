@@ -86,9 +86,8 @@ FraseRDataSet <- function(...) {
 ## show method for FraseRSettings
 .showFraseRDataSet <- function(object) {
     
-    cat("-------------------- Sample data table -----------------\n")
+    # first show the setting part
     show(object@settings)
-    cat("\n\n")
     
     cat("-------------------- Junction counts -------------------\n")
     show(object@splitReads)
