@@ -2,6 +2,8 @@
 ## FraseRDataSet
 ## ====================
 
+#' @include FraseRSettings-class.R
+NULL
 
 #' FraseRDataSet
 #'
@@ -16,7 +18,7 @@ setClass("FraseRDataSet",
              nonSplicedReads = "SummarizedExperiment"
          ),
          prototype = list(
-             settings        = createTestFraseRSettings(),
+             settings        = FraseRSettings(),
              splitReads      = SummarizedExperiment(),
              nonSplicedReads = SummarizedExperiment()
          )
