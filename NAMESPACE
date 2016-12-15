@@ -2,6 +2,7 @@
 
 export(FraseRDataSet)
 export(FraseRSettings)
+export(calculatePSIValues)
 export(countRNAData)
 export(createTestFraseRSettings)
 import(BiocParallel)

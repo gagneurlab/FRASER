@@ -84,59 +84,131 @@ calculatePSIValues <- function(dataset){
 
 
 #'
+#' This function calculates the site PSI values for each splice site
+#' based on the FraseRDataSet object
 #' 
+#' @export
 #' 
-calculate_intron_retaintion <- function(data){
-    junctions <- data[rowData(data)$type == "Junction"]
+calculateSitePSIValue <- function(dataset){
     
-    for(splice_type in c("Acceptor", "Donor")){
-        modified_rows <- rowData(data)$type == splice_type
-        splice_site <- data[modified_rows]
+    # check input
+    stopifnot(class(dataset) == "FraseRDataSet")
+    
+    # get only the junctions
+    splitReads <- dataset@splitReads
+    nonSplicedCounts <- dataset@nonSplicedReads
+    
+    
+    for(spliceType in c("Acceptor", "Donor")){
+        modified_rows <- rowData(nonSplicedCounts)$type == spliceType
+        splice_site   <- nonSplicedCounts[modified_rows]
         splice_ranges <- rowRanges(splice_site)
         
         # shift for start/end overlap
-        splice_ranges <- shift(splice_ranges, ifelse(splice_type == "Acceptor", 1, -1))
+        splice_ranges <- GenomicRanges::shift(splice_ranges, ifelse(spliceType == "Acceptor", -1, 1))
         
         # find overlap
-        overlap <- findOverlaps(splice_ranges, junctions, type = 
-                                    ifelse(splice_type == "Acceptor", "start", "end")
+        overlap <- findOverlaps(splice_ranges, 
+                splitReads, type=ifelse(spliceType == "Acceptor", "end", "start")
         )
         
         # sum up the junctions per site per sample
-        junction_counts_per_site <- mclapply(colData(data)$sample, overlap = overlap, 
-                                             junctions = junctions, mc.cores = 4, 
-                                             FUN = function(sample, overlap, junctions){
-                                                 dt <- data.table(
-                                                     from = overlap@from,
-                                                     count = as.numeric(assays(junctions[,sample])$counts[,1])[overlap@to]
-                                                 )[,.(counts = sum(count,na.rm = TRUE), is.na = all(is.na(count))), by = from]
-                                                 return(dt[,counts])
-                                             }
+        junction_counts_per_site <- bplapply(
+                dataset@settings@sampleData[,sampleID], 
+                overlap=overlap, splitReads=splitReads,
+                BPPARAM=dataset@settings@parallel,
+                FUN = function(sample, overlap, splitReads){
+                        suppressPackageStartupMessages(library(FraseR))
+                        dt <- data.table(
+                                from = overlap@from,
+                                count = as.numeric(assays(splitReads[,sample])$rawCounts[,1])[overlap@to]
+                        )
+                        dt <- dt[,.(counts=sum(count, na.rm=TRUE), is.na=all(is.na(count))), by=from]
+                        return(dt[,counts])
+                }
         )
         
         # add junction counts
-        splice_site <- merge_assay("junction_site_counts", splice_site, 
-                                   junction_counts_per_site, unique(overlap@from))
-        
-        # add junction persent spliced in value (junction_psi) 
-        splice_site <- merge_assay("junction_site_psi", splice_site,
-                                   get_assay_as_data_table(splice_site, "junction_site_counts") / (
-                                       get_assay_as_data_table(splice_site, "junction_site_counts") +
-                                           get_assay_as_data_table(splice_site, "counts")
-                                   )
+        splice_site <- .mergeAssay("rawSplitReadCounts", splice_site,
+                junction_counts_per_site, unique(overlap@from)
         )
-        
+       
         
         # wrote it to the data
-        assays(data)$junction_site_counts <- DataFrame
-        assays(data[modified_rows])$junction_site_counts <- assays(splice_site)$junction_site_counts
-        assays(data[modified_rows])$junction_site_psi    <- assays(splice_site)$junction_site_psi
-        
-        assays(data)<- NULL
+        dataset@nonSplicedReads <- .mergeAssay("rawSplitReadCounts", dataset@nonSplicedReads,
+                assays(splice_site)$rawSplitReadCounts, modified_rows
+        )
     }
     
     
+    assays()$rawCounts $junction_site_counts <- DataFrame
+    assays(dataset@nonSplicedReads[modified_rows])$junction_site_counts <- assays(splice_site)$junction_site_counts
+    assays(dataset[modified_rows])$junction_site_psi    <- assays(splice_site)$junction_site_psi
     
+    assays(dataset)<- NULL
+    # add junction persent spliced in value (sitePSI) 
+    sitePSIValue <- .getAssayAsDataTable(dataset@nonSplicedReads, "rawSplitReadCounts") / (
+        .getAssayAsDataTable(dataset@nonSplicedReads, "rawSplitReadCounts") +
+            .getAssayAsDataTable(dataset@nonSplicedReads, "rawCounts")
+    )
+    
+    dataset@nonSplicedReads <- .mergeAssay("sitePSI", dataset@nonSplicedReads, sitePSIValue)
+    
+    return(dataset)
+}
+
+
+#'
+#' convert a data.table to a DataFrame and keep the colnames
+#' 
+.asDataFrame <- function(dataframe, colname = colnames(dataframe)){
+    dataframe <- DataFrame(dataframe)
+    colnames(dataframe) <- colname
+    return(dataframe)
+}
+
+
+#'
+#' @param assay name of assay to use
+#' @param se summarizedExperiment object to add the assay
+#' @param df dataframe/data to add as assay
+#' 
+.mergeAssay <- function(assay, se1, df1, rowidx1 = 1:dim(se1)[1]){
+    # create empty dataframe for assay if not present yet
+    if(!any(names(assays(se1)) %in% assay)){
+        tmp_df <- DataFrame(matrix(as.numeric(NA), nrow = dim(se1)[1], ncol = dim(se1)[2]))
+        colnames(tmp_df) <- colnames(se1)
+        assays(se1)[[assay]] <- tmp_df
+    } 
+    
+    # make a data frame out of the given data if needed
+    if(!any(class(df1) %in% "DataFrame")){
+        df1 <- .asDataFrame(df1, colnames(se1))
+    }
+    
+    # merge the data
+    tmp_df <- assays(se1)[[assay]]
+    tmp_df[rowidx1,] <- df1
+    assays(se1)[[assay]] <- tmp_df
+    
+    # return it
+    return(se1)
+}
+
+
+#'
+#' get the assay as data.table from a SummarizedExperiment object
+#' 
+.getAssayAsDataTable <- function(se, assay, na_as_zero = TRUE){
+    if(!any(names(assays(se)) %in% assay)){
+        stop("The given assay: '", assay, "' is not present in this object")
+    }
+    dt <- as.data.table(assays(se)[[assay]])
+    if(na_as_zero){
+        dt[is.na(dt)] <- 0
+    }
+    colnames(dt) <- colnames(assays(se)[[assay]])
+    return(dt)
 }
 
 
@@ -155,55 +227,6 @@ convert_dataframe_columns_to_Rle <- function(data, index2convert = 1:dim(datafra
 }
 
 
-#'
-#' get the assay as data.table
-#' 
-get_assay_as_data_table <- function(se, assay, na_as_zero = TRUE){
-    if(!any(names(assays(se)) %in% assay)){
-        stop("The given assay: '", assay, "' is not present in this object")
-    }
-    dt <- as.data.table(assays(se)[[assay]])
-    if(na_as_zero){
-        dt[is.na(dt)] <- 0
-    }
-    colnames(dt) <- colnames(assays(se)[[assay]])
-    return(dt)
-}
-
-#'
-#' convert a data.table to a DataFrame and keep the colnames
-#' 
-as_DataFrame <- function(dataframe, colname = colnames(dataframe)){
-    dataframe <- DataFrame(dataframe)
-    colnames(dataframe) <- colnames
-    return(dataframe)
-}
-
-
-#'
-#' 
-#' 
-merge_assay <- function(assay1, se1, df1, rowidx1 = 1:dim(se1)[1]){
-    # create empty dataframe for assay if not present yet
-    if(!any(names(assays(se1)) %in% assay1)){
-        tmp_df <- DataFrame(matrix(as.numeric(NA), nrow = dim(se1)[1], ncol = dim(se1)[2]))
-        colnames(tmp_df) <- colData(se1)$sample
-        assays(se1)[[assay1]] <- tmp_df
-    } 
-    
-    # make a data frame out of the given data if needed
-    if(!any(class(df1) %in% "DataFrame")){
-        df1 <- as_DataFrame(df1, colData(se1)$sample)
-    }
-    
-    # merge the data
-    tmp_df <- assays(se1)[[assay1]]
-    tmp_df[rowidx1,] <- df1
-    assays(se1)[[assay1]] <- tmp_df
-    
-    # return it
-    return(se1)
-}
 
 #'
 #'
