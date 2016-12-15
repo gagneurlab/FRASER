@@ -59,7 +59,7 @@ countRNAData <- function(settings, internBPPARAM=SerialParam()){
     )
     nonSplicedCounts <- SummarizedExperiment(
         assays=list(rawCounts=mcols(site_counts)[settings@sampleData[,sampleID]]),
-        rowRanges=granges(site_counts)
+        rowRanges=site_counts[,"type"]
     )
     
     # return it
