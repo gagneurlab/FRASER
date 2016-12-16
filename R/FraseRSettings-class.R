@@ -167,3 +167,36 @@ setMethod("setDefaults", "FraseRSettings",
               }
               return(object)
           })
+
+
+
+setGeneric("sampleGroup", function(object) standardGeneric("sampleGroup"))
+setGeneric("sampleGroup<-", signature = "object", function(object, value) standardGeneric("sampleGroup<-"))
+
+#' Get the group definition per sample based on the \code{sampleData} table slot
+#' 
+#' @param object A FraseRSettings object.
+#' @return A \code{vector} with the group identifiers per sample object
+#' @examples
+#' settings <- createTestFraseRSettings()
+#' sampleGroup(settings)
+#' sampleGroup(settings) <- 1:length(settings)
+#' @author Christian Mertes \email{mertes@@in.tum.de}
+#' @export
+#' @rdname sampleGroup
+setMethod("sampleGroup", "FraseRSettings", function(object) {
+    data <- slot(object, "sampleData")
+    if("group" %in% colnames(data)){
+        return(data[,group])
+    } else {
+        return(data[,sampleID])
+    }
+})
+
+#' @export
+#' @rdname sampleGroup
+setReplaceMethod("sampleGroup", "FraseRSettings", function(object, value) {
+    group <- slot(object, "sampleData")[,group:=value]
+    return(object)
+})
+

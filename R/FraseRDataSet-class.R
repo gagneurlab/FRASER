@@ -125,3 +125,4 @@ setMethod("setDefaults", "FraseRDataSet", function(object, ...) {
     }
     return(object)
 })
+

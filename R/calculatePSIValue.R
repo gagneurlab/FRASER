@@ -57,6 +57,7 @@ calculatePSIValues <- function(dataset){
                           countData=countData, psiCol=psiCol,
                           BPPARAM=settings@parallel, 
                            FUN = function(sample, countData, psiCol){
+                               suppressPackageStartupMessages(library(FraseR))
                                
                                # check name, due to conversion
                                if(grepl("^\\d+$", sample)){
@@ -119,6 +120,7 @@ calculateSitePSIValue <- function(dataset){
                 BPPARAM=dataset@settings@parallel,
                 FUN = function(sample, overlap, splitReads){
                         suppressPackageStartupMessages(library(FraseR))
+                    
                         dt <- data.table(
                                 from = overlap@from,
                                 count = as.numeric(assays(splitReads[,sample])$rawCounts[,1])[overlap@to]
@@ -133,7 +135,6 @@ calculateSitePSIValue <- function(dataset){
                 junction_counts_per_site, unique(overlap@from)
         )
        
-        
         # wrote it to the data
         dataset@nonSplicedReads <- .mergeAssay("rawSplitReadCounts", dataset@nonSplicedReads,
                 assays(splice_site)$rawSplitReadCounts, modified_rows
@@ -141,17 +142,11 @@ calculateSitePSIValue <- function(dataset){
     }
     
     
-    assays()$rawCounts $junction_site_counts <- DataFrame
-    assays(dataset@nonSplicedReads[modified_rows])$junction_site_counts <- assays(splice_site)$junction_site_counts
-    assays(dataset[modified_rows])$junction_site_psi    <- assays(splice_site)$junction_site_psi
-    
-    assays(dataset)<- NULL
     # add junction persent spliced in value (sitePSI) 
     sitePSIValue <- .getAssayAsDataTable(dataset@nonSplicedReads, "rawSplitReadCounts") / (
         .getAssayAsDataTable(dataset@nonSplicedReads, "rawSplitReadCounts") +
             .getAssayAsDataTable(dataset@nonSplicedReads, "rawCounts")
     )
-    
     dataset@nonSplicedReads <- .mergeAssay("sitePSI", dataset@nonSplicedReads, sitePSIValue)
     
     return(dataset)
@@ -211,71 +206,3 @@ calculateSitePSIValue <- function(dataset){
     return(dt)
 }
 
-
-
-
-#' 
-#' 
-convert_dataframe_columns_to_Rle <- function(data, index2convert = 1:dim(dataframe)[2]){
-    
-    # convert all given indices
-    for (i in index2convert){
-        data[,i] <- Rle(data[,i])
-    }
-    
-    return(data)
-}
-
-
-
-#'
-#'
-#' calculate the zscore for each psi value
-calculate_zscore_splicing <- function(data, psi_type){
-    
-    # get raw data and replace NA's with zeros
-    psi_val <- get_assay_as_data_table(data, psi_type)
-    
-    # z = ( x - mean ) / sd
-    rowmean <- rowMeans(psi_val, na.rm = TRUE)
-    rowsd   <- apply(psi_val, 1, sd, na.rm = TRUE)
-    zscores = (psi_val - rowmean) / rowsd
-    
-    # add it to the SE object
-    assays(data)[[paste0("zscore_", psi_type)]] <- 
-        as_DataFrame(zscores, colData(data)$sample)
-    
-    return(data)
-}
-
-
-#'
-#' Filter the data based on a minimum of expression level over all samples
-#' It removes the junction and also the corresponding Donor and Acceptor site
-#' within the SummarizedExperiment object
-#' 
-filter_junction_data <- function(data, minExpRatio = 0.8){
-    # get only the junctions
-    junctions <- which(rowData(data)$type == "Junction")
-    
-    # get the expression counts for each junction
-    dt <- get_assay_as_data_table(data, "counts", FALSE)[junctions]
-    
-    # calculate the expression ratio per site
-    expression <- apply(dt, 1, function(x) sum(!(is.na(x) | x == 0)))
-    expression <- expression / dim(dt)[2]
-    
-    cutoff <- expression >= minExpRatio
-    
-    # get the hits (junction/acceptor/donor) in our full data set
-    hits <- unique(unlist(sapply(c("start", "end"), function(type){
-        findOverlaps(type = type,
-                     rowRanges(data)[junctions][cutoff], 
-                     shift(rowRanges(data), ifelse(type == "start", 1, -1))
-        )@to
-    })))
-    junction_sites <- hits[rowData(data)$type[hits] != "Junction"]
-    
-    # filter the object and return it
-    return(data[c(junction_sites, junctions[cutoff])])
-}
