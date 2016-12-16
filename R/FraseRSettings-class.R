@@ -24,7 +24,7 @@ setClass("FraseRSettings",
                 ),
                 bamParams = Rsamtools::ScanBamParam(),
                 parallel = BiocParallel::registered()[[1]],
-                method = "zscore",
+                method = "Fisher",
                 strandSpecific = FALSE
         )
 )
@@ -60,7 +60,7 @@ setClass("FraseRSettings",
 }
 
 .validateMethodType <- function(object) {
-    valid_methods <- c("zscore", "DESeq", "Martin")
+    valid_methods <- c("Fisher", "DESeq2", "Martin")
     if(class(object@method) != "character" || !any(object@method %in% valid_methods)) {
         return(paste("'method' must be one of the following types: ", valid_methods))
     }

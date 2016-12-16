@@ -18,6 +18,9 @@ createTestFraseRSettings <- function(){
                 sampleTable[,bamFile], package="FraseR", mustWork=TRUE
     )))]
     
+    # check that NHDF is NA group 
+    sampleTable[gene=='NHDF',group:=NA]
+    
     # return a FraseRSettings object
     return(FraseRSettings(sampleData=sampleTable))
 }
