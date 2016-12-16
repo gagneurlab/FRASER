@@ -27,6 +27,7 @@ calculateZScores <- function(dataset){
 #' calculates the zscore for a given data type and a given psi type
 #' and adds it directly to the dataset itself
 #'
+#' @noRd
 .calculateZScorePerDataSet <- function(dataset, readType, psiType){
     
     # data to work with
