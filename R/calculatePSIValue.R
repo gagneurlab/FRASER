@@ -30,14 +30,19 @@ calculatePSIValues <- function(dataset){
     )
     
     # calculate 3/5' PSI for each sample
-    assays(rawCountData)$psi3 <- .calculatePSIValuePrimeSite(
+    psiValues <- .calculatePSIValuePrimeSite(
             countData=countData, psiType="3'",
             settings=dataset@settings
     )
-    assays(rawCountData)$psi5 <- .calculatePSIValuePrimeSite(
+    assays(rawCountData)$psi3 <- psiValues[["psi"]]
+    assays(rawCountData)$rawOtherCounts_psi3 <- psiValues[["counts"]]
+    
+    psiValues <- .calculatePSIValuePrimeSite(
             countData=countData, psiType="5'",
             settings=dataset@settings
     )
+    assays(rawCountData)$psi5 <- psiValues[["psi"]]
+    assays(rawCountData)$rawOtherCounts_psi5 <- psiValues[["counts"]]
     
     dataset@splitReads <- rawCountData
     return(dataset)
@@ -68,20 +73,32 @@ calculatePSIValues <- function(dataset){
                                # init psi
                                countData[,psiValue:=as.numeric(NA)]
                                
-                               # calculate psi value
-                               countData[,psiValue:=get(sample)/sum(get(sample), na.rm = TRUE),
-                                    by=eval(paste0("chr,", psiCol, ",strand"))
+                               # calculate other split read counts
+                               countData[,rawOtherCounts:=sum(get(sample), na.rm=TRUE) - get(sample), 
+                                         by=eval(paste0("chr,", psiCol, ",strand"))
                                ]
                                
-                               return(countData[,psiValue])
+                               # calculate psi value
+                               countData[,psiValue:=get(sample)/(get(sample) + rawOtherCounts)]
+                               
+                               return(list(
+                                   rawOtherCounts=countData[,rawOtherCounts],
+                                   psiValue=countData[,psiValue]
+                               ))
                            }
     )
     
     # merge it and set the column names
-    df = DataFrame(matrix(unlist(psiValues), ncol = nrow(settings@sampleData)))
-    names(df) <- settings@sampleData[,sampleID] 
+    dfPsi     <- DataFrame(matrix(unlist(sapply(psiValues, "[", "psiValue")), 
+                          ncol = nrow(settings@sampleData)
+    ))
+    names(dfPsi) <- settings@sampleData[,sampleID] 
+    dfCounts  <- DataFrame(matrix(unlist(sapply(psiValues, "[", "rawOtherCounts")), 
+                          ncol = nrow(settings@sampleData)
+    ))
+    names(dfCounts) <- settings@sampleData[,sampleID] 
     
-    return(df)
+    return(SimpleList(psi=dfPsi, counts=dfCounts))
 }
 
 
@@ -137,18 +154,18 @@ calculateSitePSIValue <- function(dataset){
         )
        
         # wrote it to the data
-        dataset@nonSplicedReads <- .mergeAssay("rawSplitReadCounts", dataset@nonSplicedReads,
+        dataset@nonSplicedReads <- .mergeAssay("rawOtherCounts_sitePSI", dataset@nonSplicedReads,
                 assays(splice_site)$rawSplitReadCounts, modified_rows
         )
     }
     
     
     # add junction persent spliced in value (sitePSI) 
-    sitePSIValue <- .getAssayAsDataTable(dataset@nonSplicedReads, "rawSplitReadCounts") / (
-        .getAssayAsDataTable(dataset@nonSplicedReads, "rawSplitReadCounts") +
-            .getAssayAsDataTable(dataset@nonSplicedReads, "rawCounts")
+    sitePSIValue <- FraseR:::.getAssayAsDataTable(dataset@nonSplicedReads, "rawOtherCounts_sitePSI") / (
+            FraseR:::.getAssayAsDataTable(dataset@nonSplicedReads, "rawOtherCounts_sitePSI") +
+            FraseR:::.getAssayAsDataTable(dataset@nonSplicedReads, "rawCounts")
     )
-    dataset@nonSplicedReads <- .mergeAssay("sitePSI", dataset@nonSplicedReads, sitePSIValue)
+    dataset@nonSplicedReads <- FraseR:::.mergeAssay("sitePSI", dataset@nonSplicedReads, sitePSIValue)
     
     return(dataset)
 }
