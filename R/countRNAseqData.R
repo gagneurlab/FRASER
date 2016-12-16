@@ -39,6 +39,7 @@ countRNAData <- function(settings, internBPPARAM=SerialParam()){
 
     # count the retained reads
     message("Start counting the non spliced reads ...")
+    message("In total ", length(granges(counts)), " splice sites are analysed ...")
     countList <- bplapply(settings@sampleData[,bamFile], 
                           FUN=.countNonSplicedReads, 
                           settings=settings,

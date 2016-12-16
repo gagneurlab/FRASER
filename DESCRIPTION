@@ -30,3 +30,4 @@ Collate:
     'calculateStats.R'
     'countRNAseqData.R'
     'example_functions.R'
+    'plotResults.R'
