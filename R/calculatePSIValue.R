@@ -47,6 +47,7 @@ calculatePSIValues <- function(dataset){
 #'
 #' calculates the PSI value for the given prime site of the junction
 #' 
+#' @noRd
 .calculatePSIValuePrimeSite <- function(countData, settings, psiType){
     
     # convert psi type to the position of interest 
@@ -156,6 +157,7 @@ calculateSitePSIValue <- function(dataset){
 #'
 #' convert a data.table to a DataFrame and keep the colnames
 #' 
+#' @noRd
 .asDataFrame <- function(dataframe, colname = colnames(dataframe)){
     dataframe <- DataFrame(dataframe)
     colnames(dataframe) <- colname
@@ -168,6 +170,7 @@ calculateSitePSIValue <- function(dataset){
 #' @param se summarizedExperiment object to add the assay
 #' @param df dataframe/data to add as assay
 #' 
+#' @noRd
 .mergeAssay <- function(assay, se1, df1, rowidx1 = 1:dim(se1)[1]){
     # create empty dataframe for assay if not present yet
     if(!any(names(assays(se1)) %in% assay)){
@@ -194,6 +197,7 @@ calculateSitePSIValue <- function(dataset){
 #'
 #' get the assay as data.table from a SummarizedExperiment object
 #' 
+#' @noRd
 .getAssayAsDataTable <- function(se, assay, na_as_zero = TRUE){
     if(!any(names(assays(se)) %in% assay)){
         stop("The given assay: '", assay, "' is not present in this object")

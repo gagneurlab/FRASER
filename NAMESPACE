@@ -3,6 +3,7 @@
 export(FraseRDataSet)
 export(FraseRSettings)
 export(calculatePSIValues)
+export(calculatePValues)
 export(calculateSitePSIValue)
 export(calculateZScores)
 export(countRNAData)
