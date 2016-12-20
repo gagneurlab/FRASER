@@ -27,7 +27,7 @@ countRNAData <- function(settings, internBPPARAM=SerialParam()){
     stopifnot(is(internBPPARAM, "BiocParallelParam"))
 
     # count splitreads first
-    message("Start counting the split reads ...")
+    message(date(), ": Start counting the split reads ...")
     countList <- bplapply(settings@sampleData[,bamFile], 
                           FUN=.countSplitReads, 
                           settings=settings,
@@ -38,8 +38,8 @@ countRNAData <- function(settings, internBPPARAM=SerialParam()){
     counts <- .mergeCounts(countList, settings@parallel)
 
     # count the retained reads
-    message("Start counting the non spliced reads ...")
-    message("In total ", length(granges(counts)), " splice sites are analysed ...")
+    message(date(), ": Start counting the non spliced reads ...")
+    message(date(), ": In total ", length(granges(counts)), " splice sites are analysed ...")
     countList <- bplapply(settings@sampleData[,bamFile], 
                           FUN=.countNonSplicedReads, 
                           settings=settings,
@@ -206,7 +206,7 @@ countRNAData <- function(settings, internBPPARAM=SerialParam()){
     splice_site_coordinates <- FraseR:::.extract_splice_site_coordinates(targets, settings)
      
     # estimate chunk size 
-    numRangesPerChunk <- 50000
+    numRangesPerChunk <- 200000
     numChunks <- ceiling(length(splice_site_coordinates)/numRangesPerChunk)
     chunkID <- rep(1:numChunks, each=numRangesPerChunk)[1:length(splice_site_coordinates)]
     targetChunks <- split(splice_site_coordinates, chunkID)   
@@ -216,6 +216,8 @@ countRNAData <- function(settings, internBPPARAM=SerialParam()){
                            settings=settings,
                            BPPARAM=internBPPARAM,
                            FUN=function(range, bamFile, settings){
+                               message("Running ... ", unique(seqnames(range)))
+                               
                                single_read_fragments <- readGAlignments(bamFile, 
                                                 param=ScanBamParam(which = range)) %>% 
                                                 grglist() %>% reduce()
