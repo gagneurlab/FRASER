@@ -172,17 +172,6 @@ calculateSitePSIValue <- function(dataset){
 
 
 #'
-#' convert a data.table to a DataFrame and keep the colnames
-#' 
-#' @noRd
-.asDataFrame <- function(dataframe, colname = colnames(dataframe)){
-    dataframe <- DataFrame(dataframe)
-    colnames(dataframe) <- colname
-    return(dataframe)
-}
-
-
-#'
 #' @param assay name of assay to use
 #' @param se summarizedExperiment object to add the assay
 #' @param df dataframe/data to add as assay
@@ -211,19 +200,4 @@ calculateSitePSIValue <- function(dataset){
 }
 
 
-#'
-#' get the assay as data.table from a SummarizedExperiment object
-#' 
-#' @noRd
-.getAssayAsDataTable <- function(se, assay, na_as_zero = TRUE){
-    if(!any(names(assays(se)) %in% assay)){
-        stop("The given assay: '", assay, "' is not present in this object")
-    }
-    dt <- as.data.table(assays(se)[[assay]])
-    if(na_as_zero){
-        dt[is.na(dt)] <- 0
-    }
-    colnames(dt) <- colnames(assays(se)[[assay]])
-    return(dt)
-}
 

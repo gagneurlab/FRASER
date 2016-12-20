@@ -201,28 +201,45 @@ countRNAData <- function(settings, internBPPARAM=SerialParam()){
 ## TODO: 10k chunks hardcoded currently (needs some testing and a code to)
 .countNonSplicedReads <- function(bamFile, targets, settings, internBPPARAM=SerialParam()){
     suppressPackageStartupMessages(library(FraseR))
+    #internBPPARAM=SerialParam()
     
     # extract donor and acceptor sites
     splice_site_coordinates <- FraseR:::.extract_splice_site_coordinates(targets, settings)
-     
-    # estimate chunk size 
-    numRangesPerChunk <- 200000
-    numChunks <- ceiling(length(splice_site_coordinates)/numRangesPerChunk)
-    chunkID <- rep(1:numChunks, each=numRangesPerChunk)[1:length(splice_site_coordinates)]
-    targetChunks <- split(splice_site_coordinates, chunkID)   
-    
+
+    # estimate chunk size
+    rangeShift        <- 5*10^4
+    numRangesPerChunk <- 5*10^2
+    targetChunks <- GenomicRanges::reduce(GenomicRanges::trim(
+        suppressWarnings(
+                GenomicRanges::shift(GenomicRanges::resize(
+                        splice_site_coordinates, width=rangeShift),
+                    shift=-rangeShift/2
+    ))))
+
+
+    numChunks <- ceiling(max(1,length(targetChunks)/numRangesPerChunk))
+    chunkID <- rep(1:numChunks, each=numRangesPerChunk)[1:length(targetChunks)]
+    targetChunks <- split(targetChunks, chunkID)
+
     # extract the counts per chromosome
     countsList <- bplapply(targetChunks, bamFile=bamFile, 
                            settings=settings,
+                           spliceSites=splice_site_coordinates,
                            BPPARAM=internBPPARAM,
-                           FUN=function(range, bamFile, settings){
-                               message("Running ... ", unique(seqnames(range)))
-                               
+                           FUN=function(range, bamFile, settings, spliceSites){
+                               message(date(), ": Running on ", path(bamFile), " ... ", unique(seqnames(range)), " ... ", length(range))
                                single_read_fragments <- readGAlignments(bamFile, 
                                                 param=ScanBamParam(which = range)) %>% 
                                                 grglist() %>% reduce()
                                
-                               countOverlaps(range, single_read_fragments, minoverlap = 2)
+                               message(date(), ": Counting  ", path(bamFile), " ... ", unique(seqnames(range)), " ... ", length(range))
+                               regionOfChunk <- subsetByOverlaps(spliceSites, range, type = "any")    
+                               hits <- countOverlaps(regionOfChunk, single_read_fragments, minoverlap = 2)
+                               
+                               # clean memory
+                               rm(regionOfChunk, single_read_fragments)
+                               gc()
+                               return(hits)
                            }
     )
 	mcols(splice_site_coordinates)$count <- unlist(countsList)

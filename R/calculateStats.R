@@ -16,9 +16,12 @@ calculateZScores <- function(dataset){
     # check input
     stopifnot(class(dataset) == "FraseRDataSet")
     
-    dataset <- FraseR:::.calculateZScorePerDataSet(dataset, "splitReads", "psi3")
-    dataset <- FraseR:::.calculateZScorePerDataSet(dataset, "splitReads", "psi5")
-    dataset <- FraseR:::.calculateZScorePerDataSet(dataset, "nonSplicedReads", "sitePSI")
+    message(date(), ": Calculate the PSI3 values ...")
+    dataset <- .calculateZScorePerDataSet(dataset, "splitReads", "psi3")
+    message(date(), ": Calculate the PSI5 values ...")
+    dataset <- .calculateZScorePerDataSet(dataset, "splitReads", "psi5")
+    message(date(), ": Calculate the sitePSI values ...")
+    dataset <- .calculateZScorePerDataSet(dataset, "nonSplicedReads", "sitePSI")
     
     return(dataset)
 }
@@ -34,7 +37,7 @@ calculateZScores <- function(dataset){
     seCounts <- slot(dataset, readType)
   
     # get raw data and replace NA's with zeros
-    psiVal <- FraseR:::.getAssayAsDataTable(seCounts, psiType)
+    psiVal <- .getAssayAsDataTable(seCounts, psiType)
     
     # z = ( x - mean ) / sd
     rowmean <- rowMeans(psiVal, na.rm = TRUE)
@@ -43,7 +46,7 @@ calculateZScores <- function(dataset){
     
     # add it to the FraseR object
     assayName <- paste0("zscore_", psiType)
-    zscores   <- FraseR:::.asDataFrame(zscores, dataset@settings@sampleData[,sampleID])
+    zscores   <- .asDataFrame(zscores, dataset@settings@sampleData[,sampleID])
     assays(slot(dataset, readType))[[assayName]] <- zscores
           
     return(dataset)  
@@ -55,14 +58,14 @@ calculateZScores <- function(dataset){
 #' FraseRSettings object
 #'
 #' @export
-calculatePValues <- function(dataset){
+calculatePValues <- function(dataset, internBPPARAM=SerialParam()){
     # check input
     stopifnot(class(dataset) == "FraseRDataSet")
     
     # check which method we should use
     method <- dataset@settings@method
     if(method == "Fisher"){
-        return(FraseR:::.testPsiWithFisher(dataset))
+        return(.testPsiWithFisher(dataset, internBPPARAM))
     }
     
     if(method == "DESeq2"){
@@ -81,15 +84,15 @@ calculatePValues <- function(dataset){
 #'
 #'
 #' @noRd
-.testPsiWithFisher <- function(dataset){
+.testPsiWithFisher <- function(dataset, internBPPARAM){
     
     # test all 3 different types
     assays(dataset@splitReads)$pvalue_psi3 <- 
-            .testPsiWithFisherPerType(dataset, "splitReads", "psi3")
+            .testPsiWithFisherPerType(dataset, "splitReads", "psi3", internBPPARAM)
     assays(dataset@splitReads)$pvalue_psi5 <- 
-            .testPsiWithFisherPerType(dataset, "splitReads", "psi5")
+            .testPsiWithFisherPerType(dataset, "splitReads", "psi5", internBPPARAM)
     assays(dataset@nonSplicedReads)$pvalue_sitePSI <- 
-            .testPsiWithFisherPerType(dataset, "nonSplicedReads", "sitePSI")
+            .testPsiWithFisherPerType(dataset, "nonSplicedReads", "sitePSI", internBPPARAM)
     
     # return the new datasets
     return(dataset)
@@ -98,19 +101,20 @@ calculatePValues <- function(dataset){
 #'
 #'
 #' @noRd
-.testPsiWithFisherPerType <- function(dataset, readType, psiType){
+.testPsiWithFisherPerType <- function(dataset, readType, psiType, internBPPARAM){
     # go over each group but no NA's
     group   <- sampleGroup(dataset@settings)
     
     # reads to test for abberent splicing (eg: nonSplicedReads)
-    rawCounts <- FraseR:::.getAssayAsDataTable(slot(dataset, readType), "rawCounts")
+    rawCounts <- .getAssayAsDataTable(slot(dataset, readType), "rawCounts")
     
     # other reads (eg: splitReads)
-    rawOtherCounts <- FraseR:::.getAssayAsDataTable(slot(dataset, readType), paste0("rawOtherCounts_", psiType))
+    rawOtherCounts <- .getAssayAsDataTable(slot(dataset, readType), paste0("rawOtherCounts_", psiType))
     
     pvalues <- bplapply(unique(na.omit(group)), dataset=dataset, 
                         rawCounts=rawCounts, rawOtherCounts=rawOtherCounts,
                         BPPARAM=dataset@settings@parallel,
+                        internBPPARAM=internBPPARAM,
                         FUN=.testPsiWithFisherPerGroup
     )
     names(pvalues) <- as.character(unique(na.omit(group)))
@@ -127,68 +131,32 @@ calculatePValues <- function(dataset){
 #'
 #'
 #' @noRd
-.testPsiWithFisherPerGroup <- function(dataset, groupID, rawCounts, rawOtherCounts){
+.testPsiWithFisherPerGroup <- function(dataset, groupID, rawCounts, rawOtherCounts, internBPPARAM){
     # get group to test
     group <- sampleGroup(dataset@settings)
     group2Test <- group == groupID
     group2Test[is.na(group2Test)] <- FALSE
     
-    # groups to test against 
-    pvalues <- sapply(1:dim(rawCounts)[1], function(idx){
-        fisher.test(matrix(nrow=2,
-                           c(
-                               TP=sum(rawCounts[     idx, group2Test,with=FALSE]),
-                               FP=sum(rawCounts[     idx,!group2Test,with=FALSE]),
-                               FN=sum(rawOtherCounts[idx, group2Test,with=FALSE]),
-                               TN=sum(rawOtherCounts[idx,!group2Test,with=FALSE])
-                           )
-        ))$p.value
-    })
-    return(pvalues)
-}
-
-
-#' 
-convert_dataframe_columns_to_Rle <- function(data, index2convert = 1:dim(dataframe)[2]){
+    fullFisherTable <- data.table(
+        TP=rowSums(rawCounts[     , group2Test,with=FALSE]),
+        FP=rowSums(rawCounts[     ,!group2Test,with=FALSE]),
+        FN=rowSums(rawOtherCounts[, group2Test,with=FALSE]),
+        TN=rowSums(rawOtherCounts[,!group2Test,with=FALSE])
+    )
     
-    # convert all given indices
-    for (i in index2convert){
-        data[,i] <- Rle(data[,i])
-    }
+    # test only where at least the group has one read
+    fisherTableToTest <- fullFisherTable[TP+FN > 0]
+    pvalues <- unlist(bplapply(1:nrow(fisherTableToTest), BPPARAM = internBPPARAM, fisherTableToTest=fisherTableToTest,
+            function(idx, fisherTableToTest){
+                fisher.test(matrix(as.integer(fisherTableToTest[idx]), nrow=2))$p.value 
+            }
+    ))
     
-    return(data)
+    # add NAs wher the test group did not had any read
+    fullFisherTable[,pvalue:=as.numeric(NA)]
+    fullFisherTable[TP+FN>0,pvalue:=pvalues]
+    return(fullFisherTable[,pvalue])
 }
 
 
 
-
-#'
-#' Filter the data based on a minimum of expression level over all samples
-#' It removes the junction and also the corresponding Donor and Acceptor site
-#' within the SummarizedExperiment object
-#' @noRd
-filter_junction_data <- function(data, minExpRatio = 0.8){
-    # get only the junctions
-    junctions <- which(rowData(data)$type == "Junction")
-    
-    # get the expression counts for each junction
-    dt <- get_assay_as_data_table(data, "counts", FALSE)[junctions]
-    
-    # calculate the expression ratio per site
-    expression <- apply(dt, 1, function(x) sum(!(is.na(x) | x == 0)))
-    expression <- expression / dim(dt)[2]
-    
-    cutoff <- expression >= minExpRatio
-    
-    # get the hits (junction/acceptor/donor) in our full data set
-    hits <- unique(unlist(sapply(c("start", "end"), function(type){
-        findOverlaps(type = type,
-                     rowRanges(data)[junctions][cutoff], 
-                     shift(rowRanges(data), ifelse(type == "start", 1, -1))
-        )@to
-    })))
-    junction_sites <- hits[rowData(data)$type[hits] != "Junction"]
-    
-    # filter the object and return it
-    return(data[c(junction_sites, junctions[cutoff])])
-}
