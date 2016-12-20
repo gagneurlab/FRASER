@@ -26,6 +26,7 @@ Collate:
     'FraseR-package.R'
     'FraseRSettings-class.R'
     'FraseRDataSet-class.R'
+    'annotationOfRanges.R'
     'calculatePSIValue.R'
     'calculateStats.R'
     'countRNAseqData.R'
