@@ -6,7 +6,7 @@
 ##
 
 #'
-#' Annotates the given FaseRDataSet with the HGNC symbol
+#' Annotates the given FraseRDataSet with the HGNC symbol
 #' with biomaRt
 #' 
 #' @export
@@ -41,11 +41,14 @@ annotateRanges <- function(dataset, biotype = list("protein_coding"),
         mart = ensembl
     )
     
-    # remove emtpy symbols
+    # remove emtpy symbols or non standard chromosomes
     ensemblResults <- ensemblResults[ensemblResults$hgnc_symbol != "",]
+    ensemblResults <- ensemblResults[!grepl("_|\\.", ensemblResults$chromosome_name),]
     
     # create a grange object
-    results <- makeGRangesFromDataFrame(ensemblResults, start.field = "start_position", end.field = "end_position", keep.extra.columns = TRUE)
+    results <- makeGRangesFromDataFrame(ensemblResults, start.field = "start_position", 
+            end.field = "end_position", keep.extra.columns = TRUE
+    )
     if(all(startsWith(seqlevels(ranges), "chr"))){
         seqlevels(results) <- paste0("chr", seqlevels(results))
     }
@@ -63,3 +66,35 @@ annotateRanges <- function(dataset, biotype = list("protein_coding"),
     
     return(hgnc_symbols)
 }
+
+#'
+#' use biomart to extract the current HGNC annotation
+#'
+#' @noRd
+.getAllHgnsSymbolsAsGRange <- function(ensembl, biotype, useUCSCScheme = TRUE){
+    
+    # contact biomaRt to retrive hgnc symbols
+    ensemblResults <- getBM(
+        attributes = c("hgnc_symbol", "chromosome_name", "start_position", "end_position"),
+        filters = c("biotype"),
+        values = list(biotype=biotype),
+        mart = ensembl
+    )
+    
+    # remove emtpy symbols or non standard chromosomes
+    ensemblResults <- ensemblResults[ensemblResults$hgnc_symbol != "",]
+    ensemblResults <- ensemblResults[!grepl("_|\\.", ensemblResults$chromosome_name),]
+    
+    # create a grange object
+    results <- makeGRangesFromDataFrame(ensemblResults, start.field = "start_position", 
+                                        end.field = "end_position", keep.extra.columns = TRUE
+    )
+    
+    if(useUCSCScheme){
+        seqlevels(results) <- paste0("chr", seqlevels(results))
+    }
+    
+    return(results)
+}
+
+
