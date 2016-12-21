@@ -87,10 +87,10 @@ countRNAData <- function(settings, internBPPARAM=SerialParam()){
     suppressPackageStartupMessages(library(FraseR))
     
     # parallelize over chromosomes
-    chromosomes <- FraseR:::.extractChromosomes(bamFile)
+    chromosomes <- .extractChromosomes(bamFile)
     
     # extract the counts per chromosome
-    countsList <- bplapply(chromosomes, FUN=FraseR:::.countSplitReadsPerChromosome,
+    countsList <- bplapply(chromosomes, FUN=.countSplitReadsPerChromosome,
                        bamFile=bamFile, 
                        settings=settings,
                        BPPARAM=internBPPARAM
@@ -105,11 +105,15 @@ countRNAData <- function(settings, internBPPARAM=SerialParam()){
 ##
 .countSplitReadsPerChromosome <- function(chromosome, bamFile, settings){
     # restrict to the chromosome only
-    param <- ScanBamParam(which=GRanges(
-            seqnames=chromosome, 
-            ranges=IRanges(0, 536870912)
-    ))
-
+    which=GRanges(
+        seqnames=chromosome, 
+        ranges=IRanges(0, 536870912)
+    )
+    param <- .mergeBamParams(bamParam=settings@bamParams, which=which)
+    if(is.null(param)){
+        return(GRanges())
+    }
+    
     # get reads from bam file
     galignment <- readGAlignments(bamFile, param=param)
 
@@ -142,6 +146,29 @@ countRNAData <- function(settings, internBPPARAM=SerialParam()){
     return(sort(junctionsCounts))
 }
     
+
+##
+## merge a ScanBamParam object with a given which object (GRange)
+##
+.mergeBamParams <- function(bamParam, which, override=FALSE){
+    # the chromosome is alrways only one
+    chromosome <- as.character(unique(seqnames(which)))
+    
+    # just take the which argument of no ranges are specified
+    if(length(bamWhich(bamParam)) == 0 | override){
+        bamWhich(bamParam) <- which
+    } else {
+        if(is.null(bamWhich(bamParam)[[chromosome]])){
+            return(NULL)
+        }
+        # only take the ranges overlapping with the given once
+        ov <- findOverlaps(bamWhich(bamParam)[[chromosome]], ranges(which))
+        bamWhich(bamParam)[[chromosome]] <- bamWhich(bamParam)[[chromosome]][from(ov)]
+    }
+    return(bamParam)
+}
+
+
 
 ## 
 ## merge multiple samples into one SummarizedExperiment object
@@ -223,24 +250,27 @@ countRNAData <- function(settings, internBPPARAM=SerialParam()){
 
     # extract the counts per chromosome
     countsList <- bplapply(targetChunks, bamFile=bamFile, 
-                           settings=settings,
-                           spliceSites=splice_site_coordinates,
-                           BPPARAM=internBPPARAM,
-                           FUN=function(range, bamFile, settings, spliceSites){
-                               message(date(), ": Running on ", path(bamFile), " ... ", unique(seqnames(range)), " ... ", length(range))
-                               single_read_fragments <- readGAlignments(bamFile, 
-                                                param=ScanBamParam(which = range)) %>% 
-                                                grglist() %>% reduce()
-                               
-                               message(date(), ": Counting  ", path(bamFile), " ... ", unique(seqnames(range)), " ... ", length(range))
-                               regionOfChunk <- subsetByOverlaps(spliceSites, range, type = "any")    
-                               hits <- countOverlaps(regionOfChunk, single_read_fragments, minoverlap = 2)
-                               
-                               # clean memory
-                               rm(regionOfChunk, single_read_fragments)
-                               gc()
-                               return(hits)
-                           }
+           settings=settings,
+           spliceSites=splice_site_coordinates,
+           BPPARAM=internBPPARAM,
+           FUN=function(range, bamFile, settings, spliceSites){
+                   suppressPackageStartupMessages(library(FraseR))
+                   
+                   # restrict to the chromosome only
+                   param <- .mergeBamParams(settings@bamParams, range, TRUE)
+                   
+                   message(date(), ": Running on ", path(bamFile), " ... ", unique(seqnames(range)), " ... ", length(range))
+                   single_read_fragments <- readGAlignments(bamFile, param=param) %>% grglist() %>% reduce()
+                   
+                   message(date(), ": Counting  ", path(bamFile), " ... ", unique(seqnames(range)), " ... ", length(range))
+                   regionOfChunk <- subsetByOverlaps(spliceSites, range, type = "any")    
+                   hits <- countOverlaps(regionOfChunk, single_read_fragments, minoverlap = 2)
+                   
+                   # clean memory
+                   rm(regionOfChunk, single_read_fragments)
+                   gc()
+                   return(hits)
+           }
     )
 	mcols(splice_site_coordinates)$count <- unlist(countsList)
 	

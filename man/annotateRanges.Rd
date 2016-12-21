@@ -5,9 +5,9 @@
 \title{Annotates the given FraseRDataSet with the HGNC symbol
 with biomaRt}
 \usage{
-annotateRanges(dataset, biotype = list("protein_coding"),
-  ensembl = useEnsembl(biomart = "ensembl", dataset = "hsapiens_gene_ensembl",
-  GRCh = 37))
+annotateRanges(dataset, feature = "hgnc_symbol",
+  biotype = list("protein_coding"), ensembl = useEnsembl(biomart =
+  "ensembl", dataset = "hsapiens_gene_ensembl", GRCh = 37))
 }
 \description{
 Annotates the given FraseRDataSet with the HGNC symbol
