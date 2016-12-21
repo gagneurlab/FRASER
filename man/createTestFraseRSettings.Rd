@@ -2,8 +2,9 @@
 % Please edit documentation in R/example_functions.R
 \name{createTestFraseRSettings}
 \alias{createTestFraseRSettings}
-\title{Create a test case dataset to be used in the vignette and
-to explore the functionallity of the FraseR package.}
+\title{Create a test case dataset (sample information only)
+to be used in the vignette and to explore the 
+functionallity of the FraseR package.}
 \usage{
 createTestFraseRSettings()
 }
@@ -11,8 +12,9 @@ createTestFraseRSettings()
 a FraseRSettings object which contains a test case
 }
 \description{
-Create a test case dataset to be used in the vignette and
-to explore the functionallity of the FraseR package.
+Create a test case dataset (sample information only)
+to be used in the vignette and to explore the 
+functionallity of the FraseR package.
 }
 \examples{
     createTestFraseRSettings()

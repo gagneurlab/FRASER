@@ -6,7 +6,8 @@
 #' @import BiocParallel
 #' @import GenomicAlignments
 #' @import SummarizedExperiment
-#' @import biomaRt
+#' @importfrom biomaRt useEnsembl
+#' @importfrom biomaRt getBM
 #' @import plotly
 #' @importFrom data.table data.table
 #' @importFrom data.table as.data.table
@@ -14,5 +15,5 @@
 #' @importFrom data.table fread
 #' @import tidyr
 #' @import GenomicRanges
-#' @import IRanges
+### import IRanges
 NULL

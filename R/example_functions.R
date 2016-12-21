@@ -1,6 +1,7 @@
 #'
-#' Create a test case dataset to be used in the vignette and
-#' to explore the functionallity of the FraseR package.
+#' Create a test case dataset (sample information only)
+#' to be used in the vignette and to explore the 
+#' functionallity of the FraseR package.
 #' 
 #' @return a FraseRSettings object which contains a test case
 #' @export
@@ -24,3 +25,35 @@ createTestFraseRSettings <- function(){
     # return a FraseRSettings object
     return(FraseRSettings(sampleData=sampleTable))
 }
+
+#'
+#' Create a test case dataset based on the test sample annotation
+#' filled with counts to be used in the vignette and
+#' to explore the functionallity of the FraseR package.
+#' 
+#' @return a FraseRDataSet object which contains a test case
+#' @export
+#' @examples 
+#'     createTestFraseRDataSet()
+#'     
+createTestFraseRDataSet <- function(BPPARAM=NULL){
+    
+    # get test sample annotation
+    settings <- createTestFraseRSettings()
+    
+    # set paralelle settings if given
+    if(!is.null(BPPARAM)){
+        settings@parallel <- BPPARAM
+    }
+    
+    # count data
+    dataset <- countRNAData(settings)
+    
+    # calculate PSI values
+    dataset <- calculatePSIValues(dataset)
+    dataset <- calculateSitePSIValue(dataset)
+    
+    # return a FraseRDataSet object
+    return(dataset)
+}
+
