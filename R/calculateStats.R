@@ -8,7 +8,7 @@
 ##
 
 #'
-#' calculate the zscore for each psi value
+#' Calculate the zscore for each psi value.
 #' 
 #' @export
 calculateZScores <- function(dataset){
@@ -68,6 +68,10 @@ calculatePValues <- function(dataset, internBPPARAM=SerialParam()){
         return(.testPsiWithFisher(dataset, internBPPARAM))
     }
     
+    if(method == "betaBin"){
+        return(.testPsiWithBetaBinomial(dataset, internBPPARAM))
+    }
+    
     if(method == "DESeq2"){
         stop("This method is not yet implemented.")
     }
@@ -82,7 +86,8 @@ calculatePValues <- function(dataset, internBPPARAM=SerialParam()){
 }
 
 #'
-#'
+#' calculates the pvalue with fisher
+#' 
 #' @noRd
 .testPsiWithFisher <- function(dataset, internBPPARAM){
     
@@ -99,7 +104,8 @@ calculatePValues <- function(dataset, internBPPARAM=SerialParam()){
 }
 
 #'
-#'
+#' calculates the pvalue per type (psi3,psi5,spliceSite) with fisher
+#' 
 #' @noRd
 .testPsiWithFisherPerType <- function(dataset, readType, psiType, internBPPARAM){
     # go over each group but no NA's
@@ -129,7 +135,8 @@ calculatePValues <- function(dataset, internBPPARAM=SerialParam()){
 
 
 #'
-#'
+#' calculates the pvalue per group with fisher
+#' 
 #' @noRd
 .testPsiWithFisherPerGroup <- function(dataset, groupID, rawCounts, rawOtherCounts, internBPPARAM){
     # get group to test

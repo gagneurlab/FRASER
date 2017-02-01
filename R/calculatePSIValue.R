@@ -11,7 +11,6 @@
 #' based on the FraseRDataSet object
 #' 
 #' @export
-#' 
 calculatePSIValues <- function(dataset){
     # check input
     stopifnot(class(dataset) == "FraseRDataSet")
@@ -107,7 +106,6 @@ calculatePSIValues <- function(dataset){
 #' based on the FraseRDataSet object
 #' 
 #' @export
-#' 
 calculateSitePSIValue <- function(dataset){
     
     # check input
@@ -172,6 +170,8 @@ calculateSitePSIValue <- function(dataset){
 
 
 #'
+#' merge assays into one
+#' 
 #' @param assay name of assay to use
 #' @param se summarizedExperiment object to add the assay
 #' @param df dataframe/data to add as assay

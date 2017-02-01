@@ -2,11 +2,11 @@
 % Please edit documentation in R/calculateStats.R
 \name{calculateZScores}
 \alias{calculateZScores}
-\title{calculate the zscore for each psi value}
+\title{Calculate the zscore for each psi value.}
 \usage{
 calculateZScores(dataset)
 }
 \description{
-calculate the zscore for each psi value
+Calculate the zscore for each psi value.
 }
 

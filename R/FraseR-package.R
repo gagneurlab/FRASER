@@ -40,4 +40,8 @@
 #' @import tidyr
 #' 
 #' 
+### P-Value calculation 
+#' @import VGAM
+#' 
+#' 
 NULL
