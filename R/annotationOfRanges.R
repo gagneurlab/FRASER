@@ -66,7 +66,7 @@ annotateRanges <- function(dataset, feature="hgnc_symbol", biotype = list("prote
 
 
 #'
-#' 
+#' retriev annotations from a biomart call
 #'
 #' @noRd
 .getAnnotationFeature <- function(data, feature, annotation){

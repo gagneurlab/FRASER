@@ -34,8 +34,10 @@
 
 
 
-
+#'
+#' TODO this is not used yet or documented
 #' 
+#' @noRd
 convert_dataframe_columns_to_Rle <- function(data, index2convert = 1:dim(dataframe)[2]){
     
     # convert all given indices

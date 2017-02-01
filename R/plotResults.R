@@ -10,13 +10,13 @@
 plotSampleResults <- function(dataset, sampleID, file=NULL){
     
     # generate each sub plot
-    psi3plot <- .plotVolcano(dataset, sampleID, "splitReads", "psi3", 1)
-    psi5plot <- .plotVolcano(dataset, sampleID, "splitReads", "psi5", 2)
+    psi3plot    <- .plotVolcano(dataset, sampleID, "splitReads", "psi3", 1)
+    psi5plot    <- .plotVolcano(dataset, sampleID, "splitReads", "psi5", 2)
     sitePSIplot <- .plotVolcano(dataset, sampleID, "nonSplicedReads", "sitePSI", 3)
     
     # combine plots
     mainplot <- subplot(psi3plot, psi5plot, sitePSIplot,
-                  nrows = 3, shareX = T, shareY = T,
+                  nrows = 3, shareX = T, shareY = F,
                   titleX = TRUE, titleY = TRUE
     ) %>% layout(showlegend = FALSE)
     
@@ -32,6 +32,7 @@ plotSampleResults <- function(dataset, sampleID, file=NULL){
 }
 
 #'
+#' generate a volcano plot
 #'
 #' @noRd
 .plotVolcano <- function(dataset, sampleID, readType, psiType, subID, ylim=c(0,30), xlim=c(-5,5)){
@@ -42,11 +43,16 @@ plotSampleResults <- function(dataset, sampleID, file=NULL){
     # remove NAs from data
     toplot <- !is.na(zscore) & !is.na(pvalue) & !is.infinite(pvalue)
     
-    # remove unsignificant data
+    # remove unsignificant data (to keep plotly responsive)
+    # max 50k points
     xCutoff <- 1.5
     yCutoff <- 1.5
     unsigni <- abs(zscore[toplot]) < xCutoff & pvalue[toplot] < yCutoff
+    if(sum(toplot[toplot] & !unsigni) < 50000){
+        unsigni <- unsigni & rank(pvalue[toplot]) > 50000
+    }
     toplot[toplot]  <- !unsigni
+    
     
     # trim data to ylim and xlim 
     pvalue2plot <- pvalue
