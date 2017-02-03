@@ -46,7 +46,8 @@ calculateZScores <- function(dataset){
     
     # add it to the FraseR object
     assayName <- paste0("zscore_", psiType)
-    zscores   <- .asDataFrame(zscores, dataset@settings@sampleData[,sampleID])
+    sampleIDs <- dataset@settings@sampleData[,sampleID]
+    zscores   <- .asDataFrame(zscores, sampleIDs)
     assays(slot(dataset, readType))[[assayName]] <- zscores
           
     return(dataset)  
