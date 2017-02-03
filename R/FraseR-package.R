@@ -41,7 +41,10 @@
 #' 
 #' 
 ### P-Value calculation 
-#' @import VGAM
+#' @importFrom VGAM rbetabinom
+#' @importFrom VGAM vglm
+#' @importFrom VGAM Coef
+#' @importFrom VGAM pbetabinom
 #' 
 #' 
 NULL

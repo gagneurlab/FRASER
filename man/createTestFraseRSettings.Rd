@@ -20,4 +20,3 @@ functionallity of the FraseR package.
     createTestFraseRSettings()
     
 }
-

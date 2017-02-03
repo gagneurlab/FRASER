@@ -25,4 +25,3 @@ The constructor function for FraseRSettings
 \author{
 Christian Mertes \email{mertes@in.tum.de}
 }
-

@@ -11,4 +11,3 @@ needed for an analysis of a disease cohort
 \author{
 Christian Mertes \email{mertes@in.tum.de}
 }
-

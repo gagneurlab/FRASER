@@ -11,4 +11,3 @@ calculateSitePSIValue(dataset)
 This function calculates the site PSI values for each splice site
 based on the FraseRDataSet object
 }
-

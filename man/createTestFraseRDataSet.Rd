@@ -20,4 +20,3 @@ to explore the functionallity of the FraseR package.
     createTestFraseRDataSet()
     
 }
-

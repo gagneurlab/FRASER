@@ -27,4 +27,3 @@ sampleGroup(settings) <- 1:length(settings)
 \author{
 Christian Mertes \email{mertes@in.tum.de}
 }
-

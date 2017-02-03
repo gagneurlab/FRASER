@@ -8,4 +8,3 @@
 FraseR: A package providing a workflow to detect aberrant splicing events
     in RNA sequencing data in a rare disease cohort
 }
-
