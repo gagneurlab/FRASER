@@ -15,7 +15,7 @@ plotSampleResults <- function(dataset, sampleID, file=NULL){
     sitePSIplot <- .plotVolcano(dataset, sampleID, "nonSplicedReads", "sitePSI", 3)
     
     # combine plots
-    mainplot <- subplot(psi3plot, psi5plot, sitePSIplot,
+    mainplot <- plotly::subplot(psi3plot, psi5plot, sitePSIplot,
                   nrows = 3, shareX = T, shareY = F,
                   titleX = TRUE, titleY = TRUE
     ) %>% layout(showlegend = FALSE)
