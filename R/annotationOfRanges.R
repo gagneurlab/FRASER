@@ -10,8 +10,8 @@
 #' with biomaRt
 #' 
 #' @export
-annotateRanges <- function(dataset, feature="hgnc_symbol", biotype = list("protein_coding"), 
-            ensembl = useEnsembl(biomart="ensembl", dataset="hsapiens_gene_ensembl", GRCh=37)){
+annotateRanges <- function(dataset, feature="hgnc_symbol", biotype=list("protein_coding"), 
+            ensembl=useEnsembl(biomart="ensembl", dataset="hsapiens_gene_ensembl", GRCh=37)){
     
     # check if USCS naming scheme is used
     useUSCS <- all(startsWith(seqlevels(dataset@splitReads), "chr"))
@@ -26,7 +26,8 @@ annotateRanges <- function(dataset, feature="hgnc_symbol", biotype = list("prote
     
     # annotate splice sites
     mcols(dataset@nonSplicedReads)[[feature]] <- .getAnnotationFeature(
-            rowRanges(dataset@nonSplicedReads), feature, annotation
+            data=rowRanges(dataset@nonSplicedReads), 
+            feature, annotation
     )
     
     return(dataset)    
@@ -73,6 +74,7 @@ annotateRanges <- function(dataset, feature="hgnc_symbol", biotype = list("prote
     
     # find overlap with the query
     # suppress seqnames not in anothers object!
+    # TODO: is there a nicer way to do this?
     suppressWarnings(hits <- findOverlaps(data, annotation))
     
     # extract only the symbols and group them with a ";"
@@ -84,10 +86,20 @@ annotateRanges <- function(dataset, feature="hgnc_symbol", biotype = list("prote
     if(length(missingValues) > 0){
         featureDT <- rbind(featureDT, data.table(from=missingValues, feature=NA))
     }
-    featureDT <- featureDT[,list(feature=paste(sort(unique(feature)), collapse = ";")),by="from"]
+    # featureDT <- featureDT[,list(feature=paste(sort(unique(feature)), collapse = ";")),by="from"]
+    # TODO only take first hit since it is tooo slow to merge them with more then 10k entries
+    featureDT <- unique(featureDT, by="from")
     
     return(featureDT[,feature])
 }
     
+# system.time(a <- featureDT[1:1000,list(feature=paste(sort(unique(feature)), collapse=";")),by="from"])
+# a
+# featureDT[1:1000]
 
-
+tmp_dt <- data.table(a=c(1:12), b=rep(1:4,3))
+unique(tmp_dt)
+tmp_dt <- setkey(tmp_dt, b)
+unique(tmp_dt, by="b")
+?unique.data.table
+library(data.table)

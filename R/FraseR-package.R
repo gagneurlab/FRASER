@@ -17,7 +17,7 @@
 #' @import GenomicAlignments
 #' @import GenomicRanges
 #' @import SummarizedExperiment
-#  @import IRanges # not needed
+#' @import IRanges
 #' 
 #' 
 ### Annotation
