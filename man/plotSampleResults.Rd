@@ -17,4 +17,3 @@ based on plotly.
      plotSampleResults(dataset, "sample1")
      plotSampleResults(dataset, "sample1", "result.html")
 }
-

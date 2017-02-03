@@ -13,4 +13,3 @@ annotateRanges(dataset, feature = "hgnc_symbol",
 Annotates the given FraseRDataSet with the HGNC symbol
 with biomaRt
 }
-

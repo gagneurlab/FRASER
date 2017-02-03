@@ -26,4 +26,3 @@ TODO
 \examples{
   counRNAData(createTestFraseRSettings())
 }
-
