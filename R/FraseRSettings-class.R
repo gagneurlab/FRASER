@@ -200,3 +200,20 @@ setReplaceMethod("sampleGroup", "FraseRSettings", function(object, value) {
     return(object)
 })
 
+#' Subsetting by indices
+#'
+#' Providing subsetting by indices through the single-bracket operator
+#'
+#' @param x A \code{FraseRSettings} object
+#' @param i A integer vector
+#' @return A subsetted \code{FraseRSettings} object
+setMethod("[", c("FraseRSettings", "numeric"), function(x, i) {
+    newx <- new("FraseRSettings", 
+        sampleData     = slot(x, "sampleData")[i],
+        bamParams      = slot(x, "bamParams"),
+        parallel       = slot(x, "parallel"),
+        method         = slot(x, "method"),
+        strandSpecific = slot(x, "strandSpecific")
+    )
+    return(newx)
+})

@@ -90,16 +90,7 @@ annotateRanges <- function(dataset, feature="hgnc_symbol", biotype=list("protein
     # TODO only take first hit since it is tooo slow to merge them with more then 10k entries
     featureDT <- unique(featureDT, by="from")
     
-    return(featureDT[,feature])
+    return(featureDT[order(from),feature])
 }
-    
-# system.time(a <- featureDT[1:1000,list(feature=paste(sort(unique(feature)), collapse=";")),by="from"])
-# a
-# featureDT[1:1000]
 
-tmp_dt <- data.table(a=c(1:12), b=rep(1:4,3))
-unique(tmp_dt)
-tmp_dt <- setkey(tmp_dt, b)
-unique(tmp_dt, by="b")
-?unique.data.table
-library(data.table)
+
