@@ -11,14 +11,9 @@ Description: This package calls rare aberrant splicing events in a set of
     where RNA-seq is performed.
 License: Artistic-2.0
 Depends:
-    R (>= 3.3),
-    BiocParallel,
-    GenomicAlignments,
-    SummarizedExperiment,
-    data.table,
-    GenomicRanges,
-    IRanges,
-    tidyr
+    R (>= 3.3), BiocParallel, GenomicAlignments,
+    SummarizedExperiment, data.table, GenomicRanges,
+    IRanges, tidyr, plotly, VGAM, biomaRt
 biocViews: RNASeq, AlternativeSplicing, Sequencing, Software, Genetics
 URL: https://i12g-gagneurweb.in.tum.de/gitlab/mertes/FraseR/
 RoxygenNote: 6.0.0
@@ -27,7 +22,9 @@ Collate:
     'FraseRSettings-class.R'
     'FraseRDataSet-class.R'
     'annotationOfRanges.R'
+    'beta-binomial-testing.R'
     'calculatePSIValue.R'
+    'calculateStats.R'
     'countRNAseqData.R'
     'example_functions.R'
     'helper-functions.R'
