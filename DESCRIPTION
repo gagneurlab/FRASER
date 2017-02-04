@@ -13,8 +13,10 @@ License: Artistic-2.0
 Depends:
     R (>= 3.3), BiocParallel, GenomicAlignments,
     SummarizedExperiment, data.table, GenomicRanges,
-    IRanges, tidyr, plotly, VGAM, biomaRt
-biocViews: RNASeq, AlternativeSplicing, Sequencing, Software, Genetics
+    IRanges, tidyr, plotly, VGAM, biomaRt,
+    graphics, stats
+biocViews: RNASeq, AlternativeSplicing, Sequencing, 
+    Software, Genetics, Coverage
 URL: https://i12g-gagneurweb.in.tum.de/gitlab/mertes/FraseR/
 RoxygenNote: 6.0.0
 Collate:

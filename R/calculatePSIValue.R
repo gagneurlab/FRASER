@@ -59,41 +59,41 @@ calculatePSIValues <- function(dataset){
     
     # calculate psi value
     psiValues <- bplapply(settings@sampleData[,sampleID],
-                          countData=countData, psiCol=psiCol,
-                          BPPARAM=settings@parallel, 
-                           FUN = function(sample, countData, psiCol){
-                               suppressPackageStartupMessages(library(FraseR))
-                               
-                               # check name, due to conversion
-                               if(grepl("^\\d+$", sample)){
-                                   sample <- paste0("X", sample)
-                               }
-                               
-                               # init psi
-                               countData[,psiValue:=as.numeric(NA)]
-                               
-                               # calculate other split read counts
-                               countData[,rawOtherCounts:=sum(get(sample), na.rm=TRUE) - get(sample), 
-                                         by=eval(paste0("chr,", psiCol, ",strand"))
-                               ]
-                               
-                               # calculate psi value
-                               countData[,psiValue:=get(sample)/(get(sample) + rawOtherCounts)]
-                               
-                               return(list(
-                                   rawOtherCounts=countData[,rawOtherCounts],
-                                   psiValue=countData[,psiValue]
-                               ))
-                           }
+        countData=countData, psiCol=psiCol,
+        BPPARAM=settings@parallel, 
+        FUN = function(sample, countData, psiCol){
+            suppressPackageStartupMessages(library(FraseR))
+                           
+            # check name, due to conversion
+            if(grepl("^\\d+$", sample)){
+                sample <- paste0("X", sample)
+            }
+                           
+            # init psi
+            countData[,psiValue:=as.numeric(NA)]
+                           
+            # calculate other split read counts
+            countData[,rawOtherCounts:=sum(get(sample), na.rm=TRUE) - get(sample), 
+                    by=eval(paste0("chr,", psiCol, ",strand"))
+            ]
+                           
+            # calculate psi value
+            countData[,psiValue:=get(sample)/(get(sample) + rawOtherCounts)]
+                           
+            return(list(
+                    rawOtherCounts=countData[,rawOtherCounts],
+                    psiValue=countData[,psiValue]
+            ))
+        }
     )
     
     # merge it and set the column names
-    dfPsi     <- DataFrame(matrix(unlist(sapply(psiValues, "[", "psiValue")), 
-                          ncol = nrow(settings@sampleData)
+    dfPsi <- DataFrame(matrix(unlist(sapply(psiValues, "[", "psiValue")), 
+            ncol = nrow(settings@sampleData)
     ))
     names(dfPsi) <- settings@sampleData[,sampleID] 
     dfCounts  <- DataFrame(matrix(unlist(sapply(psiValues, "[", "rawOtherCounts")), 
-                          ncol = nrow(settings@sampleData)
+            ncol = nrow(settings@sampleData)
     ))
     names(dfCounts) <- settings@sampleData[,sampleID] 
     
