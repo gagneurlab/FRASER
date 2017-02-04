@@ -12,16 +12,16 @@ NULL
 #'
 #' @author Christian Mertes \email{mertes@@in.tum.de}
 setClass("FraseRDataSet",
-         slots = list(
-             settings        = "FraseRSettings",
-             splitReads      = "RangedSummarizedExperiment",
-             nonSplicedReads = "RangedSummarizedExperiment"
-         ),
-         prototype = list(
-             settings        = FraseRSettings(),
-             splitReads      = SummarizedExperiment(rowRanges=GRanges()),
-             nonSplicedReads = SummarizedExperiment(rowRanges=GRanges())
-         )
+    slots = list(
+        settings        = "FraseRSettings",
+        splitReads      = "RangedSummarizedExperiment",
+        nonSplicedReads = "RangedSummarizedExperiment"
+    ),
+    prototype = list(
+        settings        = FraseRSettings(),
+        splitReads      = SummarizedExperiment(rowRanges=GRanges()),
+        nonSplicedReads = SummarizedExperiment(rowRanges=GRanges())
+    )
 )
 
 ## Validity
@@ -126,3 +126,4 @@ setMethod("setDefaults", "FraseRDataSet", function(object, ...) {
     return(object)
 })
 
+    

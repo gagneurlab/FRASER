@@ -17,6 +17,9 @@
 #' @import GenomicAlignments
 #' @import GenomicRanges
 #' @import SummarizedExperiment
+#' @importFrom IRanges subsetByOverlaps
+#' @importFrom IRanges from
+#' @importFrom IRanges to
 #' @importFrom IRanges IRanges
 #' 
 #' 
@@ -28,6 +31,7 @@
 #' 
 ### Plotting
 #'
+#' @importFrom graphics plot
 #' @import plotly
 #' 
 #' 
@@ -41,10 +45,11 @@
 #' 
 #' 
 ### P-Value calculation 
+#' @importFrom stats sd
 #' @importFrom VGAM rbetabinom
 #' @importFrom VGAM vglm
 #' @importFrom VGAM Coef
 #' @importFrom VGAM pbetabinom
-#' 
+#' @importFrom VGAM betabinomial
 #' 
 NULL

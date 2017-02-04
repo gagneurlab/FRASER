@@ -22,17 +22,17 @@
 #'   counRNAData(createTestFraseRSettings())
 countRNAData <- function(settings, internBPPARAM=SerialParam()){
    
-	# Check input TODO
+    # Check input TODO
     stopifnot(class(settings) == "FraseRSettings")
     stopifnot(is(internBPPARAM, "BiocParallelParam"))
 
     # count splitreads first
     message(date(), ": Start counting the split reads ...")
     countList <- bplapply(settings@sampleData[,bamFile], 
-                          FUN=.countSplitReads, 
-                          settings=settings,
-                          BPPARAM=settings@parallel,
-                          internBPPARAM=internBPPARAM
+            FUN=.countSplitReads, 
+            settings=settings,
+            BPPARAM=settings@parallel,
+            internBPPARAM=internBPPARAM
     )
     names(countList) <- settings@sampleData[,sampleID]
     counts <- .mergeCounts(countList, settings@parallel)
@@ -41,26 +41,26 @@ countRNAData <- function(settings, internBPPARAM=SerialParam()){
     message(date(), ": Start counting the non spliced reads ...")
     message(date(), ": In total ", length(granges(counts)), " splice sites are analysed ...")
     countList <- bplapply(settings@sampleData[,bamFile], 
-                          FUN=.countNonSplicedReads, 
-                          settings=settings,
-                          targets=granges(counts),
-                          BPPARAM=settings@parallel,
-                          internBPPARAM=internBPPARAM
+            FUN=.countNonSplicedReads, 
+            settings=settings,
+            targets=granges(counts),
+            BPPARAM=settings@parallel,
+            internBPPARAM=internBPPARAM
     )
     names(countList) <- settings@sampleData[,sampleID]
     site_counts <- .mergeCounts(countList, settings@parallel)
     mcols(site_counts)$type=factor(countList[[1]]$type, 
-                    levels = c("Acceptor", "Donor")
+            levels = c("Acceptor", "Donor")
     )
     
     # create summarized objects
     splitCounts <- SummarizedExperiment(
-        assays=list(rawCounts=mcols(counts)[settings@sampleData[,sampleID]]),
-        rowRanges=granges(counts)
+            assays=list(rawCounts=mcols(counts)[settings@sampleData[,sampleID]]),
+            rowRanges=granges(counts)
     )
     nonSplicedCounts <- SummarizedExperiment(
-        assays=list(rawCounts=mcols(site_counts)[settings@sampleData[,sampleID]]),
-        rowRanges=site_counts[,"type"]
+            assays=list(rawCounts=mcols(site_counts)[settings@sampleData[,sampleID]]),
+            rowRanges=site_counts[,"type"]
     )
     
     # return it
@@ -90,10 +90,11 @@ countRNAData <- function(settings, internBPPARAM=SerialParam()){
     chromosomes <- .extractChromosomes(bamFile)
     
     # extract the counts per chromosome
-    countsList <- bplapply(chromosomes, FUN=.countSplitReadsPerChromosome,
-                       bamFile=bamFile, 
-                       settings=settings,
-                       BPPARAM=internBPPARAM
+    countsList <- bplapply(chromosomes, 
+            FUN=.countSplitReadsPerChromosome,
+            bamFile=bamFile, 
+            settings=settings,
+            BPPARAM=internBPPARAM
     )
     
     # sort and merge the results befor returning
@@ -124,7 +125,7 @@ countRNAData <- function(settings, internBPPARAM=SerialParam()){
 
     # dont count if there is nothing to count
     if(length(galignment) == 0){
-        return(GRanges())	
+        return(GRanges())    
     }
 
     # get the junction positions and their counts
@@ -137,9 +138,10 @@ countRNAData <- function(settings, internBPPARAM=SerialParam()){
     }
 
     # count the data
-    mcols(junctionsCounts)$count <- countOverlaps(junctionsCounts,
-                                                  junctions,
-                                                  type = 'equal'
+    mcols(junctionsCounts)$count <- countOverlaps(
+            junctionsCounts,
+            junctions,
+            type = 'equal'
     )
 
     # sort it and return the GRange object
@@ -177,48 +179,48 @@ countRNAData <- function(settings, internBPPARAM=SerialParam()){
 ##
 .mergeCounts <- function(counts, BPPARAM=SerialParam()){
   
-  # prepare range object
-  sample_names <- names(counts)
-  counts <- GRangesList(counts)
-  ranges <- sort(unique(unlist(counts)))
-  mcols(ranges)$count <- NULL
-  names(ranges) <- NULL
+    # prepare range object
+    sample_names <- names(counts)
+    counts <- GRangesList(counts)
+    ranges <- sort(unique(unlist(counts)))
+    mcols(ranges)$count <- NULL
+    names(ranges) <- NULL
   
-  # merge each sample counts into the combined range object
-  sample_counts <- bplapply(1:length(counts), ranges = ranges, 
-                            counts = counts, BPPARAM=BPPARAM,
-          FUN = function(i, ranges, counts){
-                suppressPackageStartupMessages(require(FraseR))
+    # merge each sample counts into the combined range object
+    sample_counts <- bplapply(1:length(counts), ranges = ranges, 
+        counts = counts, BPPARAM=BPPARAM,
+        FUN = function(i, ranges, counts){
+            suppressPackageStartupMessages(require(FraseR))
+        
+            # get sample name
+            sample_name <- names(counts)[i]
             
-                # get sample name
-                sample_name <- names(counts)[i]
-                
-                ## TODO init with NA since we dont extracted
-                # we are missing counts for junctions spliced in other samples
-                sample_count <- rep(0L, length(ranges))
-                
-                # get overlap and add counts to the corresponding ranges
-                overlaps <- findOverlaps(counts[[i]], ranges, type = "equal")
-                sample_count[overlaps@to] <- mcols(counts[[i]])$count
-                #mcols(ranges[overlaps@to,])[[sample_name]] <- mcols(counts[[i]])$count
-                
-                return(sample_count)
-          }
-  )
+            ## TODO init with NA since we dont extracted
+            # we are missing counts for junctions spliced in other samples
+            sample_count <- rep(0L, length(ranges))
+            
+            # get overlap and add counts to the corresponding ranges
+            overlaps <- findOverlaps(counts[[i]], ranges, type = "equal")
+            sample_count[overlaps@to] <- mcols(counts[[i]])$count
+            #mcols(ranges[overlaps@to,])[[sample_name]] <- mcols(counts[[i]])$count
+            
+            return(sample_count)
+        }
+    )
   
-  # convert it to a DataFrame
-  sample_counts_df <- DataFrame(
-    matrix(unlist(sample_counts), ncol = length(sample_counts))
-  )
+    # convert it to a DataFrame
+    sample_counts_df <- DataFrame(
+        matrix(unlist(sample_counts), ncol = length(sample_counts))
+    )
   
-  # merge it with the type columen and add it to the range object
-  mcols(ranges) <- sample_counts_df
+    # merge it with the type columen and add it to the range object
+    mcols(ranges) <- sample_counts_df
   
-  # set correct naming 
-  colnames(mcols(ranges)) <- sample_names
+    # set correct naming 
+    colnames(mcols(ranges)) <- sample_names
   
-  # return the object
-  return(ranges)
+    # return the object
+    return(ranges)
   
 }
 
@@ -250,31 +252,31 @@ countRNAData <- function(settings, internBPPARAM=SerialParam()){
 
     # extract the counts per chromosome
     countsList <- bplapply(targetChunks, bamFile=bamFile, 
-           settings=settings,
-           spliceSites=splice_site_coordinates,
-           BPPARAM=internBPPARAM,
-           FUN=function(range, bamFile, settings, spliceSites){
-                   suppressPackageStartupMessages(library(FraseR))
+            settings=settings,
+            spliceSites=splice_site_coordinates,
+            BPPARAM=internBPPARAM,
+            FUN=function(range, bamFile, settings, spliceSites){
+                    suppressPackageStartupMessages(library(FraseR))
                    
-                   # restrict to the chromosome only
-                   param <- .mergeBamParams(settings@bamParams, range, TRUE)
+                    # restrict to the chromosome only
+                    param <- .mergeBamParams(settings@bamParams, range, TRUE)
                    
-                   message(date(), ": Running on ", path(bamFile), " ... ", unique(seqnames(range)), " ... ", length(range))
-                   single_read_fragments <- readGAlignments(bamFile, param=param) %>% grglist() %>% reduce()
+                    message(date(), ": Running on ", path(bamFile), " ... ", unique(seqnames(range)), " ... ", length(range))
+                    single_read_fragments <- readGAlignments(bamFile, param=param) %>% grglist() %>% reduce()
                    
-                   message(date(), ": Counting  ", path(bamFile), " ... ", unique(seqnames(range)), " ... ", length(range))
-                   regionOfChunk <- subsetByOverlaps(spliceSites, range, type = "any")    
-                   hits <- countOverlaps(regionOfChunk, single_read_fragments, minoverlap = 2)
+                    message(date(), ": Counting  ", path(bamFile), " ... ", unique(seqnames(range)), " ... ", length(range))
+                    regionOfChunk <- subsetByOverlaps(spliceSites, range, type = "any")    
+                    hits <- countOverlaps(regionOfChunk, single_read_fragments, minoverlap = 2)
                    
-                   # clean memory
-                   rm(regionOfChunk, single_read_fragments)
-                   gc()
-                   return(hits)
-           }
+                    # clean memory
+                    rm(regionOfChunk, single_read_fragments)
+                    gc()
+                    return(hits)
+            }
     )
-	mcols(splice_site_coordinates)$count <- unlist(countsList)
-	
-	return(sort(splice_site_coordinates))
+    mcols(splice_site_coordinates)$count <- unlist(countsList)
+    
+    return(sort(splice_site_coordinates))
 }
 
 
@@ -282,17 +284,17 @@ countRNAData <- function(settings, internBPPARAM=SerialParam()){
 ## extracts the splice site coordinates from a junctions GRange object
 ## 
 .extract_splice_site_coordinates <- function(junctions_gr, settings){
-	if(settings@strandSpecific){
-		splice_site_coords <- unlist(GRangesList(
-		    FraseR:::.extract_splice_site_coordinates_per_strand(junctions_gr, "+"),
-		    FraseR:::.extract_splice_site_coordinates_per_strand(junctions_gr, "-")
-		))
-	} else { 
-		strand(junctions_gr) <- "*"
-		splice_site_coords <- FraseR:::.extract_splice_site_coordinates_per_strand(junctions_gr, "*")
-	}
-	
-	return(sort(unique(splice_site_coords)))
+    if(settings@strandSpecific){
+        splice_site_coords <- unlist(GRangesList(
+            FraseR:::.extract_splice_site_coordinates_per_strand(junctions_gr, "+"),
+            FraseR:::.extract_splice_site_coordinates_per_strand(junctions_gr, "-")
+        ))
+    } else { 
+        strand(junctions_gr) <- "*"
+        splice_site_coords <- FraseR:::.extract_splice_site_coordinates_per_strand(junctions_gr, "*")
+    }
+    
+    return(sort(unique(splice_site_coords)))
 }
 
 
@@ -301,43 +303,43 @@ countRNAData <- function(settings, internBPPARAM=SerialParam()){
 ## given junctions GRange object
 ##  
 .extract_splice_site_coordinates_per_strand <- function(junctions_gr, strand){
-	
-	# get only the correct strand features
-	junctions_gr <- junctions_gr[strand(junctions_gr) == strand,]
-	
-	# left side (acceptor on + and donor on -) 
-	left_side <- GRanges(
-			seqnames = seqnames(junctions_gr),
-			strand = strand(junctions_gr),
-			ranges = IRanges(
-					start = start(junctions_gr) - 1,
-					end   = start(junctions_gr)
-			),
-			seqlengths = seqlengths(junctions_gr),
-			seqinfo = seqinfo(junctions_gr)
-	)
-	
-	# right side (acceptor on - and donor on +)
-	right_side <- GRanges(
-			seqnames = seqnames(junctions_gr),
-			strand = strand(junctions_gr),
-			ranges = IRanges(
-					start = end(junctions_gr),
-					end   = end(junctions_gr) + 1
-			),
-			seqlengths = seqlengths(junctions_gr),
-			seqinfo = seqinfo(junctions_gr)
-	)
-	
-	# annotate donor and acceptor sites
-	if(strand == "+" | strand == "*"){
-		mcols(left_side)$type = "Donor"
-		mcols(right_side)$type = "Acceptor"
-	} else {
-		mcols(left_side)$type = "Acceptor"
-		mcols(right_side)$type = "Donor"
-	}
-	
-	return(sort(unlist(GRangesList(left_side, right_side))))
+    
+    # get only the correct strand features
+    junctions_gr <- junctions_gr[strand(junctions_gr) == strand,]
+    
+    # left side (acceptor on + and donor on -) 
+    left_side <- GRanges(
+            seqnames = seqnames(junctions_gr),
+            strand = strand(junctions_gr),
+            ranges = IRanges(
+                    start = start(junctions_gr) - 1,
+                    end   = start(junctions_gr)
+            ),
+            seqlengths = seqlengths(junctions_gr),
+            seqinfo = seqinfo(junctions_gr)
+    )
+    
+    # right side (acceptor on - and donor on +)
+    right_side <- GRanges(
+            seqnames = seqnames(junctions_gr),
+            strand = strand(junctions_gr),
+            ranges = IRanges(
+                    start = end(junctions_gr),
+                    end   = end(junctions_gr) + 1
+            ),
+            seqlengths = seqlengths(junctions_gr),
+            seqinfo = seqinfo(junctions_gr)
+    )
+    
+    # annotate donor and acceptor sites
+    if(strand == "+" | strand == "*"){
+        mcols(left_side)$type = "Donor"
+        mcols(right_side)$type = "Acceptor"
+    } else {
+        mcols(left_side)$type = "Acceptor"
+        mcols(right_side)$type = "Donor"
+    }
+    
+    return(sort(unlist(GRangesList(left_side, right_side))))
 }
 
