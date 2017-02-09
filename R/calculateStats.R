@@ -94,11 +94,17 @@ calculatePValues <- function(dataset, internBPPARAM=SerialParam()){
     
     # test all 3 different types
     assays(dataset@splitReads)$pvalue_psi3 <- 
-            .testPsiWithFisherPerType(dataset, "splitReads", "psi3", internBPPARAM)
+            .testPsiWithFisherPerType(dataset, "splitReads", 
+                "psi3", internBPPARAM
+            )
     assays(dataset@splitReads)$pvalue_psi5 <- 
-            .testPsiWithFisherPerType(dataset, "splitReads", "psi5", internBPPARAM)
+            .testPsiWithFisherPerType(dataset, "splitReads", 
+                "psi5", internBPPARAM
+            )
     assays(dataset@nonSplicedReads)$pvalue_sitePSI <- 
-            .testPsiWithFisherPerType(dataset, "nonSplicedReads", "sitePSI", internBPPARAM)
+            .testPsiWithFisherPerType(dataset, "nonSplicedReads", 
+                "sitePSI", internBPPARAM
+            )
     
     # return the new datasets
     return(dataset)
@@ -116,13 +122,16 @@ calculatePValues <- function(dataset, internBPPARAM=SerialParam()){
     rawCounts <- .getAssayAsDataTable(slot(dataset, readType), "rawCounts")
     
     # other reads (eg: splitReads)
-    rawOtherCounts <- .getAssayAsDataTable(slot(dataset, readType), paste0("rawOtherCounts_", psiType))
+    rawOtherCounts <- .getAssayAsDataTable(
+            slot(dataset, readType), 
+            paste0("rawOtherCounts_", psiType)
+    )
     
     pvalues <- bplapply(unique(na.omit(group)), dataset=dataset, 
-                        rawCounts=rawCounts, rawOtherCounts=rawOtherCounts,
-                        BPPARAM=dataset@settings@parallel,
-                        internBPPARAM=internBPPARAM,
-                        FUN=.testPsiWithFisherPerGroup
+            rawCounts=rawCounts, rawOtherCounts=rawOtherCounts,
+            BPPARAM=dataset@settings@parallel,
+            internBPPARAM=internBPPARAM,
+            FUN=.testPsiWithFisherPerGroup
     )
     names(pvalues) <- as.character(unique(na.omit(group)))
     pvalues_full <- pvalues[as.character(group)]
@@ -139,7 +148,8 @@ calculatePValues <- function(dataset, internBPPARAM=SerialParam()){
 #' calculates the pvalue per group with fisher
 #' 
 #' @noRd
-.testPsiWithFisherPerGroup <- function(dataset, groupID, rawCounts, rawOtherCounts, internBPPARAM){
+.testPsiWithFisherPerGroup <- function(dataset, groupID, rawCounts, 
+            rawOtherCounts, internBPPARAM){
     # get group to test
     group <- sampleGroup(dataset@settings)
     group2Test <- group == groupID
@@ -154,9 +164,13 @@ calculatePValues <- function(dataset, internBPPARAM=SerialParam()){
     
     # test only where at least the group has one read
     fisherTableToTest <- fullFisherTable[TP+FN > 0]
-    pvalues <- unlist(bplapply(1:nrow(fisherTableToTest), BPPARAM = internBPPARAM, fisherTableToTest=fisherTableToTest,
-            function(idx, fisherTableToTest){
-                fisher.test(matrix(as.integer(fisherTableToTest[idx]), nrow=2))$p.value 
+    pvalues <- unlist(bplapply(1:nrow(fisherTableToTest), 
+            BPPARAM=internBPPARAM,
+            fisherTableToTest=fisherTableToTest,
+            FUN=function(idx, fisherTableToTest){
+                fisher.test(matrix(as.integer(
+                    fisherTableToTest[idx]), nrow=2
+                ))$p.value 
             }
     ))
     
@@ -165,6 +179,5 @@ calculatePValues <- function(dataset, internBPPARAM=SerialParam()){
     fullFisherTable[TP+FN>0,pvalue:=pvalues]
     return(fullFisherTable[,pvalue])
 }
-
 
 

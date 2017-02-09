@@ -68,7 +68,7 @@ setClass("FraseRSettings",
 }
 
 .validateStrandSpecificType <- function(object) {
-   if(class(object@strandSpecific) != "logical") {
+    if(class(object@strandSpecific) != "logical") {
         return(paste("'strandSpecific' must be of type logical."))
     }
     NULL
@@ -148,25 +148,25 @@ setMethod("show", "FraseRSettings", function(object) {
 setGeneric("getDefaults", function(object, ...) standardGeneric("getDefaults"))
 
 setMethod("getDefaults", "FraseRSettings",
-          function(object, what = NULL) {
-              if(is.null(what)) return(object)
-              else return(slot(object, what))
-          })
+        function(object, what = NULL) {
+            if(is.null(what)) return(object)
+            else return(slot(object, what))
+        })
 
 setGeneric("setDefaults", function(object, ...) {
     standardGeneric("setDefaults")
 })
 
 setMethod("setDefaults", "FraseRSettings",
-          function(object, ...) {
-              for(param in names(list(...))) {
-                  slot(object, param) <- list(...)[[param]]
-                  if(param == "parallel") {
-                      BiocParallel::register(slot(object, "parallel"))
-                  }
-              }
-              return(object)
-          })
+        function(object, ...) {
+            for(param in names(list(...))) {
+                slot(object, param) <- list(...)[[param]]
+                if(param == "parallel") {
+                    BiocParallel::register(slot(object, "parallel"))
+                }
+            }
+            return(object)
+        })
 
 
 
