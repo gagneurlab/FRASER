@@ -11,7 +11,7 @@ Description: This package calls rare aberrant splicing events in a set of
     where RNA-seq is performed.
 License: Artistic-2.0
 Depends:
-    R (>= 3.3), BiocParallel, GenomicAlignments,
+    R (>= 3.3.2), BiocParallel, GenomicAlignments,
     SummarizedExperiment, data.table, GenomicRanges,
     IRanges, tidyr, plotly, VGAM, biomaRt
 biocViews: RNASeq, AlternativeSplicing, Sequencing, Software, Genetics
