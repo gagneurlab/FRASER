@@ -72,8 +72,8 @@ filter_junction_data <- function(data, minExpRatio = 0.8){
     # get the hits (junction/acceptor/donor) in our full data set
     hits <- unique(unlist(sapply(c("start", "end"), function(type){
         findOverlaps(type = type,
-                     rowRanges(data)[junctions][cutoff], 
-                     shift(rowRanges(data), ifelse(type == "start", 1, -1))
+                rowRanges(data)[junctions][cutoff], 
+                shift(rowRanges(data), ifelse(type == "start", 1, -1))
         )@to
     })))
     junction_sites <- hits[rowData(data)$type[hits] != "Junction"]

@@ -66,10 +66,12 @@
     removeHighLow <- length(group)/4
     
     # reads to test for abberent splicing (eg: nonSplicedReads)
-    rawCounts <- FraseR:::.getAssayAsDataTable(slot(dataset, readType), "rawCounts")
+    rawCounts <- .getAssayAsDataTable(slot(dataset, readType), "rawCounts")
     
     # other reads (eg: splitReads)
-    rawOtherCounts <- FraseR:::.getAssayAsDataTable(slot(dataset, readType), paste0("rawOtherCounts_", psiType))
+    rawOtherCounts <- .getAssayAsDataTable(slot(dataset, readType), 
+            paste0("rawOtherCounts_", psiType)
+    )
   
     # swap rawCounts with others for intron retention
     if(readType == "nonSplicedReads"){
@@ -88,9 +90,8 @@
             BPPARAM=dataset@settings@parallel,
             addNoise=addNoise, removeHighLow=removeHighLow,
             FUN= function(idx, rawCounts, rawOtherCounts, 
-                          addNoise, removeHighLow){
-        library(FraseR)
-        require(VGAM)
+                    addNoise, removeHighLow){
+        require(FraseR)
         
         ## simulate split read counts (numerator of psi)
         y <- as.integer(as.vector(unlist(rawCounts[idx,])))
@@ -101,7 +102,7 @@
         # TODO betabinom fails if only zeros in one row
         # add noise to avoid zero variants in alternative reads
         if(addNoise){
-            N <- N + sample(c(0,1),dim(rawCounts)[2], replace = T)
+            N <- N + sample(c(0,1),dim(rawCounts)[2], replace = TRUE)
         }
         
         # count matrix per site
@@ -128,8 +129,8 @@
             samples_to_take <- c(
                 1:dim(countMatrix)[1], 
                 sample(1:dim(countMatrix)[1], 
-                       max(0, 25 - dim(countMatrix)[1]), 
-                       replace = TRUE
+                        max(0, 25 - dim(countMatrix)[1]), 
+                        replace = TRUE
                 )
             )
             countMatrix <- countMatrix[samples_to_take,]
