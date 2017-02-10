@@ -11,6 +11,9 @@
 #' based on the FraseRDataSet object
 #' 
 #' @export
+#' @examples
+#'   data <- counRNAData(createTestFraseRSettings())
+#'   data <- calculatePSIValues(data)
 calculatePSIValues <- function(dataset){
     # check input
     stopifnot(class(dataset) == "FraseRDataSet")
@@ -106,6 +109,10 @@ calculatePSIValues <- function(dataset){
 #' based on the FraseRDataSet object
 #' 
 #' @export
+#' @examples
+#'   data <- counRNAData(createTestFraseRSettings())
+#'   data <- calculatePSIValues(data)
+#'   data <- calculateSitePSIValues(data)
 calculateSitePSIValue <- function(dataset){
     
     # check input
@@ -122,29 +129,33 @@ calculateSitePSIValue <- function(dataset){
         splice_ranges <- rowRanges(splice_site)
         
         # shift for start/end overlap
-        splice_ranges <- GenomicRanges::shift(splice_ranges, ifelse(spliceType == "Acceptor", -1, 1))
+        splice_ranges <- shift(splice_ranges, 
+                ifelse(spliceType == "Acceptor", -1, 1)
+        )
         
         # find overlap
-        overlap <- findOverlaps(splice_ranges, 
-                splitReads, type=ifelse(spliceType == "Acceptor", "end", "start")
+        overlap <- findOverlaps(splice_ranges, splitReads, 
+                type=ifelse(spliceType == "Acceptor", "end", "start")
         )
         
         # sum up the junctions per site per sample
         junction_counts_per_site <- bplapply(
-                dataset@settings@sampleData[,sampleID], 
-                overlap=overlap, splitReads=splitReads,
-                BPPARAM=dataset@settings@parallel,
-                FUN = function(sample, overlap, splitReads){
-                        suppressPackageStartupMessages(library(FraseR))
-                    
-                        dt <- data.table(
-                                from = overlap@from,
-                                count = as.numeric(assays(splitReads[,sample])$rawCounts[,1])[overlap@to]
-                        )
-                        dt <- dt[,.(counts=sum(count, na.rm=TRUE), is.na=all(is.na(count))), by=from]
-                        return(dt[,counts])
-                }
-        )
+                    samples(dataset@settings), 
+                    overlap=overlap, splitReads=splitReads,
+                    BPPARAM=parallel(dataset@settings),
+                    FUN = function(sample, overlap, splitReads){
+            suppressPackageStartupMessages(library(FraseR))
+        
+            dt <- data.table(
+                from = overlap@from,
+                count = as.numeric(assays(
+                        splitReads[,sample])$rawCounts[,1])[overlap@to]
+            )
+            dt <- dt[,.(counts=sum(count, na.rm=TRUE), 
+                    is.na=all(is.na(count))), by=from
+            ]
+            return(dt[,counts])
+        })
         
         # add junction counts
         splice_site <- .mergeAssay("rawSplitReadCounts", splice_site,
@@ -152,16 +163,18 @@ calculateSitePSIValue <- function(dataset){
         )
        
         # wrote it to the data
-        dataset@nonSplicedReads <- .mergeAssay("rawOtherCounts_sitePSI", dataset@nonSplicedReads,
+        dataset@nonSplicedReads <- .mergeAssay("rawOtherCounts_sitePSI", 
+                dataset@nonSplicedReads,
                 assays(splice_site)$rawSplitReadCounts, modified_rows
         )
     }
     
     
     # add junction persent spliced in value (sitePSI) 
-    sitePSIValue <- FraseR:::.getAssayAsDataTable(dataset@nonSplicedReads, "rawOtherCounts_sitePSI") / (
-            FraseR:::.getAssayAsDataTable(dataset@nonSplicedReads, "rawOtherCounts_sitePSI") +
-            FraseR:::.getAssayAsDataTable(dataset@nonSplicedReads, "rawCounts")
+    sitePSIValue <- 
+        .getAssayAsDataTable(dataset@nonSplicedReads, "rawOtherCounts_sitePSI") / (
+            .getAssayAsDataTable(dataset@nonSplicedReads, "rawOtherCounts_sitePSI") +
+            .getAssayAsDataTable(dataset@nonSplicedReads, "rawCounts")
     )
     dataset@nonSplicedReads <- FraseR:::.mergeAssay("sitePSI", dataset@nonSplicedReads, sitePSIValue)
     

@@ -23,7 +23,10 @@ createTestFraseRSettings <- function(){
     sampleTable[gene=='NHDF',group:=NA]
     
     # return a FraseRSettings object
-    return(FraseRSettings(sampleData=sampleTable))
+    return(FraseRSettings(
+        sampleData=sampleTable, 
+        outputFolder=file.path(Sys.getenv("HOME"), "FraseR")
+    ))
 }
 
 #'

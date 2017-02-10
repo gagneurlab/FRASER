@@ -16,13 +16,13 @@ plotSampleResults <- function(dataset, sampleID, file=NULL){
     
     # combine plots
     mainplot <- plotly::subplot(psi3plot, psi5plot, sitePSIplot,
-            nrows = 3, shareX = TRUE, shareY = FALSE,
+            nrows = 3, shareX = TRUE, shareY = TRUE,
             titleX = TRUE, titleY = TRUE
     ) %>% layout(showlegend = FALSE)
     
     #
     if(!is.null(file)){
-        htmlwidgets::saveWidget(mainplot, file=file)
+        saveWidget(mainplot, file=file)
         return(NULL)
     } 
     
@@ -61,7 +61,7 @@ plotSampleResults <- function(dataset, sampleID, file=NULL){
     zscore2plot[toplot & zscore2plot > max(xlim)] <- max(xlim) - 1
     zscore2plot[toplot & zscore2plot < min(xlim)] <- min(xlim) + 1
     
-    p <- plot_ly(x=zscore2plot[toplot], y=pvalue2plot[toplot], type="scatter",
+    p <- plot_ly(x=zscore2plot[toplot], y=pvalue2plot[toplot], type="scattergl",
             mode = "markers",
             marker = list(   
                 color = pvalue2plot[toplot],

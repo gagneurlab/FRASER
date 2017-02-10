@@ -15,8 +15,8 @@
 ### GRange/Experiment packages
 #'
 #' @import GenomicAlignments
-#' @import GenomicRanges
 #' @import SummarizedExperiment
+#' @import GenomicRanges
 #' @importFrom IRanges subsetByOverlaps
 #' @importFrom IRanges from
 #' @importFrom IRanges to
@@ -32,7 +32,10 @@
 ### Plotting
 #'
 #' @importFrom graphics plot
-#' @import plotly
+#' @importFrom plotly plot_ly
+#' @importFrom plotly subplot
+#' @importFrom plotly layout
+#' @importFrom htmlwidgets saveWidget
 #' 
 #' 
 ### Data handling
@@ -46,6 +49,9 @@
 #' 
 ### P-Value calculation 
 #' @importFrom stats sd
+#' @importFrom stats rbinom
+#' @importFrom stats fisher.test
+#' @importFrom stats na.omit
 #' @importFrom VGAM rbetabinom
 #' @importFrom VGAM vglm
 #' @importFrom VGAM Coef
