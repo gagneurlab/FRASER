@@ -1,4 +1,4 @@
-%\VignetteIndexEntry{FraseR: Find RAre Splicing Evens with R}
+%\VignetteIndexEntry{FraseR: Find RAre Splicing Evens in RNA-seq}
 %\VignettePackage{FraseR}
 %\VignetteEngine{knitr::knitr}
 
@@ -30,8 +30,8 @@ My abstract TODO
 \hline 
 If you use \fraser{} in published research, please cite:  \\
 \\
-Mertes, \emph{et al.}
-\textbf{Find rare splicing events in RNA-seq data} \\
+Mertes C, Gagneur J, \emph{et al.}
+\textbf{FraseR: Find RAre Splicing Events in RNA-seq data} \\
 \emph{bioRxiv}\\
 \hline 
 \end{tabular}
@@ -46,7 +46,25 @@ Mertes, \emph{et al.}
 \newpage
 
 \section{Standard workflow}
-my workflow
+The standard workflow for detecting rare abarrent splicing events in RNA-seq data can be divided into five steps.
+\begin{enumerate}
+    \item Data preparation
+    \item Counting reads
+    \item Calculate PSI- and Zscore-values
+    \item Calculate P-values
+    \item Plot results
+\end{enumerate}
+
+Step 2-4 is wrapped up in one function \emph{FraseR}, but each step can be called individually. A detailed explanaition of each step is given in the following subsections.
+
+\subsection{Data preparation}
+To start a RNA-seq data analysis with FraseR some preparation steps are needed. 
+First of all we need a table with basic informations which then can be transformed into a FraseRSettings object. The minimum of information per sample is a unique sample name, the path to the aligned bam file. Additionally groups can be specified for the P-value calculations later. If 
+<<>>=
+fread(system.file(
+    "extdata", "sampleTable.tsv", package="FraseR", mustWork=TRUE
+))
+@
 
 \subsection{Counting the read}
 how to count rna splicing reads

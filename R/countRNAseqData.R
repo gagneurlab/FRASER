@@ -306,8 +306,8 @@ countRNAData <- function(settings, internBPPARAM=SerialParam()){
     spliceSiteCoords <- sort(spliceSiteCoords)
 
     # estimate chunk size
-    rangeShift        <- 5*10^4
-    numRangesPerChunk <- 50
+    rangeShift        <- 2.5*10^4
+    numRangesPerChunk <- 100
     targetChunks <- GenomicRanges::reduce(GenomicRanges::trim(suppressWarnings(
         GenomicRanges::shift(resize(spliceSiteCoords, width=rangeShift),
                     shift=-rangeShift/2
