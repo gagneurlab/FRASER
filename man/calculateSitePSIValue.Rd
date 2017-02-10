@@ -11,3 +11,8 @@ calculateSitePSIValue(dataset)
 This function calculates the site PSI values for each splice site
 based on the FraseRDataSet object
 }
+\examples{
+  data <- counRNAData(createTestFraseRSettings())
+  data <- calculatePSIValues(data)
+  data <- calculateSitePSIValues(data)
+}

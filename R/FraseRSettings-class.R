@@ -10,23 +10,27 @@
 #'
 #' @author Christian Mertes \email{mertes@@in.tum.de}
 setClass("FraseRSettings",
-        slots = list(
-                sampleData = "data.table",
-                bamParams = "ScanBamParam",
-                parallel = "BiocParallelParam",
-                method = "character",
-                strandSpecific = "logical"
+    slots = list(
+        sampleData = "data.table",
+        bamParams = "ScanBamParam",
+        parallel = "BiocParallelParam",
+        method = "character",
+        strandSpecific = "logical",
+        outputFolder = "character"
+    ),
+    prototype = list(
+        sampleData = data.table(
+            sampleID="testSample", 
+            bamFile=system.file(
+                "extdata", "bam", "sample1.bam", package="FraseR"
+            )
         ),
-        prototype = list(
-                sampleData = data.table(
-                        sampleID="testSample", 
-                        bamFile=system.file("extdata", "bam", "sample1.bam", package="FraseR")
-                ),
-                bamParams = Rsamtools::ScanBamParam(),
-                parallel = BiocParallel::registered()[[1]],
-                method = "Fisher",
-                strandSpecific = FALSE
-        )
+        bamParams = Rsamtools::ScanBamParam(),
+        parallel = BiocParallel::registered()[[1]],
+        method = "Fisher",
+        strandSpecific = FALSE,
+        outputFolder = file.path(Sys.getenv("HOME"), "FraseR")
+    )
 )
 
 ## Validity
@@ -61,8 +65,11 @@ setClass("FraseRSettings",
 
 .validateMethodType <- function(object) {
     valid_methods <- c("Fisher", "DESeq2", "Martin")
-    if(class(object@method) != "character" || !any(object@method %in% valid_methods)) {
-        return(paste("'method' must be one of the following types: ", valid_methods))
+    if(class(object@method) != "character" || 
+        !any(object@method %in% valid_methods)) {
+        return(paste(
+            "'method' must be one of the following types: ", valid_methods
+        ))
     }
     NULL
 }
@@ -81,6 +88,25 @@ setClass("FraseRSettings",
     NULL
 }
 
+.validateOutputFolder <- function(object) {
+    if(is.null(object@outputFolder)){
+        return(NULL)
+    }
+    if(class(object@outputFolder) != "character"){
+        return("'outputFolder' must be a valid path or NULL.")
+    }
+    if(object@outputFolder == ""){
+        return("'outputFolder' should not be a empty string!")
+    }
+    if(!dir.exists(object@outputFolder)){
+        dir.create(object@outputFolder, recursive = TRUE)
+    }
+    if(file.access(object@outputFolder, mode = 2) != 0){
+        return("Make sure we can write to the 'outputFolder' or set it to NULL")
+    }
+    NULL
+}
+
 ## general validate function
 .validateFraseRSettings <- function(object) {
     c(
@@ -88,7 +114,8 @@ setClass("FraseRSettings",
         .validateBamParamsType(object),
         .validateParallelType(object),
         .validateMethodType(object),
-        .validateStrandSpecificType(object)
+        .validateStrandSpecificType(object),
+        .validateOutputFolder(object)
     )
 }
 
@@ -126,6 +153,9 @@ FraseRSettings <- function(...) {
     cat("-------------------- FraseR Settings --------------------\n")
     show(paste("Statistical method:", settings@method))
     show(paste("Strand specific data:", settings@strandSpecific))
+    show(paste0("Output folder for plots and cache: '", 
+            settings@outputFolder, "'")
+    )
     cat("\n\n")
     
     cat("-------------------- Parallel backend ------------------\n")
@@ -148,32 +178,120 @@ setMethod("show", "FraseRSettings", function(object) {
 setGeneric("getDefaults", function(object, ...) standardGeneric("getDefaults"))
 
 setMethod("getDefaults", "FraseRSettings",
-        function(object, what = NULL) {
-            if(is.null(what)) return(object)
-            else return(slot(object, what))
-        })
+    function(object, what = NULL) {
+        if(is.null(what)) return(object)
+        else return(slot(object, what))
+    }
+)
 
 setGeneric("setDefaults", function(object, ...) {
     standardGeneric("setDefaults")
 })
 
 setMethod("setDefaults", "FraseRSettings",
-        function(object, ...) {
-            for(param in names(list(...))) {
-                slot(object, param) <- list(...)[[param]]
-                if(param == "parallel") {
-                    BiocParallel::register(slot(object, "parallel"))
-                }
+    function(object, ...) {
+        for(param in names(list(...))) {
+            slot(object, param) <- list(...)[[param]]
+            if(param == "parallel") {
+                BiocParallel::register(slot(object, "parallel"))
             }
-            return(object)
-        })
+        }
+        return(object)
+    }
+)
 
+# sampleData functions
+setGeneric("sampleData", function(object) standardGeneric("sampleData"))
+setGeneric("sampleData<-", signature = "object", 
+           function(object, value) standardGeneric("sampleData<-"))
 
-
+# sampleGroup functions
 setGeneric("sampleGroup", function(object) standardGeneric("sampleGroup"))
-setGeneric("sampleGroup<-", signature = "object", function(object, value) standardGeneric("sampleGroup<-"))
+setGeneric("sampleGroup<-", signature = "object", 
+    function(object, value) standardGeneric("sampleGroup<-"))
 
-#' Get the group definition per sample based on the \code{sampleData} table slot
+# outputFolder functions
+setGeneric("outputFolder", function(object) standardGeneric("outputFolder"))
+setGeneric("outputFolder<-", signature = "object", 
+   function(object, value) standardGeneric("outputFolder<-"))
+
+# scanBamParam functions
+setGeneric("scanBamParam", function(object) standardGeneric("scanBamParam"))
+setGeneric("scanBamParam<-", signature = "object", 
+           function(object, value) standardGeneric("scanBamParam<-"))
+
+# parallel functions
+setGeneric("parallel", function(object) standardGeneric("parallel"))
+setGeneric("parallel<-", signature = "object", 
+           function(object, value) standardGeneric("parallel<-"))
+
+# method functions
+setGeneric("method", function(object) standardGeneric("method"))
+setGeneric("method<-", signature = "object", 
+           function(object, value) standardGeneric("method<-"))
+
+# samples functions
+setGeneric("samples", function(object) standardGeneric("samples"))
+setGeneric("samples<-", signature = "object", 
+           function(object, value) standardGeneric("samples<-"))
+
+# samples functions
+setGeneric("bamFiles", function(object) standardGeneric("bamFiles"))
+setGeneric("bamFiles<-", signature = "object", 
+           function(object, value) standardGeneric("bamFiles<-"))
+
+
+#'
+#'  Get/Set the sampleData table the FraseRSettings object
+#' 
+#' @param object A FraseRSettings object.
+#' @return A \code{data.table} with all sample infromation (id, bamfile, group)
+#' @examples
+#' settings <- createTestFraseRSettings()
+#' sampleData(settings)
+#' sampleData(settings) <- 1:length(settings)
+#' @author Christian Mertes \email{mertes@@in.tum.de}
+#' @export
+#' @rdname sampleData
+setMethod("sampleData", "FraseRSettings", function(object) {
+    return(slot(object, "sampleData"))
+})
+
+#' @export
+#' @rdname sampleData
+setReplaceMethod("sampleData", "FraseRSettings", function(object, value) {
+    slot(object, "sampleData") <- value
+    return(object)
+})
+
+
+#'
+#'  Get/Set the sampleIDs from the FraseRSettings object
+#' 
+#' @param object A FraseRSettings object.
+#' @return A \code{vector} with all sample IDs
+#' @examples
+#' settings <- createTestFraseRSettings()
+#' samples(settings)
+#' samples(settings) <- 1:length(settings)
+#' @author Christian Mertes \email{mertes@@in.tum.de}
+#' @export
+#' @rdname samples
+setMethod("samples", "FraseRSettings", function(object) {
+    return(sampleData(object)[,sampleID])
+})
+
+#' @export
+#' @rdname samples
+setReplaceMethod("samples", "FraseRSettings", function(object, value) {
+    sampleData(object)[,sampleID:=value]
+    return(object)
+})
+
+
+#'
+#'  Get the group definition per sample based on the 
+#' \code{sampleData} table slot
 #' 
 #' @param object A FraseRSettings object.
 #' @return A \code{vector} with the group identifiers per sample object
@@ -185,7 +303,7 @@ setGeneric("sampleGroup<-", signature = "object", function(object, value) standa
 #' @export
 #' @rdname sampleGroup
 setMethod("sampleGroup", "FraseRSettings", function(object) {
-    data <- slot(object, "sampleData")
+    data <- sampleData(object)
     if("group" %in% colnames(data)){
         return(data[,group])
     } else {
@@ -196,10 +314,138 @@ setMethod("sampleGroup", "FraseRSettings", function(object) {
 #' @export
 #' @rdname sampleGroup
 setReplaceMethod("sampleGroup", "FraseRSettings", function(object, value) {
-    group <- slot(object, "sampleData")[,group:=value]
+    sampleData(object)[,group:=value]
     return(object)
 })
 
+
+#'
+#'  Get/Set the bamFiles from the FraseRSettings object
+#' 
+#' @param object A FraseRSettings object.
+#' @return A \code{vector} with the bamFiles for each sample
+#' @examples
+#' settings <- createTestFraseRSettings()
+#' bamFiles(settings)
+#' @author Christian Mertes \email{mertes@@in.tum.de}
+#' @export
+#' @rdname bamFiles
+setMethod("bamFiles", "FraseRSettings", function(object) {
+    return(sampleData(object)[,bamFile])
+})
+
+#' @export
+#' @rdname bamFiles
+setReplaceMethod("bamFiles", "FraseRSettings", function(object, value) {
+    sampleData(object)[,bamFile:=value]
+    return(object)
+})
+
+
+#'
+#'  Get/Set the parallel param object from the FraseRSettings object
+#' 
+#' @param object A FraseRSettings object.
+#' @return A parallel param object
+#' @examples
+#' settings <- createTestFraseRSettings()
+#' parallel(settings)
+#' parallel(settings) <- SerialParam()
+#' @author Christian Mertes \email{mertes@@in.tum.de}
+#' @export
+#' @rdname parallel
+setMethod("parallel", "FraseRSettings", function(object) {
+    return(slot(object, "parallel"))
+})
+
+#' @export
+#' @rdname parallel
+setReplaceMethod("parallel", "FraseRSettings", function(object, value) {
+    slot(object, "parallel") <- value
+    return(object)
+})
+
+
+#'
+#'  Get/Set the statistical method to use for P-value calculation
+#'  from the FraseRSettings object
+#' 
+#' @param object A FraseRSettings object.
+#' @return A character string representing the statistical method
+#' @examples
+#' settings <- createTestFraseRSettings()
+#' method(settings)
+#' method(settings) <- "betaBinomial"
+#' @author Christian Mertes \email{mertes@@in.tum.de}
+#' @export
+#' @rdname method
+setMethod("method", "FraseRSettings", function(object) {
+    return(slot(object, "method"))
+})
+
+#' @export
+#' @rdname method
+setReplaceMethod("method", "FraseRSettings", function(object, value) {
+    slot(object, "method") <- value
+    return(object)
+})
+
+
+
+## @export
+## @rdname method
+
+
+#'
+#'  Get/Set the output folder from the FraseRSettings object
+#' 
+#' @param object A FraseRSettings object.
+#' @return A path
+#' @examples
+#' settings <- createTestFraseRSettings()
+#' outputFolder(settings)
+#' outputFolder(settings) <- tempdir()
+#' 
+#' @author Christian Mertes \email{mertes@@in.tum.de}
+#' @export
+#' @rdname outputFolder
+setMethod("outputFolder", "FraseRSettings", function(object) {
+    return(slot(object, "outputFolder"))
+})
+
+#' @export
+#' @rdname outputFolder
+setReplaceMethod("outputFolder", "FraseRSettings", function(object, value) {
+    slot(object, "outputFolder") <- value
+    return(object)
+})
+
+
+#' 
+#' Get/Set the ScanBamParam object from the FraseRSettings object
+#' 
+#' @param object A FraseRSettings object.
+#' @return A ScanBamParam object
+#' @examples
+#' settings <- createTestFraseRSettings()
+#' scanBamParam(settings)
+#' scanBamParam(settings) <- ScanBamParam()
+#' 
+#' @author Christian Mertes \email{mertes@@in.tum.de}
+#' @export
+#' @rdname scanBamParam
+setMethod("scanBamParam", "FraseRSettings", function(object) {
+    return(slot(object, "bamParams"))
+})
+
+#' @export
+#' @rdname scanBamParam
+setReplaceMethod("scanBamParam", "FraseRSettings", function(object, value) {
+    slot(object, "bamParams") <- value
+    return(object)
+})
+
+#' 
 #' Subsetting by indices
 #'
 #' Providing subsetting by indices through the single-bracket operator
@@ -209,11 +455,21 @@ setReplaceMethod("sampleGroup", "FraseRSettings", function(object, value) {
 #' @return A subsetted \code{FraseRSettings} object
 setMethod("[", c("FraseRSettings", "numeric"), function(x, i) {
     newx <- new("FraseRSettings", 
-        sampleData     = slot(x, "sampleData")[i],
-        bamParams      = slot(x, "bamParams"),
-        parallel       = slot(x, "parallel"),
-        method         = slot(x, "method"),
+        sampleData     = sampleData(x)[i],
+        bamParams      = scanBamParam(x),
+        parallel       = parallel(x),
+        method         = method(x),
         strandSpecific = slot(x, "strandSpecific")
+    )
+    return(newx)
+})
+setMethod("[", c("FraseRSettings", "logical"), function(x, i) {
+    newx <- new("FraseRSettings", 
+                sampleData     = sampleData(x)[i],
+                bamParams      = scanBamParam(x),
+                parallel       = parallel(x),
+                method         = method(x),
+                strandSpecific = slot(x, "strandSpecific")
     )
     return(newx)
 })

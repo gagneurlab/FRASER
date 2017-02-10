@@ -14,7 +14,7 @@ Depends:
     R (>= 3.3), BiocParallel, GenomicAlignments,
     SummarizedExperiment, data.table, GenomicRanges,
     IRanges, tidyr, plotly, VGAM, biomaRt,
-    graphics, stats
+    graphics, stats, htmlwidgets
 biocViews: RNASeq, AlternativeSplicing, Sequencing, 
     Software, Genetics, Coverage
 URL: https://i12g-gagneurweb.in.tum.de/gitlab/mertes/FraseR/
