@@ -84,7 +84,8 @@ countRNAData <- function(settings, internBPPARAM=SerialParam()){
 
 
 ##
-## returns the name of the cache file if caching is enabled for the given sample
+## returns the name of the cache file if caching is enabled 
+## for the given sample
 ##
 .getSplitCountCacheFile <- function(sampleID, settings){
     # check if caching is enabled
@@ -306,8 +307,8 @@ countRNAData <- function(settings, internBPPARAM=SerialParam()){
     spliceSiteCoords <- sort(spliceSiteCoords)
 
     # estimate chunk size
-    rangeShift        <- 2.5*10^4
-    numRangesPerChunk <- 100
+    rangeShift        <- 25*10^3
+    numRangesPerChunk <- 10
     targetChunks <- GenomicRanges::reduce(GenomicRanges::trim(suppressWarnings(
         GenomicRanges::shift(resize(spliceSiteCoords, width=rangeShift),
                     shift=-rangeShift/2
@@ -322,6 +323,7 @@ countRNAData <- function(settings, internBPPARAM=SerialParam()){
     countsList <- bplapply(targetChunks, bamFile=bamFile, settings=settings,
                 spliceSites=spliceSiteCoords, BPPARAM=internBPPARAM,
                 FUN=function(range, bamFile, settings, spliceSites){
+# system.time({
         suppressPackageStartupMessages(library(FraseR))
        
         # restrict to the chromosome only
@@ -343,6 +345,7 @@ countRNAData <- function(settings, internBPPARAM=SerialParam()){
         # clean memory
         #rm(regionOfChunk, singleReadFrag)
         #gc()
+# }, TRUE)
         return(hits)
     })
     
