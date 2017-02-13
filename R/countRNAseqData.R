@@ -291,20 +291,25 @@ countRNAData <- function(settings, internBPPARAM=SerialParam()){
                     internBPPARAM=SerialParam()){
     suppressPackageStartupMessages(library(FraseR))
     bamFile <- bamFiles(settings[samples(settings) == sampleID])[[1]]
+   
+    # extract donor and acceptor sites
+    spliceSiteCoords <- .extract_splice_site_coordinates(targets, settings)
+    spliceSiteCoords <- sort(spliceSiteCoords)
     
     # check cache if available 
     cacheFile <- .getNonSplicedCountCacheFile(sampleID, settings)
     if(!is.null(cacheFile) && file.exists(cacheFile)){
         # check if needs to be recalculated
-        # TODO cache <- readRDS(cacheFile)
-        return(readRDS(cacheFile))
-    }
+        # TODO 
+        cache <- readRDS(cacheFile)
+        if(length(cache) == length(spliceSiteCoords) &&
+                TEST){
+            return(readRDS(cacheFile))
+        }
+        }
     
     
-    # extract donor and acceptor sites
-    spliceSiteCoords <- .extract_splice_site_coordinates(targets, settings)
-    spliceSiteCoords <- sort(spliceSiteCoords)
-
+   
     # estimate chunk size
     rangeShift        <- 2.5*10^4
     numRangesPerChunk <- 100
