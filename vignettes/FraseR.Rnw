@@ -3,7 +3,15 @@
 %\VignetteEngine{knitr::knitr}
 
 % To compile this document
-% library('knitr'); rm(list=ls()); knit('FraseR.Rnw'); system("pdflatex FraseR")
+\if12
+  system("mkdir -p tmp/vignettes/")
+  setwd("tmp/vignettes/")
+  library('knitr'); 
+  rm(list=ls()); 
+  knit('../../FraseR/vignettes/FraseR.Rnw'); 
+  system("pdflatex FraseR")
+  setwd("../../")
+\fi
 
 \documentclass[11pt]{article}
 \usepackage{amsmath}
