@@ -331,7 +331,11 @@ setReplaceMethod("sampleGroup", "FraseRSettings", function(object, value) {
 #' @export
 #' @rdname bamFiles
 setMethod("bamFiles", "FraseRSettings", function(object) {
-    return(sampleData(object)[,bamFile])
+    bamFiles <- sampleData(object)[,bamFile]
+    if(all(sapply(bamFiles, class) == "character")){
+        bamFiles <- unlist(BamFileList(bamFiles))
+    }
+    return(bamFiles)
 })
 
 #' @export
