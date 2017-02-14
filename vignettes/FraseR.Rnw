@@ -27,9 +27,14 @@ opts_chunk$set(
   warning=FALSE)
 @ 
 
+
 <<style, eval=TRUE, echo=FALSE, results="asis">>=
 BiocStyle::latex()
 @
+
+% <<style-Sweave, eval=TRUE, echo=FALSE, results=tex>>=
+% BiocStyle::latex2()
+% @
 
 <<loadFraseR, echo=FALSE>>=
 library("FraseR")
@@ -89,7 +94,7 @@ fds <- FraseR(settings)
 fds <- annotateRanges(fds)
 
 # visualize results
-plotSampleResults(fds)
+plotSampleResults(fds, "sample1")
 @
 
 
@@ -112,9 +117,10 @@ To start a RNA-seq data analysis with \fraser{} some preparation steps are neede
 First of all we need a table with basic informations which then can be transformed into a \Rclass{FraseRSettings} object. The minimum of information per sample is an unique sample name, the path to the aligned bam file. Additionally groups can be specified for the P-value calculations later. If a \textbf{NA} is asigned no P-values will be calculated. An example sample table is given within the package: 
 
 <<sampleData Table, echo=TRUE>>=
-data.table::fread(system.file(
+library(data.table)
+head(fread(system.file(
     "extdata", "sampleTable.tsv", package="FraseR", mustWork=TRUE
-))
+)))
 @
 
 The RNA-seq data should be aligned with a splice-aware aligner like STAR\cite{STAR} or GEM\cite{GEM}. To gain better results the samples should be processed with the same protocol and origin from the same tissue. 
@@ -133,7 +139,7 @@ To create a settings object for \fraser{} the constructor \Rfunction{FraseRSetti
 
 The following shows how to create a test setting object. This object will be used throughout the whole vignette.
 
-<<FraseR setting example>>=
+<<FraseR setting example, echo=TRUE>>=
 library(FraseR)
 createTestFraseRSettings()
 @
@@ -153,7 +159,7 @@ We thank Daniel Bader and Martin Morgan for input in the development of \fraser{
 
 \section{Session Info}
 
-<<sessInfo, results="tex", echo=FALSE>>=
+<<sessInfo, eval=TRUE, echo=FALSE, results="asis">>=
 toLatex(sessionInfo())
 @
 
