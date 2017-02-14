@@ -302,14 +302,12 @@ countRNAData <- function(settings, internBPPARAM=SerialParam()){
     if(!is.null(cacheFile) && file.exists(cacheFile)){
         # check if needs to be recalculated
         # TODO 
-        cache <- readRDS(cacheFile)
-        if(length(cache) == length(spliceSiteCoords) &&
-                TEST){
-            return(readRDS(cacheFile))
-        }
-        }
-    
-    
+        #cache <- readRDS(cacheFile)
+        #if(length(cache) == length(spliceSiteCoords) &&
+        #        TEST){
+        return(readRDS(cacheFile))
+        #}
+    }
    
     # estimate chunk size
     rangeShift        <- 25*10^3
