@@ -1,14 +1,14 @@
 Package: FraseR
 Type: Package
-Title: Find RAre Splicing Events with R
+Title: Find RAre Splicing Events in RNA-seq data
 Version: 0.2.0
 Date: 2016-11-27
 Author: Christian Mertes <mertes@in.tum.de>, Prof. Julien Gagneur
     <gagneur@in.tum.de>
 Maintainer: Christian Mertes <mertes@in.tum.de>
 Description: This package calls rare aberrant splicing events in a set of
-    samples. It is designed to assist the diagnostics in the field of rare diseases
-    where RNA-seq is performed.
+    transcriptomic sequencing samples. It is designed to assist the diagnostics
+    in the field of rare diseases where RNA-seq is performed.
 License: Artistic-2.0
 Depends:
     R (>= 3.3.2), BiocParallel, GenomicAlignments,
@@ -18,7 +18,7 @@ Depends:
 biocViews: RNASeq, AlternativeSplicing, Sequencing, 
     Software, Genetics, Coverage
 URL: https://i12g-gagneurweb.in.tum.de/gitlab/mertes/FraseR/
-RoxygenNote: 6.0.0
+RoxygenNote: 6.0.1
 Collate:
     'FraseR-package.R'
     'FraseRSettings-class.R'

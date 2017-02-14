@@ -4,12 +4,11 @@
 
 % To compile this document
 \if12
-  system("mkdir -p tmp/vignettes/")
   setwd("tmp/vignettes/")
-  library('knitr'); 
-  rm(list=ls()); 
-  knit('../../FraseR/vignettes/FraseR.Rnw'); 
-  system("pdflatex FraseR")
+  rm(list=ls())
+  library(knitr)
+  knit("../../FraseR/vignettes/FraseR.Rnw")
+  system("pdflatex FraseR && pdflatex FraseR")
   setwd("../../")
 \fi
 
@@ -17,19 +16,44 @@
 \usepackage{amsmath}
 \usepackage{verbatim}
 \newcommand{\fraser}{\textit{FraseR}}
+% \newcommand{\Rfunction}{\textit{#1}}
+% \newcommand{\Rclass}{\textit{#1}}
+% \newcommand{\cite}{\textit{TODO to cite: #1}}
+
+<<knitr, echo=FALSE, results="hide">>=
+library("knitr")
+opts_chunk$set(
+  tidy=FALSE,
+  dev="png",
+  #fig.show="hide",
+  fig.width=4, fig.height=4.5,
+  dpi = 300,
+  cache=TRUE,
+  message=FALSE,
+  warning=FALSE)
+@ 
+
+<<style, eval=TRUE, echo=FALSE, results="asis">>=
+BiocStyle::latex()
+@
+
+<<loadFraseR, echo=FALSE>>=
+library("FraseR")
+@
 
 \author{Christian Mertes$^{1}$, Julien Gagneur$^{1}$ \\[1em] 
 \small{$^{1}$ Technische Universit\"at M\"unchen, Department of Informatics, Garching, Germany} 
 }
 
-\title{FraseR: Find RAre Splicing Events with R}
+\title{FraseR: Find RAre Splicing Events in RNA-seq data}
 
 \begin{document}
 
 \maketitle
 
 \begin{abstract}
-My abstract TODO
+
+Whole exome sequencing and whole genome Sequencing is already a standard in the field of diagnostics of rare disorders. But due to the lack of biological knowledge and interpretation of the vast of variants RNA-seq is an important complementary tool to assess outliers and detect potentially disease causing splice variants.
 
 \vspace{1em}
 
@@ -53,33 +77,90 @@ Mertes C, Gagneur J, \emph{et al.}
 
 \newpage
 
+\section{Quick guide to \fraser{}}
+
+To start quickly with \fraser{} just call this 3 function to get a standard analysis on a example data set from the following publication \cite{FraseR}.
+
+<<quick fraser guide>>=
+library(FraseR)
+# create sample annotation and settings
+settings <- createTestFraseRSettings()
+
+# run full standard analysis
+# fds <- FraseR(settings)
+
+# visualize results
+# plotSampleResults(fds)
+@
+
+
 \section{Standard workflow}
 The standard workflow for detecting rare abarrent splicing events in RNA-seq data can be divided into five steps.
 \begin{enumerate}
-    \item Data preparation
-    \item Counting reads
-    \item Calculate PSI- and Zscore-values
-    \item Calculate P-values
-    \item Plot results
+    \item Data preparation\ref{sec:DataPreparation}
+    \item Counting reads\ref{sec:CountingReads}
+    \item Calculate PSI- and Zscore-values\ref{CalcPSInZscore}
+    \item Calculate P-values\ref{CalcP-values}
+    \item Visualize results\ref{VisResults}
 \end{enumerate}
 
-Step 2-4 is wrapped up in one function \emph{FraseR}, but each step can be called individually. A detailed explanaition of each step is given in the following subsections.
+Step 2-5 is wrapped up in one function \Rfunction{FraseR}, but each step can be called individually and parametrizied. A detailed explanaition of each step is given in the following subsections.
+
 
 \subsection{Data preparation}
-To start a RNA-seq data analysis with FraseR some preparation steps are needed. 
-First of all we need a table with basic informations which then can be transformed into a FraseRSettings object. The minimum of information per sample is a unique sample name, the path to the aligned bam file. Additionally groups can be specified for the P-value calculations later. If 
-<<>>=
+\label{sec:DataPreparation}
+To start a RNA-seq data analysis with \fraser{} some preparation steps are needed. 
+First of all we need a table with basic informations which then can be transformed into a \Rclass{FraseRSettings} object. The minimum of information per sample is an unique sample name, the path to the aligned bam file. Additionally groups can be specified for the P-value calculations later. If a \textbf{NA} is asigned no P-values will be calculated. An example sample table is given within the package: 
+
+<<sampleData Table>>=
+library(data.table)
 fread(system.file(
     "extdata", "sampleTable.tsv", package="FraseR", mustWork=TRUE
 ))
 @
 
-\subsection{Counting the read}
+The RNA-seq data should be aligned with a splice-aware aligner like STAR\cite{STAR} or GEM\cite{GEM}. To gain better results the samples should be processed with the same protocol and origin from the same tissue. 
+
+To gain better results at least 20 samples should be sequenced. 
+
+To create a settings object for \fraser{} the constructor \Rfunction{FraseRSettings} should be called with at least a sampleData table. For an example have a look into the \Rfunction{createTestFraseRSettings}. In addition to the sampleData you can specify further parameters. 
+
+\begin{enumerate}
+    \item The parallel backend (a \Rclass{BiocParallelParam} object)
+    \item The read filtering (a \Rclass{ScanBamParam} object)
+    \item The name of the statistical method to be used
+    \item An output folder for the resulting figures and the cache
+    \item If the data is strand specific or not. (Not implemented yet)
+\end{enumerate}
+
+The following shows how to create a test setting object. This object will be used throughout the whole vignette.
+
+<<FraseR setting example>>=
+library(FraseR)
+createTestFraseRSettings()
+@
+
+
+\subsection{Counting reads}
+\label{sec:CountingReads}
+
+Counting of the reads are straight forward and is done through the \Rfunction{countRNAData} function. The only required parameter is the FraseRSettings object. First all split reads are extracted from each individuel sample and cached if enabled. Then a datased wide junction map is created (all visible junctions over all samples). After that for each sample the non-spliced reads at each given donor and acceptor site is counted. 
+
+
+
 how to count rna splicing reads
 \section{Acknowledgments}
 
 We thank Daniel Bader and Martin Morgan for input in the development of \fraser{}. 
 
 \section{Session Info}
+
+<<sessInfo, results="tex", echo=FALSE>>=
+toLatex(sessionInfo())
+@
+
+<<resetOptions, results="hide", echo=FALSE>>=
+options(prompt="> ", continue="+ ")
+@
 
 \end{document}
