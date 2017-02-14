@@ -19,10 +19,11 @@ biocViews: RNASeq, AlternativeSplicing, Sequencing,
     Software, Genetics, Coverage
 URL: https://i12g-gagneurweb.in.tum.de/gitlab/mertes/FraseR/
 RoxygenNote: 6.0.1
-Collate:
+Collate: 
     'FraseR-package.R'
     'FraseRSettings-class.R'
     'FraseRDataSet-class.R'
+    'Fraser-pipeline.R'
     'annotationOfRanges.R'
     'beta-binomial-testing.R'
     'calculatePSIValue.R'

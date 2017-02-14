@@ -41,7 +41,7 @@
 #' this tests each splice type for all samples
 #' 
 #' @noRd
-.testPsiWithBetaBinomial <- function(dataset){
+.testPsiWithBetaBinomial <- function(dataset, internBPPARAM){
     
     # test all 3 different types
     assays(dataset@splitReads)$pvalue_psi3 <- 

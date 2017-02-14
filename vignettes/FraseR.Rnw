@@ -4,21 +4,15 @@
 
 % To compile this document
 \if12
-  setwd("tmp/vignettes/")
-  rm(list=ls())
-  library(knitr)
-  knit("../../FraseR/vignettes/FraseR.Rnw")
-  system("pdflatex FraseR && pdflatex FraseR")
-  setwd("../../")
+    source("./src/r/config.R")
+    repackFraseR=FALSE
+    buildVignetteFraseR(repackFraseR)
 \fi
 
 \documentclass[11pt]{article}
 \usepackage{amsmath}
 \usepackage{verbatim}
 \newcommand{\fraser}{\textit{FraseR}}
-% \newcommand{\Rfunction}{\textit{#1}}
-% \newcommand{\Rclass}{\textit{#1}}
-% \newcommand{\cite}{\textit{TODO to cite: #1}}
 
 <<knitr, echo=FALSE, results="hide">>=
 library("knitr")
@@ -79,18 +73,23 @@ Mertes C, Gagneur J, \emph{et al.}
 
 \section{Quick guide to \fraser{}}
 
-To start quickly with \fraser{} just call this 3 function to get a standard analysis on a example data set from the following publication \cite{FraseR}.
+To start quickly with \fraser{} just call this 4 functions to get a standard analysis on an example data set from the following publication \cite{FraseR}.
 
-<<quick fraser guide>>=
+<<quick fraser guide, echo=TRUE>>=
+# load Fraser package
 library(FraseR)
+
 # create sample annotation and settings
 settings <- createTestFraseRSettings()
 
 # run full standard analysis
-# fds <- FraseR(settings)
+fds <- FraseR(settings)
+
+# annotate junctions and splice sites
+fds <- annotateRanges(fds)
 
 # visualize results
-# plotSampleResults(fds)
+plotSampleResults(fds)
 @
 
 
@@ -112,9 +111,8 @@ Step 2-5 is wrapped up in one function \Rfunction{FraseR}, but each step can be 
 To start a RNA-seq data analysis with \fraser{} some preparation steps are needed. 
 First of all we need a table with basic informations which then can be transformed into a \Rclass{FraseRSettings} object. The minimum of information per sample is an unique sample name, the path to the aligned bam file. Additionally groups can be specified for the P-value calculations later. If a \textbf{NA} is asigned no P-values will be calculated. An example sample table is given within the package: 
 
-<<sampleData Table>>=
-library(data.table)
-fread(system.file(
+<<sampleData Table, echo=TRUE>>=
+data.table::fread(system.file(
     "extdata", "sampleTable.tsv", package="FraseR", mustWork=TRUE
 ))
 @

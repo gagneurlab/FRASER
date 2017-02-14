@@ -27,7 +27,7 @@ setClass("FraseRSettings",
         ),
         bamParams = Rsamtools::ScanBamParam(),
         parallel = BiocParallel::registered()[[1]],
-        method = "Fisher",
+        method = "betaBin",
         strandSpecific = FALSE,
         outputFolder = file.path(Sys.getenv("HOME"), "FraseR")
     )
@@ -64,7 +64,7 @@ setClass("FraseRSettings",
 }
 
 .validateMethodType <- function(object) {
-    valid_methods <- c("Fisher", "DESeq2", "Martin")
+    valid_methods <- c("Fisher", "betaBin", "DESeq2", "Martin")
     if(class(object@method) != "character" || 
         !any(object@method %in% valid_methods)) {
         return(paste(
