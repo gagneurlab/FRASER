@@ -7,7 +7,34 @@
 #' @examples 
 #'      plotSampleResults(dataset, "sample1")
 #'      plotSampleResults(dataset, "sample1", "result.html")
-plotSampleResults <- function(dataset, sampleID, file=NULL){
+plotSampleResults <- function(dataset, sampleID=NULL, file=NULL){
+    
+    #
+    # check input
+    stopifnot(class(dataset) == "FraseRDataSet")
+    
+    # if sample is empty create all plots for all samples
+    if(is.null(sampleID)){
+        samples2plot <- !is.na(sampleGroup(dataset@settings))
+        sampleIDs2plot <- samples(dataset@settings[samples2plot])
+        return(sapply(sampleIDs2plot, plotSampleResults, 
+                dataset=dataset, file=file
+        ))
+    }
+    
+    # check the rest
+    stopifnot(sampleID %in% samples(dataset@settings))
+    if(is.null(file)){
+        outDir <- outputFolder(dataset@settings)
+        if(!is.null(outDir) && outDir != ""){
+            file <- file.path(outDir, paste0(sampleID, "-FraseR-results.html"))
+        }
+    }
+     
+    # create folder if needed
+    if(!is.null(file) && !dir.exists(dirname(file))){
+        dir.create(dirname(file), recursive=TRUE)
+    }
     
     # generate each sub plot
     psi3plot    <- .plotVolcano(dataset, sampleID, "splitReads", "psi3", 1)
@@ -23,7 +50,8 @@ plotSampleResults <- function(dataset, sampleID, file=NULL){
     #
     if(!is.null(file)){
         saveWidget(mainplot, file=file)
-        return(NULL)
+        browseURL(file)
+        return(file)
     } 
     
     # return it
