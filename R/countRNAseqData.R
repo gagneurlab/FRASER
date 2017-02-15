@@ -42,6 +42,9 @@ countRNAData <- function(settings, internBPPARAM=SerialParam()){
     message(date(), ": In total ", length(granges(counts)), 
             " splice sites are analysed ..."
     )
+    #
+    # TODO use spliceSites instead of targets to reduce computation
+    #
     countList <- bplapply(samples(settings), 
             FUN=.countNonSplicedReads, 
             settings=settings,
