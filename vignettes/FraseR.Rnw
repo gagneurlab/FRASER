@@ -6,6 +6,7 @@
 \if12
     source("./src/r/config.R")
     repackFraseR=FALSE
+    #repackFraseR=TRUE
     buildVignetteFraseR(repackFraseR)
 \fi
 
@@ -97,15 +98,16 @@ fds <- annotateRanges(fds)
 plotSampleResults(fds, "sample1")
 @
 
+The result html will be discussed in the corresponding section \ref{sec:Results}
 
 \section{Standard workflow}
 The standard workflow for detecting rare abarrent splicing events in RNA-seq data can be divided into five steps.
 \begin{enumerate}
-    \item Data preparation\ref{sec:DataPreparation}
-    \item Counting reads\ref{sec:CountingReads}
-    \item Calculate PSI- and Zscore-values\ref{CalcPSInZscore}
-    \item Calculate P-values\ref{CalcP-values}
-    \item Visualize results\ref{VisResults}
+    \item Data preparation \ref{sec:DataPreparation}
+    \item Counting reads \ref{sec:CountingReads}
+    \item Calculate PSI- and Zscore-values \ref{sec:PSI-Zscore-calculation}
+    \item Calculate P-values \ref{sec:P-value-calculation}
+    \item Visualize results \ref{sec:result-vis}
 \end{enumerate}
 
 Step 2-5 is wrapped up in one function \Rfunction{FraseR}, but each step can be called individually and parametrizied. A detailed explanaition of each step is given in the following subsections.
@@ -141,18 +143,38 @@ The following shows how to create a test setting object. This object will be use
 
 <<FraseR setting example, echo=TRUE>>=
 library(FraseR)
-createTestFraseRSettings()
+settings <- createTestFraseRSettings()
+settings
 @
-
 
 \subsection{Counting reads}
 \label{sec:CountingReads}
 
-Counting of the reads are straight forward and is done through the \Rfunction{countRNAData} function. The only required parameter is the FraseRSettings object. First all split reads are extracted from each individuel sample and cached if enabled. Then a datased wide junction map is created (all visible junctions over all samples). After that for each sample the non-spliced reads at each given donor and acceptor site is counted. 
+Counting of the reads are straight forward and is done through the \Rfunction{countRNAData} function. The only required parameter is the FraseRSettings object. First all split reads are extracted from each individuel sample and cached if enabled. Then a dataset wide junction map is created (all visible junctions over all samples). After that for each sample the non-spliced reads at each given donor and acceptor site is counted. The resulting \Rclass{FraseRDataSet} object contains two \Rclass{SummarizedExperiment} objects for each the junctions and the splice sites. 
+
+<<counting reads, echo=TRUE>>=
+fds <- countRNAData(settings)
+fds
+@
+
+To understand the parallelizing option will be discussed in the parallel section \ref{sec:parallel}.
+
+\subsection{PSI- and Zscore-value calculation}
+\label{sec:PSI-Zscore-calculation}
+
+After counting the user needs to compute the PSI-values and Z-scores for each site. Since this is just a 
+
+<<counting reads, echo=TRUE>>=
+fds <- countRNAData(settings)
+fds
+@
+\subsection{P-value calculation}
+\label{sec:P-value-calculation}
 
 
+\subsection{Result visualisation}
+\label{sec:result-vis}
 
-how to count rna splicing reads
 \section{Acknowledgments}
 
 We thank Daniel Bader and Martin Morgan for input in the development of \fraser{}. 
