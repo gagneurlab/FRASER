@@ -218,37 +218,46 @@ countRNAData <- function(settings, internBPPARAM=SerialParam()){
 ## 
 ## TODO: how to init non found junctions/splice sites (0L or NA)? 
 ##
-.mergeCounts <- function(counts, BPPARAM=SerialParam()){
+.mergeCounts <- function(countls, BPPARAM=SerialParam()){
   
     # prepare range object
-    sample_names <- names(counts)
-    counts <- GRangesList(counts)
-    ranges <- sort(unique(unlist(counts)))
+    sample_names <- names(countls)
+    countgr <- GRangesList(countls)
+    ranges <- sort(unique(unlist(countgr)))
     mcols(ranges)$count <- NULL
     names(ranges) <- NULL
   
-    # merge each sample counts into the combined range object
-    sample_counts <- bplapply(1:length(counts), ranges = ranges, 
-        counts = counts, BPPARAM=BPPARAM,
-        FUN = function(i, ranges, counts){
-            suppressPackageStartupMessages(require(FraseR))
-        
-            # get sample name
-            sample_name <- names(counts)[i]
-            
-            ## TODO init with NA since we dont extracted
-            # we are missing counts for junctions spliced in other samples
-            sample_count <- rep(0L, length(ranges))
-            
-            # get overlap and add counts to the corresponding ranges
-            overlaps <- findOverlaps(counts[[i]], ranges, type = "equal")
-            sample_count[overlaps@to] <- mcols(counts[[i]])$count
-            #mcols(ranges[overlaps@to,])[[sample_name]] <- 
-            #           mcols(counts[[i]])$count
-            
-            return(sample_count)
-        }
-    )
+    # check if we need to merge it or if all ranges are the same
+    hits <- findOverlaps(countgr, ranges, type="start")
+    noMergeNeeded <- all(data.table(to=to(hits), from=from(hits))[,
+            .(noMerge=length(unique(to)) == length(ranges)),by=from][,
+            noMerge
+    ])
+    if(noMergeNeeded){
+        message(paste(date(), ": Fast merging of counts ..."))
+        sample_counts <- lapply(1:length(countgr), function(i){
+                mcols(countgr[[i]])$count
+        })
+    } else {
+        message(paste(date(), ": count ranges need to be merged ..."))
+        # merge each sample counts into the combined range object
+        sample_counts <- bplapply(1:length(countgr), ranges = ranges, 
+            countgr = countgr, BPPARAM=BPPARAM,
+            FUN = function(i, ranges, countgr){
+                suppressPackageStartupMessages(require(FraseR))
+             
+                ## TODO init with NA since we dont extracted
+                # we are missing counts for junctions spliced in other samples
+                sample_count <- rep(0L, length(ranges))
+                
+                # get overlap and add counts to the corresponding ranges
+                overlaps <- findOverlaps(countgr[[i]], ranges, type = "equal")
+                sample_count[overlaps@to] <- mcols(countgr[[i]])$count
+                
+                return(sample_count)
+            }
+        )
+    }
   
     # convert it to a DataFrame
     sample_counts_df <- DataFrame(
