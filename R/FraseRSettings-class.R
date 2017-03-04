@@ -26,7 +26,7 @@ setClass("FraseRSettings",
             )
         ),
         bamParams = Rsamtools::ScanBamParam(),
-        parallel = BiocParallel::registered()[[1]],
+        parallel = SerialParam(),
         method = "betaBin",
         strandSpecific = FALSE,
         outputFolder = file.path(Sys.getenv("HOME"), "FraseR")
