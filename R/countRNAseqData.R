@@ -35,25 +35,32 @@ countRNAData <- function(settings, internBPPARAM=SerialParam()){
             internBPPARAM=internBPPARAM
     )
     names(countList) <- samples(settings)
-    counts <- .mergeCounts(countList, parallel(settings))
+    counts <- .mergeCounts(countList, assumeEqual=FALSE, parallel(settings))
 
     # count the retained reads
     message(date(), ": Start counting the non spliced reads ...")
     message(date(), ": In total ", length(granges(counts)), 
-            " splice sites are analysed ..."
+            " splice junctions are found."
     )
+    
+    # extract donor and acceptor sites
+    spliceSiteCoords <- .extractSpliceSiteCoordinates(granges(counts), settings)
+    message(date(), ": In total ", length(spliceSiteCoords), 
+            " splice sites (acceptor/donor) will be counted ..."
+    )
+    
     #
     # TODO use spliceSites instead of targets to reduce computation
     #
     countList <- bplapply(samples(settings), 
             FUN=.countNonSplicedReads, 
             settings=settings,
-            targets=granges(counts),
+            spliceSiteCoords=spliceSiteCoords,
             BPPARAM=parallel(settings),
             internBPPARAM=internBPPARAM
     )
     names(countList) <- samples(settings)
-    site_counts <- .mergeCounts(countList, parallel(settings))
+    site_counts <- .mergeCounts(countList, assumeEqual=TRUE, parallel(settings))
     mcols(site_counts)$type=factor(countList[[1]]$type, 
             levels = c("Acceptor", "Donor")
     )
@@ -68,14 +75,15 @@ countRNAData <- function(settings, internBPPARAM=SerialParam()){
             rowRanges=site_counts[,"type"]
     )
     
-    # return it
-    return(
-        FraseRDataSet(
-            settings=settings,
-            splitReads=splitCounts,
-            nonSplicedReads=nonSplicedCounts
-        )
+    # create final FraseR dataset
+    fds <- FraseRDataSet(
+        settings=settings,
+        splitReads=splitCounts,
+        nonSplicedReads=nonSplicedCounts
     )
+    
+    # return it
+    return(fds)
 }
 
 ##
@@ -133,7 +141,7 @@ countRNAData <- function(settings, internBPPARAM=SerialParam()){
             BPPARAM=internBPPARAM
     )
     
-    # sort and merge the results befor returning
+    # sort and merge the results befor returning/saving
     countsGR <- sort(unlist(GRangesList(countsList)))
     if(!is.null(cacheFile)){
         saveRDS(countsGR, cacheFile)
@@ -218,22 +226,16 @@ countRNAData <- function(settings, internBPPARAM=SerialParam()){
 ## 
 ## TODO: how to init non found junctions/splice sites (0L or NA)? 
 ##
-.mergeCounts <- function(countls, BPPARAM=SerialParam()){
+.mergeCounts <- function(countList, assumeEqual=FALSE, BPPARAM=SerialParam()){
   
     # prepare range object
-    sample_names <- names(countls)
-    countgr <- GRangesList(countls)
+    sample_names <- names(countList)
+    countgr <- GRangesList(countList)
     ranges <- sort(unique(unlist(countgr)))
     mcols(ranges)$count <- NULL
     names(ranges) <- NULL
   
-    # check if we need to merge it or if all ranges are the same
-    hits <- findOverlaps(countgr, ranges, type="start")
-    noMergeNeeded <- all(data.table(to=to(hits), from=from(hits))[,
-            .(noMerge=length(unique(to)) == length(ranges)),by=from][,
-            noMerge
-    ])
-    if(noMergeNeeded){
+    if(assumeEqual){
         message(paste(date(), ": Fast merging of counts ..."))
         sample_counts <- lapply(1:length(countgr), function(i){
                 mcols(countgr[[i]])$count
@@ -300,39 +302,43 @@ countRNAData <- function(settings, internBPPARAM=SerialParam()){
 ##
 ## counts non spliced reads based on the given target (acceptor/donor) regions
 ## TODO: 10k chunks hardcoded currently (needs some testing and a code to)
-.countNonSplicedReads <- function(sampleID, targets, settings, 
+.countNonSplicedReads <- function(sampleID, spliceSiteCoords, settings, 
                     internBPPARAM=SerialParam()){
     suppressPackageStartupMessages(library(FraseR))
     bamFile <- bamFiles(settings[samples(settings) == sampleID])[[1]]
-   
-    # extract donor and acceptor sites
-    spliceSiteCoords <- .extract_splice_site_coordinates(targets, settings)
-    spliceSiteCoords <- sort(spliceSiteCoords)
     
     # check cache if available 
     cacheFile <- .getNonSplicedCountCacheFile(sampleID, settings)
     if(!is.null(cacheFile) && file.exists(cacheFile)){
         # check if needs to be recalculated
-        # TODO 
-        #cache <- readRDS(cacheFile)
-        #if(length(cache) == length(spliceSiteCoords) &&
-        #        TEST){
-        return(readRDS(cacheFile))
-        #}
+        cache <- readRDS(cacheFile)
+        numEqualOverlaps <- length(unique(to(findOverlaps(
+                cache, spliceSiteCoords, type="equal"
+        ))))
+        if(numEqualOverlaps == length(spliceSiteCoords)){
+            return(cache)
+        } else {
+            message(paste("The cache file does not contain the same",
+                    "genomic positions. Remove cache and recounting ..."
+            ))
+            file.remove(cacheFile)
+        }
     }
    
     # estimate chunk size
     rangeShift        <- 25*10^3
-    numRangesPerChunk <- 10
-    targetChunks <- GenomicRanges::reduce(GenomicRanges::trim(suppressWarnings(
+    numRangesPerChunk <- 100
+    targetChunksTmp <- GenomicRanges::reduce(GenomicRanges::trim(suppressWarnings(
         GenomicRanges::shift(resize(spliceSiteCoords, width=rangeShift),
                     shift=-rangeShift/2
             )
     )))
 
-    numChunks <- ceiling(max(1,length(targetChunks)/numRangesPerChunk))
-    chunkID <- rep(1:numChunks, each=numRangesPerChunk)[1:length(targetChunks)]
-    targetChunks <- split(targetChunks, chunkID)
+    numChunks <- ceiling(max(1,length(targetChunksTmp)/numRangesPerChunk))
+    chunkID <- rep(1:numChunks, each=numRangesPerChunk)[
+                1:length(targetChunksTmp)
+    ]
+    targetChunks <- split(targetChunksTmp, chunkID)
 
     # extract the counts per chromosome
     countsList <- bplapply(targetChunks, bamFile=bamFile, settings=settings,
@@ -381,7 +387,7 @@ countRNAData <- function(settings, internBPPARAM=SerialParam()){
 ##
 ## extracts the splice site coordinates from a junctions GRange object
 ## 
-.extract_splice_site_coordinates <- function(junctions_gr, settings){
+.extractSpliceSiteCoordinates <- function(junctions_gr, settings){
     if(settings@strandSpecific){
         splice_site_coords <- unlist(GRangesList(
             .extract_splice_site_coordinates_per_strand(junctions_gr, "+"),
