@@ -25,7 +25,7 @@ setClass("FraseRSettings",
                 "extdata", "bam", "sample1.bam", package="FraseR"
             )
         ),
-        bamParams = Rsamtools::ScanBamParam(),
+        bamParams = ScanBamParam(mapqFilter=10),
         parallel = SerialParam(),
         method = "betaBin",
         strandSpecific = FALSE,
