@@ -41,15 +41,18 @@
 #' this tests each splice type for all samples
 #' 
 #' @noRd
-.testPsiWithBetaBinomial <- function(dataset, internBPPARAM){
+.testPsiWithBetaBinomial <- function(dataset, internBPPARAM, 
+                    pvalFun=.betabinVglmTest){
     
     # test all 3 different types
     assays(dataset@splitReads)$pvalue_psi3 <- 
-        .testPsiWithBetaBinomialPerType(dataset, "splitReads", "psi3")
+        .testPsiWithBetaBinomialPerType(dataset, "splitReads", "psi3", pvalFun)
     assays(dataset@splitReads)$pvalue_psi5 <- 
-        .testPsiWithBetaBinomialPerType(dataset, "splitReads", "psi5")
+        .testPsiWithBetaBinomialPerType(dataset, "splitReads", "psi5", pvalFun)
     assays(dataset@nonSplicedReads)$pvalue_sitePSI <- 
-        .testPsiWithBetaBinomialPerType(dataset, "nonSplicedReads", "sitePSI")
+        .testPsiWithBetaBinomialPerType(dataset, "nonSplicedReads", 
+                "sitePSI", pvalFun
+        )
     
     # return the new datasets
     return(dataset)
@@ -59,11 +62,18 @@
 #' calculates the pvalue per type (psi3,psi5,spliceSite) with beta-binomial
 #' 
 #' @noRd
-.testPsiWithBetaBinomialPerType <- function(dataset, readType, psiType){
+.testPsiWithBetaBinomialPerType <- function(dataset, readType, psiType, 
+                    pvalFun){
+    
+    message(date(), ": Calculate P-values for the ", 
+            psiType, " splice type ..."
+    )
+    
     # go over each group but no NA's
     group         <- sampleGroup(dataset@settings)
     addNoise      <- TRUE
-    removeHighLow <- length(group)/4
+    removeHighLow <- 0
+    #removeHighLow <- length(group)/4
     
     # reads to test for abberent splicing (eg: nonSplicedReads)
     rawCounts <- .getAssayAsDataTable(slot(dataset, readType), "rawCounts")
@@ -83,6 +93,7 @@
     # select junctions to test take only junctions 
     # with at least 5 reads in at least one sample
     toTest <- which(apply(rawCounts,1,max) >= 5)
+    message(date(), ": Sites to test: ", length(toTest))
     
     # TODO how to group groups?
     pvalues_ls <- bplapply(toTest, rawCounts=rawCounts, 
@@ -92,7 +103,7 @@
             FUN= function(idx, rawCounts, rawOtherCounts, 
                     addNoise, removeHighLow){
         require(FraseR)
-        
+                
         ## simulate split read counts (numerator of psi)
         y <- as.integer(as.vector(unlist(rawCounts[idx,])))
        
@@ -120,45 +131,125 @@
             ]
         }
         
-        # bootstrap sample data if sample count to low
-        if(dim(countMatrix)[1] < 25){
-            warning(paste0("Sample count (", 
-                    dim(countMatrix)[1], 
-                    ") to low. Pseudo bootstrap is used to have 25 samples."
-            ))   
-            samples_to_take <- c(
-                1:dim(countMatrix)[1], 
-                sample(1:dim(countMatrix)[1], 
-                        max(0, 25 - dim(countMatrix)[1]), 
-                        replace = TRUE
-                )
-            )
-            countMatrix <- countMatrix[samples_to_take,]
-        }
-        
         # plot(log10(N+1),log10(y+1))
 
         ## fitting
-        pv <- rep(as.numeric(NA), dim(rawCounts)[2])
-        tryCatch({
-            fit <- vglm(countMatrix ~ 1, betabinomial)
-            co  <- Coef(fit)
-            
-            ## one-sided p-value (alternative = "less")
-            pv  <- pbetabinom(y, N, co[["mu"]], co[["rho"]])
-        }, error = function(e) str(e))
-        pv[which(pv > 1)] <- as.numeric(NA)
+        pv_res <- lapply(list(countMatrix), 
+                FUN=.tryCatchFactory(pvalFun), y=y, N=N
+        )[[1]]
         
-        # plot(-log10(na.omit(pv)))
-        return(pv)
+        #
+        # put pvalues into correct boundaries
+        if(is.null(pv_res[[1]])){
+            pv_res[[1]] <- rep(as.numeric(NA), dim(rawCounts)[2])
+        }
+        pv_res[[1]][which(pv_res[[1]] > 1)] <- as.numeric(NA)
+        
+        # plot(-log10(na.omit(pv_res[[1]])))
+        return(pv_res)
     })
     
+    # warnings
+    warntable <- sort(table(gsub("^\\d+ diagonal ele", "xxx diagonal ele", 
+                                 unlist(sapply(pvalues_ls, "[[", "warn"))
+    )))
+    message(paste(collapse = "\n", c(date(), 
+        "Warnings in VGLM code while computing pvalues:\n",
+        sapply(1:length(warntable), function(idx) paste(
+            "\t", warntable[idx], "x", names(warntable)[idx]
+        ))
+    )))
     
-    pvalues <- do.call(rbind,pvalues_ls)
+    # errors
+    errotable <- sort(table(gsub("^\\d+ diagonal ele", "xxx diagonal ele", 
+                                 unlist(sapply(pvalues_ls, "[[", "err"))
+    )))
+    message(paste(collapse = "\n", c( 
+        "\nErrors in VGLM code while computing pvalues:\n",
+        sapply(1:length(errotable), function(idx) paste(
+            "\t", errotable[idx], "x", names(errotable)[idx]
+        ))
+    )))
     
-    pvalues_full <- matrix(as.numeric(NULL), nrow=dim(rawCounts)[1], ncol=dim(rawCounts)[2])
+    # extract pvalues
+    pvalues <- do.call(rbind,lapply(pvalues_ls, "[[", 1))
+    pvalues_full <- matrix(as.numeric(NULL), 
+            nrow=dim(rawCounts)[1], ncol=dim(rawCounts)[2]
+    )
     pvalues_full[toTest,] <- pvalues
     
     # transform it to a DataFrame and return it
-    return(FraseR:::.asDataFrame(pvalues_full, dataset@settings@sampleData[,sampleID]))
+    return(.asDataFrame(pvalues_full, dataset@settings@sampleData[,sampleID]))
+}
+
+#'
+#' calculate the pvalues with vglm and the betabinomial functions
+#' 
+#' @noRd
+.betabinVglmTest <- function(countMatrix, y, N){
+    fit <- vglm(countMatrix ~ 1, betabinomial)
+    co  <- Coef(fit)
+    
+    ## one-sided p-value (alternative = "less")
+    pbetabinom(y, N, co[["mu"]], co[["rho"]])
+}
+
+
+#'
+#' calculate the pvalues with method of moments and the betabinomial functions
+#' https://en.wikipedia.org/wiki/Beta-binomial_distribution#Method_of_moments
+#' 
+#' @noRd
+.betabinMMTest <- function(countMatrix, y, N){
+    y <- countMatrix[,"y"]
+    N <- rowSums(countMatrix)
+    
+    cm <- countMatrix
+    colnames(cm)[1] <- "x"
+    n <- dim(cm)[1] - 1
+    m1 <- 1/n * sum(cm[,"x"])
+    m2 <- 1/n * sum(cm[,"x"]**2)
+    
+    nominator <- n*(m2/m1 - m1 - 1) + m1
+    a <- (n*m1 - m2) / nominator
+    b <- (n - m1)*(n - m2/m1) / nominator
+    
+    message("N:  ", n, "\nm1:  ", m1, "\nm2:  ", m2, "\na:  ", a, "\nb:  ", b)
+    
+    dF <- function(x,n,a,b) dbetabinom.ab(x, n, a, b)
+    pF <- function(q,n,a,b) sum(sapply(0:q,dF,n=n,a=a,b=b))
+    warnings()
+    
+    pF(100,n,a,b)
+    plot(dbetabinom.ab(1:12, 12, a, b))
+    cm <- matrix(ncol=2,
+        c(0:12, c(3, 24, 104, 286, 670, 1033, 1343, 1112, 829, 478, 181, 45, 7))
+    )
+    colnames(cm) <- c("x", "y")
+    
+    fit <- vglm(countMatrix ~ 1, betabinomial)
+    co  <- Coef(fit)
+    
+    ## one-sided p-value (alternative = "less")
+    pbetabinom(y, N, co[["mu"]], co[["rho"]])
+}
+
+
+##
+## error/warning catching functions by martin morgan
+## http://stackoverflow.com/questions/4948361/how-do-i-save-warnings-and-errors-as-output-from-a-function
+##
+.tryCatchFactory <- function(fun){
+    function(...) {
+        warn <- err <- NULL
+        res <- withCallingHandlers(
+            tryCatch(fun(...), error=function(e) {
+                err <<- conditionMessage(e)
+                NULL
+            }), warning=function(w) {
+                warn <<- append(warn, conditionMessage(w))
+                invokeRestart("muffleWarning")
+            })
+        list(res, warn=warn, err=err)
+    }
 }
