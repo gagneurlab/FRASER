@@ -7,13 +7,13 @@
 ##
 
 #'
-#' This function calculates the PSI values for each junction
+#' This function calculates the PSI values for each junction and splice site
 #' based on the FraseRDataSet object
 #' 
 #' @export
 #' @examples
-#'   data <- counRNAData(createTestFraseRSettings())
-#'   data <- calculatePSIValues(data)
+#'   fds <- counRNAData(createTestFraseRSettings())
+#'   fds <- calculatePSIValues(fds)
 calculatePSIValues <- function(dataset){
     # check input
     stopifnot(class(dataset) == "FraseRDataSet")
@@ -32,6 +32,7 @@ calculatePSIValues <- function(dataset){
     )
     
     # calculate 3/5' PSI for each sample
+    message("Calculate the PSI3 values ...")
     psiValues <- .calculatePSIValuePrimeSite(
             countData=countData, psiType="3'",
             settings=dataset@settings
@@ -39,6 +40,7 @@ calculatePSIValues <- function(dataset){
     assays(rawCountData)$psi3 <- psiValues[["psi"]]
     assays(rawCountData)$rawOtherCounts_psi3 <- psiValues[["counts"]]
     
+    message("Calculate the PSI5 values ...")
     psiValues <- .calculatePSIValuePrimeSite(
             countData=countData, psiType="5'",
             settings=dataset@settings
@@ -47,6 +49,11 @@ calculatePSIValues <- function(dataset){
     assays(rawCountData)$rawOtherCounts_psi5 <- psiValues[["counts"]]
     
     dataset@splitReads <- rawCountData
+    
+    # calculate siteSplice values
+    dataset <- .calculateSitePSIValue(dataset)
+    
+    # return it
     return(dataset)
 }
 
@@ -108,12 +115,8 @@ calculatePSIValues <- function(dataset){
 #' This function calculates the site PSI values for each splice site
 #' based on the FraseRDataSet object
 #' 
-#' @export
-#' @examples
-#'   data <- counRNAData(createTestFraseRSettings())
-#'   data <- calculatePSIValues(data)
-#'   data <- calculateSitePSIValues(data)
-calculateSitePSIValue <- function(dataset){
+#' @noRd
+.calculateSitePSIValue <- function(dataset){
     
     # check input
     stopifnot(class(dataset) == "FraseRDataSet")
@@ -124,6 +127,7 @@ calculateSitePSIValue <- function(dataset){
     
     
     for(spliceType in c("Acceptor", "Donor")){
+        message("Calculate the splice site values for ", spliceType, " ...")
         modified_rows <- rowData(nonSplicedCounts)$type == spliceType
         splice_site   <- nonSplicedCounts[modified_rows]
         splice_ranges <- rowRanges(splice_site)
