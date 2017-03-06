@@ -164,8 +164,10 @@ To understand the parallelizing option will be discussed in the parallel section
 
 After counting the user needs to compute the PSI-values and Z-scores for each site. Since this is just a 
 
-<<counting reads, echo=TRUE>>=
-fds <- countRNAData(settings)
+<<calculate psi/zscore values, echo=TRUE>>=
+fds <- calculatePSIValues(fds)
+fds <- calculateSitePSIValue(fds)
+fds <- calculateZScores(fds)
 fds
 @
 \subsection{P-value calculation}
