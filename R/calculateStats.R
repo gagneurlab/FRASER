@@ -11,16 +11,18 @@
 #' Calculate the zscore for each psi value.
 #' 
 #' @export
+#' @examples
+#'   fds <- counRNAData(createTestFraseRSettings())
+#'   fds <- calculatePSIValues(fds)
+#'   fds <- calculateZScores(fds)
 calculateZScores <- function(dataset){
     
     # check input
     stopifnot(class(dataset) == "FraseRDataSet")
     
-    message(date(), ": Calculate the PSI3 values ...")
+    # calculate zscore for each psi type
     dataset <- .calculateZScorePerDataSet(dataset, "splitReads", "psi3")
-    message(date(), ": Calculate the PSI5 values ...")
     dataset <- .calculateZScorePerDataSet(dataset, "splitReads", "psi5")
-    message(date(), ": Calculate the sitePSI values ...")
     dataset <- .calculateZScorePerDataSet(dataset, "nonSplicedReads", "sitePSI")
     
     return(dataset)
@@ -32,6 +34,8 @@ calculateZScores <- function(dataset){
 #'
 #' @noRd
 .calculateZScorePerDataSet <- function(dataset, readType, psiType){
+    
+    message(date(), ": Calculate the Zscore for ", psiType, " values ...")
     
     # data to work with
     seCounts <- slot(dataset, readType)
@@ -59,6 +63,11 @@ calculateZScores <- function(dataset){
 #' FraseRSettings object
 #'
 #' @export
+#' @examples
+#'   fds <- counRNAData(createTestFraseRSettings())
+#'   fds <- calculatePSIValues(fds)
+#'   fds <- calculateZScores(fds)
+#'   fds <- calculatePValues(fds)
 calculatePValues <- function(dataset, internBPPARAM=SerialParam()){
     # check input
     stopifnot(class(dataset) == "FraseRDataSet")
@@ -82,7 +91,8 @@ calculatePValues <- function(dataset, internBPPARAM=SerialParam()){
     }
     
     stop("The provided method is not present for this package.",
-            "Please set the method to one of the following: Fisher, DESeq2, Martin"
+            "Please set the method to one of the following:",
+            "Fisher, betaBin, DESeq2, Martin"
     )
 }
 
