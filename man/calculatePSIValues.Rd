@@ -2,16 +2,16 @@
 % Please edit documentation in R/calculatePSIValue.R
 \name{calculatePSIValues}
 \alias{calculatePSIValues}
-\title{This function calculates the PSI values for each junction
+\title{This function calculates the PSI values for each junction and splice site
 based on the FraseRDataSet object}
 \usage{
 calculatePSIValues(dataset)
 }
 \description{
-This function calculates the PSI values for each junction
+This function calculates the PSI values for each junction and splice site
 based on the FraseRDataSet object
 }
 \examples{
-  data <- counRNAData(createTestFraseRSettings())
-  data <- calculatePSIValues(data)
+  fds <- counRNAData(createTestFraseRSettings())
+  fds <- calculatePSIValues(fds)
 }
