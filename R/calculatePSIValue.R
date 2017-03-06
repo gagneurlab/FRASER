@@ -32,7 +32,7 @@ calculatePSIValues <- function(dataset){
     )
     
     # calculate 3/5' PSI for each sample
-    message("Calculate the PSI3 values ...")
+    message(date(), ": Calculate the PSI3 values ...")
     psiValues <- .calculatePSIValuePrimeSite(
             countData=countData, psiType="3'",
             settings=dataset@settings
@@ -40,7 +40,7 @@ calculatePSIValues <- function(dataset){
     assays(rawCountData)$psi3 <- psiValues[["psi"]]
     assays(rawCountData)$rawOtherCounts_psi3 <- psiValues[["counts"]]
     
-    message("Calculate the PSI5 values ...")
+    message(date(), ": Calculate the PSI5 values ...")
     psiValues <- .calculatePSIValuePrimeSite(
             countData=countData, psiType="5'",
             settings=dataset@settings
@@ -127,7 +127,7 @@ calculatePSIValues <- function(dataset){
     
     
     for(spliceType in c("Acceptor", "Donor")){
-        message("Calculate the splice site values for ", spliceType, " ...")
+        message(date(), ": Calculate the splice site values for ", spliceType, " ...")
         modified_rows <- rowData(nonSplicedCounts)$type == spliceType
         splice_site   <- nonSplicedCounts[modified_rows]
         splice_ranges <- rowRanges(splice_site)
