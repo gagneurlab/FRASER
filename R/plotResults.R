@@ -7,7 +7,8 @@
 #' @examples 
 #'      plotSampleResults(dataset, "sample1")
 #'      plotSampleResults(dataset, "sample1", "result.html")
-plotSampleResults <- function(dataset, sampleID=NULL, file=NULL){
+plotSampleResults <- function(dataset, sampleID=NULL, 
+                    file=NULL, browseIt=FALSE){
     
     #
     # check input
@@ -37,22 +38,26 @@ plotSampleResults <- function(dataset, sampleID=NULL, file=NULL){
     }
     
     # generate each sub plot
-    psi3plot    <- .plotVolcano(dataset, sampleID, "splitReads", "psi3", 1)
-    psi5plot    <- .plotVolcano(dataset, sampleID, "splitReads", "psi5", 2)
-    sitePSIplot <- .plotVolcano(dataset, sampleID, "nonSplicedReads", "sitePSI", 3)
+    psi3plot <- .plotVolcano(dataset, sampleID, "splitReads", "psi3", 1)
+    psi5plot <- .plotVolcano(dataset, sampleID, "splitReads", "psi5", 2)
+    psisplot <- .plotVolcano(dataset, sampleID, "nonSplicedReads", "sitePSI", 3)
     
     # combine plots
-    mainplot <- plotly::subplot(psi3plot, psi5plot, sitePSIplot,
-            nrows = 3, shareX = TRUE, shareY = TRUE,
+    mainplot <- plotly::subplot(psi3plot, psi5plot, psisplot,
+            nrows = 3, shareX = FALSE, shareY = TRUE,
             titleX = TRUE, titleY = TRUE
-    ) %>% layout(showlegend = FALSE)
+    ) %>% layout(showlegend = FALSE,
+            title = paste0("FraseR results for sample: <b>", sampleID, "</b>")
+    )
     
     #
     if(!is.null(file)){
         saveWidget(mainplot, file=file)
-        browseURL(file)
+        if(browseIt){
+            browseURL(file)
+        }
         return(file)
-    } 
+    }
     
     # return it
     return(mainplot)
@@ -63,7 +68,8 @@ plotSampleResults <- function(dataset, sampleID=NULL, file=NULL){
 #' generate a volcano plot
 #'
 #' @noRd
-.plotVolcano <- function(dataset, sampleID, readType, psiType, subID, ylim=c(0,30), xlim=c(-5,5)){
+.plotVolcano <- function(dataset, sampleID, readType, psiType, subID, 
+                    ylim=c(0,30), xlim=c(-5,5)){
     curSlot <- slot(dataset, readType)
     zscore  <- assays(curSlot)[[paste0("zscore_", psiType)]][,sampleID]
     pvalue  <- -log10(assays(curSlot)[[paste0("pvalue_", psiType)]][,sampleID])
@@ -90,6 +96,7 @@ plotSampleResults <- function(dataset, sampleID=NULL, file=NULL){
     zscore2plot[toplot & zscore2plot < min(xlim)] <- min(xlim) + 1
     
     p <- plot_ly(x=zscore2plot[toplot], y=pvalue2plot[toplot], type="scattergl",
+            
             mode = "markers",
             marker = list(   
                 color = pvalue2plot[toplot],
@@ -103,20 +110,22 @@ plotSampleResults <- function(dataset, sampleID=NULL, file=NULL){
                 "Chromosome: ", seqnames(curSlot)[toplot],  "</br>",
                 "Start:      ", start(curSlot)[toplot],     "</br>",
                 "End:        ", end(curSlot)[toplot],       "</br>",
-                "-log<sub>10</sub>(<i>P</i>-value): ", round(pvalue[toplot], 2), "</br>",
+                "-log<sub>10</sub>(<i>P</i>-value): ", round(pvalue[toplot], 2),
+                "</br>",
                 "Z-score:    ", round(zscore[toplot], 2), "</br>"
             )
     )
     p <- p %>% layout(
-        xaxis=list(range=xlim, title="Z-score"),
+        xaxis=list(range=xlim, title=paste0("Z-score of splicetype: ",psiType)),
         yaxis=list(range=ylim, title="-log<sub>10</sub><i>P</i>-value"),
         annotations=list(
             x=0, 
             y=yCutoff/2, 
-            text=paste("Removed points</br>",
-                round(sum(unsigni)/length(unsigni)*100, digits=2), 
-                "% of points"
-            ),
+            text="",
+            #text=paste("Removed points</br>",
+            #    round(sum(unsigni)/length(unsigni)*100, digits=2), 
+            #    "% of points"
+            #),
             xref = paste0("x", subID),
             yref = paste0("y", subID),
             showarrow = FALSE
@@ -124,13 +133,13 @@ plotSampleResults <- function(dataset, sampleID=NULL, file=NULL){
     )
     
     # add removed area
-    p <- p %>% layout(shapes = list(
-            list(type = "rect",
-                    fillcolor = "blue", line = list(color = "blue"), opacity = 0.3,
-                    x0 = -xCutoff, x1 = xCutoff, xref = paste0("x", subID),
-                    y0 = 0, y1 = yCutoff, yref = paste0("y", subID)
-            )
-    ))
+    #p <- p %>% layout(shapes = list(
+    #        list(type = "rect",
+    #                fillcolor = "blue", line = list(color = "blue"), opacity = 0.3,
+    #                x0 = -xCutoff, x1 = xCutoff, xref = paste0("x", subID),
+    #                y0 = 0, y1 = yCutoff, yref = paste0("y", subID)
+    #        )
+    #))
     
     return(p)
 }
