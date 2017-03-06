@@ -9,3 +9,8 @@ calculateZScores(dataset)
 \description{
 Calculate the zscore for each psi value.
 }
+\examples{
+  fds <- counRNAData(createTestFraseRSettings())
+  fds <- calculatePSIValues(fds)
+  fds <- calculateZScores(fds)
+}

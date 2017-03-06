@@ -13,3 +13,9 @@ calculates the P-Value for the given FraseR dataset object
 The P-Value calculation is based on the given method in the
 FraseRSettings object
 }
+\examples{
+  fds <- counRNAData(createTestFraseRSettings())
+  fds <- calculatePSIValues(fds)
+  fds <- calculateZScores(fds)
+  fds <- calculatePValues(fds)
+}

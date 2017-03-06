@@ -6,7 +6,7 @@
 All three types are plotted into one HTML file
 based on plotly.}
 \usage{
-plotSampleResults(dataset, sampleID = NULL, file = NULL)
+plotSampleResults(dataset, sampleID = NULL, file = NULL, browseIt = FALSE)
 }
 \description{
 Plot the results of the FraseR analysis pipeline
