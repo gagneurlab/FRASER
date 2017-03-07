@@ -79,11 +79,11 @@ calculatePValues <- function(dataset, internBPPARAM=SerialParam()){
     }
     
     if(method == "betaBin"){
-        return(.testPsiWithBetaBinomial(dataset, internBPPARAM))
+        return(.testPsiWithBetaBinomial(dataset, internBPPARAM, pvalFun=.betabinVglmTest))
     }
     
-    if(method == "DESeq2"){
-        stop("This method is not yet implemented.")
+    if(method == "betaBinMM"){
+        return(FraseR:::.testPsiWithBetaBinomial(dataset, internBPPARAM, pvalFun=FraseR:::.betabinMMTest))
     }
     
     if(method == "Martin"){
