@@ -29,6 +29,7 @@
     plot(N,y)
 
     ## fitting
+    countMatrix <- cbind(y=y, o=N-y)
     fit <- vglm(cbind(y, N-y) ~ 1, betabinomial)
     co  <- Coef(fit)
     
@@ -153,23 +154,27 @@
     warntable <- sort(table(gsub("^\\d+ diagonal ele", "xxx diagonal ele", 
                                  unlist(sapply(pvalues_ls, "[[", "warn"))
     )))
-    message(paste(collapse = "\n", c(date(), 
-        "Warnings in VGLM code while computing pvalues:\n",
-        sapply(1:length(warntable), function(idx) paste(
-            "\t", warntable[idx], "x", names(warntable)[idx]
-        ))
-    )))
+    if(length(warntable) > 0){
+        message(paste(collapse = "\n", c(date(), 
+            "Warnings in VGLM code while computing pvalues:\n",
+            sapply(1:length(warntable), function(idx) paste(
+                "\t", warntable[idx], "x", names(warntable)[idx]
+            ))
+        )))
+    }
     
     # errors
     errotable <- sort(table(gsub("^\\d+ diagonal ele", "xxx diagonal ele", 
                                  unlist(sapply(pvalues_ls, "[[", "err"))
     )))
-    message(paste(collapse = "\n", c( 
-        "\nErrors in VGLM code while computing pvalues:\n",
-        sapply(1:length(errotable), function(idx) paste(
-            "\t", errotable[idx], "x", names(errotable)[idx]
-        ))
-    )))
+    if(length(errotable) > 0){
+        message(paste(collapse = "\n", c( 
+            "\nErrors in VGLM code while computing pvalues:\n",
+            sapply(1:length(errotable), function(idx) paste(
+                "\t", errotable[idx], "x", names(errotable)[idx]
+            ))
+        )))
+    }
     
     # extract pvalues
     pvalues <- do.call(rbind,lapply(pvalues_ls, "[[", 1))
@@ -200,30 +205,30 @@
 #' https://en.wikipedia.org/wiki/Beta-binomial_distribution#Method_of_moments
 #' 
 #' @noRd
-.betabinMMTest <- function(countMatrix, y, N){
-    y <- countMatrix[,"y"]
-    N <- rowSums(countMatrix)
+.betabinMMTest <- function(mat, y, N){
+    # estimate mu1 and mu2
+    Ns <- dim(mat)[1]
+    n  <- ceiling(mean(rowSums(mat)))
+    m1 <- 1/Ns * sum(mat[,"y"])
+    m2 <- 1/Ns * sum(mat[,"y"]^2)
     
-    cm <- countMatrix
-    colnames(cm)[1] <- "x"
-    n <- dim(cm)[1] - 1
-    m1 <- 1/n * sum(cm[,"x"])
-    m2 <- 1/n * sum(cm[,"x"]**2)
-    
+    # estimate the shapes
     nominator <- n*(m2/m1 - m1 - 1) + m1
     a <- (n*m1 - m2) / nominator
     b <- (n - m1)*(n - m2/m1) / nominator
     
-    message("N:  ", n, "\nm1:  ", m1, "\nm2:  ", m2, "\na:  ", a, "\nb:  ", b)
+    # return the probability
+    pbetabinom.ab(y, N, max(0.1, a), max(0.1, b))
+}
+
+testing <- function(){
+    mat <- countMatrix
+    message("N:  ", Ns, "\nn:  ", n, "\nm1:  ", m1, "\nm2:  ", m2, "\na:  ", a, "\nb:  ", b)
     
-    dF <- function(x,n,a,b) dbetabinom.ab(x, n, a, b)
-    pF <- function(q,n,a,b) sum(sapply(0:q,dF,n=n,a=a,b=b))
-    warnings()
-    
-    pF(100,n,a,b)
+    pF(10,n,a,b)
     plot(dbetabinom.ab(1:12, 12, a, b))
     cm <- matrix(ncol=2,
-        c(0:12, c(3, 24, 104, 286, 670, 1033, 1343, 1112, 829, 478, 181, 45, 7))
+            c(0:12, c(3, 24, 104, 286, 670, 1033, 1343, 1112, 829, 478, 181, 45, 7))
     )
     colnames(cm) <- c("x", "y")
     
@@ -232,8 +237,8 @@
     
     ## one-sided p-value (alternative = "less")
     pbetabinom(y, N, co[["mu"]], co[["rho"]])
+    
 }
-
 
 ##
 ## error/warning catching functions by martin morgan
