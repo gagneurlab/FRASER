@@ -82,7 +82,7 @@ Mertes C, Gagneur J, \emph{et al.}
 To start quickly with \fraser{} just call this 4 functions to get a standard analysis on an example data set from the following publication \cite{FraseR}.
 
 <<quick fraser guide, echo=TRUE>>=
-# load Fraser package
+# load FraseR package
 library(FraseR)
 
 # create sample annotation and settings
@@ -166,7 +166,6 @@ After counting the user needs to compute the PSI-values and Z-scores for each si
 
 <<calculate psi/zscore values, echo=TRUE>>=
 fds <- calculatePSIValues(fds)
-fds <- calculateSitePSIValue(fds)
 fds <- calculateZScores(fds)
 fds
 @
