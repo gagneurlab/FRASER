@@ -29,7 +29,6 @@ FraseR <- function(settings, internBPPARAM=SerialParam()){
     
     # calculate PSI values
     fds <- calculatePSIValues(fds)
-    fds <- calculateSitePSIValue(fds)
     
     # calculate ZScores
     fds <- calculateZScores(fds)
