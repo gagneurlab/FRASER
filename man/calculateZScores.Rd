@@ -2,12 +2,12 @@
 % Please edit documentation in R/calculateStats.R
 \name{calculateZScores}
 \alias{calculateZScores}
-\title{Calculate the zscore for each psi value.}
+\title{Calculate the zscore for each PSI value.}
 \usage{
 calculateZScores(dataset)
 }
 \description{
-Calculate the zscore for each psi value.
+Calculate the zscore for each PSI value.
 }
 \examples{
   fds <- counRNAData(createTestFraseRSettings())
