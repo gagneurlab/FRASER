@@ -26,7 +26,7 @@ plotSampleResults <- function(dataset, sampleID=NULL,
     # check the rest
     stopifnot(sampleID %in% samples(dataset@settings))
     if(is.null(file)){
-        outDir <- outputFolder(dataset@settings)
+        outDir <- file.path(outputFolder(dataset@settings), "results")
         if(!is.null(outDir) && outDir != ""){
             file <- file.path(outDir, paste0(sampleID, "-FraseR-results.html"))
         }

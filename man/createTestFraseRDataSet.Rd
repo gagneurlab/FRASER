@@ -18,5 +18,5 @@ to explore the functionallity of the FraseR package.
 }
 \examples{
     createTestFraseRDataSet()
-    
+
 }
