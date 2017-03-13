@@ -146,6 +146,9 @@ setMethod("saveFraseRDataSet", "FraseRDataSet",
         dir.create(outDir, recursive=TRUE)
     }
 
+    # convert assays to matrix to save them as HDF5Assay
+    fds <- .assay2Matrix(fds)
+
     # save spliceReads as HDF5
     fds@splitReads <- saveHDF5SummarizedExperiment(fds@splitReads,
             dir=file.path(outDir, "splitReads"), replace=replace, verbose=verbose
