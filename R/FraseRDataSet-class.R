@@ -67,17 +67,17 @@ setValidity2("FraseRDataSet", .validateFraseRDataSet)
 ## ==========
 
 #' The constructor function for FraseRSettings
-#' 
+#'
 #' @param ... Any parameters corresponding to the slots and their possible
 #' values. See \linkS4class{FraseRDataSet}
 #' @return A FraseRDataSet object.
 #' @author Christian Mertes \email{mertes@@in.tum.de}
 #' @export
-#' @examples 
+#' @examples
 #'     fraser <- FraseRDataSet()
 #'     fraser <- countRNAData(createTestFraseRSettings())
 FraseRDataSet <- function(...) {
-    return(new("FraseRDataSet", ...)) 
+    return(new("FraseRDataSet", ...))
 }
 
 ## Cosmetics
@@ -85,18 +85,18 @@ FraseRDataSet <- function(...) {
 
 ## show method for FraseRSettings
 .showFraseRDataSet <- function(object) {
-    
+
     # first show the setting part
     show(object@settings)
-    
+
     cat("-------------------- Junction counts -------------------\n")
     show(object@splitReads)
     cat("\n\n")
-    
+
     cat("-------------------- Splice site counts ----------------\n")
     show(object@nonSplicedReads)
     cat("\n\n")
-    
+
 }
 
 setMethod("show", "FraseRDataSet", function(object) {
@@ -126,4 +126,60 @@ setMethod("setDefaults", "FraseRDataSet", function(object, ...) {
     return(object)
 })
 
-    
+
+
+# save and load function for a fds dataset object
+setGeneric("saveFraseRDataSet",
+        function(fds, dir=NULL, replace=FALSE, verbose=FALSE)
+                standardGeneric("saveFraseRDataSet"))
+setGeneric("loadFraseRDataSet",
+        function(dir) standardGeneric("loadFraseRDataSet"))
+
+#' @export
+setMethod("saveFraseRDataSet", "FraseRDataSet",
+            function (fds, dir=NULL, replace=FALSE, verbose=FALSE) {
+    if(is.null(dir)){
+        dir <- outputFolder(fds@settings)
+    }
+    outDir <- file.path(dir, "savedObjects")
+    if(!dir.exists(outDir)){
+        dir.create(outDir, recursive=TRUE)
+    }
+
+    # save spliceReads as HDF5
+    fds@splitReads <- saveHDF5SummarizedExperiment(fds@splitReads,
+            dir=file.path(outDir, "splitReads"), replace=replace, verbose=verbose
+    )
+    # save nonSplicedReads as HDF5
+    fds@nonSplicedReads <- saveHDF5SummarizedExperiment(
+            fds@nonSplicedReads, dir=file.path(outDir, "nonSplicedReads"),
+            replace=replace, verbose=verbose
+    )
+
+    saveRDS(fds, file.path(outDir, "FraseRDataSet.RDS"))
+    invisible(fds)
+})
+
+#' @export
+setMethod("loadFraseRDataSet", "FraseRDataSet", function (dir) {
+    outDir <- file.path(dir, "savedObjects")
+    if(!dir.exists(outDir)){
+        stop(paste(
+            "The given folder does not contain",
+            "any saved FraseRDataSet objects."
+        ))
+    }
+
+    # load the main object
+    fds <- readRDS(file.path(outDir, "FraseRDataSet.RDS"))
+
+    # load the SummarizedExperiment slots
+    fds@splitReads <- loadHDF5SummarizedExperiment(
+            dir=file.path(outDir, "splitReads")
+    )
+    fds@nonSplicedReads <- loadHDF5SummarizedExperiment(
+        dir=file.path(outDir, "nonSplicedReads")
+    )
+
+    return(fds)
+})
