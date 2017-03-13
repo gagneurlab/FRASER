@@ -12,7 +12,7 @@ Description: This package calls rare aberrant splicing events in a set of
 License: Artistic-2.0
 Depends:
     R (>= 3.3.2), BiocParallel, GenomicAlignments,
-    SummarizedExperiment, data.table, GenomicRanges,
+    SummarizedExperiment (>= 1.5.7), data.table, GenomicRanges,
     IRanges, tidyr, plotly, VGAM, biomaRt,
     graphics, stats, htmlwidgets
 biocViews: RNASeq, AlternativeSplicing, Sequencing, 
