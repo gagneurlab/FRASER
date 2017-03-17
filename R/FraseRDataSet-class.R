@@ -164,7 +164,7 @@ setMethod("saveFraseRDataSet", "FraseRDataSet",
 })
 
 #' @export
-setMethod("loadFraseRDataSet", "FraseRDataSet", function (dir) {
+setMethod("loadFraseRDataSet", "character", function (dir) {
     outDir <- file.path(dir, "savedObjects")
     if(!dir.exists(outDir)){
         stop(paste(
