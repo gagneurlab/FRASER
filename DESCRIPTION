@@ -32,4 +32,5 @@ Collate:
     'example_functions.R'
     'helper-functions.R'
     'plotResults.R'
+    'saveHDF5Objects.R'
 Suggests: testthat
