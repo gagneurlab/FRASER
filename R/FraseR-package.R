@@ -1,17 +1,17 @@
 #'
 #' FraseR: A package providing a workflow to detect aberrant splicing events
 #'     in RNA sequencing data in a rare disease cohort
-#'     
+#'
 ### PACKAGE NAME
 #'
 #' @name FraseR
-#' 
-#' 
+#'
+#'
 ### Parallel computing
 #'
 #' @import BiocParallel
-#' 
-#' 
+#'
+#'
 ### GRange/Experiment packages
 #'
 #' @import GenomicAlignments
@@ -21,14 +21,14 @@
 #' @importFrom IRanges from
 #' @importFrom IRanges to
 #' @importFrom IRanges IRanges
-#' 
-#' 
+#'
+#'
 ### Annotation
 #'
 #' @importFrom biomaRt useEnsembl
 #' @importFrom biomaRt getBM
-#' 
-#' 
+#'
+#'
 ### Plotting
 #'
 #' @importFrom graphics plot
@@ -36,8 +36,9 @@
 #' @importFrom plotly subplot
 #' @importFrom plotly layout
 #' @importFrom htmlwidgets saveWidget
-#' @importFrom HDF5Array writeHDF5Array 
-#' 
+#' @importFrom HDF5Array writeHDF5Array
+#' @importFrom rhdf5 h5ls
+#'
 ### Data handling
 #'
 #' @importFrom data.table data.table
@@ -45,9 +46,9 @@
 #' @importFrom data.table :=
 #' @importFrom data.table fread
 #' @import tidyr
-#' 
-#' 
-### P-Value calculation 
+#'
+#'
+### P-Value calculation
 #' @importFrom stats sd
 #' @importFrom stats rbinom
 #' @importFrom stats fisher.test
@@ -57,5 +58,5 @@
 #' @importFrom VGAM Coef
 #' @importFrom VGAM pbetabinom
 #' @importFrom VGAM betabinomial
-#' 
+#'
 NULL
