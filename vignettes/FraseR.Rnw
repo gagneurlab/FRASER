@@ -6,7 +6,7 @@
 \if12
     source("./src/r/config.R")
     repackFraseR=FALSE
-    #repackFraseR=TRUE
+    repackFraseR=TRUE
     buildVignetteFraseR(repackFraseR)
 \fi
 
@@ -26,7 +26,7 @@ opts_chunk$set(
   cache=TRUE,
   message=FALSE,
   warning=FALSE)
-@ 
+@
 
 
 <<style, eval=TRUE, echo=FALSE, results="asis">>=
@@ -41,8 +41,8 @@ BiocStyle::latex()
 library("FraseR")
 @
 
-\author{Christian Mertes$^{1}$, Julien Gagneur$^{1}$ \\[1em] 
-\small{$^{1}$ Technische Universit\"at M\"unchen, Department of Informatics, Garching, Germany} 
+\author{Christian Mertes$^{1}$, Julien Gagneur$^{1}$ \\[1em]
+\small{$^{1}$ Technische Universit\"at M\"unchen, Department of Informatics, Garching, Germany}
 }
 
 \title{FraseR: Find RAre Splicing Events in RNA-seq data}
@@ -59,13 +59,13 @@ Whole exome sequencing and whole genome Sequencing is already a standard in the 
 
 \begin{center}
 \begin{tabular}{ | l | }
-\hline 
+\hline
 If you use \fraser{} in published research, please cite:  \\
 \\
 Mertes C, Gagneur J, \emph{et al.}
 \textbf{FraseR: Find RAre Splicing Events in RNA-seq data} \\
 \emph{bioRxiv}\\
-\hline 
+\hline
 \end{tabular}
 \end{center}
 
@@ -115,8 +115,8 @@ Step 2-5 is wrapped up in one function \Rfunction{FraseR}, but each step can be 
 
 \subsection{Data preparation}
 \label{sec:DataPreparation}
-To start a RNA-seq data analysis with \fraser{} some preparation steps are needed. 
-First of all we need a table with basic informations which then can be transformed into a \Rclass{FraseRSettings} object. The minimum of information per sample is an unique sample name, the path to the aligned bam file. Additionally groups can be specified for the P-value calculations later. If a \textbf{NA} is asigned no P-values will be calculated. An example sample table is given within the package: 
+To start a RNA-seq data analysis with \fraser{} some preparation steps are needed.
+First of all we need a table with basic informations which then can be transformed into a \Rclass{FraseRSettings} object. The minimum of information per sample is an unique sample name, the path to the aligned bam file. Additionally groups can be specified for the P-value calculations later. If a \textbf{NA} is asigned no P-values will be calculated. An example sample table is given within the package:
 
 <<sampleData Table, echo=TRUE>>=
 library(data.table)
@@ -125,11 +125,11 @@ head(fread(system.file(
 )))
 @
 
-The RNA-seq data should be aligned with a splice-aware aligner like STAR\cite{STAR} or GEM\cite{GEM}. To gain better results the samples should be processed with the same protocol and origin from the same tissue. 
+The RNA-seq data should be aligned with a splice-aware aligner like STAR\cite{STAR} or GEM\cite{GEM}. To gain better results the samples should be processed with the same protocol and origin from the same tissue.
 
-To gain better results at least 20 samples should be sequenced. 
+To gain better results at least 20 samples should be sequenced.
 
-To create a settings object for \fraser{} the constructor \Rfunction{FraseRSettings} should be called with at least a sampleData table. For an example have a look into the \Rfunction{createTestFraseRSettings}. In addition to the sampleData you can specify further parameters. 
+To create a settings object for \fraser{} the constructor \Rfunction{FraseRSettings} should be called with at least a sampleData table. For an example have a look into the \Rfunction{createTestFraseRSettings}. In addition to the sampleData you can specify further parameters.
 
 \begin{enumerate}
     \item The parallel backend (a \Rclass{BiocParallelParam} object)
@@ -150,7 +150,7 @@ settings
 \subsection{Counting reads}
 \label{sec:CountingReads}
 
-Counting of the reads are straight forward and is done through the \Rfunction{countRNAData} function. The only required parameter is the FraseRSettings object. First all split reads are extracted from each individuel sample and cached if enabled. Then a dataset wide junction map is created (all visible junctions over all samples). After that for each sample the non-spliced reads at each given donor and acceptor site is counted. The resulting \Rclass{FraseRDataSet} object contains two \Rclass{SummarizedExperiment} objects for each the junctions and the splice sites. 
+Counting of the reads are straight forward and is done through the \Rfunction{countRNAData} function. The only required parameter is the FraseRSettings object. First all split reads are extracted from each individuel sample and cached if enabled. Then a dataset wide junction map is created (all visible junctions over all samples). After that for each sample the non-spliced reads at each given donor and acceptor site is counted. The resulting \Rclass{FraseRDataSet} object contains two \Rclass{SummarizedExperiment} objects for each the junctions and the splice sites.
 
 <<counting reads, echo=TRUE>>=
 fds <- countRNAData(settings)
@@ -162,7 +162,7 @@ To understand the parallelizing option will be discussed in the parallel section
 \subsection{PSI- and Zscore-value calculation}
 \label{sec:PSI-Zscore-calculation}
 
-After counting the user needs to compute the PSI-values and Z-scores for each site. Since this is just a 
+After counting the user needs to compute the PSI-values and Z-scores for each site. Since this is just a
 
 <<calculate psi/zscore values, echo=TRUE>>=
 fds <- calculatePSIValues(fds)
@@ -178,7 +178,7 @@ fds
 
 \section{Acknowledgments}
 
-We thank Daniel Bader and Martin Morgan for input in the development of \fraser{}. 
+We thank Daniel Bader and Martin Morgan for input in the development of \fraser{}.
 
 \section{Session Info}
 
