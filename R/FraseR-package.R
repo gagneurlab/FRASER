@@ -36,7 +36,7 @@
 #' @importFrom plotly subplot
 #' @importFrom plotly layout
 #' @importFrom htmlwidgets saveWidget
-#' 
+#' @importFrom HDF5Array writeHDF5Array 
 #' 
 ### Data handling
 #'

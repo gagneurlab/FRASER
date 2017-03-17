@@ -7,17 +7,17 @@
 countRNAData(settings, internBPPARAM = SerialParam())
 }
 \arguments{
-\item{settings}{A FraseRSetting object with all the information 
+\item{settings}{A FraseRSetting object with all the information
 how and what to count}
 
-\item{internBPPARAM}{A BiocParallel param object to configure the 
+\item{internBPPARAM}{A BiocParallel param object to configure the
 parallel backend of the internal loop}
 }
 \value{
 FraseRDataSet
 }
 \description{
-This method extracts and counts the split reads and 
+This method extracts and counts the split reads and
             non spliced reads from a RNA bam file
 }
 \details{
