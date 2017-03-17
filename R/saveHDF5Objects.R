@@ -59,8 +59,9 @@ setMethod("loadFraseRDataSet", "character", function (dir) {
   return(fds)
 })
 
-function (dir = "my_h5_se")
-{
+#'
+#' @noRd
+.testinghdf5 <- function (dir = "my_h5_se"){
   outDir <- oldDir
   dir <- file.path(outDir, "splitReads")
   library(rhdf5)
