@@ -6,7 +6,7 @@
 \if12
     source("./src/r/config.R")
     repackFraseR=FALSE
-    repackFraseR=TRUE
+    #repackFraseR=TRUE
     buildVignetteFraseR(repackFraseR)
 \fi
 
