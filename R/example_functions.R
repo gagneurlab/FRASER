@@ -54,7 +54,14 @@ createTestFraseRDataSet <- function(BPPARAM=NULL){
 
     # calculate PSI values
     dataset <- calculatePSIValues(dataset)
-    dataset <- calculateSitePSIValue(dataset)
+    dataset <- calculateZScores(dataset)
+
+    # calculate pvalues
+    dataset <- saveFraseRDataSet(dataset)
+    dataset <- calculatePValues(dataset)
+
+    # annotate it
+    dataset <- annotateRanges(dataset)
 
     # return a FraseRDataSet object
     return(dataset)

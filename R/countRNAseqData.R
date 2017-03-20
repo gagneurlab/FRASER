@@ -99,6 +99,7 @@ countRNAData <- function(settings, internBPPARAM=SerialParam()){
 ## for the given sample
 ##
 .getSplitCountCacheFile <- function(sampleID, settings){
+
     # check if caching is enabled
     if(is.null(outputFolder(settings)) || outputFolder(settings) == "")
         return(NULL)
@@ -121,7 +122,8 @@ countRNAData <- function(settings, internBPPARAM=SerialParam()){
 ## count all split reads in a bam file
 ##
 .countSplitReads <- function(sampleID, settings, internBPPARAM){
-    suppressPackageStartupMessages(library(FraseR))
+    suppressPackageStartupMessages(require(FraseR))
+    message(date(), ": Count split reads for sample: ", sampleID)
     bamFile <- bamFiles(settings[samples(settings) == sampleID])[[1]]
 
     # check cache if available
@@ -281,6 +283,8 @@ countRNAData <- function(settings, internBPPARAM=SerialParam()){
 ## returns the name of the cache file if caching is enabled for the given sample
 ##
 .getNonSplicedCountCacheFile <- function(sampleID, settings){
+    message(date(), ": Count non spliced reads for sample: ", sampleID)
+
     # check if caching is enabled
     if(is.null(outputFolder(settings)) || outputFolder(settings) == "")
         return(NULL)

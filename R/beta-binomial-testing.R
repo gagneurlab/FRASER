@@ -38,6 +38,12 @@
     plot(-log10(pv))
 }
 
+fraserNames <- data.table(
+        readType = c("splitReads", "splitReads", "nonSplicedReads"),
+        psiType = c("psi3", "psi5", "sitePSI"),
+        pvalName = c("pvalue_psi3", "pvalue_psi5", "pvalue_sitePSI")
+)
+
 #'
 #' this tests each splice type for all samples
 #'
@@ -46,14 +52,17 @@
                     pvalFun=.betabinVglmTest){
 
     # test all 3 different types
-    assays(dataset@splitReads)$pvalue_psi3 <-
-        .testPsiWithBetaBinomialPerType(dataset, "splitReads", "psi3", pvalFun)
-    assays(dataset@splitReads)$pvalue_psi5 <-
-        .testPsiWithBetaBinomialPerType(dataset, "splitReads", "psi5", pvalFun)
-    assays(dataset@nonSplicedReads)$pvalue_sitePSI <-
-        .testPsiWithBetaBinomialPerType(dataset, "nonSplicedReads",
-                "sitePSI", pvalFun
+    for(idx in 1:nrow(fraserNames)){
+        pvalName <- fraserNames[idx,pvalName]
+        pvals <- .testPsiWithBetaBinomialPerType(dataset,
+                fraserNames[idx,readType], fraserNames[idx,psiType], pvalFun
         )
+        h5File <- .getFraseRHDF5File(dataset, fraserNames[idx,readType], TRUE)
+        assays(slot(dataset, fraserNames[idx,readType]))[[pvalName]] <-
+            .addAssayAsHDF5(pvals, pvalName, h5File)
+
+        gc()
+    }
 
     # return the new datasets
     return(dataset)
@@ -77,11 +86,10 @@
     if(!dir.exists(dirname(tmpfile))){
         dir.create(dirname(tmpfile), recursive=TRUE)
     } else if(file.exists(tmpfile) &&
-                h5ls(tmpfile)$name == assayname){
+                assayname %in% h5ls(tmpfile)$name){
         unlink(tmpfile)
     }
-    h5obj <- writeHDF5Array(x=as.matrix(counts),
-            file=tmpfile, name=)
+    h5obj <- writeHDF5Array(as.matrix(counts), tmpfile, assayname)
 
     return(h5obj)
 }
