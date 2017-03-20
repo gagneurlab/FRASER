@@ -45,9 +45,18 @@ plotSampleResults <- function(dataset, sampleID=NULL,
 
     # combine plots
     mainplot <- plotly::subplot(psi3plot, psi5plot, psisplot,
-            nrows = 3, shareX = FALSE, shareY = TRUE,
+            nrows = 3, shareX = FALSE, shareY = FALSE,
             titleX = TRUE, titleY = TRUE
-    ) %>% layout(showlegend = FALSE,
+    ) %>% layout(showlegend = TRUE,
+            #xaxis=list(title="Z-score"),
+            # TODO P-value does not appear in italic
+            #yaxis=list(title="-log10 P-value"),
+
+            legend = list(
+                x = 1,
+                y = 0.1,
+                title = "&#936; filter"
+            ),
             title = paste0("FraseR results for sample: <b>", sampleID, "</b>")
     )
 
@@ -106,16 +115,18 @@ plotSampleResults <- function(dataset, sampleID=NULL,
     zscore2plot[toplot & zscore2plot > max(xlim)] <- max(xlim)
     zscore2plot[toplot & zscore2plot < min(xlim)] <- min(xlim)
     plotTraces <- list(
-        "&#968; <= 30%"=.na2false(psival[toplot]<=0.3),
-        "60% >= &#968; > 30%"=.na2false(psival[toplot]<=0.6 & psival[toplot]>0.3),
-        "&#968; > 60%"=.na2false(psival[toplot]>0.6),
-        "&#968; == NA"=is.na(psival[toplot])
+        "&#936; &#8804; 30%"=.na2false(psival[toplot]<=0.3),
+        "30% < &#936; &#8804; 60%"=.na2false(psival[toplot]<=0.6 & psival[toplot]>0.3),
+        "60% < &#936;"=.na2false(psival[toplot]>0.6),
+        "&#936; &#8801; NA"=is.na(psival[toplot])
     )
 
     p <- plot_ly()
     for(i in seq_along(plotTraces)){
         t <- which(toplot)[plotTraces[[i]]]
-
+        if(sum(t) == 0){
+            next
+        }
         p <- p %>% add_trace(type="scattergl",
             x=zscore2plot[t], y=pvalue2plot[t],
             mode = "markers",
@@ -123,9 +134,16 @@ plotSampleResults <- function(dataset, sampleID=NULL,
                 color = pvalue2plot[t],
                 cmin = 0,
                 cmax = max(ylim),
-                colorbar = list(yanchor = "middle")
+                colorbar = list(
+                    y = 0.8,
+                    len = 0.4,
+                    title = "-log<sub>10</sub> <i>P</i>-value"
+                )
             ),
-            name = paste0(psiType, ": ", names(plotTraces)[i]),
+            #name = paste0(psiType, ": ", names(plotTraces)[i]),
+            name = names(plotTraces)[i],
+            legendgroup = names(plotTraces)[i],
+            showlegend = psiType=="psi3",
             visible = ifelse(i<=2, TRUE, "legendonly"),
             text = paste0(
                 "Symbol:     ", mcols(curSlot)$hgnc_symbol[t], "</br>",
@@ -143,9 +161,10 @@ plotSampleResults <- function(dataset, sampleID=NULL,
     nylim <- c(ylim[1], ylim[2]*1.05)
 
     p <- p %>% layout(
-        xaxis=list(range=nxlim, title=paste0("Z-score of splicetype: ",psiType)),
+        xaxis=list(range=nxlim, title=ifelse(psiType=="sitePSI", "Z-score", "")),
         # TODO P-value does not appear in italic
-        yaxis=list(range=nylim, title="-log<sub>10</sub> P-value")
+        yaxis=list(range=nylim, title=paste0("-log10 P-value for ", psiType)),
+        showlegend = FALSE
         #annotations=list(
         #    x=0,
         #    y=yCutoff/2,
@@ -175,4 +194,9 @@ plotSampleResults <- function(dataset, sampleID=NULL,
 .na2false <- function(x){
     x[is.na(x)] <- FALSE
     return(x)
+}
+
+rerunPlot <- function(){
+    source("./FraseR/R/plotResults.R")
+    plotSampleResults(fds, "sample1")
 }
