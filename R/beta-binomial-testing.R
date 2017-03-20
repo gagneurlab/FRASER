@@ -51,6 +51,14 @@ fraserNames <- data.table(
 .testPsiWithBetaBinomial <- function(dataset, internBPPARAM,
                     pvalFun=.betabinVglmTest){
 
+    # check, that the object is stored as HDF5 array!
+    if(!"DelayedArray" %in% is(assays(dataset@splitReads)[["rawCounts"]])){
+        message(date(), ": The data is not stored in a HDF5Array. ",
+            "To improve the performance we will store now ",
+            "the data in HDF5 format.")
+        saveFraseRDataSet(dataset)
+    }
+
     # test all 3 different types
     for(idx in 1:nrow(fraserNames)){
         pvalName <- fraserNames[idx,pvalName]
