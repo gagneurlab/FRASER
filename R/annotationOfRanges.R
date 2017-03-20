@@ -14,17 +14,20 @@ annotateRanges <- function(dataset, feature="hgnc_symbol",
             biotype=list("protein_coding"), ensembl=NULL){
     if(is.null(ensembl)){
         tryCatch({
-            ensembl <- useEnsembl(biomart="ensembl",
-                    dataset="hsapiens_gene_ensembl", GRCh=37
-            )
+            ensemblOutput <- capture.output(ensembl <- useEnsembl(
+                    biomart="ensembl", dataset="hsapiens_gene_ensembl", GRCh=37
+            ))
         },
         error=function(e){
-                message("\nCheck if we have a internet connection!")
-                message("Nothing was annotated!")
-                return(dataset)
+                message("\nCheck if we have a internet connection!",
+                        " Could not connect to ENSEMBL."
+                )
         })
     }
-
+    if(is.null(ensembl)){
+        message("Nothing was annotated!")
+        return(dataset)
+    }
 
     # check if USCS naming scheme is used
     useUSCS <- all(startsWith(seqlevels(dataset@splitReads), "chr"))
