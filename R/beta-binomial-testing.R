@@ -62,13 +62,11 @@ fraserNames <- data.table(
     # test all 3 different types
     for(idx in 1:nrow(fraserNames)){
         pvalName <- fraserNames[idx,pvalName]
-        pvals <- .testPsiWithBetaBinomialPerType(dataset,
-                fraserNames[idx,readType], fraserNames[idx,psiType], pvalFun
+        readType <- fraserNames[idx,readType]
+        psiType  <- fraserNames[idx,psiType]
+        dataset <- .testPsiWithBetaBinomialPerType(
+                dataset, readType, psiType, pvalName, pvalFun
         )
-        h5File <- .getFraseRHDF5File(dataset, fraserNames[idx,readType], TRUE)
-        assays(slot(dataset, fraserNames[idx,readType]))[[pvalName]] <-
-            .addAssayAsHDF5(pvals, pvalName, h5File)
-
         gc()
     }
 
@@ -108,7 +106,7 @@ fraserNames <- data.table(
 #'
 #' @noRd
 .testPsiWithBetaBinomialPerType <- function(dataset, readType, psiType,
-                    pvalFun){
+                    pvalname, pvalFun){
 
     message(date(), ": Calculate P-values for the ",
             psiType, " splice type ..."
@@ -198,41 +196,43 @@ fraserNames <- data.table(
         return(pv_res)
     })
 
-    # warnings
-    warntable <- sort(table(gsub("^\\d+ diagonal ele", "xxx diagonal ele",
-                                 unlist(sapply(pvalues_ls, "[[", "warn"))
-    )))
-    if(length(warntable) > 0){
-        message(paste(collapse = "\n", c(date(),
-            "Warnings in VGLM code while computing pvalues:\n",
-            sapply(1:length(warntable), function(idx) paste(
-                "\t", warntable[idx], "x", names(warntable)[idx]
-            ))
-        )))
+    # print the vglm infos
+    for(type in c("warn", "err")){
+        infoChar <- .vglmInfos2character(pvalues_ls, type)
+        if(infoChar != ""){
+            message(infoChar)
+        }
     }
 
-    # errors
-    errotable <- sort(table(gsub("^\\d+ diagonal ele", "xxx diagonal ele",
-                                 unlist(sapply(pvalues_ls, "[[", "err"))
-    )))
-    if(length(errotable) > 0){
-        message(paste(collapse = "\n", c(
-            "\nErrors in VGLM code while computing pvalues:\n",
-            sapply(1:length(errotable), function(idx) paste(
-                "\t", errotable[idx], "x", names(errotable)[idx]
-            ))
-        )))
+    # extract additional informations
+    mcol_ls <- list(
+        alpha   = as.vector(sapply(pvalues_ls, function(x) x[[1]]$alpha)),
+        beta    = as.vector(sapply(pvalues_ls, function(x) x[[1]]$beta)),
+        timing  = as.vector(sapply(pvalues_ls, function(x) x[[1]]$timing)),
+        errStr  = .vglmInfos2character(pvalues_ls, "err"),
+        warnStr = .vglmInfos2character(pvalues_ls, "warn")
+    )
+    for(i in seq_along(mcol_ls)){
+        name <- paste0(psiType, "_", names(mcol_ls)[[i]])
+        mcols(slot(dataset, readType))[[name]] <- NA
+        mcols(slot(dataset, readType))[[name]][toTest] <- mcol_ls[[i]]
     }
 
     # extract pvalues
-    pvalues <- do.call(rbind,lapply(pvalues_ls, "[[", 1))
+    pvalues <- do.call(rbind,lapply(pvalues_ls, function(x) x[[1]]$pval))
     pvalues_full <- matrix(as.numeric(NULL),
             nrow=dim(rawCounts)[1], ncol=dim(rawCounts)[2]
     )
     pvalues_full[toTest,] <- pvalues
 
-            # transform it to a DataFrame and return it
-    return(.asDataFrame(pvalues_full, dataset@settings@sampleData[,sampleID]))
+    # transform it to a hdf5 assay and save it to the dataset
+    h5File  <- .getFraseRHDF5File(dataset, readType, TRUE)
+    pval_df <- .asDataFrame(pvalues_full, samples(dataset@settings))
+    h5Assay <- .addAssayAsHDF5(pval_df, pvalname, h5File)
+    assays(slot(dataset, readType))[[pvalname]] <- h5Assay
+
+    # save the pvalue calculations in the SE ranged object
+    return(dataset)
 }
 
 #'
@@ -304,6 +304,38 @@ fraserNames <- data.table(
             })
         list(res, warn=warn, err=err)
     }
+}
+
+
+#'
+#' formate the VGLM error/warning output in a nice readable way
+#'
+#' @noRd
+.vglmInfos2character <- function(res, type){
+    infoList <- unlist(sapply(res, "[[", type))
+    infoList <- gsub("^\\d+ diagonal ele", "xxx diagonal ele", infoList)
+    infoTable <- sort(table(infoList))
+
+    if(length(infoTable) == 0){
+        return("")
+    }
+
+    return(paste(collapse = "\n", c(paste0(date(), ": ",
+            ifelse(type == "warn", "Warnings", "Errors"),
+            " in VGLM code while computing pvalues:"),
+            .table2character(warntable)
+    )))
+}
+
+
+#'
+#' convert a table to a string like the output of table
+#'
+#' @noRd
+.table2character <- function(table){
+    sapply(1:length(table), function(idx) paste(
+        "\t", table[idx], "x", names(table)[idx]
+    ))
 }
 
 
