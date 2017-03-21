@@ -178,21 +178,26 @@ fraserNames <- data.table(
         # plot(log10(N+1),log10(y+1))
 
         ## fitting
+        startTime <- Sys.time()
         pv_res <- lapply(list(countMatrix),
                 FUN=.tryCatchFactory(pvalFun), y=y, N=N
         )[[1]]
+        timing <- Sys.time() - startTime
 
         #
         # put pvalues into correct boundaries
         if(is.null(pv_res[[1]])){
             pv_res[[1]] <- list(
                 pval = rep(as.numeric(NA), dim(rawCounts)[2]),
-                result = paste0("ERROR: ", pv_res$err)
+                alpha = NA,
+                beta = NA
             )
         }
         pv_res[[1]]$pval[which(pv_res[[1]]$pval > 1)] <- as.numeric(NA)
 
-        # plot(-log10(na.omit(pv_res[[1]])))
+        # add timing
+        pv_res[[1]]$timing <- timing
+
         return(pv_res)
     })
 
@@ -240,27 +245,24 @@ fraserNames <- data.table(
 #'
 #' @noRd
 .betabinVglmTest <- function(countMatrix, y, N){
-    time <- system.time({
-        # get fit
-        fit <- vglm(countMatrix ~ 1, betabinomial)
+    # get fit
+    fit <- vglm(countMatrix ~ 1, betabinomial)
 
-        # get the shape values
-        co  <- Coef(fit)
-        prob <- co[["mu"]]
-        rho  <- co[["rho"]]
-        alpha <- prob * (1 - rho)/rho
-        beta  <- (1 - prob) * (1 - rho)/rho
+    # get the shape values
+    co  <- Coef(fit)
+    prob <- co[["mu"]]
+    rho  <- co[["rho"]]
+    alpha <- prob * (1 - rho)/rho
+    beta  <- (1 - prob) * (1 - rho)/rho
 
-        # get the pvalues
-        # one-sided p-value (alternative = "less")
-        pval <- pbetabinom.ab(y, N, alpha, beta)
-    })["elapsed"]
+    # get the pvalues
+    # one-sided p-value (alternative = "less")
+    pval <- pbetabinom.ab(y, N, alpha, beta)
 
     return(list(
         pval = pval,
         alpha = alpha,
-        beta = beta,
-        timing = time
+        beta = beta
     ))
 }
 
@@ -323,7 +325,7 @@ fraserNames <- data.table(
     return(paste(collapse = "\n", c(paste0(date(), ": ",
             ifelse(type == "warn", "Warnings", "Errors"),
             " in VGLM code while computing pvalues:"),
-            .table2character(warntable)
+            .table2character(infoTable)
     )))
 }
 
