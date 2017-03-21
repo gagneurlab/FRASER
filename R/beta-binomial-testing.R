@@ -56,7 +56,7 @@ fraserNames <- data.table(
         message(date(), ": The data is not stored in a HDF5Array. ",
             "To improve the performance we will store now ",
             "the data in HDF5 format.")
-        saveFraseRDataSet(dataset)
+        dataset <- saveFraseRDataSet(dataset)
     }
 
     # test all 3 different types
@@ -147,6 +147,7 @@ fraserNames <- data.table(
             addNoise=addNoise, removeHighLow=removeHighLow,
             FUN= function(idx, rawCounts, rawOtherCounts,
                     addNoise, removeHighLow){
+        # idx <- toTest[[2]]
         suppressPackageStartupMessages(require(FraseR))
 
         ## simulate split read counts (numerator of psi)
@@ -186,9 +187,12 @@ fraserNames <- data.table(
         #
         # put pvalues into correct boundaries
         if(is.null(pv_res[[1]])){
-            pv_res[[1]] <- rep(as.numeric(NA), dim(rawCounts)[2])
+            pv_res[[1]] <- list(
+                pval = rep(as.numeric(NA), dim(rawCounts)[2]),
+                result = paste0("ERROR: ", pv_res$err)
+            )
         }
-        pv_res[[1]][which(pv_res[[1]] > 1)] <- as.numeric(NA)
+        pv_res[[1]]$pval[which(pv_res[[1]]$pval > 1)] <- as.numeric(NA)
 
         # plot(-log10(na.omit(pv_res[[1]])))
         return(pv_res)
@@ -227,7 +231,7 @@ fraserNames <- data.table(
     )
     pvalues_full[toTest,] <- pvalues
 
-    # transform it to a DataFrame and return it
+            # transform it to a DataFrame and return it
     return(.asDataFrame(pvalues_full, dataset@settings@sampleData[,sampleID]))
 }
 
@@ -236,11 +240,28 @@ fraserNames <- data.table(
 #'
 #' @noRd
 .betabinVglmTest <- function(countMatrix, y, N){
-    fit <- vglm(countMatrix ~ 1, betabinomial)
-    co  <- Coef(fit)
+    time <- system.time({
+        # get fit
+        fit <- vglm(countMatrix ~ 1, betabinomial)
 
-    ## one-sided p-value (alternative = "less")
-    pbetabinom(y, N, co[["mu"]], co[["rho"]])
+        # get the shape values
+        co  <- Coef(fit)
+        prob <- co[["mu"]]
+        rho  <- co[["rho"]]
+        alpha <- prob * (1 - rho)/rho
+        beta  <- (1 - prob) * (1 - rho)/rho
+
+        # get the pvalues
+        # one-sided p-value (alternative = "less")
+        pval <- pbetabinom.ab(y, N, alpha, beta)
+    })["elapsed"]
+
+    return(list(
+        pval = pval,
+        alpha = alpha,
+        beta = beta,
+        timing = time
+    ))
 }
 
 
@@ -265,29 +286,11 @@ fraserNames <- data.table(
     pbetabinom.ab(y, N, max(0.1, a), max(0.1, b))
 }
 
-testing <- function(){
-    mat <- countMatrix
-    message("N:  ", Ns, "\nn:  ", n, "\nm1:  ", m1, "\nm2:  ", m2, "\na:  ", a, "\nb:  ", b)
-
-    pF(10,n,a,b)
-    plot(dbetabinom.ab(1:12, 12, a, b))
-    cm <- matrix(ncol=2,
-            c(0:12, c(3, 24, 104, 286, 670, 1033, 1343, 1112, 829, 478, 181, 45, 7))
-    )
-    colnames(cm) <- c("x", "y")
-
-    fit <- vglm(countMatrix ~ 1, betabinomial)
-    co  <- Coef(fit)
-
-    ## one-sided p-value (alternative = "less")
-    pbetabinom(y, N, co[["mu"]], co[["rho"]])
-
-}
-
-##
-## error/warning catching functions by martin morgan
-## http://stackoverflow.com/questions/4948361/how-do-i-save-warnings-and-errors-as-output-from-a-function
-##
+#'
+#' error/warning catching functions by martin morgan
+#' http://stackoverflow.com/questions/4948361/how-do-i-save-warnings-and-errors-as-output-from-a-function
+#'
+#' @noRd
 .tryCatchFactory <- function(fun){
     function(...) {
         warn <- err <- NULL
@@ -302,3 +305,24 @@ testing <- function(){
         list(res, warn=warn, err=err)
     }
 }
+
+
+
+.testingbetabinom <- function(){
+    fds <- createTestFraseRDataSet()
+
+    source("FraseR/R/beta-binomial-testing.R")
+    source("FraseR/R/helper-functions.R")
+    pvalFun=.betabinVglmTest
+    idx <- 1
+    readType <- fraserNames[idx,readType]
+    psiType <- fraserNames[idx,psiType]
+    internBPPARAM <- MulticoreParam(4,progressbar=TRUE)
+    parallel(fds@settings) <- MulticoreParam(4,progressbar=TRUE)
+    dataset <- fds
+
+    ## one-sided p-value (alternative = "less")
+    pbetabinom(y, N, co[["mu"]], co[["rho"]])
+
+}
+
