@@ -119,7 +119,7 @@ saveFraseRDataSet <- function (fds, dir=NULL) {
         assays(slot(fds, type)) <- assays
     }
 
-    message("Writing final FraseR object.")
+    message(date(), ": Writing final FraseR object.")
     saveRDS(fds, file.path(outDir, "fds-object.RDS"))
 
     if(endsWith(h5File, "1.h5")){
@@ -167,7 +167,7 @@ saveFraseRDataSet <- function (fds, dir=NULL) {
         aName <- names(assays)[idx]
     }
     aMat <- as.matrix(as.data.table(assays[[idx]]))
-    message("Writing assay: ", aName, " to file: ", h5File)
+    message(date(), ": Writing assay: ", aName, " to file: ", h5File)
     ah5 <- writeHDF5Array(aMat, h5File, aName, verbose=TRUE)
     if(matrixGiven){
         return(ah5)
