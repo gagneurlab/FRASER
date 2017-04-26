@@ -5,7 +5,7 @@
 \alias{FraseRSettings-class}
 \title{FraseRSettings}
 \description{
-This class is designed to store the sample annotation 
+This class is designed to store the sample annotation
 and settings for the computation of the FraseR package
 }
 \author{
