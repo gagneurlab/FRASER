@@ -4,7 +4,7 @@
 \name{sampleGroup,FraseRSettings-method}
 \alias{sampleGroup,FraseRSettings-method}
 \alias{sampleGroup<-,FraseRSettings-method}
-\title{Get the group definition per sample based on the 
+\title{Get the group definition per sample based on the
 \code{sampleData} table slot}
 \usage{
 \S4method{sampleGroup}{FraseRSettings}(object)
@@ -18,7 +18,7 @@
 A \code{vector} with the group identifiers per sample object
 }
 \description{
-Get the group definition per sample based on the 
+Get the group definition per sample based on the
 \code{sampleData} table slot
 }
 \examples{

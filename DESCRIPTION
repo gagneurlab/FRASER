@@ -24,6 +24,7 @@ Collate:
     'FraseRSettings-class.R'
     'FraseRDataSet-class.R'
     'Fraser-pipeline.R'
+    'accessor-methods.R'
     'annotationOfRanges.R'
     'beta-binomial-testing.R'
     'calculatePSIValue.R'

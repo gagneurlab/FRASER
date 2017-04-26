@@ -15,12 +15,15 @@
 #'             how and what to count
 #' @param internBPPARAM A BiocParallel param object to configure the
 #'             parallel backend of the internal loop
+#' @param globalJunctionMap A object or file containing a map of
+#'             all junction of interest across all samples
 #'
 #' @return FraseRDataSet
 #' @export
 #' @examples
 #'   counRNAData(createTestFraseRSettings())
-countRNAData <- function(settings, internBPPARAM=SerialParam()){
+countRNAData <- function(settings, internBPPARAM=SerialParam(),
+            globalJunctionMap=NULL){
 
     # Check input TODO
     stopifnot(class(settings) == "FraseRSettings")
@@ -45,13 +48,14 @@ countRNAData <- function(settings, internBPPARAM=SerialParam()){
 
     # extract donor and acceptor sites
     spliceSiteCoords <- .extractSpliceSiteCoordinates(granges(counts), settings)
+    spliceSiteCoords <- .mergeSpliceSitesWithJunctionMap(
+            spliceSiteCoords, globalJunctionMap
+    )
     message(date(), ": In total ", length(spliceSiteCoords),
             " splice sites (acceptor/donor) will be counted ..."
     )
 
-    #
-    # TODO use spliceSites instead of targets to reduce computation
-    #
+    # count non spliced reads
     countList <- bplapply(samples(settings),
             FUN=.countNonSplicedReads,
             settings=settings,
@@ -60,7 +64,7 @@ countRNAData <- function(settings, internBPPARAM=SerialParam()){
             internBPPARAM=internBPPARAM
     )
     names(countList) <- samples(settings)
-    site_counts <- .mergeCounts(countList, assumeEqual=TRUE, parallel(settings))
+    site_counts <- .mergeCounts(countList, assumeEqual=TRUE)
     mcols(site_counts)$type=factor(countList[[1]]$type,
             levels = c("Acceptor", "Donor")
     )
@@ -232,31 +236,33 @@ countRNAData <- function(settings, internBPPARAM=SerialParam()){
 
     # prepare range object
     sample_names <- names(countList)
-    countgr <- GRangesList(countList)
-    ranges <- sort(unique(unlist(countgr)))
-    mcols(ranges)$count <- NULL
-    names(ranges) <- NULL
 
     if(assumeEqual){
+        ranges <- GRanges(sort(unique(countList[[1]])))
+        mcols(ranges)$count <- NULL
+        names(ranges) <- NULL
+
         message(paste(date(), ": Fast merging of counts ..."))
-        sample_counts <- lapply(1:length(countgr), function(i){
-                mcols(countgr[[i]])$count
-        })
+        sample_counts <- lapply(countList, function(gr) mcols(gr)[["count"]] )
     } else {
+        countgr <- GRangesList(countList)
+        ranges <- sort(unique(unlist(countgr)))
+        mcols(ranges)$count <- NULL
+        names(ranges) <- NULL
+
         message(paste(date(), ": count ranges need to be merged ..."))
         # merge each sample counts into the combined range object
-        sample_counts <- bplapply(1:length(countgr), ranges = ranges,
-            countgr = countgr, BPPARAM=BPPARAM,
-            FUN = function(i, ranges, countgr){
+        sample_counts <- bplapply(countList, ranges = ranges, BPPARAM=BPPARAM,
+            FUN = function(gr, ranges){
                 suppressPackageStartupMessages(require(FraseR))
 
-                ## TODO init with NA since we dont extracted
-                # we are missing counts for junctions spliced in other samples
-                sample_count <- rep(0L, length(ranges))
+                # init with 0 since we did not find any read
+                # for this sample supporting a given site
+                sample_count <- integer(length(ranges))
 
                 # get overlap and add counts to the corresponding ranges
-                overlaps <- findOverlaps(countgr[[i]], ranges, type = "equal")
-                sample_count[overlaps@to] <- mcols(countgr[[i]])$count
+                overlaps <- findOverlaps(gr, ranges, type = "equal")
+                sample_count[overlaps@to] <- mcols(gr)$count
 
                 return(sample_count)
             }
@@ -283,7 +289,6 @@ countRNAData <- function(settings, internBPPARAM=SerialParam()){
 ## returns the name of the cache file if caching is enabled for the given sample
 ##
 .getNonSplicedCountCacheFile <- function(sampleID, settings){
-    message(date(), ": Count non spliced reads for sample: ", sampleID)
 
     # check if caching is enabled
     if(is.null(outputFolder(settings)) || outputFolder(settings) == "")
@@ -307,6 +312,7 @@ countRNAData <- function(settings, internBPPARAM=SerialParam()){
 ## TODO: 10k chunks hardcoded currently (needs some testing and a code to)
 .countNonSplicedReads <- function(sampleID, spliceSiteCoords, settings,
                     internBPPARAM=SerialParam()){
+    message(date(), ": Count non spliced reads for sample: ", sampleID)
     suppressPackageStartupMessages(library(FraseR))
     bamFile <- bamFiles(settings[samples(settings) == sampleID])[[1]]
 
@@ -314,28 +320,37 @@ countRNAData <- function(settings, internBPPARAM=SerialParam()){
     cacheFile <- .getNonSplicedCountCacheFile(sampleID, settings)
     if(!is.null(cacheFile) && file.exists(cacheFile)){
         # check if needs to be recalculated
-        cache <- readRDS(cacheFile)
-        numEqualOverlaps <- length(unique(to(findOverlaps(
-                cache, spliceSiteCoords, type="equal"
-        ))))
-        if(numEqualOverlaps == length(spliceSiteCoords)){
-            return(cache)
+        cache <- try(readRDS(cacheFile), silent=TRUE)
+        if(class(cache) == "try-error"){
+            message(date(), ":Cache is currupt for sample:",
+                    sampleID, ". Will recount it."
+            )
+            cache <- GRanges()
+        }
+        ov    <- findOverlaps(cache, spliceSiteCoords, type="equal")
+
+        # we have all sites of interest cached
+        if(all(1:length(spliceSiteCoords) %in% to(ov))){
+            return(cache[from(ov)])
         } else {
-            message(paste("The cache file does not contain the same",
-                    "genomic positions. Remove cache and recounting ..."
+            message(paste("The cache file does not contain the needed",
+                    "genomic positions. Adding the remaining sites to",
+                    "the cache ..."
             ))
-            file.remove(cacheFile)
+            # get remaining splice sites
+            spliceSiteCoords <-
+                spliceSiteCoords[!(1:length(spliceSiteCoords) %in% to(ov))]
         }
     }
 
     # estimate chunk size
     rangeShift        <- 25*10^3
     numRangesPerChunk <- 100
-    targetChunksTmp <- GenomicRanges::reduce(GenomicRanges::trim(suppressWarnings(
-        GenomicRanges::shift(resize(spliceSiteCoords, width=rangeShift),
-                    shift=-rangeShift/2
-            )
-    )))
+    targetChunksTmp <- GenomicRanges::reduce(GenomicRanges::trim(
+        suppressWarnings(GenomicRanges::shift(
+            resize(spliceSiteCoords, width=rangeShift), shift=-rangeShift/2
+        ))
+    ))
 
     numChunks <- ceiling(max(1,length(targetChunksTmp)/numRangesPerChunk))
     chunkID <- rep(1:numChunks, each=numRangesPerChunk)[
@@ -377,15 +392,74 @@ countRNAData <- function(settings, internBPPARAM=SerialParam()){
     mcols(spliceSiteCoords)$count <- unlist(countsList)
     spliceSiteCoords <- sort(spliceSiteCoords)
 
+
     # cache it if enabled
     if(!is.null(cacheFile)){
-        saveRDS(spliceSiteCoords, cacheFile)
+        if(exists("cache") && class(cache) == "GRanges"){
+            message("Adding splice sites to cache ...")
+            saveRDS(unique(unlist(GRangesList(cache, spliceSiteCoords))),
+                    cacheFile
+            )
+        } else {
+            message("Saving splice site cache Adding splice sites to cache ...")
+            saveRDS(spliceSiteCoords, cacheFile)
+        }
+    }
+
+    # merge with existing cache if needed
+    if(exists("cache") && class(cache) == "GRanges"){
+        # take only sites of interest
+        cache <- cache[unique(from(ov))]
+
+        # merge it with new sites
+        spliceSiteCoords <- unlist(GRangesList(cache, spliceSiteCoords))
     }
 
     # return it
     return(spliceSiteCoords)
 }
 
+#'
+#' reads the given global junction map and merges it with
+#' the given junction map
+#'
+#' @noRd
+.mergeSpliceSitesWithJunctionMap <- function(spliceSiteCoords,
+            globalJunctionMap){
+    if(is.null(globalJunctionMap)){
+        return(spliceSiteCoords)
+    }
+
+    # read global junction map
+    if(isScalarCharacter(globalJunctionMap)){
+        stopifnot(file.exists(globalJunctionMap))
+        if(endsWith(globalJunctionMap, ".RDS")){
+            map <- readRDS(globalJunctionMap)
+            stopifnot(class(map) == "GRanges")
+        } else {
+            message(date(), ": currently not supported.")
+            message(date(), ": will only use the provided junctions")
+            return(spliceSiteCoords)
+        }
+    } else if (class(globalJunctionMap) == "GRanges"){
+        map <- globalJunctionMap
+    } else {
+        stop("Objecttype (class) for global junction map not supported:",
+                    class(globalJunctionMap)
+        )
+    }
+
+    # merge it
+    newSpliceSiteCoords <- unique(unlist(GRangesList(map, spliceSiteCoords)))
+    if(length(newSpliceSiteCoords) != length(spliceSiteCoords)){
+        nnew <- length(newSpliceSiteCoords)
+        nold <- length(spliceSiteCoords)
+        message(date(), ": Added splice junctions from global map: ",
+                nnew - nold
+        )
+    }
+    return(newSpliceSiteCoords)
+}
 
 ##
 ## extracts the splice site coordinates from a junctions GRange object

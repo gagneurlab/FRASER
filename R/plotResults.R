@@ -18,7 +18,7 @@ plotSampleResults <- function(dataset, sampleID=NULL,
     # if sample is empty create all plots for all samples
     if(is.null(sampleID)){
         samples2plot <- !is.na(sampleGroup(dataset@settings))
-        sampleIDs2plot <- samples(dataset@settings[samples2plot])
+        sampleIDs2plot <- samples(dataset@settings)[samples2plot]
         return(bplapply(sampleIDs2plot, plotSampleResults,
                 dataset=dataset, file=file, BPPARAM=parallel(dataset@settings)
         ))
@@ -124,7 +124,7 @@ plotSampleResults <- function(dataset, sampleID=NULL,
     p <- plot_ly()
     for(i in seq_along(plotTraces)){
         t <- which(toplot)[plotTraces[[i]]]
-        if(sum(t) == 0){
+        if(length(t) == 0){
             next
         }
         p <- p %>% add_trace(type="scattergl",

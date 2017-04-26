@@ -5,7 +5,7 @@
 #'
 
 .getReadTypeFromPsiType <- function(psiType){
-    stopifnot(length(psiType == 1 && class(psiType) == "")
+    stopifnot(length(psiType) == 1 && class(psiType) == "")
     readType <- switch(psiType,
            psi3="spliceSite",
            psi5="spliceSite",
@@ -16,5 +16,5 @@
 }
 
 fdsmcols <- function(fds, psiType){
-    assays(fds, )
+    assays(fds)
 }
