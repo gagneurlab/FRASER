@@ -57,7 +57,7 @@ countRNAData <- function(settings, internBPPARAM=SerialParam(),
 
     # count non spliced reads
     countList <- bplapply(samples(settings),
-            FUN=.countNonSplicedReads,
+            FUN=.countNonSplicedReadsWithRsubread,
             settings=settings,
             spliceSiteCoords=spliceSiteCoords,
             BPPARAM=parallel(settings),
