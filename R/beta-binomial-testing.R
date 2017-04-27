@@ -38,12 +38,6 @@
     plot(-log10(pv))
 }
 
-fraserNames <- data.table(
-        readType = c("splitReads", "splitReads", "nonSplicedReads"),
-        psiType = c("psi3", "psi5", "sitePSI"),
-        pvalName = c("pvalue_psi3", "pvalue_psi5", "pvalue_sitePSI")
-)
-
 #'
 #' this tests each splice type for all samples
 #'
@@ -60,12 +54,9 @@ fraserNames <- data.table(
     }
 
     # test all 3 different types
-    for(idx in 1:nrow(fraserNames)){
-        pvalName <- fraserNames[idx,pvalName]
-        readType <- fraserNames[idx,readType]
-        psiType  <- fraserNames[idx,psiType]
+    for(psiType in getPsiTypes()){
         dataset <- .testPsiWithBetaBinomialPerType(
-                dataset, readType, psiType, pvalName, pvalFun
+                dataset, psiType, pvalFun
         )
         gc()
     }

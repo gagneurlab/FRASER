@@ -75,7 +75,8 @@ calculatePSIValues <- function(dataset){
             suppressPackageStartupMessages(library(FraseR))
 
             # check name, due to conversion
-            if(grepl("^\\d+$", sample)){
+            # (needed only for data.table not with hdf5 arrays anymore)
+            if(grepl("^\\d+$", sample) & !sample %in% colnames(countData)){
                 sample <- paste0("X", sample)
             }
 
@@ -99,13 +100,13 @@ calculatePSIValues <- function(dataset){
 
     # merge it and set the column names
     dfPsi <- DataFrame(matrix(unlist(sapply(psiValues, "[", "psiValue")),
-            ncol = nrow(settings@sampleData)
+            ncol = nrow(sampleData(settings))
     ))
     names(dfPsi) <- settings@sampleData[,sampleID]
     dfCounts  <- DataFrame(matrix(unlist(sapply(psiValues, "[", "rawOtherCounts")),
-            ncol = nrow(settings@sampleData)
+            ncol = nrow(sampleData(settings))
     ))
-    names(dfCounts) <- settings@sampleData[,sampleID]
+    names(dfCounts) <- samples(settings)
 
     return(SimpleList(psi=dfPsi, counts=dfCounts))
 }
@@ -133,7 +134,7 @@ calculatePSIValues <- function(dataset){
         splice_ranges <- rowRanges(splice_site)
 
         # shift for start/end overlap
-        splice_ranges <- shift(splice_ranges,
+        splice_ranges <- GenomicRanges::shift(splice_ranges,
                 ifelse(spliceType == "Acceptor", -1, 1)
         )
 

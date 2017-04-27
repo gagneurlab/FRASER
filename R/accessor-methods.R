@@ -4,16 +4,37 @@
 #' This file contains accessor functions for the FraseRDataSet object
 #'
 
-.getReadTypeFromPsiType <- function(psiType){
-    stopifnot(length(psiType) == 1 && class(psiType) == "")
-    readType <- switch(psiType,
-           psi3="spliceSite",
-           psi5="spliceSite",
-           sitePSI="nonSplicedReads",
-           stop("The given PSI type '", psiType, "' is not correct!")
-    )
-    return(readType)
+#'
+#' the three different splice types
+#'   * psi3: 3' splice site
+#'   * psi5: 5' splice site
+#'   * psiS: non splice reads vs spliced reads at splice site
+#'
+getPsiTypes <- function(){
+    c("psi3", "psi5", "psiS")
 }
+
+getReadType <- function(psiType){
+    stopifnot(isScalarCharacter(psiType))
+    switch(psiType,
+           psi3 = "splitReads",
+           psi5 = "splitReads",
+           psiS = "nonSplicedReads",
+           stop("Did not recognice the given psi type: ", psiType)
+    )
+}
+
+getPvalName <- function(){
+
+}
+
+fraserNames <- data.table(
+    readType = c("splitReads", "splitReads", "nonSplicedReads"),
+    psiType = c("psi3", "psi5", "sitePSI"),
+    pvalName = c("pvalue_psi3", "pvalue_psi5", "pvalue_sitePSI")
+)
+
+
 
 fdsmcols <- function(fds, psiType){
     assays(fds)

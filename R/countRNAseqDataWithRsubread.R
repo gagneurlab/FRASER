@@ -66,7 +66,10 @@
     if(is(internNcpu, "BiocParallelParam")){
         internNcpu <- bpworkers(internNcpu)
     }
-
+    tmp_dir <- file.path(outputFolder(settings), "cache", "rsubread-tmp")
+    if(!dir.exists(tmp_dir)) {
+        dir.create(tmp_dir, recursive=TRUE)
+    }
     anno <- .GRange2SAF(spliceSiteCoords)
     res <- featureCounts(
         files = path(bamFile),
@@ -89,7 +92,8 @@
         # parameters specific to paired end reads
         isPairedEnd=FALSE,
         autosort=TRUE,
-        nthreads=internNcpu
+        nthreads=internNcpu,
+        tmpDir=tmp_dir
     )
 
 
