@@ -70,6 +70,7 @@
     if(!dir.exists(tmp_dir)) {
         dir.create(tmp_dir, recursive=TRUE)
     }
+    
     anno <- .GRange2SAF(spliceSiteCoords)
     res <- featureCounts(
         files = path(bamFile),
