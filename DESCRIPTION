@@ -30,6 +30,7 @@ Collate:
     'calculatePSIValue.R'
     'calculateStats.R'
     'countRNAseqData.R'
+    'countRNAseqDataWithRsubread.R'
     'example_functions.R'
     'helper-functions.R'
     'plotResults.R'
