@@ -2,8 +2,11 @@
 ## FraseRDataSet
 ## ====================
 
-#' @include FraseRSettings-class.R
-NULL
+#setClass("FraseRDataSet",
+#        contains = "RangedSummarizedExperiment",
+#        representation = representation(
+#            design = "formula",
+#             dispersionFunction = "function"))
 
 #' FraseRDataSet
 #'
@@ -12,8 +15,8 @@ NULL
 #'
 #' @author Christian Mertes \email{mertes@@in.tum.de}
 setClass("FraseRDataSet",
+    contains = "FraseRSettings",
     slots = list(
-        settings        = "FraseRSettings",
         splitReads      = "RangedSummarizedExperiment",
         nonSplicedReads = "RangedSummarizedExperiment"
     ),
@@ -76,8 +79,8 @@ setValidity2("FraseRDataSet", .validateFraseRDataSet)
 #' @examples
 #'     fraser <- FraseRDataSet()
 #'     fraser <- countRNAData(createTestFraseRSettings())
-FraseRDataSet <- function(...) {
-    return(new("FraseRDataSet", ...))
+FraseRDataSet <- function(settings, ...) {
+    return(new("FraseRDataSet", settings, ...))
 }
 
 ## Cosmetics

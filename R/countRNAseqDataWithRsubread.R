@@ -15,17 +15,10 @@
     )
 }
 
+#'
+#' count non spliced reads with RSubRead
+#'
 .countNonSplicedReadsWithRsubread <- function(sampleID, settings, spliceSiteCoords, internBPPARAM){
-
-    .GRange2SAF <- function(gr){
-        data.table(
-            GeneID  = seq_along(gr),
-            Chr     = as.character(seqnames(gr)),
-            Start   = start(gr),
-            End     = end(gr),
-            Strand  = as.character(strand(gr))
-        )
-    }
 
     message(date(), ": Count non spliced reads for sample with Rsubread: ", sampleID)
     suppressPackageStartupMessages(library(FraseR))
@@ -36,7 +29,7 @@
     # check cache if available
     cacheFile <- .getNonSplicedCountCacheFile(sampleID, settings)
     cacheFile <- gsub(".RDS$", "-rsubread.RDS", cacheFile)
-    if(!is.null(cacheFile) && file.exists(cacheFile)){
+    if(FALSE){#!is.null(cacheFile) && file.exists(cacheFile)){
         # check if needs to be recalculated
         cache <- try(readRDS(cacheFile), silent=TRUE)
         if(class(cache) == "try-error"){
@@ -84,10 +77,10 @@
         minMQS=bamMapqFilter(scanBamParam(settings)),
 
         # strandness
-        strandSpecific=0,
+        strandSpecific=settings@strandSpecific,
 
         # parameters specific to paired end reads
-        isPairedEnd=FALSE,
+        isPairedEnd=TRUE,
         autosort=TRUE,
         nthreads=internNcpu
     )
