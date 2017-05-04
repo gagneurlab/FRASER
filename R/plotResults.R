@@ -150,6 +150,8 @@ plotSampleResults <- function(dataset, sampleID=NULL,
                 "Chromosome: ", seqnames(curSlot)[t],  "</br>",
                 "Start:      ", start(curSlot)[t],     "</br>",
                 "End:        ", end(curSlot)[t],       "</br>",
+                "raw counts: ", assays(curSlot)$rawCounts[t,sampleID], "</br>",
+                "raw other counts: ", assays(curSlot)[[paste0("rawOtherCounts_", psiType)]][t,sampleID] , "</br>",
                 "-log<sub>10</sub>(<i>P</i>-value): ", round(pvalue[t], 2), "</br>",
                 "Z-score:    ", round(zscore[t], 2), "</br>",
                 "PSI-value:  ", round(psival[t], 3)*100, "%</br>"

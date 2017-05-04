@@ -11,34 +11,44 @@
 #'             non spliced reads from a RNA bam file
 #' @details TODO
 #'
-#' @param settings A FraseRSetting object with all the information
+#' @param fds A FraseRDataSet object with all the information
 #'             how and what to count
-#' @param internBPPARAM A BiocParallel param object to configure the
-#'             parallel backend of the internal loop
-#' @param globalJunctionMap A object or file containing a map of
-#'             all junction of interest across all samples
+#' @param NcpuPerSample A BiocParallel param object or a positive integer
+#'             to configure the parallel backend
+#'             of the internal loop per sample
+#' @param junctionMap A object or file containing a map of
+#'             all junctions of interest across all samples
 #'
 #' @return FraseRDataSet
 #' @export
 #' @examples
 #'   counRNAData(createTestFraseRSettings())
-countRNAData <- function(settings, internBPPARAM=SerialParam(),
-            globalJunctionMap=NULL){
+#'   counRNAData(createTestFraseRSettings(), 5)
+countRNAData <- function(fds, NcpuPerSample=1, junctionMap=NULL){
 
     # Check input TODO
-    stopifnot(class(settings) == "FraseRSettings")
-    stopifnot(is(internBPPARAM, "BiocParallelParam"))
+    stopifnot(class(fds) == "FraseRDataSet")
+    stopifnot(is.numeric(NcpuPerSample) && NcpuPerSample > 0)
+    if(!is.integer(NcpuPerSample)){
+        NcpuPerSample <- as.integer(NcpuPerSample)
+    }
+    if(!is.null(junctionMap)){
+        junctionMap <- readJunctionMap(junctionMap)
+    }
 
     # count splitreads first
     message(date(), ": Start counting the split reads ...")
-    countList <- bplapply(samples(settings),
-            FUN=.countSplitReads,
-            settings=settings,
-            BPPARAM=parallel(settings),
-            internBPPARAM=internBPPARAM
+    countList <- bplapply(samples(fds),
+            FUN=countSplitReads,
+            settings=fds,
+            BPPARAM=parallel(fds),
+            NcpuPerSample=NcpuPerSample
     )
-    names(countList) <- samples(settings)
-    counts <- .mergeCounts(countList, assumeEqual=FALSE, parallel(settings))
+    names(countList) <- samples(fds)
+    counts <- mergeCounts(countList, junctionMap=junctionMap,
+            assumeEqual=FALSE, parallel(fds)
+    )
+    counts <- annotateSpliceSite(counts)
 
     # count the retained reads
     message(date(), ": Start counting the non spliced reads ...")
@@ -47,42 +57,40 @@ countRNAData <- function(settings, internBPPARAM=SerialParam(),
     )
 
     # extract donor and acceptor sites
-    spliceSiteCoords <- .extractSpliceSiteCoordinates(granges(counts), settings)
-    spliceSiteCoords <- .mergeSpliceSitesWithJunctionMap(
-            spliceSiteCoords, globalJunctionMap
-    )
+    spliceSiteCoords <- extractSpliceSiteCoordinates(counts)
     message(date(), ": In total ", length(spliceSiteCoords),
             " splice sites (acceptor/donor) will be counted ..."
     )
 
     # count non spliced reads
-    countList <- bplapply(samples(settings),
-            FUN=.countNonSplicedReadsWithRsubread,
-            settings=settings,
+    countList <- bplapply(samples(fds),
+            FUN=countNonSplicedReads,
+            settings=fds,
             spliceSiteCoords=spliceSiteCoords,
-            BPPARAM=parallel(settings),
-            internBPPARAM=internBPPARAM
+            BPPARAM=parallel(fds),
+            NcpuPerSample=NcpuPerSample
     )
-    names(countList) <- samples(settings)
-    site_counts <- .mergeCounts(countList, assumeEqual=TRUE)
-    mcols(site_counts)$type=factor(countList[[1]]$type,
+    names(countList) <- samples(fds)
+    siteCounts <- mergeCounts(countList, assumeEqual=TRUE)
+    mcols(siteCounts)$type <- factor(countList[[1]]$type,
             levels = c("Acceptor", "Donor")
     )
 
     # create summarized objects
     splitCounts <- SummarizedExperiment(
-            assays=list(rawCounts=mcols(counts)[samples(settings)]),
-            rowRanges=granges(counts)
+            colData=colData(fds),
+            assays=list(rawCounts=mcols(counts)[samples(fds)]),
+            rowRanges=counts[,!colnames(mcols(counts)) %in% samples(fds)]
     )
     nonSplicedCounts <- SummarizedExperiment(
-            assays=list(rawCounts=mcols(site_counts)[samples(settings)]),
-            rowRanges=site_counts[,"type"]
+            colData=colData(fds),
+            assays=list(rawCounts=mcols(siteCounts)[samples(fds)]),
+            rowRanges=siteCounts[,!colnames(mcols(siteCounts)) %in% samples(fds)]
     )
 
     # create final FraseR dataset
-    fds <- FraseRDataSet(
-        settings=settings,
-        splitReads=splitCounts,
+    fds <- new("FraseRDataSet",
+        splitCounts,
         nonSplicedReads=nonSplicedCounts
     )
 
@@ -90,26 +98,22 @@ countRNAData <- function(settings, internBPPARAM=SerialParam(),
     return(fds)
 }
 
-##
-## extracts the chromosomes within the given bamFile
-##
-.extractChromosomes <- function(bamFile){
-    names(scanBamHeader(path(bamFile))[[path(bamFile)]]$target)
+#'
+#' extracts the chromosomes within the given bamFile
+#' @noRd
+extractChromosomes <- function(bamFile){
+    names(scanBamHeader(bamFile)[[bamFile]]$target)
 }
 
 
-##
-## returns the name of the cache file if caching is enabled
-## for the given sample
-##
-.getSplitCountCacheFile <- function(sampleID, settings){
-
-    # check if caching is enabled
-    if(is.null(outputFolder(settings)) || outputFolder(settings) == "")
-        return(NULL)
+#'
+#' returns the name of the cache file if caching is enabled
+#' for the given sample
+#' @noRd
+getSplitCountCacheFile <- function(sampleID, settings){
 
     # cache folder
-    cachedir <- file.path(outputFolder(settings), "cache", "splitCounts")
+    cachedir <- file.path(workingDir(settings), "cache", "splitCounts")
     if(!dir.exists(cachedir)){
         dir.create(cachedir, recursive=TRUE)
     }
@@ -122,50 +126,49 @@ countRNAData <- function(settings, internBPPARAM=SerialParam(),
 }
 
 
-##
-## count all split reads in a bam file
-##
-.countSplitReads <- function(sampleID, settings, internBPPARAM){
+#'
+#' count all split reads in a bam file
+#' @noRd
+countSplitReads <- function(sampleID, settings, NcpuPerSample){
     suppressPackageStartupMessages(require(FraseR))
     message(date(), ": Count split reads for sample: ", sampleID)
-    bamFile <- bamFiles(settings[samples(settings) == sampleID])[[1]]
+    bamFile <- bamFile(settings[,samples(settings) == sampleID])[[1]]
 
     # check cache if available
-    cacheFile <- .getSplitCountCacheFile(sampleID, settings)
+    cacheFile <- getSplitCountCacheFile(sampleID, settings)
     if(!is.null(cacheFile) && file.exists(cacheFile)){
         return(readRDS(cacheFile))
     }
 
     # parallelize over chromosomes
-    chromosomes <- .extractChromosomes(bamFile)
+    chromosomes <- extractChromosomes(bamFile)
 
     # extract the counts per chromosome
     countsList <- bplapply(chromosomes,
-            FUN=.countSplitReadsPerChromosome,
+            FUN=countSplitReadsPerChromosome,
             bamFile=bamFile,
             settings=settings,
-            BPPARAM=internBPPARAM
+            BPPARAM=MulticoreParam(NcpuPerSample)
     )
 
     # sort and merge the results befor returning/saving
     countsGR <- sort(unlist(GRangesList(countsList)))
-    if(!is.null(cacheFile)){
-        saveRDS(countsGR, cacheFile)
-    }
+    saveRDS(countsGR, cacheFile)
+
     return(countsGR)
 }
 
 
-##
-## counting the split reads per chromosome
-##
-.countSplitReadsPerChromosome <- function(chromosome, bamFile, settings){
+#'
+#' counting the split reads per chromosome
+#' @noRd
+countSplitReadsPerChromosome <- function(chromosome, bamFile, settings){
     # restrict to the chromosome only
     which=GRanges(
         seqnames=chromosome,
         ranges=IRanges(0, 536870912)
     )
-    param <- .mergeBamParams(bamParam=settings@bamParams, which=which)
+    param <- mergeBamParams(bamParam=scanBamParam(settings), which=which)
     if(is.null(param)){
         return(GRanges())
     }
@@ -174,7 +177,7 @@ countRNAData <- function(settings, internBPPARAM=SerialParam(),
     galignment <- readGAlignments(bamFile, param=param)
 
     # remove the strand information if unstranded data
-    if(!settings@strandSpecific){
+    if(!strandSpecific(settings)){
         strand(galignment) <- "*"
     }
 
@@ -204,10 +207,10 @@ countRNAData <- function(settings, internBPPARAM=SerialParam(),
 }
 
 
-##
-## merge a ScanBamParam object with a given which object (GRange)
-##
-.mergeBamParams <- function(bamParam, which, override=FALSE){
+#'
+#' merge a ScanBamParam object with a given which object (GRange)
+#' @noRd
+mergeBamParams <- function(bamParam, which, override=FALSE){
     # the chromosome is alrways only one
     chromosome <- as.character(unique(seqnames(which)))
 
@@ -227,18 +230,17 @@ countRNAData <- function(settings, internBPPARAM=SerialParam(),
 }
 
 
-##
-## merge multiple samples into one SummarizedExperiment object
-##
-## TODO: how to init non found junctions/splice sites (0L or NA)?
-##
-.mergeCounts <- function(countList, assumeEqual=FALSE, BPPARAM=SerialParam()){
+#'
+#' merge multiple samples into one SummarizedExperiment object
+#' @noRd
+mergeCounts <- function(countList, junctionMap=NULL, assumeEqual=FALSE,
+                BPPARAM=SerialParam()){
 
     # prepare range object
     sample_names <- names(countList)
 
     if(assumeEqual){
-        ranges <- GRanges(sort(unique(countList[[1]])))
+        ranges <- sort(unique(GRanges(countList[[1]])))
         mcols(ranges)$count <- NULL
         names(ranges) <- NULL
 
@@ -246,6 +248,10 @@ countRNAData <- function(settings, internBPPARAM=SerialParam(),
         sample_counts <- lapply(countList, function(gr) mcols(gr)[["count"]] )
     } else {
         countgr <- GRangesList(countList)
+        if(!is.null(junctionMap)){
+            stopifnot(class(junctionMap) == "GRanges")
+            countgr <- c(countgr, GRangesList(junctionMap))
+        }
         ranges <- sort(unique(unlist(countgr)))
         mcols(ranges)$count <- NULL
         names(ranges) <- NULL
@@ -275,27 +281,27 @@ countRNAData <- function(settings, internBPPARAM=SerialParam(),
     )
 
     # merge it with the type columen and add it to the range object
-    mcols(ranges) <- sample_counts_df
+    mcolsInfoDF <- mcols(ranges)
+    mcols(ranges) <- cbind(sample_counts_df)
 
     # set correct naming
     colnames(mcols(ranges)) <- sample_names
+
+    # add mcolsInfoDF
+    mcols(ranges) <- cbind(mcolsInfoDF, mcols(ranges))
 
     # return the object
     return(ranges)
 }
 
 
-##
-## returns the name of the cache file if caching is enabled for the given sample
-##
-.getNonSplicedCountCacheFile <- function(sampleID, settings){
-
-    # check if caching is enabled
-    if(is.null(outputFolder(settings)) || outputFolder(settings) == "")
-        return(NULL)
+#'
+#' returns the name of the cache file if caching is enabled for the given sample
+#' @noRd
+getNonSplicedCountCacheFile <- function(sampleID, settings){
 
     # cache folder
-    cachedir <- file.path(outputFolder(settings), "cache", "nonSplicedCounts")
+    cachedir <- file.path(workingDir(settings), "cache", "nonSplicedCounts")
     if(!dir.exists(cachedir)){
         dir.create(cachedir, recursive=TRUE)
     }
@@ -307,17 +313,33 @@ countRNAData <- function(settings, internBPPARAM=SerialParam(),
     return(file.path(cachedir, filename))
 }
 
-##
-## counts non spliced reads based on the given target (acceptor/donor) regions
-## TODO: 10k chunks hardcoded currently (needs some testing and a code to)
-.countNonSplicedReads <- function(sampleID, spliceSiteCoords, settings,
-                    internBPPARAM=SerialParam()){
+
+#'
+#' creates a SAF data.table based on the given grange like object
+#' @noRd
+GRanges2SAF <- function(gr){
+    data.table(
+        GeneID  = seq_along(gr),
+        Chr     = as.character(seqnames(gr)),
+        Start   = start(gr),
+        End     = end(gr),
+        Strand  = as.character(strand(gr))
+    )
+}
+
+
+#'
+#' counts non spliced reads based on the given target (acceptor/donor) regions
+#' TODO: 10k chunks hardcoded currently (needs some testing and a code to)
+#' @noRd
+countNonSplicedReads <- function(sampleID, spliceSiteCoords, settings,
+                    NcpuPerSample=1){
     message(date(), ": Count non spliced reads for sample: ", sampleID)
     suppressPackageStartupMessages(library(FraseR))
-    bamFile <- bamFiles(settings[samples(settings) == sampleID])[[1]]
+    bamFile <- bamFile(settings[,samples(settings) == sampleID])[[1]]
 
     # check cache if available
-    cacheFile <- .getNonSplicedCountCacheFile(sampleID, settings)
+    cacheFile <- getNonSplicedCountCacheFile(sampleID, settings)
     if(!is.null(cacheFile) && file.exists(cacheFile)){
         # check if needs to be recalculated
         cache <- try(readRDS(cacheFile), silent=TRUE)
@@ -343,53 +365,27 @@ countRNAData <- function(settings, internBPPARAM=SerialParam(),
         }
     }
 
-    # estimate chunk size
-    rangeShift        <- 25*10^3
-    numRangesPerChunk <- 100
-    targetChunksTmp <- GenomicRanges::reduce(GenomicRanges::trim(
-        suppressWarnings(GenomicRanges::shift(
-            resize(spliceSiteCoords, width=rangeShift), shift=-rangeShift/2
-        ))
-    ))
+    # extract the counts with Rsubread
+    anno <- GRanges2SAF(spliceSiteCoords)
+    rsubreadCounts <- featureCounts(files=bamFile, annot.ext=anno,
+            minOverlap=2, allowMultiOverlap=TRUE, checkFragLength=FALSE,
+            minMQS=bamMapqFilter(scanBamParam(settings)),
+            strandSpecific=strandSpecific(settings),
 
-    numChunks <- ceiling(max(1,length(targetChunksTmp)/numRangesPerChunk))
-    chunkID <- rep(1:numChunks, each=numRangesPerChunk)[
-                1:length(targetChunksTmp)
-    ]
-    targetChunks <- split(targetChunksTmp, chunkID)
+            # multi-mapping reads
+            countMultiMappingReads=TRUE,
 
-    # extract the counts per chromosome
-    countsList <- bplapply(targetChunks, bamFile=bamFile, settings=settings,
-                spliceSites=spliceSiteCoords, BPPARAM=internBPPARAM,
-                FUN=function(range, bamFile, settings, spliceSites){
-# system.time({
-        suppressPackageStartupMessages(library(FraseR))
+            # for counting only non spliced reads we skip this information
+            isPairedEnd=FALSE,
 
-        # restrict to the chromosome only
-        param <- .mergeBamParams(scanBamParam(settings), range, TRUE)
+            # this is important, otherwise it will sort it by name
+            autosort=FALSE,
+            nthreads=NcpuPerSample,
+            tmpDir=file.path(workingDir(settings), "cache")
+    )
 
-        # extract raw data
-        message(date(), ": Running on following chromosomes: '",
-                paste(unique(seqnames(range)), collapse = ", "),
-                "' \twith the number of ranges: '", length(range), "'",
-                "\n\ton Bamfile: ",path(bamFile)
-        )
-        singleReadFrag <- readGAlignments(bamFile, param=param) %>%
-                grglist() %>% reduce()
-
-        # count data
-        regionOfChunk <- subsetByOverlaps(spliceSites, range, type = "any")
-        hits <- countOverlaps(regionOfChunk, singleReadFrag, minoverlap = 2)
-
-        # clean memory
-        #rm(regionOfChunk, singleReadFrag)
-        #gc()
-# }, TRUE)
-        return(hits)
-    })
-
-    #
-    mcols(spliceSiteCoords)$count <- unlist(countsList)
+    # extract results
+    mcols(spliceSiteCoords)$count <- rsubreadCounts$counts[,1]
     spliceSiteCoords <- sort(spliceSiteCoords)
 
 
@@ -424,104 +420,123 @@ countRNAData <- function(settings, internBPPARAM=SerialParam(),
 #' the given junction map
 #'
 #' @noRd
-.mergeSpliceSitesWithJunctionMap <- function(spliceSiteCoords,
-            globalJunctionMap){
-    if(is.null(globalJunctionMap)){
-        return(spliceSiteCoords)
+readJunctionMap <- function(junctionMap){
+    if(is.null(junctionMap)){
+        return(NULL)
     }
 
     # read global junction map
-    if(isScalarCharacter(globalJunctionMap)){
-        stopifnot(file.exists(globalJunctionMap))
-        if(endsWith(globalJunctionMap, ".RDS")){
-            map <- readRDS(globalJunctionMap)
+    if(isScalarCharacter(junctionMap)){
+        stopifnot(file.exists(junctionMap))
+        if(endsWith(junctionMap, ".RDS")){
+            map <- readRDS(junctionMap)
             stopifnot(class(map) == "GRanges")
-        } else {
-            message(date(), ": currently not supported.")
-            message(date(), ": will only use the provided junctions")
-            return(spliceSiteCoords)
+            return(map)
         }
-    } else if (class(globalJunctionMap) == "GRanges"){
-        map <- globalJunctionMap
-    } else {
-        stop("Objecttype (class) for global junction map not supported:",
-                    class(globalJunctionMap)
-        )
+        message(date(), ": currently not supported.")
+        message(date(), ": will only use the provided junctions")
+        return(NULL)
     }
-
-    # merge it
-    newSpliceSiteCoords <- unique(unlist(GRangesList(map, spliceSiteCoords)))
-    if(length(newSpliceSiteCoords) != length(spliceSiteCoords)){
-        nnew <- length(newSpliceSiteCoords)
-        nold <- length(spliceSiteCoords)
-        message(date(), ": Added splice junctions from global map: ",
-                nnew - nold
-        )
+    if(class(junctionMap) == "GRanges"){
+        return(junctionMap)
     }
-    return(newSpliceSiteCoords)
+    stop("Objecttype (class) for junction map currently not supported:",
+            class(junctionMap)
+    )
 }
 
-##
-## extracts the splice site coordinates from a junctions GRange object
-##
-.extractSpliceSiteCoordinates <- function(junctions_gr, settings){
-    if(settings@strandSpecific){
-        splice_site_coords <- unlist(GRangesList(
-            .extract_splice_site_coordinates_per_strand(junctions_gr, "+"),
-            .extract_splice_site_coordinates_per_strand(junctions_gr, "-")
+#'
+#' extracts the splice site coordinates from a junctions GRange object
+#' @noRd
+extractSpliceSiteCoordinates <- function(junctions){
+
+    if(all(strand(junctions) == "*")){
+        spliceSiteCoords <- extractSpliceSiteCoordsPerStrand(junctions, "*")
+    } else {
+        spliceSiteCoords <- unlist(GRangesList(
+            extractSpliceSiteCoordsPerStrand(junctions, "+"),
+            extractSpliceSiteCoordsPerStrand(junctions, "-")
         ))
-    } else {
-        strand(junctions_gr) <- "*"
-        splice_site_coords <-
-            .extract_splice_site_coordinates_per_strand(junctions_gr, "*")
     }
 
-    return(sort(unique(splice_site_coords)))
+    return(unique(sort(spliceSiteCoords)))
 }
 
 
-##
-## extracts the splice site coordinates per strand from a
-## given junctions GRange object
-##
-.extract_splice_site_coordinates_per_strand <- function(junctions_gr, strand){
+#'
+#' extracts the splice site coordinates per strand from a
+#' given junctions GRange object
+#' @noRd
+extractSpliceSiteCoordsPerStrand <- function(junctions, strand){
 
     # get only the correct strand features
-    junctions_gr <- junctions_gr[strand(junctions_gr) == strand,]
+    junctions <- junctions[strand(junctions) == strand,]
 
     # left side (acceptor on + and donor on -)
-    left_side <- GRanges(
-            seqnames = seqnames(junctions_gr),
-            strand = strand(junctions_gr),
+    left <- GRanges(
+            seqnames = seqnames(junctions),
+            strand = strand(junctions),
             ranges = IRanges(
-                    start = start(junctions_gr) - 1,
-                    end   = start(junctions_gr)
+                    start = start(junctions) - 1,
+                    end   = start(junctions)
             ),
-            seqlengths = seqlengths(junctions_gr),
-            seqinfo = seqinfo(junctions_gr)
+            seqlengths = seqlengths(junctions),
+            seqinfo = seqinfo(junctions),
+            mcols(junctions)[c("startID")]
     )
+    colnames(mcols(left)) <- "spliceSiteID"
 
     # right side (acceptor on - and donor on +)
-    right_side <- GRanges(
-            seqnames = seqnames(junctions_gr),
-            strand = strand(junctions_gr),
+    right <- GRanges(
+            seqnames = seqnames(junctions),
+            strand = strand(junctions),
             ranges = IRanges(
-                    start = end(junctions_gr),
-                    end   = end(junctions_gr) + 1
+                    start = end(junctions),
+                    end   = end(junctions) + 1
             ),
-            seqlengths = seqlengths(junctions_gr),
-            seqinfo = seqinfo(junctions_gr)
+            seqlengths = seqlengths(junctions),
+            seqinfo = seqinfo(junctions),
+            mcols(junctions)[c("endID")]
     )
+    colnames(mcols(right)) <- "spliceSiteID"
 
     # annotate donor and acceptor sites
-    if(strand == "+" | strand == "*"){
-        mcols(left_side)$type = "Donor"
-        mcols(right_side)$type = "Acceptor"
+    if(strand %in% c("+", "*")){
+        mcols(left)$type  = "Donor"
+        mcols(right)$type = "Acceptor"
     } else {
-        mcols(left_side)$type = "Acceptor"
-        mcols(right_side)$type = "Donor"
+        mcols(left)$type  = "Acceptor"
+        mcols(right)$type = "Donor"
     }
 
-    return(sort(unlist(GRangesList(left_side, right_side))))
+    return(unique(sort(unlist(GRangesList(left, right)))))
+}
+
+#'
+#' annotates the given GRange object with unique identifier for
+#' splice sites (acceptors and donors)
+#' @noRd
+annotateSpliceSite <- function(gr){
+    # convert to data.table for better handling
+    dt <- GRanges2SAF(gr)
+
+    # extract donor/acceptor annotation
+    startSideDT <- dt[,.(End=Start, type="start"),by="Chr,Start,Strand"]
+    endSideDT   <- dt[,.(Start=End, type="end"  ),by="Chr,End,Strand"]
+
+    # annotate and enumerate donor/acceptor
+    annotadedDT <- rbind(startSideDT, endSideDT)
+    annotadedDT[,id:=1:nrow(annotadedDT)]
+
+    # convert back to granges
+    annogr <- makeGRangesFromDataFrame(annotadedDT, keep.extra.columns=TRUE)
+
+    for(type in c("startID", "endID")){
+        mcols(gr)[[type]] <- as.integer(NA)
+        ov <- findOverlaps(gr,annogr, type=gsub("ID", "", type))
+        mcols(gr)[[type]] <- mcols(annogr[to(ov)])[["id"]]
+    }
+
+    return(gr)
 }
 

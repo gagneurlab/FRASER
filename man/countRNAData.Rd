@@ -4,18 +4,17 @@
 \alias{countRNAData}
 \title{Count RNA-seq data}
 \usage{
-countRNAData(settings, internBPPARAM = SerialParam(),
-  globalJunctionMap = NULL)
+countRNAData(fds, NcpuPerSample = 1, junctionMap = NULL)
 }
 \arguments{
-\item{settings}{A FraseRSetting object with all the information
+\item{fds}{A FraseRDataSet object with all the information
 how and what to count}
+
+\item{junctionMap}{A object or file containing a map of
+all junctions of interest across all samples}
 
 \item{internBPPARAM}{A BiocParallel param object to configure the
 parallel backend of the internal loop}
-
-\item{globalJunctionMap}{A object or file containing a map of
-all junction of interest across all samples}
 }
 \value{
 FraseRDataSet

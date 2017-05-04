@@ -1,3 +1,4 @@
+
 #'
 #' Create a test case dataset (sample information only)
 #' to be used in the vignette and to explore the
@@ -17,15 +18,20 @@ createTestFraseRSettings <- function(){
     # convert it to a bamFile list
     bamFiles <- system.file(sampleTable[,bamFile],
             package="FraseR", mustWork=TRUE)
-    sampleTable[,bamFile:=unlist(BamFileList(bamFiles))]
+    sampleTable[,bamFile:=bamFiles]
+
+    # TODO remove after example data update
+    if("group" %in% colnames(sampleTable)){
+        setnames(sampleTable, "group", "condition")
+    }
 
     # check that NHDF is NA group
-    sampleTable[gene=='NHDF',group:=NA]
+    sampleTable[gene=='NHDF',condition:=NA]
 
     # return a FraseRSettings object
-    return(FraseRSettings(
-        sampleData=sampleTable,
-        outputFolder=file.path(Sys.getenv("HOME"), "FraseR")
+    return(FraseRDataSet(
+        colData=sampleTable,
+        workingDir=file.path(Sys.getenv("HOME"), "FraseR")
     ))
 }
 

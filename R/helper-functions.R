@@ -4,6 +4,17 @@
 ## Helperfunctions to convert or extract data within the FraseR package
 ##
 
+#'
+#' clear the files in the cache to start fresh
+#' @export
+cleanCache <- function(fds, ...){
+    stopifnot(class(fds) == "FraseRDataSet")
+    # clean cache
+    cacheDir <- file.path(workingDir(fds), "cache")
+    if(dir.exists(cacheDir)){
+        unlink(cacheDir, recursive=TRUE)
+    }
+}
 
 #'
 #' convert a data.table to a DataFrame and keep the colname names

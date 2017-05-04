@@ -21,8 +21,8 @@ URL: https://i12g-gagneurweb.in.tum.de/gitlab/mertes/FraseR/
 RoxygenNote: 6.0.1
 Collate: 
     'FraseR-package.R'
-    'FraseRSettings-class.R'
     'FraseRDataSet-class.R'
+    'AllGenerics.R'
     'Fraser-pipeline.R'
     'accessor-methods.R'
     'annotationOfRanges.R'
@@ -30,7 +30,6 @@ Collate:
     'calculatePSIValue.R'
     'calculateStats.R'
     'countRNAseqData.R'
-    'countRNAseqDataWithRsubread.R'
     'example_functions.R'
     'helper-functions.R'
     'plotResults.R'

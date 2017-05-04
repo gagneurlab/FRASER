@@ -4,7 +4,7 @@
 \alias{FraseRDataSet}
 \title{The constructor function for FraseRSettings}
 \usage{
-FraseRDataSet(...)
+FraseRDataSet(colData = NULL, ...)
 }
 \arguments{
 \item{...}{Any parameters corresponding to the slots and their possible

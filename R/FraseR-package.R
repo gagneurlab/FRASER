@@ -21,6 +21,7 @@
 #' @importFrom IRanges from
 #' @importFrom IRanges to
 #' @importFrom IRanges IRanges
+#' @importFrom Rsubread featureCounts
 #'
 #'
 ### Annotation
@@ -39,6 +40,7 @@
 #' @importFrom HDF5Array writeHDF5Array
 #' @importFrom rhdf5 h5ls
 #'
+#'
 ### Data handling
 #'
 #' @importFrom data.table data.table
@@ -49,6 +51,7 @@
 #'
 #'
 ### P-Value calculation
+#'
 #' @importFrom stats sd
 #' @importFrom stats rbinom
 #' @importFrom stats fisher.test
@@ -58,5 +61,10 @@
 #' @importFrom VGAM Coef
 #' @importFrom VGAM pbetabinom
 #' @importFrom VGAM betabinomial
+#'
+### Miscelenious functions
+#'
+#' @importFrom BBmisc isScalarCharacter
+#' @importFrom BBmisc isScalarLogical
 #'
 NULL

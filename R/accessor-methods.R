@@ -4,6 +4,14 @@
 #' This file contains accessor functions for the FraseRDataSet object
 #'
 
+#'
+#' internal accessor for the non spliced reads object
+#' @noRd
+nonSplicedReads <- function(fds){
+    stopifnot(class(fds) == "FraseRDataSet")
+    return(fds@nonSplicedReads)
+}
+
 .getReadTypeFromPsiType <- function(psiType){
     stopifnot(length(psiType) == 1 && class(psiType) == "")
     readType <- switch(psiType,
