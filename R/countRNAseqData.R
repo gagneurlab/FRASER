@@ -46,18 +46,31 @@ countRNAData <- function(fds, NcpuPerSample=1, junctionMap=NULL){
     )
     names(countList) <- samples(fds)
     counts <- mergeCounts(countList, junctionMap=junctionMap,
-            assumeEqual=FALSE, parallel(fds)
+            assumeEqual=FALSE, BPPARAM=parallel(fds)
     )
-    counts <- annotateSpliceSite(counts)
+
+    # create summarized objects
+    h5 <- saveAsHDF5(fds, "rawCountsJ", mcols(counts)[samples(fds)])
+    colnames(h5) <- samples(fds)
+    splitCounts <- SummarizedExperiment(
+        colData=colData(fds),
+        assays=list(rawCountsJ=h5),
+        rowRanges=counts[,!colnames(mcols(counts)) %in% samples(fds)]
+    )
+    rm(countList, counts, h5)
+    gc()
+
+    # set
+    splitCounts <- annotateSpliceSite(splitCounts)
 
     # count the retained reads
     message(date(), ": Start counting the non spliced reads ...")
-    message(date(), ": In total ", length(granges(counts)),
+    message(date(), ": In total ", length(splitCounts),
             " splice junctions are found."
     )
 
     # extract donor and acceptor sites
-    spliceSiteCoords <- extractSpliceSiteCoordinates(counts)
+    spliceSiteCoords <- extractSpliceSiteCoordinates(splitCounts)
     message(date(), ": In total ", length(spliceSiteCoords),
             " splice sites (acceptor/donor) will be counted ..."
     )
@@ -77,16 +90,15 @@ countRNAData <- function(fds, NcpuPerSample=1, junctionMap=NULL){
     )
 
     # create summarized objects
-    splitCounts <- SummarizedExperiment(
-            colData=colData(fds),
-            assays=list(rawCountsJ=mcols(counts)[samples(fds)]),
-            rowRanges=counts[,!colnames(mcols(counts)) %in% samples(fds)]
-    )
+    h5 <- saveAsHDF5(fds, "rawCountsSS", mcols(siteCounts)[samples(fds)])
+    colnames(h5) <- samples(fds)
     nonSplicedCounts <- SummarizedExperiment(
-            colData=colData(fds),
-            assays=list(rawCountsSS=mcols(siteCounts)[samples(fds)]),
-            rowRanges=siteCounts[,!colnames(mcols(siteCounts)) %in% samples(fds)]
+        colData=colData(fds),
+        assays=list(rawCountsSS=h5),
+        rowRanges=siteCounts[,!colnames(mcols(siteCounts)) %in% samples(fds)]
     )
+    rm(countList, siteCounts, h5)
+    gc()
 
     # create final FraseR dataset
     fds <- new("FraseRDataSet",
@@ -94,7 +106,7 @@ countRNAData <- function(fds, NcpuPerSample=1, junctionMap=NULL){
         nonSplicedReads=nonSplicedCounts
     )
 
-    # save it so the counts get saved as a HDF5 array on disk
+    # save it so the FraseR object also gets saved
     fds <- saveFraseRDataSet(fds)
 
     # return it
@@ -285,13 +297,15 @@ mergeCounts <- function(countList, junctionMap=NULL, assumeEqual=FALSE,
 
     # merge it with the type columen and add it to the range object
     mcolsInfoDF <- mcols(ranges)
-    mcols(ranges) <- cbind(sample_counts_df)
+    mcols(ranges) <- sample_counts_df
 
     # set correct naming
     colnames(mcols(ranges)) <- sample_names
 
     # add mcolsInfoDF
-    mcols(ranges) <- cbind(mcolsInfoDF, mcols(ranges))
+    if(dim(mcolsInfoDF)[2] > 0){
+        mcols(ranges)[colnames(mcolsInfoDF)] <- mcolsInfoDF
+    }
 
     # return the object
     return(ranges)
@@ -520,6 +534,8 @@ extractSpliceSiteCoordsPerStrand <- function(junctions, strand){
 #' splice sites (acceptors and donors)
 #' @noRd
 annotateSpliceSite <- function(gr){
+    message(date(), ": Create splice site indices ...")
+
     # convert to data.table for better handling
     dt <- GRanges2SAF(gr)
 
@@ -534,13 +550,15 @@ annotateSpliceSite <- function(gr){
     # convert back to granges
     annogr <- makeGRangesFromDataFrame(annotadedDT, keep.extra.columns=TRUE)
 
-    for(type in c("start", "end")){
+    ids <- mclapply(c("start", "end"), mc.cores=2, function(type){
         # reduce annogr to only the specific type to prevent overlap
         annogrtmp <- annogr[annogr$type == type]
-        mcols(gr)[[paste0(type, "ID")]] <- as.integer(NA)
         ov <- findOverlaps(gr, annogrtmp, type=type)
-        mcols(gr)[[paste0(type, "ID")]] <- mcols(annogrtmp[to(ov)])[["id"]]
-    }
+        mcols(annogrtmp[to(ov)])[["id"]]
+    })
+
+    names(ids) <- paste0(c("start", "end"), "ID")
+    mcols(gr)[names(ids)] <- DataFrame(ids)
 
     return(gr)
 }

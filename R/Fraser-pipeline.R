@@ -28,13 +28,13 @@ FraseR <- function(settings=createTestFraseRSettings(), NcpuPerSample=1){
     fds <<- countRNAData(settings, NcpuPerSample=NcpuPerSample)
 
     # calculate PSI values
-    fds <- calculatePSIValues(fds)
+    fds <<- calculatePSIValues(fds)
 
     # calculate ZScores
-    fds <- calculateZScores(fds)
+    fds <<- calculateZScores(fds)
 
     # calculte P-values
-    fds <- calculatePValues(fds)
+    fds <<- calculatePValues(fds)
 
     # return final analysis
     return(fds)
