@@ -406,12 +406,18 @@ FraseRDataSet.assays.replace <-
         jslots <- value[1:nj]
         sslots <- value[(nj+1):n]
         if(length(value) > n){
+            if(!type %in% c("j", "ss")){
+                stop(paste("Please set the 'type' option to ",
+                        "'j' (Junction) or 'ss' (splice site)."
+                ))
+            }
             jslots <- c(jslots, value[(1+n):length(value)][type=="j"])
             sslots <- c(sslots, value[(1+n):length(value)][type=="ss"])
         }
 
         # assign new assays
-        assays(as(x,"SummarizedExperiment"), ..., withDimnames=withDimnames) <- jslots
+        value <- jslots
+        x <- callNextMethod()
         assays(nonSplicedReads(x), ..., withDimnames=withDimnames) <- sslots
 
         # validate and return
@@ -424,7 +430,6 @@ setReplaceMethod("assays", c("FraseRDataSet", "SimpleList"),
 setReplaceMethod("assays", c("FraseRDataSet", "list"),
         FraseRDataSet.assays.replace
 )
-
 
 
 
