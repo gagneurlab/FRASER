@@ -103,7 +103,13 @@ countRNAData <- function(fds, NcpuPerSample=1, junctionMap=NULL){
     # create final FraseR dataset
     fds <- new("FraseRDataSet",
         splitCounts,
-        nonSplicedReads=nonSplicedCounts
+        name            = name(fds),
+        method          = method(fds),
+        parallel        = parallel(fds),
+        bamParam        = scanBamParam(fds),
+        strandSpecific  = strandSpecific(fds),
+        workingDir      = workingDir(fds),
+        nonSplicedReads = nonSplicedCounts
     )
 
     # save it so the FraseR object also gets saved
