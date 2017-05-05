@@ -534,10 +534,12 @@ annotateSpliceSite <- function(gr){
     # convert back to granges
     annogr <- makeGRangesFromDataFrame(annotadedDT, keep.extra.columns=TRUE)
 
-    for(type in c("startID", "endID")){
-        mcols(gr)[[type]] <- as.integer(NA)
-        ov <- findOverlaps(gr,annogr, type=gsub("ID", "", type))
-        mcols(gr)[[type]] <- mcols(annogr[to(ov)])[["id"]]
+    for(type in c("start", "end")){
+        # reduce annogr to only the specific type to prevent overlap
+        annogrtmp <- annogr[annogr$type == type]
+        mcols(gr)[[paste0(type, "ID")]] <- as.integer(NA)
+        ov <- findOverlaps(gr, annogrtmp, type=type)
+        mcols(gr)[[paste0(type, "ID")]] <- mcols(annogrtmp[to(ov)])[["id"]]
     }
 
     return(gr)
