@@ -14,47 +14,19 @@
 #' @examples
 #'   fds <- counRNAData(createTestFraseRSettings())
 #'   fds <- calculatePSIValues(fds)
-calculatePSIValues <- function(dataset){
+calculatePSIValues <- function(fds){
     # check input
-    stopifnot(class(dataset) == "FraseRDataSet")
-
-    # generate a data.table from granges
-    rawCountData <- dataset@splitReads
-    countData <- cbind(
-        data.table(
-            chr = as.factor(seqnames(rawCountData)),
-            start = start(rawCountData),
-            end = end(rawCountData),
-            strand = as.factor(strand(rawCountData)),
-            counts = NA
-        ),
-        as.data.table(assays(rawCountData)$rawCounts)
-    )
+    stopifnot(class(fds) == "FraseRDataSet")
 
     # calculate 3/5' PSI for each sample
-    message(date(), ": Calculate the PSI3 values ...")
-    psiValues <- .calculatePSIValuePrimeSite(
-            countData=countData, psiType="3'",
-            settings=dataset@settings
-    )
-    assays(rawCountData)$psi3 <- psiValues[["psi"]]
-    assays(rawCountData)$rawOtherCounts_psi3 <- psiValues[["counts"]]
-
-    message(date(), ": Calculate the PSI5 values ...")
-    psiValues <- .calculatePSIValuePrimeSite(
-            countData=countData, psiType="5'",
-            settings=dataset@settings
-    )
-    assays(rawCountData)$psi5 <- psiValues[["psi"]]
-    assays(rawCountData)$rawOtherCounts_psi5 <- psiValues[["counts"]]
-
-    dataset@splitReads <- rawCountData
+    fds <- calculatePSIValuePrimeSite(fds, psiType="3")
+    fds <- calculatePSIValuePrimeSite(fds, psiType="5")
 
     # calculate siteSplice values
-    dataset <- .calculateSitePSIValue(dataset)
+    fds <- calculateSitePSIValue(fds)
 
     # return it
-    return(dataset)
+    return(fds)
 }
 
 
@@ -62,33 +34,48 @@ calculatePSIValues <- function(dataset){
 #' calculates the PSI value for the given prime site of the junction
 #'
 #' @noRd
-.calculatePSIValuePrimeSite <- function(countData, settings, psiType){
+calculatePSIValuePrimeSite <- function(fds, psiType){
+    stopifnot(class(fds) == "FraseRDataSet")
+    stopifnot(isScalarCharacter(psiType))
+    stopifnot(psiType %in% c("3", "5"))
+
+    message(date(), ": Calculate the PSI", psiType, " values ...")
 
     # convert psi type to the position of interest
-    psiCol <- ifelse(psiType == "3'", "start", "end")
+    psiCol <- ifelse(psiType == "3", "start", "end")
+    psiName <- paste0("psi", psiType)
+    psiROCName <- paste0("rawOtherCounts_psi", psiType)
+
+    # generate a data.table from granges
+    countData <- data.table(
+        chr = as.factor(seqnames(fds)),
+        start = start(fds),
+        end = end(fds),
+        strand = as.factor(strand(fds)),
+        counts = NA
+    )
 
     # calculate psi value
-    psiValues <- bplapply(settings@sampleData[,sampleID],
-        countData=countData, psiCol=psiCol,
-        BPPARAM=settings@parallel,
-        FUN = function(sample, countData, psiCol){
+    psiValues <- bplapply(samples(fds), countData=countData, psiCol=psiCol,
+        BPPARAM=parallel(fds), FUN = function(sample, countData, psiCol){
             suppressPackageStartupMessages(library(FraseR))
 
-            # check name, due to conversion
-            if(grepl("^\\d+$", sample)){
-                sample <- paste0("X", sample)
-            }
-
-            # init psi
-            countData[,psiValue:=as.numeric(NA)]
+            # add sample specific counts to the data.table
+            sample <- as.character(sample)
+            sampleCounts <- as.data.table(assays(fds)[["rawCountsJ"]][,sample])
+            colnames(sampleCounts) <- sample
+            countData <- cbind(countData, sampleCounts)
 
             # calculate other split read counts
-            countData[,rawOtherCounts:=sum(get(sample), na.rm=TRUE) - get(sample),
+            countData[,rawOtherCounts:=sum(get(sample)) - get(sample),
                     by=eval(paste0("chr,", psiCol, ",strand"))
             ]
 
             # calculate psi value
             countData[,psiValue:=get(sample)/(get(sample) + rawOtherCounts)]
+
+            # if psi is NA this means there were no reads at all so set it to 0
+            countData[is.na(psiValue),psiValue:=0]
 
             return(list(
                     rawOtherCounts=countData[,rawOtherCounts],
@@ -97,17 +84,17 @@ calculatePSIValues <- function(dataset){
         }
     )
 
-    # merge it and set the column names
-    dfPsi <- DataFrame(matrix(unlist(sapply(psiValues, "[", "psiValue")),
-            ncol = nrow(settings@sampleData)
+    # merge it to a DataFrame and assign it to our object
+    assays(fds, type="j")[[psiName]] <- DataFrame(matrix(
+        data = unlist(sapply(psiValues, "[", "psiValue")),
+        ncol = dim(fds)[2], dimnames = list(NULL,samples(fds))
     ))
-    names(dfPsi) <- settings@sampleData[,sampleID]
-    dfCounts  <- DataFrame(matrix(unlist(sapply(psiValues, "[", "rawOtherCounts")),
-            ncol = nrow(settings@sampleData)
+    assays(fds, type="j")[[psiROCName]] <- DataFrame(matrix(
+        unlist(sapply(psiValues, "[", "rawOtherCounts")),
+        ncol = dim(fds)[2], dimnames = list(NULL,samples(fds))
     ))
-    names(dfCounts) <- settings@sampleData[,sampleID]
 
-    return(SimpleList(psi=dfPsi, counts=dfCounts))
+    return(fds)
 }
 
 
@@ -116,107 +103,74 @@ calculatePSIValues <- function(dataset){
 #' based on the FraseRDataSet object
 #'
 #' @noRd
-.calculateSitePSIValue <- function(dataset){
+calculateSitePSIValue <- function(fds){
 
     # check input
-    stopifnot(class(dataset) == "FraseRDataSet")
+    stopifnot(class(fds) == "FraseRDataSet")
 
-    # get only the junctions
-    splitReads <- dataset@splitReads
-    nonSplicedCounts <- dataset@nonSplicedReads
+    message(date(), ": Calculate the PSI site values ...")
 
+    psiName <- "psiSite"
+    psiROCName <- "rawOtherCounts_psiSite"
 
-    for(spliceType in c("Acceptor", "Donor")){
-        message(date(), ": Calculate the splice site values for ", spliceType, " ...")
-        modified_rows <- rowData(nonSplicedCounts)$type == spliceType
-        splice_site   <- nonSplicedCounts[modified_rows]
-        splice_ranges <- rowRanges(splice_site)
-
-        # shift for start/end overlap
-        splice_ranges <- shift(splice_ranges,
-                ifelse(spliceType == "Acceptor", -1, 1)
+    # prepare data table for calculating the psi value
+    countData <- data.table(
+        spliceSiteID=c(
+            rowData(fds)[["startID"]],
+            rowData(fds)[["endID"]],
+            rowData(nonSplicedReads(fds))[["spliceSiteID"]]
+        ),
+        type=rep(
+            c("junction", "spliceSite"),
+            c(length(fds)*2, length(nonSplicedReads(fds)))
         )
-
-        # find overlap
-        overlap <- findOverlaps(splice_ranges, splitReads,
-                type=ifelse(spliceType == "Acceptor", "end", "start")
-        )
-
-        # sum up the junctions per site per sample
-        junction_counts_per_site <- bplapply(
-                    samples(dataset@settings),
-                    overlap=overlap, splitReads=splitReads,
-                    BPPARAM=parallel(dataset@settings),
-                    FUN = function(sample, overlap, splitReads){
-            suppressPackageStartupMessages(library(FraseR))
-
-            dt <- data.table(
-                from = overlap@from,
-                count = as.numeric(assays(
-                        splitReads[,sample])$rawCounts[,1])[overlap@to]
-            )
-            dt <- dt[,.(counts=sum(count, na.rm=TRUE),
-                    is.na=all(is.na(count))), by=from
-            ]
-            return(dt[,counts])
-        })
-
-        # add junction counts
-        splice_site <- .mergeAssay("rawSplitReadCounts", splice_site,
-                junction_counts_per_site, unique(overlap@from)
-        )
-
-        # wrote it to the data
-        dataset@nonSplicedReads <- .mergeAssay("rawOtherCounts_sitePSI",
-                dataset@nonSplicedReads,
-                assays(splice_site)$rawSplitReadCounts, modified_rows
-        )
-    }
-
-
-    # add junction persent spliced in value (sitePSI)
-    sitePSIValue <-
-        .getAssayAsDataTable(dataset@nonSplicedReads, "rawOtherCounts_sitePSI") / (
-            .getAssayAsDataTable(dataset@nonSplicedReads, "rawOtherCounts_sitePSI") +
-            .getAssayAsDataTable(dataset@nonSplicedReads, "rawCounts")
     )
-    dataset@nonSplicedReads <- FraseR:::.mergeAssay("sitePSI", dataset@nonSplicedReads, sitePSIValue)
 
-    return(dataset)
+    psiSiteValues <- bplapply(samples(fds), countData=countData, fds=fds,
+        BPPARAM=parallel(fds), FUN = function(sample, countData, fds){
+
+            # add sample specific counts to the data.table
+            sample <- as.character(sample)
+            sampleCounts <- as.data.table(c(
+                rep(as.vector(assays(fds)[["rawCountsJ"]][,sample]), 2),
+                as.vector(assays(fds)[["rawCountsSS"]][,sample])
+            ))
+            colnames(sampleCounts) <- sample
+            countData <- cbind(countData, sampleCounts)
+
+            # calculate other split read counts
+            countData[,rawOtherCounts:=sum(get(sample)) - get(sample),
+                    by="spliceSiteID"
+            ]
+
+            # remove the junction part since we only want to calculate the
+            # psi values for the splice site itself
+            countData <- countData[type=="spliceSite"]
+
+            # calculate psi value
+            countData[,psiValue:=get(sample)/(get(sample) + rawOtherCounts)]
+
+            # if psi is NA this means there were no reads at all so set it to 0
+            countData[is.na(psiValue),psiValue:=0]
+
+            return(list(
+                rawOtherCounts=countData[,rawOtherCounts],
+                psiValue=countData[,psiValue]
+            ))
+        }
+    )
+
+    # merge it to a DataFrame and assign it to our object
+    assays(fds, type="ss")[[psiName]] <- DataFrame(matrix(
+        data = unlist(sapply(psiSiteValues, "[", "psiValue")),
+        ncol = dim(fds)[2], dimnames = list(NULL,samples(fds))
+    ))
+    assays(fds, type="ss")[[psiROCName]] <- DataFrame(matrix(
+        unlist(sapply(psiSiteValues, "[", "rawOtherCounts")),
+        ncol = dim(fds)[2], dimnames = list(NULL,samples(fds))
+    ))
+
+    return(fds)
 }
-
-
-#'
-#' merge assays into one
-#'
-#' @param assay name of assay to use
-#' @param se summarizedExperiment object to add the assay
-#' @param df dataframe/data to add as assay
-#'
-#' @noRd
-.mergeAssay <- function(assay, se1, df1, rowidx1 = 1:dim(se1)[1]){
-    # create empty dataframe for assay if not present yet
-    if(!any(names(assays(se1)) %in% assay)){
-        tmp_df <- DataFrame(matrix(
-                as.numeric(NA), nrow=dim(se1)[1], ncol=dim(se1)[2]
-        ))
-        colnames(tmp_df) <- colnames(se1)
-        assays(se1)[[assay]] <- tmp_df
-    }
-
-    # make a data frame out of the given data if needed
-    if(!any(class(df1) %in% "DataFrame")){
-        df1 <- .asDataFrame(df1, colnames(se1))
-    }
-
-    # merge the data
-    tmp_df <- assays(se1)[[assay]]
-    tmp_df[rowidx1,] <- df1
-    assays(se1)[[assay]] <- tmp_df
-
-    # return it
-    return(se1)
-}
-
 
 
