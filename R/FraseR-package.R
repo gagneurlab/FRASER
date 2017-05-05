@@ -48,6 +48,7 @@
 #' @importFrom data.table :=
 #' @importFrom data.table fread
 #' @import tidyr
+#' @importFrom dplyr bind_rows
 #' @importFrom HDF5Array writeHDF5Array
 #'
 #'

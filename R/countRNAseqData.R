@@ -290,14 +290,9 @@ mergeCounts <- function(countList, junctionMap=NULL, assumeEqual=FALSE,
         )
     }
 
-    # convert it to a DataFrame
-    sample_counts_df <- DataFrame(
-        matrix(unlist(sample_counts), ncol = length(sample_counts))
-    )
-
     # merge it with the type columen and add it to the range object
     mcolsInfoDF <- mcols(ranges)
-    mcols(ranges) <- sample_counts_df
+    mcols(ranges) <- DataFrame(bind_rows(sample_counts))
 
     # set correct naming
     colnames(mcols(ranges)) <- sample_names
