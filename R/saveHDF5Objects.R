@@ -96,6 +96,9 @@ saveAsHDF5 <- function(fds, name, object=NULL){
 getFraseRHDF5File <- function(fds, aname, add){
     dir <- workingDir(fds)
     outDir <- file.path(dir, "savedObjects")
+    if(!dir.exists(outDir)) {
+        dir.create(outDir, recursive=TRUE)
+    }
     h5File <- file.path(outDir, paste0(aname, ".h5"))
     return(h5File)
 }
