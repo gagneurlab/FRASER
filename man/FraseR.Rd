@@ -6,13 +6,13 @@
 \title{FraseR: A package providing a workflow to detect aberrant splicing events
     in RNA sequencing data in a rare disease cohort}
 \usage{
-FraseR(settings, internBPPARAM = SerialParam())
+FraseR(settings = createTestFraseRSettings(), NcpuPerSample = 1)
 }
 \arguments{
-\item{settings}{A FraseRSetting object with all the information
+\item{settings}{A FraseRDataSet object with all the information
 how and what to count}
 
-\item{internBPPARAM}{A BiocParallel param object to configure the
+\item{NcpuPerSample}{A BiocParallel param object to configure the
 parallel backend of the internal loop for counting}
 }
 \value{

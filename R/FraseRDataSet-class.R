@@ -175,8 +175,7 @@ showFraseRDataSet <- function(object) {
         cat(paste0("Number of samples:      ", dim(object)[2]), "\n")
         cat(paste0("Number of junctions:    ", length(object)), "\n")
         cat(paste0("Number of splice sites: ", length(nonSplicedReads(object))), "\n")
-        scat("assaysJunctions(%d):    %s\n", assayNames(object))
-        scat("assaysSpliceSites(%d):  %s\n", assayNames(nonSplicedReads(object)))
+        scat("assays(%d):    %s\n", assayNames(object))
         cat("\n\n")
     }
 

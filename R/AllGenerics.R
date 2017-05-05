@@ -6,54 +6,60 @@
 
 # samples (get the sampleID) functions
 #' @export
-setGeneric("samples",          function(object) standardGeneric("samples"))
+setGeneric("samples",           function(object) standardGeneric("samples"))
 #' @export
-setGeneric("samples<-",        signature = "object", function(object, value) standardGeneric("samples<-"))
+setGeneric("samples<-",         signature = "object", function(object, value) standardGeneric("samples<-"))
 
 # condition (get the group/condition of a sample) functions
 #' @export
-setGeneric("condition",        function(object) standardGeneric("condition"))
+setGeneric("condition",         function(object) standardGeneric("condition"))
 #' @export
-setGeneric("condition<-",      signature = "object", function(object, value) standardGeneric("condition<-"))
+setGeneric("condition<-",       signature = "object", function(object, value) standardGeneric("condition<-"))
 
 # bamFile (get the bamFile of a sample) functions
 #' @export
-setGeneric("bamFile",          function(object) standardGeneric("bamFile"))
+setGeneric("bamFile",           function(object) standardGeneric("bamFile"))
 #' @export
-setGeneric("bamFile<-",        signature = "object", function(object, value) standardGeneric("bamFile<-"))
+setGeneric("bamFile<-",         signature = "object", function(object, value) standardGeneric("bamFile<-"))
 
 #' @export
-setGeneric("name",             function(object) standardGeneric("name"))
+setGeneric("name",              function(object) standardGeneric("name"))
 #' @export
-setGeneric("name<-",           signature = "object", function(object, value) standardGeneric("name<-"))
+setGeneric("name<-",            signature = "object", function(object, value) standardGeneric("name<-"))
 
 #' @export
-setGeneric("method",           function(object) standardGeneric("method"))
+setGeneric("method",            function(object) standardGeneric("method"))
 #' @export
-setGeneric("method<-",         signature = "object", function(object, value) standardGeneric("method<-"))
+setGeneric("method<-",          signature = "object", function(object, value) standardGeneric("method<-"))
 
 #' @export
-setGeneric("strandSpecific",   function(object) standardGeneric("strandSpecific"))
+setGeneric("strandSpecific",    function(object) standardGeneric("strandSpecific"))
 #' @export
-setGeneric("strandSpecific<-", signature = "object", function(object, value) standardGeneric("strandSpecific<-"))
+setGeneric("strandSpecific<-",  signature = "object", function(object, value) standardGeneric("strandSpecific<-"))
 
 # working directory functions
 #' @export
-setGeneric("workingDir",       function(object) standardGeneric("workingDir"))
+setGeneric("workingDir",        function(object) standardGeneric("workingDir"))
 #' @export
-setGeneric("workingDir<-",     signature = "object", function(object, value) standardGeneric("workingDir<-"))
+setGeneric("workingDir<-",      signature = "object", function(object, value) standardGeneric("workingDir<-"))
 
 # scanBamParam functions
 #' @export
-setGeneric("scanBamParam",     function(object) standardGeneric("scanBamParam"))
+setGeneric("scanBamParam",      function(object) standardGeneric("scanBamParam"))
 #' @export
-setGeneric("scanBamParam<-",   signature = "object", function(object, value) standardGeneric("scanBamParam<-"))
+setGeneric("scanBamParam<-",    signature = "object", function(object, value) standardGeneric("scanBamParam<-"))
 
 # parallel functions
 #' @export
-setGeneric("parallel",         function(object) standardGeneric("parallel"))
+setGeneric("parallel",          function(object) standardGeneric("parallel"))
 #' @export
-setGeneric("parallel<-",       signature = "object", function(object, value) standardGeneric("parallel<-"))
+setGeneric("parallel<-",        signature = "object", function(object, value) standardGeneric("parallel<-"))
+
+# non spliced reads function
+#' @export
+setGeneric("nonSplicedReads",   function(object) standardGeneric("nonSplicedReads"))
+#' @export
+setGeneric("nonSplicedReads<-", signature = "object", function(object, value) standardGeneric("nonSplicedReads<-"))
 
 
 #'
@@ -291,6 +297,25 @@ setReplaceMethod("scanBamParam", "FraseRDataSet", function(object, value) {
     return(object)
 })
 
+
+#'
+#' accessor for the non spliced reads object within the FraseRDataSet object
+#' @export
+#' @rdname nonSplicedReads
+setMethod("nonSplicedReads", "FraseRDataSet", function(object){
+    return(slot(object, "nonSplicedReads"))
+})
+
+#'
+#' setter for the non spliced reads object within the FraseRDataSet object
+#' @export
+#' @rdname nonSplicedReads
+setReplaceMethod("nonSplicedReads", "FraseRDataSet", function(object, value){
+    slot(object, "nonSplicedReads") <- value
+    validObject(object)
+    return(object)
+})
+
 #'
 #' Subsetting by indices for junctions
 #'
@@ -339,3 +364,68 @@ setMethod("[", c("FraseRDataSet", "ANY", "ANY"), function(x, i, j) {
     validObject(newx)
     return(newx)
 })
+
+
+#'
+#' Returns the assayNames of FraseR
+#'
+setMethod("assayNames", "FraseRDataSet", function(x) {
+    ans1 <- assayNames(as(x, "SummarizedExperiment"))
+    ans2 <- assayNames(nonSplicedReads(x))
+    return(c(ans1, ans2))
+})
+
+
+#'
+#' Returns the assay corrensonding to the given name/index of the FraseRDataSet
+#'
+setMethod("assays", "FraseRDataSet", function(x,...){
+    return(c(
+        callNextMethod(),
+        assays(nonSplicedReads(x))
+    ))
+})
+FraseRDataSet.assays.replace <-
+    function(x, ..., type="", withDimnames=TRUE, value){
+        if(any(names(value) == "")) stop("Name of an assay can not be empty!")
+        if(any(duplicated(names(value)))) stop("Assay names need to be unique!")
+
+        # make sure all slots are HDF5
+        for(i in seq_along(value)){
+            if(!class(value[[i]]) %in% c("HDF5Matrix", "DelayedMatrix")){
+                aname <- names(value)[i]
+                h5obj <- saveAsHDF5(x, aname, object=value[[i]])
+                value[[i]] <- h5obj
+            }
+        }
+
+        # first replace all existing slots
+        n <- length(assayNames(x))
+        nj <- n - length(assays(nonSplicedReads(x)))
+        ns <- n - nj
+        jslots <- value[1:nj]
+        sslots <- value[(nj+1):n]
+        if(length(value) > n){
+            jslots <- c(jslots, value[(1+n):length(value)][type=="j"])
+            sslots <- c(sslots, value[(1+n):length(value)][type=="ss"])
+        }
+
+        # assign new assays
+        assays(as(x,"SummarizedExperiment"), ..., withDimnames=withDimnames) <- jslots
+        assays(nonSplicedReads(x), ..., withDimnames=withDimnames) <- sslots
+
+        # validate and return
+        validObject(x)
+        return(x)
+}
+setReplaceMethod("assays", c("FraseRDataSet", "SimpleList"),
+        FraseRDataSet.assays.replace
+)
+setReplaceMethod("assays", c("FraseRDataSet", "list"),
+        FraseRDataSet.assays.replace
+)
+
+
+
+
+

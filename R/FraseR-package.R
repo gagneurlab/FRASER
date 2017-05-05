@@ -48,6 +48,7 @@
 #' @importFrom data.table :=
 #' @importFrom data.table fread
 #' @import tidyr
+#' @importFrom HDF5Array writeHDF5Array
 #'
 #'
 ### P-Value calculation
@@ -66,5 +67,6 @@
 #'
 #' @importFrom BBmisc isScalarCharacter
 #' @importFrom BBmisc isScalarLogical
+#' @importFrom R.utils renameFile
 #'
 NULL

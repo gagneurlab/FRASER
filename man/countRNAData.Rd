@@ -10,11 +10,12 @@ countRNAData(fds, NcpuPerSample = 1, junctionMap = NULL)
 \item{fds}{A FraseRDataSet object with all the information
 how and what to count}
 
+\item{NcpuPerSample}{A BiocParallel param object or a positive integer
+to configure the parallel backend
+of the internal loop per sample}
+
 \item{junctionMap}{A object or file containing a map of
 all junctions of interest across all samples}
-
-\item{internBPPARAM}{A BiocParallel param object to configure the
-parallel backend of the internal loop}
 }
 \value{
 FraseRDataSet
@@ -28,4 +29,5 @@ TODO
 }
 \examples{
   counRNAData(createTestFraseRSettings())
+  counRNAData(createTestFraseRSettings(), 5)
 }

@@ -79,12 +79,12 @@ countRNAData <- function(fds, NcpuPerSample=1, junctionMap=NULL){
     # create summarized objects
     splitCounts <- SummarizedExperiment(
             colData=colData(fds),
-            assays=list(rawCounts=mcols(counts)[samples(fds)]),
+            assays=list(rawCountsJ=mcols(counts)[samples(fds)]),
             rowRanges=counts[,!colnames(mcols(counts)) %in% samples(fds)]
     )
     nonSplicedCounts <- SummarizedExperiment(
             colData=colData(fds),
-            assays=list(rawCounts=mcols(siteCounts)[samples(fds)]),
+            assays=list(rawCountsSS=mcols(siteCounts)[samples(fds)]),
             rowRanges=siteCounts[,!colnames(mcols(siteCounts)) %in% samples(fds)]
     )
 
@@ -93,6 +93,9 @@ countRNAData <- function(fds, NcpuPerSample=1, junctionMap=NULL){
         splitCounts,
         nonSplicedReads=nonSplicedCounts
     )
+
+    # save it so the counts get saved as a HDF5 array on disk
+    fds <- saveFraseRDataSet(fds)
 
     # return it
     return(fds)

@@ -8,9 +8,9 @@
 #'
 #' @description This function performs a default analysis of RNA-seq data
 #'
-#' @param settings A FraseRSetting object with all the information
+#' @param settings A FraseRDataSet object with all the information
 #'             how and what to count
-#' @param internBPPARAM A BiocParallel param object to configure the
+#' @param NcpuPerSample A BiocParallel param object to configure the
 #'             parallel backend of the internal loop for counting
 #'
 #' @return FraseRDataSet
@@ -18,14 +18,14 @@
 #' @examples
 #'   fds <- FraseR(createTestFraseRSettings())
 #'   plotSampleResults(fds)
-FraseR <- function(settings, internBPPARAM=SerialParam()){
+FraseR <- function(settings=createTestFraseRSettings(), NcpuPerSample=1){
 
     # Check input
-    stopifnot(class(settings) == "FraseRSettings")
-    stopifnot(is(internBPPARAM, "BiocParallelParam"))
+    stopifnot(class(settings) == "FraseRDataSet")
+    # stopifnot(is(NcpuPerSample, "BiocParallelParam"))
 
     # count data
-    fds <- countRNAData(settings, internBPPARAM=internBPPARAM)
+    fds <<- countRNAData(settings, NcpuPerSample=NcpuPerSample)
 
     # calculate PSI values
     fds <- calculatePSIValues(fds)
