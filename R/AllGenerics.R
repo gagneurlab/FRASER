@@ -431,6 +431,9 @@ setReplaceMethod("assays", c("FraseRDataSet", "list"),
         FraseRDataSet.assays.replace
 )
 
-
+#'
+#' retrive the length of the object (aka number of junctions)
+#'
+setMethod("length", "FraseRDataSet", function(x) callNextMethod())
 
 
