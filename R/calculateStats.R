@@ -47,10 +47,9 @@ calculateZScorePerDataSet <- function(fds, psiType){
 
     # add it to the FraseR object
     assayName <- paste0("zscore_", psiType)
-    assayType <- whichAssayType(fds, psiType)
 
     # use as.matrix to rewrite it as a new hdf5 array
-    assays(fds, type=assayType)[[assayName]] <- as.matrix(zscores)
+    assays(fds, type=psiType)[[assayName]] <- as.matrix(zscores)
 
     return(fds)
 }

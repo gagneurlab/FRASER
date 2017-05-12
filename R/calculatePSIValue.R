@@ -115,9 +115,9 @@ calculateSitePSIValue <- function(fds){
     # prepare data table for calculating the psi value
     countData <- data.table(
         spliceSiteID=c(
-            rowData(fds)[["startID"]],
-            rowData(fds)[["endID"]],
-            rowData(nonSplicedReads(fds))[["spliceSiteID"]]
+            rowData(fds, type="j")[["startID"]],
+            rowData(fds, type="j")[["endID"]],
+            rowData(fds, type="ss")[["spliceSiteID"]]
         ),
         type=rep(
             c("junction", "spliceSite"),

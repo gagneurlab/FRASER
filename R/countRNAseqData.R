@@ -114,6 +114,7 @@ countRNAData <- function(fds, NcpuPerSample=1, junctionMap=NULL){
 
     # save it so the FraseR object also gets saved
     fds <- saveFraseRDataSet(fds)
+    gc()
 
     # return it
     return(fds)

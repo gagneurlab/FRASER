@@ -339,16 +339,16 @@ setMethod("[", c("FraseRDataSet", "ANY", "ANY"), function(x, i, j) {
     x <- callNextMethod()
 
     # subset non spliced reads
-    nonSplicedReads <- slot(x, "nonSplicedReads")
-    if(length(nonSplicedReads) > 0){
+    nsrObj <- nonSplicedReads(x)
+    if(length(nsrObj) > 0){
         # get selected splice site IDs
-        selectedIDs <- unique(unlist(rowData(x)[c("startID", "endID")]))
+        selectedIDs <- unique(unlist(rowData(x, type="j")[c("startID", "endID")]))
 
         # get the selection vector
-        iNSR <- rowData(nonSplicedReads)['spliceSiteID'] %in% selectedIDs
+        iNSR <- rowData(x, type="ss")['spliceSiteID'] %in% selectedIDs
 
         # subset it
-        nonSplicedReads <- nonSplicedReads[unlist(iNSR),j]
+        nsrObj <- nsrObj[unlist(iNSR),j]
     }
 
     newx <- new("FraseRDataSet",
@@ -359,7 +359,7 @@ setMethod("[", c("FraseRDataSet", "ANY", "ANY"), function(x, i, j) {
                 bamParam        = scanBamParam(x),
                 strandSpecific  = strandSpecific(x),
                 workingDir      = workingDir(x),
-                nonSplicedReads = nonSplicedReads
+                nonSplicedReads = nsrObj
     )
     validObject(newx)
     return(newx)
@@ -386,7 +386,7 @@ setMethod("assays", "FraseRDataSet", function(x,...){
     ))
 })
 FraseRDataSet.assays.replace <-
-    function(x, ..., type="", withDimnames=TRUE, value){
+    function(x, ..., type=NULL, withDimnames=TRUE, value){
         if(any(names(value) == "")) stop("Name of an assay can not be empty!")
         if(any(duplicated(names(value)))) stop("Assay names need to be unique!")
 
@@ -406,11 +406,7 @@ FraseRDataSet.assays.replace <-
         jslots <- value[1:nj]
         sslots <- value[(nj+1):n]
         if(length(value) > n){
-            if(!type %in% c("j", "ss")){
-                stop(paste("Please set the 'type' option to ",
-                        "'j' (Junction) or 'ss' (splice site)."
-                ))
-            }
+            type <- sapply(type, checkReadType, fds=x)
             jslots <- c(jslots, value[(1+n):length(value)][type=="j"])
             sslots <- c(sslots, value[(1+n):length(value)][type=="ss"])
         }
@@ -430,10 +426,29 @@ setReplaceMethod("assays", c("FraseRDataSet", "SimpleList"),
 setReplaceMethod("assays", c("FraseRDataSet", "list"),
         FraseRDataSet.assays.replace
 )
+setReplaceMethod("assays", c("FraseRDataSet", "DelayedMatrix"),
+                 FraseRDataSet.assays.replace
+)
 
 #'
 #' retrive the length of the object (aka number of junctions)
 #'
 setMethod("length", "FraseRDataSet", function(x) callNextMethod())
 
+#'
+#' getter and setter for mcols
+#'
+setMethod("mcols", "FraseRDataSet", function(x, type=NULL, ...){
+    type <- checkReadType(x, type)
+    if(type=="j")  return(callNextMethod())
+    if(type=="ss") return(mcols(nonSplicedReads(x), ...))
+})
+setReplaceMethod("mcols", "FraseRDataSet", function(x, type=NULL, ..., value){
+    type <- checkReadType(x, type)
+    if(type=="j") return(callNextMethod())
+    if(type=="ss"){
+        mcols(nonSplicedReads(x), ...) <- value
+        return(x)
+    }
+})
 

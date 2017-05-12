@@ -39,18 +39,13 @@ saveFraseRDataSet <- function(fds, dir=NULL) {
 
     # check input
     stopifnot(class(fds) == "FraseRDataSet")
-    if(any(assayNames(fds) == "")) stop("Name of an assay can not be empty!")
-    if(any(duplicated(assayNames(fds)))) stop("Assay names need to be unique!")
+    if(is.null(dir)) dir <- workingDir(fds)
+    stopifnot(isScalarCharacter(dir))
 
-    if(is.null(dir)){
-        dir <- workingDir(fds)
-    }
     outDir <- file.path(dir, "savedObjects")
-    if(!dir.exists(outDir)){
-        dir.create(outDir, recursive=TRUE)
-    }
+    if(!dir.exists(outDir)) dir.create(outDir, recursive=TRUE)
 
-    # over each se object
+    # over each assay object
     assays <- assays(fds)
     for(aname in names(assays)){
         assay <- assay(fds, aname)
@@ -69,12 +64,16 @@ saveFraseRDataSet <- function(fds, dir=NULL) {
 #' saves the given assay as HDF5 array on disk
 #' @noRd
 saveAsHDF5 <- function(fds, name, object=NULL){
-    if(is.null(object)){
-        object <- assay(fds, name)
-    }
+    if(is.null(object)) object <- assay(fds, name)
+
     h5File <- getFraseRHDF5File(fds, name, add=FALSE)
     h5FileTmp <- gsub("$", ".save.tmp", h5File)
     if(file.exists(h5FileTmp)) unlink(h5FileTmp)
+
+    # dont rewrite it if already there
+    if("DelayedMatrix" %in% is(object) && object@seed@file == h5File){
+        return(object)
+    }
 
     # write new HDF5 data
     message(date(), ": Writing data: ", name, " to file: ", h5File)

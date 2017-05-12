@@ -17,9 +17,38 @@ cleanCache <- function(fds, ...){
 }
 
 #'
-#' returns the given assay type based on the given assay name
+#' checks if the given type is part of the correct category
+#' to map correctly to a read type
+#'
 #' @noRd
-whichAssayType <- function(fds, name){
+checkReadType <- function(fds, type){
+    # check if type is null or missing
+    if(missing(type) | is.null(type)){
+        warning("Read type was not specified! We will assume the default: 'j'")
+        return("j")
+    }
+
+    stopifnot(isScalarCharacter(type))
+    isCorrectType <- function(type) type %in% c("j", "ss")
+
+    # check if it is already the correct type
+    if(isCorrectType(type)) return(type)
+
+    # check assay names
+    atype <- whichReadType(fds, type)
+    if(isCorrectType(atype)) return(atype)
+
+    stop("Given read type: '", type, "' not recognized. ",
+            "It needs to be 'j' (junction) or 'ss' (splice sites)",
+            "\nor an existing assay name within the given object."
+    )
+}
+
+#'
+#' returns the read type based on the given assay name
+#'
+#' @noRd
+whichReadType <- function(fds, name){
     stopifnot(isScalarCharacter(name))
     fdsNames <- assayNames(fds)
     if(!name %in% fdsNames){
