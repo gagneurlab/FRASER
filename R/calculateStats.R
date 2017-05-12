@@ -15,17 +15,17 @@
 #'   fds <- counRNAData(createTestFraseRSettings())
 #'   fds <- calculatePSIValues(fds)
 #'   fds <- calculateZScores(fds)
-calculateZScores <- function(dataset){
+calculateZScores <- function(fds){
 
     # check input
-    stopifnot(class(dataset) == "FraseRDataSet")
+    stopifnot(class(fds) == "FraseRDataSet")
 
     # calculate zscore for each psi type
-    dataset <- .calculateZScorePerDataSet(dataset, "splitReads", "psi3")
-    dataset <- .calculateZScorePerDataSet(dataset, "splitReads", "psi5")
-    dataset <- .calculateZScorePerDataSet(dataset, "nonSplicedReads", "sitePSI")
+    for(psiType in c("psi3", "psi5", "psiSite")){
+        fds <- calculateZScorePerDataSet(fds, psiType)
+    }
 
-    return(dataset)
+    return(fds)
 }
 
 #'
@@ -33,15 +33,12 @@ calculateZScores <- function(dataset){
 #' and adds it directly to the dataset itself
 #'
 #' @noRd
-.calculateZScorePerDataSet <- function(dataset, readType, psiType){
+calculateZScorePerDataSet <- function(fds, psiType){
 
     message(date(), ": Calculate the Zscore for ", psiType, " values ...")
 
-    # data to work with
-    seCounts <- slot(dataset, readType)
-
     # get raw data and replace NA's with zeros
-    psiVal <- .getAssayAsDataTable(seCounts, psiType)
+    psiVal <- assays(fds)[[psiType]]
 
     # z = ( x - mean ) / sd
     rowmean <- rowMeans(psiVal, na.rm = TRUE)
@@ -50,11 +47,12 @@ calculateZScores <- function(dataset){
 
     # add it to the FraseR object
     assayName <- paste0("zscore_", psiType)
-    sampleIDs <- dataset@settings@sampleData[,sampleID]
-    zscores   <- .asDataFrame(zscores, sampleIDs)
-    assays(slot(dataset, readType))[[assayName]] <- zscores
+    assayType <- whichAssayType(fds, psiType)
 
-    return(dataset)
+    # use as.matrix to rewrite it as a new hdf5 array
+    assays(fds, type=assayType)[[assayName]] <- as.matrix(zscores)
+
+    return(fds)
 }
 
 #'
@@ -73,22 +71,22 @@ calculatePValues <- function(dataset, internBPPARAM=SerialParam()){
     stopifnot(class(dataset) == "FraseRDataSet")
 
     # check which method we should use
-    method <- method(dataset@settings)
+    method <- method(dataset)
 
     if(method == "betaBin"){
-        return(.testPsiWithBetaBinomial(dataset, internBPPARAM,
-                pvalFun=.betabinVglmTest
+        return(testPsiWithBetaBinomial(dataset, internBPPARAM,
+                pvalFun=betabinVglmTest
         ))
     }
 
     if(method == "betaBinMM"){
-        return(.testPsiWithBetaBinomial(dataset, internBPPARAM,
-                pvalFun=.betabinMMTest
+        return(testPsiWithBetaBinomial(dataset, internBPPARAM,
+                pvalFun=betabinMMTest
         ))
     }
 
     if(method == "Fisher"){
-        return(.testPsiWithFisher(dataset, internBPPARAM))
+        return(testPsiWithFisher(dataset, internBPPARAM))
     }
 
     if(method == "Martin"){

@@ -17,6 +17,25 @@ cleanCache <- function(fds, ...){
 }
 
 #'
+#' returns the given assay type based on the given assay name
+#' @noRd
+whichAssayType <- function(fds, name){
+    stopifnot(isScalarCharacter(name))
+    fdsNames <- assayNames(fds)
+    if(!name %in% fdsNames){
+        return(NA)
+    }
+    nsrNamesL <- length(assayNames(nonSplicedReads(fds)))
+    fdsNamesL <- length(fdsNames)
+
+    return(ifelse(
+        which(fdsNames == name) <= fdsNamesL - nsrNamesL,
+        "j",
+        "ss"
+    ))
+}
+
+#'
 #' convert a data.table to a DataFrame and keep the colname names
 #'
 #' @noRd

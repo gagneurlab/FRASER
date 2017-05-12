@@ -38,6 +38,7 @@
 #' @importFrom plotly layout
 #' @importFrom htmlwidgets saveWidget
 #' @importFrom HDF5Array writeHDF5Array
+#' @importFrom DelayedArray rowMeans
 #' @importFrom rhdf5 h5ls
 #'
 #'
