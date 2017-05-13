@@ -322,7 +322,8 @@ setReplaceMethod("nonSplicedReads", "FraseRDataSet", function(object, value){
 #' Providing subsetting by indices through the single-bracket operator
 #'
 #' @param x A \code{FraseRDataSet} object
-#' @param i A integer vector
+#' @param i A integer vector to subset the rows/ranges
+#' @param j A integer vector to subset the columns/samples
 #' @return A subsetted \code{FraseRDataSet} object
 setMethod("[", c("FraseRDataSet", "ANY", "ANY"), function(x, i, j) {
     if(missing(i) && missing(j)){
@@ -335,14 +336,13 @@ setMethod("[", c("FraseRDataSet", "ANY", "ANY"), function(x, i, j) {
         j <- TRUE
     }
 
-    # subset the inheritate SE object
-    x <- callNextMethod()
-
-    # subset non spliced reads
+    # first subset non spliced reads if needed
     nsrObj <- nonSplicedReads(x)
     if(length(nsrObj) > 0){
         # get selected splice site IDs
-        selectedIDs <- unique(unlist(rowData(x, type="j")[c("startID", "endID")]))
+        selectedIDs <- unique(unlist(
+                rowData(x, type="j")[i, c("startID", "endID")]
+        ))
 
         # get the selection vector
         iNSR <- rowData(x, type="ss")['spliceSiteID'] %in% selectedIDs
@@ -351,6 +351,11 @@ setMethod("[", c("FraseRDataSet", "ANY", "ANY"), function(x, i, j) {
         nsrObj <- nsrObj[unlist(iNSR),j]
     }
 
+    # subset the inheritate SE object
+    #xsubset <- as(x, "SummarizedExperiment)[i,j]
+    x <- callNextMethod()
+
+    # create new FraseRDataSet object
     newx <- new("FraseRDataSet",
                 x,
                 name            = name(x),

@@ -128,6 +128,10 @@ validateNonSplicedReadsType <- function(object) {
     if(length(object) != 0 && dim(object@nonSplicedReads)[2] != dim(object)[2]){
         return("The NSR dimensions are not correct. This is a internal error!")
     }
+    ans <- validObject(object@nonSplicedReads)
+    if(!isScalarLogical(ans) || ans == FALSE){
+        return(ans)
+    }
     NULL
 }
 
