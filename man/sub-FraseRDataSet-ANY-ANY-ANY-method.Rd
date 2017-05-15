@@ -10,7 +10,9 @@
 \arguments{
 \item{x}{A \code{FraseRDataSet} object}
 
-\item{i}{A integer vector}
+\item{i}{A integer vector to subset the rows/ranges}
+
+\item{j}{A integer vector to subset the columns/samples}
 }
 \value{
 A subsetted \code{FraseRDataSet} object

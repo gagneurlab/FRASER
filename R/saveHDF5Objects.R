@@ -4,7 +4,7 @@
 #' @param dir a path to the working directory of FraseR
 #'
 #' @example
-#'   loadFraseRDataSet('~/FraseR')
+#'   loadFraseRDataSet(file.path(Sys.getenv("HOME"), "FraseR"))
 #'
 #' @export
 loadFraseRDataSet <- function(dir){

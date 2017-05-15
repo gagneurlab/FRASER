@@ -326,6 +326,7 @@ setReplaceMethod("nonSplicedReads", "FraseRDataSet", function(object, value){
 #' @param j A integer vector to subset the columns/samples
 #' @return A subsetted \code{FraseRDataSet} object
 setMethod("[", c("FraseRDataSet", "ANY", "ANY"), function(x, i, j) {
+    #browser()
     if(missing(i) && missing(j)){
         return(x)
     }
@@ -345,7 +346,7 @@ setMethod("[", c("FraseRDataSet", "ANY", "ANY"), function(x, i, j) {
         ))
 
         # get the selection vector
-        iNSR <- rowData(x, type="ss")['spliceSiteID'] %in% selectedIDs
+        iNSR <- rowData(x, type="ss")[['spliceSiteID']] %in% selectedIDs
 
         # subset it
         nsrObj <- nsrObj[unlist(iNSR),j]
