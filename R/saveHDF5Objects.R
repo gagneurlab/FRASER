@@ -81,8 +81,9 @@ saveAsHDF5 <- function(fds, name, object=NULL){
     }
 
     # write new HDF5 data
-    message(date(), ": Writing data: ", name, " to file: ", h5File)
+    message(date(), ": Preparing data for HDF5 conversion: ", name)
     aMat <- as.matrix(as.data.table(object))
+    message(date(), ": Writing data: ", name, " to file: ", h5File)
     h5 <- writeHDF5Array(aMat, h5FileTmp, name, verbose=TRUE)
 
     # override old h5 file if present and move tmp to correct place
