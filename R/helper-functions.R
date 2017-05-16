@@ -65,46 +65,21 @@ whichReadType <- function(fds, name){
 }
 
 #'
-#' convert a data.table to a DataFrame and keep the colname names
-#'
-#' @noRd
-.asDataFrame <- function(dataframe, colname = colnames(dataframe)){
-    dataframe <- DataFrame(dataframe)
-    colnames(dataframe) <- colname
-    return(dataframe)
+#' Removes the white spaces to have a cleaner file path
+#'@noRd
+nameNoSpace <- function(name){
+    if(class(name) == "FraseRDataSet") name <- name(name)
+    stopifnot(isScalarCharacter(name))
+    gsub("\\s+", "_", name, perl=TRUE)
 }
 
 #'
-#' convert SummarizedExperiment Assays to matrices to be able to store them as hdf5 assays
-#'
+#' convert the input of NA to FALSE
 #' @noRd
-.assay2Matrix <- function(fds){
-    for(se in c("splitReads", "nonSplicedReads")){
-        for(i in 1:length(assays(slot(fds, se)))){
-            matrix <- as.matrix(assays(slot(fds, se))[[i]])
-            assays(slot(fds, se))[[i]] <- matrix
-        }
-    }
-    return(fds)
+na2false <- function(x){
+    x[is.na(x)] <- FALSE
+    return(x)
 }
-
-
-#'
-#' get the assay as data.table from a SummarizedExperiment object
-#'
-#' @noRd
-.getAssayAsDataTable <- function(se, assay, na_as_zero = TRUE){
-    if(!any(names(assays(se)) %in% assay)){
-        stop("The given assay: '", assay, "' is not present in this object")
-    }
-    dt <- as.data.table(assays(se)[[assay]])
-    if(na_as_zero){
-        dt[is.na(dt)] <- 0
-    }
-    colnames(dt) <- colnames(assays(se)[[assay]])
-    return(dt)
-}
-
 
 
 #'

@@ -16,11 +16,22 @@ loadFraseRDataSet <- function(dir, name=NULL){
     # check name
     if(is.null(name)) name <- "Data Analysis"
     if(!isScalarCharacter(name)) stop("name: needs to be a character dir name.")
-    outDir <- file.path(dir, "savedObjects", nameNoSpace(name))
+    outDir <-file.path(dir, "savedObjects", nameNoSpace(name))
     if(!dir.exists(outDir)) stop("The analysis name does not exists: ", name)
 
-    fds <- readRDS(file.path(outDir, "fds-object.RDS"))
-    # TODO check HDF5 objects and pathnames
+    fds <- readRDS(gsub("//+", "/", file.path(outDir, "fds-object.RDS")))
+
+    # set working dir and name correct
+    workingDir(fds) <- dir
+    name(fds) <- name
+
+    # set the correct path of the assay seed file (if folder changed)
+    for(obj in c(fds, nonSplicedReads(fds))){
+        for(aname in names(obj@assays$data@listData)){
+            afile <- getFraseRHDF5File(fds, aname)
+            obj@assays$data@listData[[aname]]@seed@file <- afile
+        }
+    }
 
     return(fds)
 }
@@ -58,8 +69,9 @@ saveFraseRDataSet <- function(fds, dir=NULL) {
     }
     assays(fds) <- assays
 
-    message(date(), ": Writing final FraseR object.")
-    saveRDS(fds, file.path(outDir, "fds-object.RDS"))
+    rdsFile <- file.path(outDir, "fds-object.RDS")
+    message(date(), ": Writing final FraseR object ('", rdsFile, "').")
+    saveRDS(fds, rdsFile)
 
     return(fds)
 }
@@ -71,7 +83,7 @@ saveFraseRDataSet <- function(fds, dir=NULL) {
 saveAsHDF5 <- function(fds, name, object=NULL){
     if(is.null(object)) object <- assay(fds, name)
 
-    h5File <- getFraseRHDF5File(fds, name, add=FALSE)
+    h5File <- getFraseRHDF5File(fds, name)
     h5FileTmp <- gsub("$", ".save.tmp", h5File)
     if(file.exists(h5FileTmp)) unlink(h5FileTmp)
 
@@ -98,22 +110,13 @@ saveAsHDF5 <- function(fds, name, object=NULL){
 #'
 #' creates the correct and needed HDF5 file
 #' @noRd
-getFraseRHDF5File <- function(fds, aname, add){
+getFraseRHDF5File <- function(fds, aname){
     dir <- workingDir(fds)
     outDir <- file.path(dir, "savedObjects", nameNoSpace(fds))
     if(!dir.exists(outDir)) {
         dir.create(outDir, recursive=TRUE)
     }
-    h5File <- file.path(outDir, paste0(aname, ".h5"))
+    h5File <- file_path_as_absolute(file.path(outDir, paste0(aname, ".h5")))
     return(h5File)
-}
-
-#'
-#' Removes the white spaces to have a cleaner file path
-#'@noRd
-nameNoSpace <- function(name){
-    if(class(name) == "FraseRDataSet") name <- name(name)
-    stopifnot(isScalarCharacter(name))
-    gsub("\\s+", "_", name, perl=TRUE)
 }
 

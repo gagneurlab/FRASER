@@ -342,7 +342,7 @@ setMethod("[", c("FraseRDataSet", "ANY", "ANY"), function(x, i, j) {
     if(length(nsrObj) > 0){
         # get selected splice site IDs
         selectedIDs <- unique(unlist(
-                rowData(x, type="j")[i, c("startID", "endID")]
+            rowData(x, type="j")[i, c("startID", "endID")]
         ))
 
         # get the selection vector
@@ -376,9 +376,10 @@ setMethod("[", c("FraseRDataSet", "ANY", "ANY"), function(x, i, j) {
 #' Returns the assayNames of FraseR
 #'
 setMethod("assayNames", "FraseRDataSet", function(x) {
-    ans1 <- assayNames(as(x, "SummarizedExperiment"))
-    ans2 <- assayNames(nonSplicedReads(x))
-    return(c(ans1, ans2))
+    return(c(
+        callNextMethod(),
+        assayNames(nonSplicedReads(x))
+    ))
 })
 
 
@@ -388,43 +389,43 @@ setMethod("assayNames", "FraseRDataSet", function(x) {
 setMethod("assays", "FraseRDataSet", function(x,...){
     return(c(
         callNextMethod(),
-        assays(nonSplicedReads(x))
+        assays(nonSplicedReads(x, ...))
     ))
 })
 FraseRDataSet.assays.replace <-
-    function(x, ..., type=NULL, withDimnames=TRUE, value){
-        if(any(names(value) == "")) stop("Name of an assay can not be empty!")
-        if(any(duplicated(names(value)))) stop("Assay names need to be unique!")
+            function(x, ..., type=NULL, withDimnames=TRUE, value){
+    if(any(names(value) == "")) stop("Name of an assay can not be empty!")
+    if(any(duplicated(names(value)))) stop("Assay names need to be unique!")
 
-        # make sure all slots are HDF5
-        for(i in seq_along(value)){
-            if(!class(value[[i]]) %in% c("HDF5Matrix", "DelayedMatrix")){
-                aname <- names(value)[i]
-                h5obj <- saveAsHDF5(x, aname, object=value[[i]])
-                value[[i]] <- h5obj
-            }
+    # make sure all slots are HDF5
+    for(i in seq_along(value)){
+        if(!class(value[[i]]) %in% c("HDF5Matrix", "DelayedMatrix")){
+            aname <- names(value)[i]
+            h5obj <- saveAsHDF5(x, aname, object=value[[i]])
+            value[[i]] <- h5obj
         }
+    }
 
-        # first replace all existing slots
-        n <- length(assayNames(x))
-        nj <- n - length(assays(nonSplicedReads(x)))
-        ns <- n - nj
-        jslots <- value[1:nj]
-        sslots <- value[(nj+1):n]
-        if(length(value) > n){
-            type <- sapply(type, checkReadType, fds=x)
-            jslots <- c(jslots, value[(1+n):length(value)][type=="j"])
-            sslots <- c(sslots, value[(1+n):length(value)][type=="ss"])
-        }
+    # first replace all existing slots
+    n <- length(assayNames(x))
+    nj <- n - length(assays(nonSplicedReads(x)))
+    ns <- n - nj
+    jslots <- value[1:nj]
+    sslots <- value[(nj+1):n]
+    if(length(value) > n){
+        type <- sapply(type, checkReadType, fds=x)
+        jslots <- c(jslots, value[(1+n):length(value)][type=="j"])
+        sslots <- c(sslots, value[(1+n):length(value)][type=="ss"])
+    }
 
-        # assign new assays
-        value <- jslots
-        x <- callNextMethod()
-        assays(nonSplicedReads(x), ..., withDimnames=withDimnames) <- sslots
+    # assign new assays
+    value <- jslots
+    x <- callNextMethod()
+    assays(nonSplicedReads(x), ..., withDimnames=withDimnames) <- sslots
 
-        # validate and return
-        validObject(x)
-        return(x)
+    # validate and return
+    validObject(x)
+    return(x)
 }
 setReplaceMethod("assays", c("FraseRDataSet", "SimpleList"),
         FraseRDataSet.assays.replace
@@ -433,7 +434,7 @@ setReplaceMethod("assays", c("FraseRDataSet", "list"),
         FraseRDataSet.assays.replace
 )
 setReplaceMethod("assays", c("FraseRDataSet", "DelayedMatrix"),
-                 FraseRDataSet.assays.replace
+        FraseRDataSet.assays.replace
 )
 
 #'
@@ -458,3 +459,19 @@ setReplaceMethod("mcols", "FraseRDataSet", function(x, type=NULL, ..., value){
     }
 })
 
+
+#'
+#' getter for count data
+#'
+setMethod("counts", "FraseRDataSet", function(object, type=NULL,
+                                              side=c("ofInterest", "otherSide")){
+    side <- match.arg(side)
+    if(side=="ofInterest"){
+        type <- FraseR:::checkReadType(object, type)
+        return(assays(object)[[paste0("rawCounts", toupper(type))]])
+    }
+
+    # extract psi value from type
+    type <- unlist(regmatches(type, gregexpr("psi(3|5|Site)", type, perl=TRUE)))
+    return(assays(object)[[paste0("rawOtherCounts_", type)]])
+})
