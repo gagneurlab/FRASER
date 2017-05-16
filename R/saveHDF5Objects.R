@@ -3,20 +3,25 @@
 #'
 #' @param dir a path to the working directory of FraseR
 #'
-#' @example
+#' @examples
 #'   loadFraseRDataSet(file.path(Sys.getenv("HOME"), "FraseR"))
 #'
 #' @export
-loadFraseRDataSet <- function(dir){
-    if(is.null(dir)){
-        stop("dir: canot be null")
-    }
-    if(!dir.exists(dir)){
-        stop("The given dir does not exists: ", dir)
-    }
-    outDir <- file.path(dir, "savedObjects")
+loadFraseRDataSet <- function(dir, name=NULL){
+    # check dir
+    if(is.null(dir)) stop("dir: can not be NULL")
+    if(!isScalarCharacter(dir)) stop("dir: needs to be a character path name.")
+    if(!dir.exists(dir)) stop("The given dir does not exists: ", dir)
+
+    # check name
+    if(is.null(name)) name <- "Data Analysis"
+    if(!isScalarCharacter(name)) stop("name: needs to be a character dir name.")
+    outDir <- file.path(dir, "savedObjects", nameNoSpace(name))
+    if(!dir.exists(outDir)) stop("The analysis name does not exists: ", name)
 
     fds <- readRDS(file.path(outDir, "fds-object.RDS"))
+    # TODO check HDF5 objects and pathnames
+
     return(fds)
 }
 
@@ -42,7 +47,7 @@ saveFraseRDataSet <- function(fds, dir=NULL) {
     if(is.null(dir)) dir <- workingDir(fds)
     stopifnot(isScalarCharacter(dir))
 
-    outDir <- file.path(dir, "savedObjects")
+    outDir <- file.path(dir, "savedObjects", nameNoSpace(fds))
     if(!dir.exists(outDir)) dir.create(outDir, recursive=TRUE)
 
     # over each assay object
@@ -94,11 +99,20 @@ saveAsHDF5 <- function(fds, name, object=NULL){
 #' @noRd
 getFraseRHDF5File <- function(fds, aname, add){
     dir <- workingDir(fds)
-    outDir <- file.path(dir, "savedObjects")
+    outDir <- file.path(dir, "savedObjects", nameNoSpace(fds))
     if(!dir.exists(outDir)) {
         dir.create(outDir, recursive=TRUE)
     }
     h5File <- file.path(outDir, paste0(aname, ".h5"))
     return(h5File)
+}
+
+#'
+#' Removes the white spaces to have a cleaner file path
+#'@noRd
+nameNoSpace <- function(name){
+    if(class(name) == "FraseRDataSet") name <- name(name)
+    stopifnot(isScalarCharacter(name))
+    gsub("\\s+", "_", name, perl=TRUE)
 }
 

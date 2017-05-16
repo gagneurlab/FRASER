@@ -38,66 +38,30 @@
     plot(-log10(pv))
 }
 
-fraserNames <- data.table(
-        readType = c("splitReads", "splitReads", "nonSplicedReads"),
-        psiType = c("psi3", "psi5", "sitePSI"),
-        pvalName = c("pvalue_psi3", "pvalue_psi5", "pvalue_sitePSI")
-)
-
 #'
 #' this tests each splice type for all samples
 #'
 #' @noRd
-.testPsiWithBetaBinomial <- function(dataset, internBPPARAM,
-                    pvalFun=.betabinVglmTest){
+testPsiWithBetaBinomial <- function(fds, internBPPARAM,
+                    pvalFun=betabinVglmTest){
 
     # check, that the object is stored as HDF5 array!
-    if(!"DelayedArray" %in% is(assays(dataset@splitReads)[["rawCounts"]])){
+    if(any(sapply(assayNames(fds), function(x) any("DelayedArray" == is(x))))){
         message(date(), ": The data is not stored in a HDF5Array. ",
             "To improve the performance we will store now ",
             "the data in HDF5 format.")
-        dataset <- saveFraseRDataSet(dataset)
+        fds <- saveFraseRDataSet(fds)
     }
 
     # test all 3 different types
-    for(idx in 1:nrow(fraserNames)){
-        pvalName <- fraserNames[idx,pvalName]
-        readType <- fraserNames[idx,readType]
-        psiType  <- fraserNames[idx,psiType]
-        dataset <- .testPsiWithBetaBinomialPerType(
-                dataset, readType, psiType, pvalName, pvalFun
-        )
+    for(psiType in c("psi3", "psi5", "psiSite")){
+        fds <- testPsiWithBetaBinomialPerType(fds, psiType, pvalFun)
+        fds <- saveFraseRDataSet(fds)
         gc()
     }
 
     # return the new datasets
-    return(dataset)
-}
-
-#'
-#' extracts raw counts and saves it as a temp hdf5 assay
-#'
-#' @noRd
-.getCountsAsHDF5 <- function(dataset, readType, countType){
-
-    # get count data
-    counts <- .getAssayAsDataTable(
-            slot(dataset, readType), countType
-    )
-
-    # save it as hfd5
-    assayname <- paste0(readType, "_", countType)
-    tmpfile <- file.path(outputFolder(dataset@settings),
-            "cache", "tmp", "counts.h5")
-    if(!dir.exists(dirname(tmpfile))){
-        dir.create(dirname(tmpfile), recursive=TRUE)
-    } else if(file.exists(tmpfile) &&
-                assayname %in% h5ls(tmpfile)$name){
-        unlink(tmpfile)
-    }
-    h5obj <- writeHDF5Array(as.matrix(counts), tmpfile, assayname)
-
-    return(h5obj)
+    return(fds)
 }
 
 
@@ -105,32 +69,30 @@ fraserNames <- data.table(
 #' calculates the pvalue per type (psi3,psi5,spliceSite) with beta-binomial
 #'
 #' @noRd
-.testPsiWithBetaBinomialPerType <- function(dataset, readType, psiType,
-                    pvalname, pvalFun){
+testPsiWithBetaBinomialPerType <- function(fds, psiType, pvalFun){
 
     message(date(), ": Calculate P-values for the ",
             psiType, " splice type ..."
     )
 
     # go over each group but no NA's
-    group         <- sampleGroup(dataset@settings)
+    group         <- condition(fds)
     addNoise      <- TRUE
     removeHighLow <- 0
     #removeHighLow <- length(group)/4
 
-    # reads to test for abberent splicing (eg: nonSplicedReads)
-    rawCounts <- .getCountsAsHDF5(dataset, readType, countType="rawCounts")
-
-    # other reads (eg: splitReads)
-    rawOtherCounts <- .getCountsAsHDF5(dataset, readType,
-            paste0("rawOtherCounts_", psiType)
-    )
+    # raw reads to test for abberent splicing
+    rawCounts <- assays(fds)[[
+            paste0("rawCounts", toupper(whichReadType(fds, psiType)))
+    ]]
+    rawOtherCounts <- assays(fds)[[paste0("rawOtherCounts_", psiType)]]
 
     # swap rawCounts with others for intron retention
-    if(readType == "nonSplicedReads"){
+    if(psiType == "psiSite"){
         tmp <- rawCounts
         rawCounts <- rawOtherCounts
         rawOtherCounts <- tmp
+        rm(tmp)
     }
 
     # select junctions to test take only junctions
@@ -138,25 +100,29 @@ fraserNames <- data.table(
     toTest <- which(apply(rawCounts,1,max) >= 5)
     message(date(), ": Sites to test: ", length(toTest))
 
+    # TODO: IMPORTANT:
+    # Tests are not equal in there runtime and
+    # long running test tent to cluster at genomic positions
+    # therefore shuffel positions to remove this runtime bias
+    toTest <- sample(toTest)
+
     # TODO how to group groups?
     pvalues_ls <- bplapply(toTest, rawCounts=rawCounts,
-            rawOtherCounts=rawOtherCounts,
-            BPPARAM=dataset@settings@parallel,
+            rawOtherCounts=rawOtherCounts, pvalFun,
+            BPPARAM=parallel(fds),
             addNoise=addNoise, removeHighLow=removeHighLow,
             FUN= function(idx, rawCounts, rawOtherCounts,
-                    addNoise, removeHighLow){
+                    addNoise, removeHighLow, pvalFun){
         # idx <- toTest[[2]]
         suppressPackageStartupMessages(require(FraseR))
 
-        ## simulate split read counts (numerator of psi)
+        ## get read coverage (y == reads of interests, N == all reads)
         y <- as.integer(as.vector(unlist(rawCounts[idx,])))
-
-        ## simulate coverage (denominator of psi)
         N <- y + as.integer(as.vector(unlist(rawOtherCounts[idx,])))
 
         # TODO betabinom fails if only zeros in one row
         # add noise to avoid zero variants in alternative reads
-        if(addNoise){
+        if(sd(N) == 0 & addNoise){
             N <- N + sample(c(0,1),dim(rawCounts)[2], replace = TRUE)
         }
 
@@ -180,7 +146,7 @@ fraserNames <- data.table(
         ## fitting
         startTime <- Sys.time()
         pv_res <- lapply(list(countMatrix),
-                FUN=.tryCatchFactory(pvalFun), y=y, N=N
+                FUN=tryCatchFactory(pvalFun), y=y, N=N
         )[[1]]
         timing <- Sys.time() - startTime
 
@@ -201,9 +167,12 @@ fraserNames <- data.table(
         return(pv_res)
     })
 
+    # sort table again
+    pvalues_ls <- pvalues_ls[order(toTest)]
+
     # print the vglm infos
     for(type in c("warn", "err")){
-        infoChar <- .vglmInfos2character(pvalues_ls, type)
+        infoChar <- vglmInfos2character(pvalues_ls, type)
         if(infoChar != ""){
             message(infoChar)
         }
@@ -211,17 +180,19 @@ fraserNames <- data.table(
 
     # extract additional informations
     mcol_ls <- list(
+        tested  = TRUE,
         alpha   = as.vector(sapply(pvalues_ls, function(x) x[[1]]$alpha)),
         beta    = as.vector(sapply(pvalues_ls, function(x) x[[1]]$beta)),
         timing  = as.vector(sapply(pvalues_ls, function(x) x[[1]]$timing)),
-        errStr  = .vglmInfos2character(pvalues_ls, "err"),
-        warnStr = .vglmInfos2character(pvalues_ls, "warn")
+        errStr  = vglmInfos2character(pvalues_ls, "err"),
+        warnStr = vglmInfos2character(pvalues_ls, "warn")
     )
     for(i in seq_along(mcol_ls)){
         name <- paste0(psiType, "_", names(mcol_ls)[[i]])
-        mcols(slot(dataset, readType))[[name]] <- NA
-        mcols(slot(dataset, readType))[[name]][toTest] <- mcol_ls[[i]]
+        mcols(fds, type=psiType)[[name]] <- NA
+        mcols(fds, type=psiType)[[name]][toTest] <- mcol_ls[[i]]
     }
+    mcols(fds, type=psiType)[[name]][!toTest] <- FALSE
 
     # extract pvalues
     pvalues <- do.call(rbind,lapply(pvalues_ls, function(x) x[[1]]$pval))
@@ -231,20 +202,17 @@ fraserNames <- data.table(
     pvalues_full[toTest,] <- pvalues
 
     # transform it to a hdf5 assay and save it to the dataset
-    h5File  <- .getFraseRHDF5File(dataset, readType, TRUE)
-    pval_df <- .asDataFrame(pvalues_full, samples(dataset@settings))
-    h5Assay <- .addAssayAsHDF5(pval_df, pvalname, h5File)
-    assays(slot(dataset, readType))[[pvalname]] <- h5Assay
+    assays(fds, type=psiType)[[paste0("pvalue_", psiType)]] <- pvalues_full
 
     # save the pvalue calculations in the SE ranged object
-    return(dataset)
+    return(fds)
 }
 
 #'
 #' calculate the pvalues with vglm and the betabinomial functions
 #'
 #' @noRd
-.betabinVglmTest <- function(countMatrix, y, N){
+betabinVglmTest <- function(countMatrix, y, N){
     # get fit
     fit <- vglm(countMatrix ~ 1, betabinomial)
 
@@ -273,6 +241,7 @@ fraserNames <- data.table(
 #'
 #' @noRd
 .betabinMMTest <- function(mat, y, N){
+    #try{evalWithTimeout(timeout = expr={
     # estimate mu1 and mu2
     Ns <- dim(mat)[1]
     n  <- ceiling(mean(rowSums(mat)))
@@ -293,7 +262,7 @@ fraserNames <- data.table(
 #' http://stackoverflow.com/questions/4948361/how-do-i-save-warnings-and-errors-as-output-from-a-function
 #'
 #' @noRd
-.tryCatchFactory <- function(fun){
+tryCatchFactory <- function(fun){
     function(...) {
         warn <- err <- NULL
         res <- withCallingHandlers(
@@ -313,7 +282,7 @@ fraserNames <- data.table(
 #' formate the VGLM error/warning output in a nice readable way
 #'
 #' @noRd
-.vglmInfos2character <- function(res, type){
+vglmInfos2character <- function(res, type){
     infoList <- unlist(sapply(res, "[[", type))
     infoList <- gsub("^\\d+ diagonal ele", "xxx diagonal ele", infoList)
     infoTable <- sort(table(infoList))
@@ -325,7 +294,7 @@ fraserNames <- data.table(
     return(paste(collapse = "\n", c(paste0(date(), ": ",
             ifelse(type == "warn", "Warnings", "Errors"),
             " in VGLM code while computing pvalues:"),
-            .table2character(infoTable)
+            table2character(infoTable)
     )))
 }
 
@@ -334,7 +303,7 @@ fraserNames <- data.table(
 #' convert a table to a string like the output of table
 #'
 #' @noRd
-.table2character <- function(table){
+table2character <- function(table){
     sapply(1:length(table), function(idx) paste(
         "\t", table[idx], "x", names(table)[idx]
     ))

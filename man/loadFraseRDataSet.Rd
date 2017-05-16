@@ -4,11 +4,15 @@
 \alias{loadFraseRDataSet}
 \title{Load a saved FraseR object into memory}
 \usage{
-loadFraseRDataSet(dir)
+loadFraseRDataSet(dir, name = NULL)
 }
 \arguments{
 \item{dir}{a path to the working directory of FraseR}
 }
 \description{
 Load a saved FraseR object into memory
+}
+\examples{
+  loadFraseRDataSet(file.path(Sys.getenv("HOME"), "FraseR"))
+
 }
