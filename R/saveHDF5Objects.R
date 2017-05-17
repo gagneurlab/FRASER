@@ -116,7 +116,7 @@ getFraseRHDF5File <- function(fds, aname){
     if(!dir.exists(outDir)) {
         dir.create(outDir, recursive=TRUE)
     }
-    h5File <- file_path_as_absolute(file.path(outDir, paste0(aname, ".h5")))
+    h5File <- file.path(file_path_as_absolute(outDir), paste0(aname, ".h5"))
     return(h5File)
 }
 

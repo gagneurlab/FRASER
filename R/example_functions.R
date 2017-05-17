@@ -1,4 +1,3 @@
-
 #'
 #' Create a test case dataset (sample information only)
 #' to be used in the vignette and to explore the
@@ -10,14 +9,18 @@
 #'     createTestFraseRSettings()
 #'
 createTestFraseRSettings <- function(){
+    condition <- "condition"
+    bamFile <- "bamFile"
+
     # get sample data table
     sampleTable <- fread(system.file(
                 "extdata", "sampleTable.tsv", package="FraseR", mustWork=TRUE
     ))
 
     # convert it to a bamFile list
-    bamFiles <- system.file(sampleTable[,bamFile],
-            package="FraseR", mustWork=TRUE)
+    bamFiles <- system.file(
+        sampleTable[,bamFile], package="FraseR", mustWork=TRUE
+    )
     sampleTable[,bamFile:=bamFiles]
 
     # TODO remove after example data update
@@ -26,7 +29,7 @@ createTestFraseRSettings <- function(){
     }
 
     # check that NHDF is NA group
-    sampleTable[gene=='NHDF',condition:=NA]
+    sampleTable[gene=='NHDF', conditiona:=NA]
 
     # return a FraseRSettings object
     return(FraseRDataSet(

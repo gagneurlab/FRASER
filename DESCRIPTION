@@ -11,10 +11,12 @@ Description: This package calls rare aberrant splicing events in a set of
     in the field of rare diseases where RNA-seq is performed.
 License: Artistic-2.0
 Depends:
-    R (>= 3.4), BiocParallel, GenomicAlignments,
-    SummarizedExperiment (>= 1.5.7), data.table, GenomicRanges,
+    R (>= 3.4), data.table, BiocParallel, GenomicAlignments,
+    SummarizedExperiment (>= 1.5.7), GenomicRanges,
     IRanges, tidyr, plotly, VGAM, biomaRt,
     graphics, stats, htmlwidgets
+Imports:
+    data.table
 biocViews: RNASeq, AlternativeSplicing, Sequencing
     Software, Genetics, Coverage
 URL: https://i12g-gagneurweb.in.tum.de/gitlab/mertes/FraseR/

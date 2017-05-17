@@ -44,10 +44,11 @@
 #'
 ### Data handling
 #'
-#' @importFrom data.table data.table
-#' @importFrom data.table as.data.table
-#' @importFrom data.table :=
-#' @importFrom data.table fread
+#' @import data.table
+## @importFrom data.table data.table
+## @importFrom data.table as.data.table
+## @importFrom data.table :=
+## @importFrom data.table fread
 #' @import tidyr
 #' @importFrom HDF5Array writeHDF5Array
 #'
@@ -69,5 +70,6 @@
 #' @importFrom BBmisc isScalarCharacter
 #' @importFrom BBmisc isScalarLogical
 #' @importFrom R.utils renameFile
+#' @importFrom tools file_path_as_absolute
 #'
 NULL

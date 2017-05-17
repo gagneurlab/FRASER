@@ -5,7 +5,7 @@
 \alias{assays,FraseRDataSet-method}
 \title{Returns the assay corrensonding to the given name/index of the FraseRDataSet}
 \usage{
-\S4method{assays}{FraseRDataSet}(x, ..., withDimnames = TRUE)
+\S4method{assays}{FraseRDataSet}(x, ..., type = NULL, withDimnames = TRUE)
 }
 \description{
 Returns the assay corrensonding to the given name/index of the FraseRDataSet

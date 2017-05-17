@@ -377,7 +377,7 @@ setMethod("[", c("FraseRDataSet", "ANY", "ANY"), function(x, i, j) {
 #'
 setMethod("assayNames", "FraseRDataSet", function(x) {
     return(c(
-        callNextMethod(),
+        assayNames(as(x, "SummarizedExperiment")),
         assayNames(nonSplicedReads(x))
     ))
 })
@@ -386,7 +386,7 @@ setMethod("assayNames", "FraseRDataSet", function(x) {
 #'
 #' Returns the assay corrensonding to the given name/index of the FraseRDataSet
 #'
-setMethod("assays", "FraseRDataSet", function(x,...){
+setMethod("assays", "FraseRDataSet", function(x, ..., type=NULL, withDimnames=TRUE){
     return(c(
         callNextMethod(),
         assays(nonSplicedReads(x, ...))
@@ -464,10 +464,10 @@ setReplaceMethod("mcols", "FraseRDataSet", function(x, type=NULL, ..., value){
 #' getter for count data
 #'
 setMethod("counts", "FraseRDataSet", function(object, type=NULL,
-                                              side=c("ofInterest", "otherSide")){
+            side=c("ofInterest", "otherSide")){
     side <- match.arg(side)
     if(side=="ofInterest"){
-        type <- FraseR:::checkReadType(object, type)
+        type <- checkReadType(object, type)
         return(assays(object)[[paste0("rawCounts", toupper(type))]])
     }
 
