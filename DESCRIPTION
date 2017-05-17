@@ -6,17 +6,16 @@ Date: 2016-11-27
 Author: Christian Mertes <mertes@in.tum.de>, Prof. Julien Gagneur
     <gagneur@in.tum.de>
 Maintainer: Christian Mertes <mertes@in.tum.de>
-Description: This package calls rare aberrant splicing events in a set of
-    transcriptomic sequencing samples. It is designed to assist the diagnostics
-    in the field of rare diseases where RNA-seq is performed.
+Description: FraseR calls rare aberrant splicing events in a set of 
+    transcriptomic sequencing samples. The workflow is designed to assist the 
+    diagnostics in the field of rare diseases where RNA-seq is performed.
 License: Artistic-2.0
 Depends:
-    R (>= 3.4), data.table, BiocParallel, GenomicAlignments,
-    SummarizedExperiment (>= 1.5.7), GenomicRanges,
-    IRanges, tidyr, plotly, VGAM, biomaRt,
-    graphics, stats, htmlwidgets
+    R (>= 3.4), SummarizedExperiment (>= 1.5.7), GenomicRanges
 Imports:
-    data.table
+    IRanges, tidyr, plotly, VGAM, biomaRt, graphics, stats, htmlwidgets
+    data.table, BiocParallel, GenomicAlignments, GenomicRanges,
+    Rsubread, rhdf5, BBmisc, DelayedArray, HDF5Array, R.utils, tools
 biocViews: RNASeq, AlternativeSplicing, Sequencing
     Software, Genetics, Coverage
 URL: https://i12g-gagneurweb.in.tum.de/gitlab/mertes/FraseR/
