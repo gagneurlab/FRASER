@@ -22,7 +22,7 @@ Get/Set if the analysis is strand specific or not
 \examples{
 settings <- createTestFraseRSettings()
 strandSpecific(settings)
-strandSpecific(settings) <- "betaBinomial"
+strandSpecific(settings) <- TRUE
 }
 \author{
 Christian Mertes \email{mertes@in.tum.de}

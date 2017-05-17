@@ -22,6 +22,7 @@ Get/Set the bamFile
 \examples{
 settings <- createTestFraseRSettings()
 bamFile(settings)
+bamFile(settings) <- file.path("bamfiles", samples(settings), "rna-seq.bam")
 }
 \author{
 Christian Mertes \email{mertes@in.tum.de}

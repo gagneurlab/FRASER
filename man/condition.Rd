@@ -23,7 +23,7 @@ Get the condition for each sample
 \examples{
 fds <- createTestFraseRSettings()
 condition(fds)
-condition(fds) <- 1:length(fds)
+condition(fds) <- 1:dim(fds)[2]
 }
 \author{
 Christian Mertes \email{mertes@in.tum.de}

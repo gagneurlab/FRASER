@@ -20,3 +20,8 @@ A subsetted \code{FraseRDataSet} object
 \description{
 Providing subsetting by indices through the single-bracket operator
 }
+\examples{
+    fds <- countRNAData(createTestFraseRSettings())
+    fds[1:10,1:10]
+    fds[,samples(fds) \%in\% c("sample1", "sample2")]
+}

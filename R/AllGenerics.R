@@ -96,7 +96,7 @@ setReplaceMethod("samples", "FraseRDataSet", function(object, value) {
 #' @examples
 #' fds <- createTestFraseRSettings()
 #' condition(fds)
-#' condition(fds) <- 1:length(fds)
+#' condition(fds) <- 1:dim(fds)[2]
 #' @author Christian Mertes \email{mertes@@in.tum.de}
 #' @export
 #' @rdname condition
@@ -124,6 +124,7 @@ setReplaceMethod("condition", "FraseRDataSet", function(object, value) {
 #' @examples
 #' settings <- createTestFraseRSettings()
 #' bamFile(settings)
+#' bamFile(settings) <- file.path("bamfiles", samples(settings), "rna-seq.bam")
 #' @author Christian Mertes \email{mertes@@in.tum.de}
 #' @export
 #' @rdname bamFile
@@ -255,7 +256,7 @@ setReplaceMethod("workingDir", "FraseRDataSet", function(object, value) {
 #' @examples
 #' settings <- createTestFraseRSettings()
 #' strandSpecific(settings)
-#' strandSpecific(settings) <- "betaBinomial"
+#' strandSpecific(settings) <- TRUE
 #' @author Christian Mertes \email{mertes@@in.tum.de}
 #' @export
 #' @rdname strandSpecific
@@ -280,7 +281,7 @@ setReplaceMethod("strandSpecific", "FraseRDataSet", function(object, value) {
 #' @examples
 #' settings <- createTestFraseRSettings()
 #' scanBamParam(settings)
-#' scanBamParam(settings) <- ScanBamParam()
+#' scanBamParam(settings) <- ScanBamParam(mapqFilter=30)
 #'
 #' @author Christian Mertes \email{mertes@@in.tum.de}
 #' @export
@@ -325,6 +326,10 @@ setReplaceMethod("nonSplicedReads", "FraseRDataSet", function(object, value){
 #' @param i A integer vector to subset the rows/ranges
 #' @param j A integer vector to subset the columns/samples
 #' @return A subsetted \code{FraseRDataSet} object
+#' @examples
+#'     fds <- countRNAData(createTestFraseRSettings())
+#'     fds[1:10,1:10]
+#'     fds[,samples(fds) %in% c("sample1", "sample2")]
 setMethod("[", c("FraseRDataSet", "ANY", "ANY"), function(x, i, j) {
     #browser()
     if(missing(i) && missing(j)){
