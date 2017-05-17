@@ -10,6 +10,8 @@
 ### Parallel computing
 #'
 #' @import BiocParallel
+#' @importFrom BiocParallel SerialParam
+#' @importFrom BiocParallel MulticoreParam
 #'
 #'
 ### GRange/Experiment/bamFile packages
