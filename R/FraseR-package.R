@@ -22,6 +22,7 @@
 #' @importFrom IRanges to
 #' @importFrom IRanges IRanges
 #' @importFrom Rsubread featureCounts
+#' @importFrom Rsamtools ScanBamParam
 #'
 #'
 ### Annotation
@@ -44,11 +45,10 @@
 #'
 ### Data handling
 #'
-#' @import data.table
-## @importFrom data.table data.table
-## @importFrom data.table as.data.table
-## @importFrom data.table :=
-## @importFrom data.table fread
+#' @importFrom data.table data.table
+#' @importFrom data.table as.data.table
+#' @importFrom data.table :=
+#' @importFrom data.table fread
 #' @import tidyr
 #' @importFrom HDF5Array writeHDF5Array
 #'
@@ -71,5 +71,17 @@
 #' @importFrom BBmisc isScalarLogical
 #' @importFrom R.utils renameFile
 #' @importFrom tools file_path_as_absolute
+#' @importFrom methods as
+#' @importFrom methods callNextMethod
+#' @importFrom methods is
+#' @importFrom methods new
+#' @importFrom methods slot
+#' @importFrom methods slot<-
+#' @importFrom methods validObject
+#' @importFrom utils browseURL
+#' @importFrom utils capture.output
 #'
+#'
+
 NULL
+
