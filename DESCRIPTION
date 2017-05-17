@@ -13,8 +13,8 @@ License: Artistic-2.0
 Depends:
     R (>= 3.4), BiocParallel, GenomicAlignments,
     SummarizedExperiment (>= 1.5.7), data.table, GenomicRanges,
-    IRanges, tidyr, plotly, VGAM, biomaRt,
-    graphics, stats, htmlwidgets
+    IRanges, tidyr, plotly, VGAM, biomaRt, Rsubread, rhdf5,
+    graphics, stats, htmlwidgets, BBmisc, DelayedArray, HDF5Array, R.utils
 biocViews: RNASeq, AlternativeSplicing, Sequencing
     Software, Genetics, Coverage
 URL: https://i12g-gagneurweb.in.tum.de/gitlab/mertes/FraseR/
