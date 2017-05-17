@@ -12,7 +12,7 @@
 #' @import BiocParallel
 #'
 #'
-### GRange/Experiment packages
+### GRange/Experiment/bamFile packages
 #'
 #' @import GenomicAlignments
 #' @import SummarizedExperiment
@@ -23,6 +23,8 @@
 #' @importFrom IRanges IRanges
 #' @importFrom Rsubread featureCounts
 #' @importFrom Rsamtools ScanBamParam
+#' @importFrom Rsamtools scanBamHeader
+#' @importFrom Rsamtools bamMapqFilter
 #'
 #'
 ### Annotation
