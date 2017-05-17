@@ -9,8 +9,6 @@
 #'     createTestFraseRSettings()
 #'
 createTestFraseRSettings <- function(){
-    condition <- "condition"
-    bamFile <- "bamFile"
 
     # get sample data table
     sampleTable <- fread(system.file(
@@ -29,7 +27,7 @@ createTestFraseRSettings <- function(){
     }
 
     # check that NHDF is NA group
-    sampleTable[gene=='NHDF', conditiona:=NA]
+    sampleTable[gene=='NHDF', condition:=NA]
 
     # return a FraseRSettings object
     return(FraseRDataSet(
