@@ -13,7 +13,7 @@ License: Artistic-2.0
 Depends:
     R (>= 3.4), SummarizedExperiment (>= 1.5.7), GenomicRanges
 Imports:
-    IRanges, tidyr, plotly, VGAM, biomaRt, graphics, stats, htmlwidgets
+    IRanges, tidyr, plotly, VGAM, biomaRt, graphics, stats, htmlwidgets,
     data.table, BiocParallel, GenomicAlignments, GenomicRanges,
     Rsubread, rhdf5, BBmisc, DelayedArray, HDF5Array, R.utils, tools
 biocViews: RNASeq, AlternativeSplicing, Sequencing
