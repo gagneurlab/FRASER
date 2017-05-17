@@ -15,6 +15,7 @@
 \usepackage{verbatim}
 \newcommand{\fraser}{\textit{FraseR}}
 
+
 % <<knitr, echo=FALSE, results="hide">>=
 % library("knitr")
 % opts_chunk$set(
