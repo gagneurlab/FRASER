@@ -12,7 +12,7 @@
 #'
 #' @export
 #' @examples
-#'   fds <- counRNAData(createTestFraseRSettings())
+#'   fds <- countRNAData(createTestFraseRSettings())
 #'   fds <- calculatePSIValues(fds)
 #'   fds <- calculateZScores(fds)
 calculateZScores <- function(fds){
@@ -61,9 +61,7 @@ calculateZScorePerDataSet <- function(fds, psiType){
 #'
 #' @export
 #' @examples
-#'   fds <- counRNAData(createTestFraseRSettings())
-#'   fds <- calculatePSIValues(fds)
-#'   fds <- calculateZScores(fds)
+#'   fds <- countRNAData(createTestFraseRSettings())
 #'   fds <- calculatePValues(fds)
 calculatePValues <- function(dataset, internBPPARAM=SerialParam()){
     # check input
