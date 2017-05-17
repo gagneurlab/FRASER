@@ -1,6 +1,7 @@
-%\VignetteIndexEntry{FraseR: Find RAre Splicing Evens in RNA-seq}
+%\VignetteIndexEntry{FraseR: Find RAre Splicing Evens in RNA-seq Data}
 %\VignettePackage{FraseR}
 %\VignetteEngine{knitr::knitr}
+%\VignetteEncoding{UTF-8}
 
 % To compile this document
 \if12
@@ -15,27 +16,23 @@
 \usepackage{verbatim}
 \newcommand{\fraser}{\textit{FraseR}}
 
-
-% <<knitr, echo=FALSE, results="hide">>=
-% library("knitr")
-% opts_chunk$set(
-%   tidy=FALSE,
-%   dev="png",
-%   #fig.show="hide",
-%   fig.width=4, fig.height=4.5,
-%   dpi = 300,
-%   cache=TRUE,
-%   message=FALSE,
-%   warning=FALSE)
-% @
-
-<<style, eval=TRUE, echo=FALSE, results="tex">>=
-BiocStyle::latex()
+<<style, eval=TRUE, echo=FALSE, results="asis">>=
+BiocStyle::latex2()
 @
 
-% <<style-Sweave, eval=TRUE, echo=FALSE, results="tex">>=
-% BiocStyle::latex2()
-% @
+<<knitr, echo=FALSE, cache=FALSE, results="hide">>=
+library("knitr")
+opts_chunk$set(
+  tidy=FALSE,
+  dev="png",
+  #fig.show="hide",
+  fig.width=4, fig.height=4.5,
+  dpi = 300,
+  cache=TRUE
+  #message=FALSE,
+  #warning=FALSE
+)
+@
 
 <<loadFraseR, echo=FALSE>>=
 library("FraseR")
@@ -48,7 +45,8 @@ library("FraseR")
 \title{FraseR: Find RAre Splicing Events in RNA-seq data}
 
 \begin{document}
-\SweaveOpts{concordance=TRUE}
+
+% \SweaveOpts{concordance=TRUE}
 
 \maketitle
 
@@ -93,10 +91,12 @@ settings <- createTestFraseRSettings()
 fds <- FraseR(settings)
 
 # annotate junctions and splice sites
-fds <- annotateRanges(fds)
+# TODO
+# fds <- annotateRanges(fds)
 
 # visualize results
-plotSampleResults(fds, "sample1")
+# TODO
+# plotSampleResults(fds, "sample1")
 @
 
 The result html will be discussed in the corresponding section \ref{sec:Results}
@@ -183,7 +183,7 @@ We thank Daniel Bader and Martin Morgan for input in the development of \fraser{
 
 \section{Session Info}
 
-<<sessInfo, eval=TRUE, echo=FALSE, results="tex">>=
+<<sessInfo, eval=TRUE, echo=FALSE, results="asis">>=
 toLatex(sessionInfo())
 @
 

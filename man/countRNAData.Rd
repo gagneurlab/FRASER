@@ -28,6 +28,6 @@ This method extracts and counts the split reads and
 TODO
 }
 \examples{
-  counRNAData(createTestFraseRSettings())
-  counRNAData(createTestFraseRSettings(), 5)
+  countRNAData(createTestFraseRSettings())
+  countRNAData(createTestFraseRSettings(), 5)
 }
