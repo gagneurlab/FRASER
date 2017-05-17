@@ -10,7 +10,7 @@ calculateZScores(fds)
 Calculate the zscore for each PSI value.
 }
 \examples{
-  fds <- counRNAData(createTestFraseRSettings())
+  fds <- countRNAData(createTestFraseRSettings())
   fds <- calculatePSIValues(fds)
   fds <- calculateZScores(fds)
 }
