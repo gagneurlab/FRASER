@@ -14,6 +14,7 @@ All three types are plotted into one HTML file
 based on plotly.
 }
 \examples{
+     fds <- FraseR()
      plotSampleResults(fds, "sample1")
      plotSampleResults(fds, "sample1", "result.html")
 }

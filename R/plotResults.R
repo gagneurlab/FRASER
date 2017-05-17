@@ -5,6 +5,7 @@
 #'
 #' @export
 #' @examples
+#'      fds <- FraseR()
 #'      plotSampleResults(fds, "sample1")
 #'      plotSampleResults(fds, "sample1", "result.html")
 plotSampleResults <- function(fds, sampleID=NULL, file=NULL, browseIt=FALSE){
