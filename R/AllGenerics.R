@@ -70,7 +70,7 @@ setGeneric("nonSplicedReads<-", signature = "object", function(object, value) st
 #' @examples
 #' fds <- createTestFraseRSettings()
 #' samples(fds)
-#' samples(fds) <- 1:length(fds)
+#' samples(fds) <- 1:dim(fds)[2]
 #' @author Christian Mertes \email{mertes@@in.tum.de}
 #' @export
 #' @rdname samples

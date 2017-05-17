@@ -22,7 +22,7 @@ Getter/Setter for the sampleIDs
 \examples{
 fds <- createTestFraseRSettings()
 samples(fds)
-samples(fds) <- 1:length(fds)
+samples(fds) <- 1:dim(fds)[2]
 }
 \author{
 Christian Mertes \email{mertes@in.tum.de}
