@@ -22,8 +22,8 @@
 #' @return FraseRDataSet
 #' @export
 #' @examples
-#'   counRNAData(createTestFraseRSettings())
-#'   counRNAData(createTestFraseRSettings(), 5)
+#'   countRNAData(createTestFraseRSettings())
+#'   countRNAData(createTestFraseRSettings(), 5)
 countRNAData <- function(fds, NcpuPerSample=1, junctionMap=NULL){
 
     # Check input TODO

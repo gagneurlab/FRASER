@@ -12,7 +12,7 @@
 #'
 #' @export
 #' @examples
-#'   fds <- counRNAData(createTestFraseRSettings())
+#'   fds <- countRNAData(createTestFraseRSettings())
 #'   fds <- calculatePSIValues(fds)
 calculatePSIValues <- function(fds){
     # check input
