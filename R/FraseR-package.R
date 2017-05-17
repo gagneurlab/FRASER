@@ -26,6 +26,7 @@
 #' @importFrom Rsamtools scanBamHeader
 #' @importFrom Rsamtools bamMapqFilter
 #' @importFrom Rsamtools bamWhich
+#' @importFrom Rsamtools bamWhich<-
 #'
 #'
 ### Annotation

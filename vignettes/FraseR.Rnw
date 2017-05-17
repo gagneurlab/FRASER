@@ -15,25 +15,24 @@
 \usepackage{verbatim}
 \newcommand{\fraser}{\textit{FraseR}}
 
-<<knitr, echo=FALSE, results="hide">>=
-library("knitr")
-opts_chunk$set(
-  tidy=FALSE,
-  dev="png",
-  #fig.show="hide",
-  fig.width=4, fig.height=4.5,
-  dpi = 300,
-  cache=TRUE,
-  message=FALSE,
-  warning=FALSE)
-@
+% <<knitr, echo=FALSE, results="hide">>=
+% library("knitr")
+% opts_chunk$set(
+%   tidy=FALSE,
+%   dev="png",
+%   #fig.show="hide",
+%   fig.width=4, fig.height=4.5,
+%   dpi = 300,
+%   cache=TRUE,
+%   message=FALSE,
+%   warning=FALSE)
+% @
 
+% <<style, eval=TRUE, echo=FALSE, results="tex">>=
+% BiocStyle::latex()
+% @
 
-<<style, eval=TRUE, echo=FALSE, results="asis">>=
-BiocStyle::latex()
-@
-
-% <<style-Sweave, eval=TRUE, echo=FALSE, results=tex>>=
+% <<style-Sweave, eval=TRUE, echo=FALSE, results="tex">>=
 % BiocStyle::latex2()
 % @
 
@@ -48,6 +47,7 @@ library("FraseR")
 \title{FraseR: Find RAre Splicing Events in RNA-seq data}
 
 \begin{document}
+\SweaveOpts{concordance=TRUE}
 
 \maketitle
 
@@ -182,12 +182,12 @@ We thank Daniel Bader and Martin Morgan for input in the development of \fraser{
 
 \section{Session Info}
 
-<<sessInfo, eval=TRUE, echo=FALSE, results="tex">>=
-toLatex(sessionInfo())
-@
+% <<sessInfo, eval=TRUE, echo=FALSE, results="tex">>=
+% toLatex(sessionInfo())
+% @
 
-<<resetOptions, results="hide", echo=FALSE>>=
-options(prompt="> ", continue="+ ")
-@
+% <<resetOptions, results="hide", echo=FALSE>>=
+% options(prompt="> ", continue="+ ")
+% @
 
 \end{document}
