@@ -15,5 +15,6 @@ FraseRSettings object
 }
 \examples{
   fds <- countRNAData(createTestFraseRSettings())
+  fds <- calculatePSIValues(fds)
   fds <- calculatePValues(fds)
 }

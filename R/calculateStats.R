@@ -62,6 +62,7 @@ calculateZScorePerDataSet <- function(fds, psiType){
 #' @export
 #' @examples
 #'   fds <- countRNAData(createTestFraseRSettings())
+#'   fds <- calculatePSIValues(fds)
 #'   fds <- calculatePValues(fds)
 calculatePValues <- function(dataset, internBPPARAM=SerialParam()){
     # check input

@@ -468,10 +468,22 @@ setMethod("counts", "FraseRDataSet", function(object, type=NULL,
     side <- match.arg(side)
     if(side=="ofInterest"){
         type <- checkReadType(object, type)
-        return(assays(object)[[paste0("rawCounts", toupper(type))]])
+        aname <- paste0("rawCounts", toupper(type))
+        if(!aname %in% assayNames(object)){
+            stop("Missing rawCounts. Please count your data first. ",
+                 "And then try again."
+            )
+        }
+        return(assays(object)[[aname]])
     }
 
     # extract psi value from type
     type <- unlist(regmatches(type, gregexpr("psi(3|5|Site)", type, perl=TRUE)))
-    return(assays(object)[[paste0("rawOtherCounts_", type)]])
+    aname <- paste0("rawOtherCounts_", type)
+    if(!aname %in% assayNames(object)){
+        stop("Missing rawOtherCounts. Please calculate PSIValues first. ",
+             "And then try again."
+        )
+    }
+    return(assays(object)[[aname]])
 })

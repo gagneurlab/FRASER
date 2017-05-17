@@ -82,10 +82,8 @@ testPsiWithBetaBinomialPerType <- function(fds, psiType, pvalFun){
     #removeHighLow <- length(group)/4
 
     # raw reads to test for abberent splicing
-    rawCounts <- assays(fds)[[
-            paste0("rawCounts", toupper(whichReadType(fds, psiType)))
-    ]]
-    rawOtherCounts <- assays(fds)[[paste0("rawOtherCounts_", psiType)]]
+    rawCounts      <- counts(fds, type=psiType, side="ofInterest")
+    rawOtherCounts <- counts(fds, type=psiType, side="otherSide")
 
     # swap rawCounts with others for intron retention
     if(psiType == "psiSite"){

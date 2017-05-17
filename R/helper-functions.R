@@ -29,10 +29,13 @@ checkReadType <- function(fds, type){
     }
 
     stopifnot(isScalarCharacter(type))
-    isCorrectType <- function(type) type %in% c("j", "ss")
+    correctTypes <- c(psi3="j", psi5="j", psiSite="ss")
 
     # check if it is already the correct type
-    if(isCorrectType(type)) return(type)
+    if(type %in% correctTypes) return(type)
+
+    # check if psitype is given
+    if(type %in% names(correctTypes)) return(correctTypes[type])
 
     # check assay names
     atype <- whichReadType(fds, type)
