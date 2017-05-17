@@ -50,6 +50,7 @@
 #' @importFrom data.table :=
 #' @importFrom data.table fread
 #' @importFrom data.table setnames
+#' @importFrom data.table is.data.table
 #' @import tidyr
 #' @importFrom HDF5Array writeHDF5Array
 #'

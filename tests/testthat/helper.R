@@ -15,7 +15,9 @@ getName <- function(){
 
 getFraseR <- function(){
     fds <- NULL
-    try(fds <- loadFraseRDataSet(getDir(), getName()))
+    try({
+        fds <- loadFraseRDataSet(getDir(), getName())
+    }, silent=TRUE)
     if(class(fds) != "FraseRDataSet") {
         fds <- createTestFraseRSettings()
         workingDir(fds) <- getDir()

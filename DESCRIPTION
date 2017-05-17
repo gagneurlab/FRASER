@@ -1,7 +1,7 @@
 Package: FraseR
 Type: Package
 Title: Find RAre Splicing Events in RNA-seq data
-Version: 0.3.0
+Version: 0.99.0
 Date: 2016-11-27
 Author: Christian Mertes <mertes@in.tum.de>, Prof. Julien Gagneur
     <gagneur@in.tum.de>
@@ -17,7 +17,7 @@ Imports:
     plotly, graphics, stats, htmlwidgets,
     GenomicAlignments, GenomicRanges, HDF5Array, methods,
     rhdf5, Rsamtools, Rsubread, R.utils, tidyr, tools, VGAM
-biocViews: RNASeq, AlternativeSplicing, Sequencing
+biocViews: RNASeq, AlternativeSplicing, Sequencing,
     Software, Genetics, Coverage
 URL: https://i12g-gagneurweb.in.tum.de/gitlab/mertes/FraseR/
 RoxygenNote: 6.0.1
