@@ -11,11 +11,12 @@ Description: Calling rare aberrant splicing events in transcriptome profiles.
     rare diseases where RNA-seq is performed to identify splicing defects.
 License: Artistic-2.0
 Depends:
-    R (>= 3.4), SummarizedExperiment (>= 1.7.2), plotly (>= 4.6.0)
+    R (>= 3.4), SummarizedExperiment (>= 1.7.2), BiocParallel
 Imports:
-    BBmisc, BiocParallel, biomaRt, data.table, DelayedArray, IRanges, 
+    BBmisc, biomaRt, data.table, DelayedArray, IRanges, 
     graphics, stats, htmlwidgets, GenomicAlignments, GenomicRanges, 
-    HDF5Array, methods, rhdf5, Rsamtools, Rsubread, R.utils, tidyr, tools, VGAM
+    HDF5Array, methods, plotly (>= 4.6.0), rhdf5, Rsamtools, 
+    Rsubread, R.utils, tidyr, tools, VGAM
 biocViews: RNASeq, AlternativeSplicing, Sequencing,
     Software, Genetics, Coverage
 URL: https://i12g-gagneurweb.in.tum.de/gitlab/mertes/FraseR/
