@@ -120,13 +120,13 @@ setReplaceMethod("condition", "FraseRDataSet", function(object, value) {
 #'  Get/Set the bamFile
 #'
 #' @param object A FraseRDataSet object.
-#' @return A \code{vector} with the bamFiles for each sample
+#' @return A \code{vector} with the bamFile for each sample
 #' @examples
 #' settings <- createTestFraseRSettings()
-#' bamFiles(settings)
+#' bamFile(settings)
 #' @author Christian Mertes \email{mertes@@in.tum.de}
 #' @export
-#' @rdname bamFiles
+#' @rdname bamFile
 setMethod("bamFile", "FraseRDataSet", function(object) {
     bamFile <- colData(object)[,"bamFile"]
     if(all(sapply(bamFile, class) == "BamFile")){
@@ -136,7 +136,7 @@ setMethod("bamFile", "FraseRDataSet", function(object) {
 })
 
 #' @export
-#' @rdname bamFiles
+#' @rdname bamFile
 setReplaceMethod("bamFile", "FraseRDataSet", function(object, value) {
     colData(object)[,"bamFile"] <- value
     validObject(object)
