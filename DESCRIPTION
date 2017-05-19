@@ -36,4 +36,4 @@ Collate:
     'plotResults.R'
     'saveHDF5Objects.R'
 VignetteBuilder: knitr
-Suggests: BiocStyle, knitr, testthat
+Suggests: BiocStyle, knitr, testthat, covr
