@@ -1,21 +1,22 @@
 Package: FraseR
 Type: Package
-Title: Find RAre Splicing Events in RNA-seq data
-Version: 0.3.0
+Title: Find RAre Splicing Events in RNA-Seq Data
+Version: 0.99.0
 Date: 2016-11-27
 Author: Christian Mertes <mertes@in.tum.de>, Prof. Julien Gagneur
     <gagneur@in.tum.de>
 Maintainer: Christian Mertes <mertes@in.tum.de>
-Description: This package calls rare aberrant splicing events in a set of
-    transcriptomic sequencing samples. It is designed to assist the diagnostics
-    in the field of rare diseases where RNA-seq is performed.
+Description: Detection of rare aberrant splicing events in transcriptome 
+    profiles. The workflow aims to assist the diagnostics in the field of 
+    rare diseases where RNA-seq is performed to identify splicing defects.
 License: Artistic-2.0
 Depends:
-    R (>= 3.4), BiocParallel, GenomicAlignments,
-    SummarizedExperiment (>= 1.5.7), data.table, GenomicRanges,
-    IRanges, tidyr, plotly, VGAM, biomaRt,
-    graphics, stats, htmlwidgets
-biocViews: RNASeq, AlternativeSplicing, Sequencing
+    R (>= 3.4), SummarizedExperiment (>= 1.7.2), BiocParallel, Rsamtools
+Imports:
+    BBmisc, biomaRt, data.table, DelayedArray, GenomicAlignments, GenomicRanges,
+    IRanges, graphics, htmlwidgets, HDF5Array, methods, plotly (>= 4.6.0), 
+    rhdf5, Rsubread, R.utils, stats, tidyr, tools, VGAM
+biocViews: RNASeq, AlternativeSplicing, Sequencing,
     Software, Genetics, Coverage
 URL: https://i12g-gagneurweb.in.tum.de/gitlab/mertes/FraseR/
 RoxygenNote: 6.0.1
@@ -34,4 +35,5 @@ Collate:
     'helper-functions.R'
     'plotResults.R'
     'saveHDF5Objects.R'
-Suggests: testthat
+VignetteBuilder: knitr
+Suggests: BiocStyle, knitr, testthat, covr

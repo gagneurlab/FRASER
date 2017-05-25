@@ -17,46 +17,72 @@ cleanCache <- function(fds, ...){
 }
 
 #'
-#' convert a data.table to a DataFrame and keep the colname names
+#' checks if the given type is part of the correct category
+#' to map correctly to a read type
 #'
 #' @noRd
-.asDataFrame <- function(dataframe, colname = colnames(dataframe)){
-    dataframe <- DataFrame(dataframe)
-    colnames(dataframe) <- colname
-    return(dataframe)
+checkReadType <- function(fds, type){
+    # check if type is null or missing
+    if(missing(type) | is.null(type)){
+        warning("Read type was not specified! We will assume the default: 'j'")
+        return("j")
+    }
+
+    stopifnot(isScalarCharacter(type))
+    correctTypes <- c(psi3="j", psi5="j", psiSite="ss")
+
+    # check if it is already the correct type
+    if(type %in% correctTypes) return(type)
+
+    # check if psitype is given
+    if(type %in% names(correctTypes)) return(correctTypes[type])
+
+    # check assay names
+    atype <- whichReadType(fds, type)
+    if(isCorrectType(atype)) return(atype)
+
+    stop("Given read type: '", type, "' not recognized. ",
+            "It needs to be 'j' (junction) or 'ss' (splice sites)",
+            "\nor an existing assay name within the given object."
+    )
 }
 
 #'
-#' convert SummarizedExperiment Assays to matrices to be able to store them as hdf5 assays
+#' returns the read type based on the given assay name
 #'
 #' @noRd
-.assay2Matrix <- function(fds){
-    for(se in c("splitReads", "nonSplicedReads")){
-        for(i in 1:length(assays(slot(fds, se)))){
-            matrix <- as.matrix(assays(slot(fds, se))[[i]])
-            assays(slot(fds, se))[[i]] <- matrix
-        }
+whichReadType <- function(fds, name){
+    stopifnot(isScalarCharacter(name))
+    fdsNames <- assayNames(fds)
+    if(!name %in% fdsNames){
+        return(NA)
     }
-    return(fds)
+    nsrNamesL <- length(assayNames(nonSplicedReads(fds)))
+    fdsNamesL <- length(fdsNames)
+
+    return(ifelse(
+        which(fdsNames == name) <= fdsNamesL - nsrNamesL,
+        "j",
+        "ss"
+    ))
 }
 
+#'
+#' Removes the white spaces to have a cleaner file path
+#'@noRd
+nameNoSpace <- function(name){
+    if(class(name) == "FraseRDataSet") name <- name(name)
+    stopifnot(isScalarCharacter(name))
+    gsub("\\s+", "_", name, perl=TRUE)
+}
 
 #'
-#' get the assay as data.table from a SummarizedExperiment object
-#'
+#' convert the input of NA to FALSE
 #' @noRd
-.getAssayAsDataTable <- function(se, assay, na_as_zero = TRUE){
-    if(!any(names(assays(se)) %in% assay)){
-        stop("The given assay: '", assay, "' is not present in this object")
-    }
-    dt <- as.data.table(assays(se)[[assay]])
-    if(na_as_zero){
-        dt[is.na(dt)] <- 0
-    }
-    colnames(dt) <- colnames(assays(se)[[assay]])
-    return(dt)
+na2false <- function(x){
+    x[is.na(x)] <- FALSE
+    return(x)
 }
-
 
 
 #'

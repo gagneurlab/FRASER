@@ -12,6 +12,11 @@
 #' @export
 annotateRanges <- function(dataset, feature="hgnc_symbol",
             biotype=list("protein_coding"), ensembl=NULL){
+
+    # TODO
+    message(date(), ": TODO: annotateRanges needs to be adapted to the new structure!")
+    return(dataset)
+
     if(is.null(ensembl)){
         tryCatch({
             ensemblOutput <- capture.output(ensembl <- useEnsembl(

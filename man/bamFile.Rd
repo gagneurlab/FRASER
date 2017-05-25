@@ -14,14 +14,15 @@
 \item{object}{A FraseRDataSet object.}
 }
 \value{
-A \code{vector} with the bamFiles for each sample
+A \code{vector} with the bamFile for each sample
 }
 \description{
 Get/Set the bamFile
 }
 \examples{
 settings <- createTestFraseRSettings()
-bamFiles(settings)
+bamFile(settings)
+bamFile(settings) <- file.path("bamfiles", samples(settings), "rna-seq.bam")
 }
 \author{
 Christian Mertes \email{mertes@in.tum.de}

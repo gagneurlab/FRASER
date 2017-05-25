@@ -22,7 +22,7 @@ Get/Set the ScanBamParam object from the FraseRDataSet object
 \examples{
 settings <- createTestFraseRSettings()
 scanBamParam(settings)
-scanBamParam(settings) <- ScanBamParam()
+scanBamParam(settings) <- ScanBamParam(mapqFilter=30)
 
 }
 \author{

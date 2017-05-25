@@ -4,13 +4,13 @@
 \alias{calculateZScores}
 \title{Calculate the zscore for each PSI value.}
 \usage{
-calculateZScores(dataset)
+calculateZScores(fds)
 }
 \description{
 Calculate the zscore for each PSI value.
 }
 \examples{
-  fds <- counRNAData(createTestFraseRSettings())
+  fds <- countRNAData(createTestFraseRSettings())
   fds <- calculatePSIValues(fds)
   fds <- calculateZScores(fds)
 }

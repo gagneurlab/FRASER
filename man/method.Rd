@@ -24,7 +24,7 @@ Get/Set the statistical method to use for P-value calculation
 \examples{
 settings <- createTestFraseRSettings()
 method(settings)
-method(settings) <- "betaBinomial"
+method(settings) <- "betaBin"
 }
 \author{
 Christian Mertes \email{mertes@in.tum.de}

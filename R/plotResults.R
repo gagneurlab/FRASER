@@ -5,32 +5,30 @@
 #'
 #' @export
 #' @examples
-#'      plotSampleResults(dataset, "sample1")
-#'      plotSampleResults(dataset, "sample1", "result.html")
-plotSampleResults <- function(dataset, sampleID=NULL,
-                    file=NULL, browseIt=FALSE){
-    require(FraseR)
+#'      fds <- FraseR()
+#'      plotSampleResults(fds, "sample1")
+#'      plotSampleResults(fds, "sample1", "result.html")
+plotSampleResults <- function(fds, sampleID=NULL, file=NULL, browseIt=FALSE){
 
-    #
     # check input
-    stopifnot(class(dataset) == "FraseRDataSet")
+    stopifnot(class(fds) == "FraseRDataSet")
 
     # if sample is empty create all plots for all samples
     if(is.null(sampleID)){
-        samples2plot <- !is.na(sampleGroup(dataset@settings))
-        sampleIDs2plot <- samples(dataset@settings)[samples2plot]
+        if(!is.null(file))
+            stop("Can't do multiple samples yet with file. File would be overriden!")
+        samples2plot <- !is.na(condition(fds))
+        sampleIDs2plot <- samples(fds)[samples2plot]
         return(bplapply(sampleIDs2plot, plotSampleResults,
-                dataset=dataset, file=file, BPPARAM=parallel(dataset@settings)
+                        fds=fds, BPPARAM=parallel(fds)
         ))
     }
 
     # check the rest
-    stopifnot(sampleID %in% samples(dataset@settings))
+    stopifnot(sampleID %in% samples(fds))
     if(is.null(file)){
-        outDir <- file.path(outputFolder(dataset@settings), "results")
-        if(!is.null(outDir) && outDir != ""){
-            file <- file.path(outDir, paste0(sampleID, "-FraseR-results.html"))
-        }
+        outDir <- file.path(workingDir(fds), "results", nameNoSpace(fds))
+        file <- file.path(outDir, paste0(sampleID, "-FraseR-results.html"))
     }
 
     # create folder if needed
@@ -38,61 +36,59 @@ plotSampleResults <- function(dataset, sampleID=NULL,
         dir.create(dirname(file), recursive=TRUE)
     }
 
-    # generate each sub plot
-    psi3plot <- .plotVolcano(dataset, sampleID, "splitReads", "psi3", 1)
-    psi5plot <- .plotVolcano(dataset, sampleID, "splitReads", "psi5", 2)
-    psisplot <- .plotVolcano(dataset, sampleID, "nonSplicedReads", "sitePSI", 3)
-
-    # combine plots
-    mainplot <- plotly::subplot(psi3plot, psi5plot, psisplot,
-            nrows = 3, shareX = FALSE, shareY = FALSE,
-            titleX = TRUE, titleY = TRUE
-    ) %>% layout(showlegend = TRUE,
-            #xaxis=list(title="Z-score"),
-            # TODO P-value does not appear in italic
-            #yaxis=list(title="-log10 P-value"),
-
-            legend = list(
-                x = 1,
-                y = 0.1,
-                title = "&#936; filter"
-            ),
-            title = paste0("FraseR results for sample: <b>", sampleID, "</b>")
-    )
+    # create main plot
+    mainplot <- createMainPlotFraseR(fds, sampleID)
 
     #
-    if(!is.null(file)){
-        saveWidget(mainplot, file=file)
-        if(browseIt){
-            browseURL(file)
-        }
-        return(file)
+    saveWidget(mainplot, file=file)
+    if(browseIt){
+        browseURL(file)
     }
+    return(file)
+}
 
-    # return it
+#'
+#' generate the main FraseR plot
+#' @noRd
+createMainPlotFraseR <- function(fds, sampleID){
+
+    # generate each sub plot
+    psi3plot <- plotVolcano(fds, sampleID, "psi3")
+    psi5plot <- plotVolcano(fds, sampleID, "psi5")
+    psisplot <- plotVolcano(fds, sampleID, "psiSite")
+
+    # combine plots
+    mainplot <- subplot(psi3plot, psi5plot, psisplot, nrows = 3,
+                        shareX = FALSE, shareY = FALSE, titleX = TRUE, titleY = TRUE
+    ) %>% layout(showlegend = TRUE,
+                 #xaxis=list(title="Z-score"),
+                 # TODO P-value does not appear in italic
+                 #yaxis=list(title="-log10 P-value"),
+
+                 legend = list(
+                     x = 1,
+                     y = 0.1,
+                     title = "&#936; filter"
+                 ),
+                 title = paste0("FraseR results for sample: <b>", sampleID, "</b>")
+    )
+
     return(mainplot)
 }
+
 
 #'
 #' generate a volcano plot
 #'
 #' @noRd
-.plotVolcano <- function(dataset, sampleID, readType, psiType, subID,
-                    ylim=c(0,30), xlim=c(-5,5)){
-    curSlot <- slot(dataset, readType)
-    zscore  <- assays(curSlot)[[paste0("zscore_", psiType)]][,sampleID]
-    pvalue  <- -log10(assays(curSlot)[[paste0("pvalue_", psiType)]][,sampleID])
-    psival  <- assays(curSlot)[[psiType]][,sampleID]
+plotVolcano <- function(fds, sampleID, psiType, ylim=c(0,30), xlim=c(-5,5)){
+    zscore  <- assays(fds)[[paste0("zscore_", psiType)]][,sampleID]
+    pvalue  <- -log10(assays(fds)[[paste0("pvalue_", psiType)]][,sampleID])
+    psival  <- assays(fds)[[psiType]][,sampleID]
 
-    if("DelayedMatrix" %in% is(zscore)){
-        zscore <- as.vector(zscore[,1])
-    }
-    if("DelayedMatrix" %in% is(pvalue)){
-        pvalue <- as.vector(pvalue[,1])
-    }
-    if("DelayedMatrix" %in% is(psival)){
-        psival <- as.vector(psival[,1])
-    }
+    zscore <- as.vector(zscore[,1])
+    pvalue <- as.vector(pvalue[,1])
+    psival <- as.vector(psival[,1])
 
     # remove NAs from data
     toplot <- !is.na(zscore) & !is.na(pvalue) & !is.infinite(pvalue)
@@ -115,9 +111,9 @@ plotSampleResults <- function(dataset, sampleID=NULL,
     zscore2plot[toplot & zscore2plot > max(xlim)] <- max(xlim)
     zscore2plot[toplot & zscore2plot < min(xlim)] <- min(xlim)
     plotTraces <- list(
-        "&#936; &#8804; 30%"=.na2false(psival[toplot]<=0.3),
-        "30% < &#936; &#8804; 60%"=.na2false(psival[toplot]<=0.6 & psival[toplot]>0.3),
-        "60% < &#936;"=.na2false(psival[toplot]>0.6),
+        "&#936; &#8804; 30%"=na2false(psival[toplot]<=0.3),
+        "30% < &#936; &#8804; 60%"=na2false(psival[toplot]<=0.6 & psival[toplot]>0.3),
+        "60% < &#936;"=na2false(psival[toplot]>0.6),
         "&#936; &#8801; NA"=is.na(psival[toplot])
     )
 
@@ -128,34 +124,34 @@ plotSampleResults <- function(dataset, sampleID=NULL,
             next
         }
         p <- p %>% add_trace(type="scattergl",
-            x=zscore2plot[t], y=pvalue2plot[t],
-            mode = "markers",
-            marker = list(
-                color = pvalue2plot[t],
-                cmin = 0,
-                cmax = max(ylim),
-                colorbar = list(
-                    y = 0.8,
-                    len = 0.4,
-                    title = "-log<sub>10</sub> <i>P</i>-value"
-                )
-            ),
-            #name = paste0(psiType, ": ", names(plotTraces)[i]),
-            name = names(plotTraces)[i],
-            legendgroup = names(plotTraces)[i],
-            showlegend = psiType=="psi3",
-            visible = ifelse(i<=2, TRUE, "legendonly"),
-            text = paste0(
-                "Symbol:     ", mcols(curSlot)$hgnc_symbol[t], "</br>",
-                "Chromosome: ", seqnames(curSlot)[t],  "</br>",
-                "Start:      ", start(curSlot)[t],     "</br>",
-                "End:        ", end(curSlot)[t],       "</br>",
-                "raw counts: ", assays(curSlot)$rawCounts[t,sampleID], "</br>",
-                "raw other counts: ", assays(curSlot)[[paste0("rawOtherCounts_", psiType)]][t,sampleID] , "</br>",
-                "-log<sub>10</sub>(<i>P</i>-value): ", round(pvalue[t], 2), "</br>",
-                "Z-score:    ", round(zscore[t], 2), "</br>",
-                "PSI-value:  ", round(psival[t], 3)*100, "%</br>"
-            )
+                             x=zscore2plot[t], y=pvalue2plot[t],
+                             mode = "markers",
+                             marker = list(
+                                 color = pvalue2plot[t],
+                                 cmin = 0,
+                                 cmax = max(ylim),
+                                 colorbar = list(
+                                     y = 0.8,
+                                     len = 0.4,
+                                     title = "-log<sub>10</sub> <i>P</i>-value"
+                                 )
+                             ),
+                             #name = paste0(psiType, ": ", names(plotTraces)[i]),
+                             name = names(plotTraces)[i],
+                             legendgroup = names(plotTraces)[i],
+                             showlegend = psiType=="psi3",
+                             visible = ifelse(i<=2, TRUE, "legendonly"),
+                             text = paste0(
+                                 "Symbol:     ", mcols(fds)$hgnc_symbol[t], "</br>",
+                                 "Chromosome: ", seqnames(fds)[t],  "</br>",
+                                 "Start:      ", start(fds)[t],     "</br>",
+                                 "End:        ", end(fds)[t],       "</br>",
+                                 "raw counts: ", assays(fds)$rawCounts[t,sampleID], "</br>",
+                                 "raw other counts: ", assays(fds)[[paste0("rawOtherCounts_", psiType)]][t,sampleID] , "</br>",
+                                 "-log<sub>10</sub>(<i>P</i>-value): ", round(pvalue[t], 2), "</br>",
+                                 "Z-score:    ", round(zscore[t], 2), "</br>",
+                                 "PSI-value:  ", round(psival[t], 3)*100, "%</br>"
+                             )
         )
     }
 
@@ -171,10 +167,10 @@ plotSampleResults <- function(dataset, sampleID=NULL,
         #    x=0,
         #    y=yCutoff/2,
         #    text="",
-            #text=paste("Removed points</br>",
-            #    round(sum(unsigni)/length(unsigni)*100, digits=2),
-            #    "% of points"
-            #),
+        #text=paste("Removed points</br>",
+        #    round(sum(unsigni)/length(unsigni)*100, digits=2),
+        #    "% of points"
+        #),
         #    xref = paste0("x", subID),
         #    yref = paste0("y", subID),
         #    showarrow = FALSE
@@ -193,12 +189,7 @@ plotSampleResults <- function(dataset, sampleID=NULL,
     return(p)
 }
 
-.na2false <- function(x){
-    x[is.na(x)] <- FALSE
-    return(x)
-}
-
 rerunPlot <- function(){
     source("./FraseR/R/plotResults.R")
-    plotSampleResults(fds, "sample1")
+    createMainPlotFraseR(fds, "sample1")
 }

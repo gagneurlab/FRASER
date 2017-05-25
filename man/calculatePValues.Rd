@@ -14,8 +14,7 @@ The P-Value calculation is based on the given method in the
 FraseRSettings object
 }
 \examples{
-  fds <- counRNAData(createTestFraseRSettings())
+  fds <- countRNAData(createTestFraseRSettings())
   fds <- calculatePSIValues(fds)
-  fds <- calculateZScores(fds)
   fds <- calculatePValues(fds)
 }

@@ -12,7 +12,7 @@
 #'
 #' @export
 #' @examples
-#'   fds <- counRNAData(createTestFraseRSettings())
+#'   fds <- countRNAData(createTestFraseRSettings())
 #'   fds <- calculatePSIValues(fds)
 calculatePSIValues <- function(fds){
     # check input
@@ -83,16 +83,15 @@ calculatePSIValuePrimeSite <- function(fds, psiType){
             ))
         }
     )
+    names(psiValues) <- samples(fds)
 
     # merge it to a DataFrame and assign it to our object
-    assays(fds, type="j")[[psiName]] <- DataFrame(matrix(
-        data = unlist(sapply(psiValues, "[", "psiValue")),
-        ncol = dim(fds)[2], dimnames = list(NULL,samples(fds))
-    ))
-    assays(fds, type="j")[[psiROCName]] <- DataFrame(matrix(
-        unlist(sapply(psiValues, "[", "rawOtherCounts")),
-        ncol = dim(fds)[2], dimnames = list(NULL,samples(fds))
-    ))
+    assays(fds, type="j")[[psiName]] <- DataFrame(
+        lapply(psiValues, "[[", "psiValue")
+    )
+    assays(fds, type="j")[[psiROCName]] <- DataFrame(
+        lapply(psiValues, "[[", "rawOtherCounts")
+    )
 
     return(fds)
 }
@@ -116,9 +115,9 @@ calculateSitePSIValue <- function(fds){
     # prepare data table for calculating the psi value
     countData <- data.table(
         spliceSiteID=c(
-            rowData(fds)[["startID"]],
-            rowData(fds)[["endID"]],
-            rowData(nonSplicedReads(fds))[["spliceSiteID"]]
+            rowData(fds, type="j")[["startID"]],
+            rowData(fds, type="j")[["endID"]],
+            rowData(fds, type="ss")[["spliceSiteID"]]
         ),
         type=rep(
             c("junction", "spliceSite"),
@@ -159,16 +158,15 @@ calculateSitePSIValue <- function(fds){
             ))
         }
     )
+    names(psiSiteValues) <- samples(fds)
 
     # merge it to a DataFrame and assign it to our object
-    assays(fds, type="ss")[[psiName]] <- DataFrame(matrix(
-        data = unlist(sapply(psiSiteValues, "[", "psiValue")),
-        ncol = dim(fds)[2], dimnames = list(NULL,samples(fds))
-    ))
-    assays(fds, type="ss")[[psiROCName]] <- DataFrame(matrix(
-        unlist(sapply(psiSiteValues, "[", "rawOtherCounts")),
-        ncol = dim(fds)[2], dimnames = list(NULL,samples(fds))
-    ))
+    assays(fds, type="ss")[[psiName]] <- DataFrame(
+        lapply(psiSiteValues, "[[", "psiValue")
+    )
+    assays(fds, type="ss")[[psiROCName]] <- DataFrame(
+        lapply(psiSiteValues, "[[", "rawOtherCounts")
+    )
 
     return(fds)
 }

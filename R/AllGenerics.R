@@ -70,7 +70,7 @@ setGeneric("nonSplicedReads<-", signature = "object", function(object, value) st
 #' @examples
 #' fds <- createTestFraseRSettings()
 #' samples(fds)
-#' samples(fds) <- 1:length(fds)
+#' samples(fds) <- 1:dim(fds)[2]
 #' @author Christian Mertes \email{mertes@@in.tum.de}
 #' @export
 #' @rdname samples
@@ -96,7 +96,7 @@ setReplaceMethod("samples", "FraseRDataSet", function(object, value) {
 #' @examples
 #' fds <- createTestFraseRSettings()
 #' condition(fds)
-#' condition(fds) <- 1:length(fds)
+#' condition(fds) <- 1:dim(fds)[2]
 #' @author Christian Mertes \email{mertes@@in.tum.de}
 #' @export
 #' @rdname condition
@@ -120,13 +120,14 @@ setReplaceMethod("condition", "FraseRDataSet", function(object, value) {
 #'  Get/Set the bamFile
 #'
 #' @param object A FraseRDataSet object.
-#' @return A \code{vector} with the bamFiles for each sample
+#' @return A \code{vector} with the bamFile for each sample
 #' @examples
 #' settings <- createTestFraseRSettings()
-#' bamFiles(settings)
+#' bamFile(settings)
+#' bamFile(settings) <- file.path("bamfiles", samples(settings), "rna-seq.bam")
 #' @author Christian Mertes \email{mertes@@in.tum.de}
 #' @export
-#' @rdname bamFiles
+#' @rdname bamFile
 setMethod("bamFile", "FraseRDataSet", function(object) {
     bamFile <- colData(object)[,"bamFile"]
     if(all(sapply(bamFile, class) == "BamFile")){
@@ -136,7 +137,7 @@ setMethod("bamFile", "FraseRDataSet", function(object) {
 })
 
 #' @export
-#' @rdname bamFiles
+#' @rdname bamFile
 setReplaceMethod("bamFile", "FraseRDataSet", function(object, value) {
     colData(object)[,"bamFile"] <- value
     validObject(object)
@@ -204,7 +205,7 @@ setReplaceMethod("name", "FraseRDataSet", function(object, value) {
 #' @examples
 #' settings <- createTestFraseRSettings()
 #' method(settings)
-#' method(settings) <- "betaBinomial"
+#' method(settings) <- "betaBin"
 #' @author Christian Mertes \email{mertes@@in.tum.de}
 #' @export
 #' @rdname method
@@ -255,7 +256,7 @@ setReplaceMethod("workingDir", "FraseRDataSet", function(object, value) {
 #' @examples
 #' settings <- createTestFraseRSettings()
 #' strandSpecific(settings)
-#' strandSpecific(settings) <- "betaBinomial"
+#' strandSpecific(settings) <- TRUE
 #' @author Christian Mertes \email{mertes@@in.tum.de}
 #' @export
 #' @rdname strandSpecific
@@ -280,7 +281,7 @@ setReplaceMethod("strandSpecific", "FraseRDataSet", function(object, value) {
 #' @examples
 #' settings <- createTestFraseRSettings()
 #' scanBamParam(settings)
-#' scanBamParam(settings) <- ScanBamParam()
+#' scanBamParam(settings) <- ScanBamParam(mapqFilter=30)
 #'
 #' @author Christian Mertes \email{mertes@@in.tum.de}
 #' @export
@@ -322,9 +323,15 @@ setReplaceMethod("nonSplicedReads", "FraseRDataSet", function(object, value){
 #' Providing subsetting by indices through the single-bracket operator
 #'
 #' @param x A \code{FraseRDataSet} object
-#' @param i A integer vector
+#' @param i A integer vector to subset the rows/ranges
+#' @param j A integer vector to subset the columns/samples
 #' @return A subsetted \code{FraseRDataSet} object
+#' @examples
+#'     fds <- countRNAData(createTestFraseRSettings())
+#'     fds[1:10,1:10]
+#'     fds[,samples(fds) %in% c("sample1", "sample2")]
 setMethod("[", c("FraseRDataSet", "ANY", "ANY"), function(x, i, j) {
+    #browser()
     if(missing(i) && missing(j)){
         return(x)
     }
@@ -335,22 +342,26 @@ setMethod("[", c("FraseRDataSet", "ANY", "ANY"), function(x, i, j) {
         j <- TRUE
     }
 
-    # subset the inheritate SE object
-    x <- callNextMethod()
-
-    # subset non spliced reads
-    nonSplicedReads <- slot(x, "nonSplicedReads")
-    if(length(nonSplicedReads) > 0){
+    # first subset non spliced reads if needed
+    nsrObj <- nonSplicedReads(x)
+    if(length(nsrObj) > 0){
         # get selected splice site IDs
-        selectedIDs <- unique(unlist(rowData(x)[c("startID", "endID")]))
+        selectedIDs <- unique(unlist(
+            rowData(x, type="j")[i, c("startID", "endID")]
+        ))
 
         # get the selection vector
-        iNSR <- rowData(nonSplicedReads)['spliceSiteID'] %in% selectedIDs
+        iNSR <- rowData(x, type="ss")[['spliceSiteID']] %in% selectedIDs
 
         # subset it
-        nonSplicedReads <- nonSplicedReads[unlist(iNSR),j]
+        nsrObj <- nsrObj[unlist(iNSR),j]
     }
 
+    # subset the inheritate SE object
+    #xsubset <- as(x, "SummarizedExperiment)[i,j]
+    x <- callNextMethod()
+
+    # create new FraseRDataSet object
     newx <- new("FraseRDataSet",
                 x,
                 name            = name(x),
@@ -359,7 +370,7 @@ setMethod("[", c("FraseRDataSet", "ANY", "ANY"), function(x, i, j) {
                 bamParam        = scanBamParam(x),
                 strandSpecific  = strandSpecific(x),
                 workingDir      = workingDir(x),
-                nonSplicedReads = nonSplicedReads
+                nonSplicedReads = nsrObj
     )
     validObject(newx)
     return(newx)
@@ -370,59 +381,56 @@ setMethod("[", c("FraseRDataSet", "ANY", "ANY"), function(x, i, j) {
 #' Returns the assayNames of FraseR
 #'
 setMethod("assayNames", "FraseRDataSet", function(x) {
-    ans1 <- assayNames(as(x, "SummarizedExperiment"))
-    ans2 <- assayNames(nonSplicedReads(x))
-    return(c(ans1, ans2))
+    return(c(
+        assayNames(as(x, "SummarizedExperiment")),
+        assayNames(nonSplicedReads(x))
+    ))
 })
 
 
 #'
 #' Returns the assay corrensonding to the given name/index of the FraseRDataSet
 #'
-setMethod("assays", "FraseRDataSet", function(x,...){
+setMethod("assays", "FraseRDataSet", function(x, ..., type=NULL, withDimnames=TRUE){
     return(c(
         callNextMethod(),
-        assays(nonSplicedReads(x))
+        assays(nonSplicedReads(x, ...))
     ))
 })
 FraseRDataSet.assays.replace <-
-    function(x, ..., type="", withDimnames=TRUE, value){
-        if(any(names(value) == "")) stop("Name of an assay can not be empty!")
-        if(any(duplicated(names(value)))) stop("Assay names need to be unique!")
+            function(x, ..., type=NULL, withDimnames=TRUE, value){
+    if(any(names(value) == "")) stop("Name of an assay can not be empty!")
+    if(any(duplicated(names(value)))) stop("Assay names need to be unique!")
 
-        # make sure all slots are HDF5
-        for(i in seq_along(value)){
-            if(!class(value[[i]]) %in% c("HDF5Matrix", "DelayedMatrix")){
-                aname <- names(value)[i]
-                h5obj <- saveAsHDF5(x, aname, object=value[[i]])
-                value[[i]] <- h5obj
-            }
+    # make sure all slots are HDF5
+    for(i in seq_along(value)){
+        if(!class(value[[i]]) %in% c("HDF5Matrix", "DelayedMatrix")){
+            aname <- names(value)[i]
+            h5obj <- saveAsHDF5(x, aname, object=value[[i]])
+            value[[i]] <- h5obj
         }
+    }
 
-        # first replace all existing slots
-        n <- length(assayNames(x))
-        nj <- n - length(assays(nonSplicedReads(x)))
-        ns <- n - nj
-        jslots <- value[1:nj]
-        sslots <- value[(nj+1):n]
-        if(length(value) > n){
-            if(!type %in% c("j", "ss")){
-                stop(paste("Please set the 'type' option to ",
-                        "'j' (Junction) or 'ss' (splice site)."
-                ))
-            }
-            jslots <- c(jslots, value[(1+n):length(value)][type=="j"])
-            sslots <- c(sslots, value[(1+n):length(value)][type=="ss"])
-        }
+    # first replace all existing slots
+    n <- length(assayNames(x))
+    nj <- n - length(assays(nonSplicedReads(x)))
+    ns <- n - nj
+    jslots <- value[1:nj]
+    sslots <- value[(nj+1):n]
+    if(length(value) > n){
+        type <- sapply(type, checkReadType, fds=x)
+        jslots <- c(jslots, value[(1+n):length(value)][type=="j"])
+        sslots <- c(sslots, value[(1+n):length(value)][type=="ss"])
+    }
 
-        # assign new assays
-        value <- jslots
-        x <- callNextMethod()
-        assays(nonSplicedReads(x), ..., withDimnames=withDimnames) <- sslots
+    # assign new assays
+    value <- jslots
+    x <- callNextMethod()
+    assays(nonSplicedReads(x), ..., withDimnames=withDimnames) <- sslots
 
-        # validate and return
-        validObject(x)
-        return(x)
+    # validate and return
+    validObject(x)
+    return(x)
 }
 setReplaceMethod("assays", c("FraseRDataSet", "SimpleList"),
         FraseRDataSet.assays.replace
@@ -430,7 +438,57 @@ setReplaceMethod("assays", c("FraseRDataSet", "SimpleList"),
 setReplaceMethod("assays", c("FraseRDataSet", "list"),
         FraseRDataSet.assays.replace
 )
+setReplaceMethod("assays", c("FraseRDataSet", "DelayedMatrix"),
+        FraseRDataSet.assays.replace
+)
+
+#'
+#' retrive the length of the object (aka number of junctions)
+#'
+setMethod("length", "FraseRDataSet", function(x) callNextMethod())
+
+#'
+#' getter and setter for mcols
+#'
+setMethod("mcols", "FraseRDataSet", function(x, type=NULL, ...){
+    type <- checkReadType(x, type)
+    if(type=="j")  return(callNextMethod())
+    if(type=="ss") return(mcols(nonSplicedReads(x), ...))
+})
+setReplaceMethod("mcols", "FraseRDataSet", function(x, type=NULL, ..., value){
+    type <- checkReadType(x, type)
+    if(type=="j") return(callNextMethod())
+    if(type=="ss"){
+        mcols(nonSplicedReads(x), ...) <- value
+        return(x)
+    }
+})
 
 
+#'
+#' getter for count data
+#'
+setMethod("counts", "FraseRDataSet", function(object, type=NULL,
+            side=c("ofInterest", "otherSide")){
+    side <- match.arg(side)
+    if(side=="ofInterest"){
+        type <- checkReadType(object, type)
+        aname <- paste0("rawCounts", toupper(type))
+        if(!aname %in% assayNames(object)){
+            stop("Missing rawCounts. Please count your data first. ",
+                 "And then try again."
+            )
+        }
+        return(assays(object)[[aname]])
+    }
 
-
+    # extract psi value from type
+    type <- unlist(regmatches(type, gregexpr("psi(3|5|Site)", type, perl=TRUE)))
+    aname <- paste0("rawOtherCounts_", type)
+    if(!aname %in% assayNames(object)){
+        stop("Missing rawOtherCounts. Please calculate PSIValues first. ",
+             "And then try again."
+        )
+    }
+    return(assays(object)[[aname]])
+})

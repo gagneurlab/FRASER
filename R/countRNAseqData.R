@@ -22,8 +22,8 @@
 #' @return FraseRDataSet
 #' @export
 #' @examples
-#'   counRNAData(createTestFraseRSettings())
-#'   counRNAData(createTestFraseRSettings(), 5)
+#'   countRNAData(createTestFraseRSettings())
+#'   countRNAData(createTestFraseRSettings(), 5)
 countRNAData <- function(fds, NcpuPerSample=1, junctionMap=NULL){
 
     # Check input TODO
@@ -103,11 +103,18 @@ countRNAData <- function(fds, NcpuPerSample=1, junctionMap=NULL){
     # create final FraseR dataset
     fds <- new("FraseRDataSet",
         splitCounts,
-        nonSplicedReads=nonSplicedCounts
+        name            = name(fds),
+        method          = method(fds),
+        parallel        = parallel(fds),
+        bamParam        = scanBamParam(fds),
+        strandSpecific  = strandSpecific(fds),
+        workingDir      = workingDir(fds),
+        nonSplicedReads = nonSplicedCounts
     )
 
     # save it so the FraseR object also gets saved
     fds <- saveFraseRDataSet(fds)
+    gc()
 
     # return it
     return(fds)
@@ -292,7 +299,7 @@ mergeCounts <- function(countList, junctionMap=NULL, assumeEqual=FALSE,
 
     # merge it with the type columen and add it to the range object
     mcolsInfoDF <- mcols(ranges)
-    mcols(ranges) <- DataFrame(bind_rows(sample_counts))
+    mcols(ranges) <- DataFrame(sample_counts)
 
     # set correct naming
     colnames(mcols(ranges)) <- sample_names

@@ -42,7 +42,7 @@ validateSampleAnnotation <- function(object) {
     if(!"sampleID" %in% colnames(sampleData)){
         return("Please provide a 'sampleID' column with a ID for each sample.")
     }
-    if(any(sampleData[,duplicated(sampleID)])){
+    if(any(duplicated(sampleData$sampleID))){
         return("The 'sampleID' column needs to be unique.")
     }
     if(!any("bamFile" %in% colnames(sampleData))){
@@ -128,6 +128,10 @@ validateNonSplicedReadsType <- function(object) {
     if(length(object) != 0 && dim(object@nonSplicedReads)[2] != dim(object)[2]){
         return("The NSR dimensions are not correct. This is a internal error!")
     }
+    ans <- validObject(object@nonSplicedReads)
+    if(!isScalarLogical(ans) || ans == FALSE){
+        return(ans)
+    }
     NULL
 }
 
@@ -162,12 +166,13 @@ showFraseRDataSet <- function(object) {
     }
     cat("-------------------- Sample data table -----------------\n")
     sampleData <- as.data.table(colData(object))
-    if(all(sapply(sampleData[,bamFile], isScalarCharacter))){
-        sampleData[,bamFile:=sapply(bamFile, function(str){
+    if(all(sapply(sampleData$bamFile, isScalarCharacter))){
+        sampleData$bamFile <- gsub("... [^/]+/", ".../",
+            sapply(sampleData$bamFile, function(str){
                 if(nchar(str) <= 29) return(str)
                 paste("...", substr(str, nchar(str) - 25, nchar(str)))
-        })]
-        sampleData[,bamFile:=gsub("... [^/]+/", ".../", bamFile)]
+            })
+        )
     }
     show(sampleData)
     cat("\n\n")
