@@ -59,18 +59,18 @@ createMainPlotFraseR <- function(fds, sampleID){
 
     # combine plots
     mainplot <- subplot(psi3plot, psi5plot, psisplot, nrows = 3,
-                        shareX = FALSE, shareY = FALSE, titleX = TRUE, titleY = TRUE
+            shareX = FALSE, shareY = FALSE, titleX = TRUE, titleY = TRUE
     ) %>% layout(showlegend = TRUE,
-                 #xaxis=list(title="Z-score"),
-                 # TODO P-value does not appear in italic
-                 #yaxis=list(title="-log10 P-value"),
+            #xaxis=list(title="Z-score"),
+            # TODO P-value does not appear in italic
+            #yaxis=list(title="-log10 P-value"),
 
-                 legend = list(
-                     x = 1,
-                     y = 0.1,
-                     title = "&#936; filter"
-                 ),
-                 title = paste0("FraseR results for sample: <b>", sampleID, "</b>")
+            legend = list(
+                    x = 1,
+                    y = 0.1,
+                    title = "&#936; filter"
+            ),
+            title = paste0("FraseR results for sample: <b>", sampleID, "</b>")
     )
 
     return(mainplot)
@@ -82,39 +82,39 @@ createMainPlotFraseR <- function(fds, sampleID){
 #'
 #' @noRd
 plotVolcano <- function(fds, sampleID, psiType, ylim=c(0,30), xlim=c(-5,5)){
-    zscore  <- assays(fds)[[paste0("zscore_", psiType)]][,sampleID]
-    pvalue  <- -log10(assays(fds)[[paste0("pvalue_", psiType)]][,sampleID])
-    psival  <- assays(fds)[[psiType]][,sampleID]
+    # extract values
+    zscores  <- assays(fds)[[paste0("zscore_", psiType)]][,sampleID]
+    pvalues  <- -log10(assays(fds)[[paste0("pvalue_", psiType)]][,sampleID])
+    psivals  <- assays(fds)[[psiType]][,sampleID]
 
-    zscore <- as.vector(zscore[,1])
-    pvalue <- as.vector(pvalue[,1])
-    psival <- as.vector(psival[,1])
+    # convert from HDF5 to memory array
+    zscores <- as.vector(zscores[,1])
+    pvalues <- as.vector(pvalues[,1])
+    psivals <- as.vector(psivals[,1])
 
     # remove NAs from data
-    toplot <- !is.na(zscore) & !is.na(pvalue) & !is.infinite(pvalue)
+    toplot <- !is.na(zscores) & !is.na(pvalues) & !is.infinite(pvalues)
 
     # remove unsignificant data (to keep plotly responsive)
     # max 50k points
     xCutoff <- 1.5
     yCutoff <- 1.5
-    unsigni <- abs(zscore[toplot]) < xCutoff & pvalue[toplot] < yCutoff
-    if(sum(toplot[toplot] & !unsigni) < 50000){
-        unsigni <- unsigni & rank(pvalue[toplot]) > 50000
-    }
+    unsigni <- abs(zscores[toplot]) < xCutoff & pvalues[toplot] < yCutoff
     toplot[toplot]  <- !unsigni
 
-
     # trim data to ylim and xlim
-    pvalue2plot <- pvalue
-    zscore2plot <- zscore
+    pvalue2plot <- pvalues
+    zscore2plot <- zscores
     pvalue2plot[toplot & pvalue2plot > max(ylim)] <- max(ylim)
     zscore2plot[toplot & zscore2plot > max(xlim)] <- max(xlim)
     zscore2plot[toplot & zscore2plot < min(xlim)] <- min(xlim)
+
+    # traces to plot
     plotTraces <- list(
-        "&#936; &#8804; 30%"=na2false(psival[toplot]<=0.3),
-        "30% < &#936; &#8804; 60%"=na2false(psival[toplot]<=0.6 & psival[toplot]>0.3),
-        "60% < &#936;"=na2false(psival[toplot]>0.6),
-        "&#936; &#8801; NA"=is.na(psival[toplot])
+        "&#936; &#8804; 30%" =       na2false(psivals[toplot]<=0.3),
+        "30% < &#936; &#8804; 60%" = na2false(psivals[toplot]<=0.6 & psivals[toplot]>0.3),
+        "60% < &#936;" =             na2false(psivals[toplot]>0.6),
+        "&#936; &#8801; NA" =        is.na(psivals[toplot]) # currently emtpy
     )
 
     p <- plot_ly()
@@ -123,35 +123,45 @@ plotVolcano <- function(fds, sampleID, psiType, ylim=c(0,30), xlim=c(-5,5)){
         if(length(t) == 0){
             next
         }
-        p <- p %>% add_trace(type="scattergl",
-                             x=zscore2plot[t], y=pvalue2plot[t],
-                             mode = "markers",
-                             marker = list(
-                                 color = pvalue2plot[t],
-                                 cmin = 0,
-                                 cmax = max(ylim),
-                                 colorbar = list(
-                                     y = 0.8,
-                                     len = 0.4,
-                                     title = "-log<sub>10</sub> <i>P</i>-value"
-                                 )
-                             ),
-                             #name = paste0(psiType, ": ", names(plotTraces)[i]),
-                             name = names(plotTraces)[i],
-                             legendgroup = names(plotTraces)[i],
-                             showlegend = psiType=="psi3",
-                             visible = ifelse(i<=2, TRUE, "legendonly"),
-                             text = paste0(
-                                 "Symbol:     ", mcols(fds)$hgnc_symbol[t], "</br>",
-                                 "Chromosome: ", seqnames(fds)[t],  "</br>",
-                                 "Start:      ", start(fds)[t],     "</br>",
-                                 "End:        ", end(fds)[t],       "</br>",
-                                 "raw counts: ", assays(fds)$rawCounts[t,sampleID], "</br>",
-                                 "raw other counts: ", assays(fds)[[paste0("rawOtherCounts_", psiType)]][t,sampleID] , "</br>",
-                                 "-log<sub>10</sub>(<i>P</i>-value): ", round(pvalue[t], 2), "</br>",
-                                 "Z-score:    ", round(zscore[t], 2), "</br>",
-                                 "PSI-value:  ", round(psival[t], 3)*100, "%</br>"
-                             )
+
+        # generate data to plot
+        tmpFds <- fds
+        if(psiType == "psiSite") tmpFds <- nonSplicedReads(fds)
+        tmpData <- data.table(
+            zscore=zscore2plot,
+            pvalue=pvalue2plot,
+            psivalue=psivals,
+            symbol=mcols(fds, type=psiType)$hgnc_symbol,
+            chr   =as.character(seqnames(tmpFds)),
+            start =start(tmpFds),
+            end   =end(tmpFds),
+            counts=as.vector(counts(fds, type=psiType, side="ofInterest")[,sampleID]),
+            ocounts=as.vector(counts(fds, type=psiType, side="otherSide")[,sampleID])
+        )[t]
+
+        p <- p %>% add_trace(data=tmpData, type="scattergl", mode = "markers",
+            x=~zscore, y=~pvalue,
+            marker = list(color = ~pvalue,
+                    cmin = 0, cmax = max(ylim),
+                    colorbar = list(y = 0.8, len = 0.4,
+                            title = "-log<sub>10</sub> <i>P</i>-value"
+                    )
+            ),
+            name = names(plotTraces)[i],
+            legendgroup = names(plotTraces)[i],
+            showlegend = psiType=="psi3",
+            visible = ifelse(i<=2, TRUE, "legendonly"),
+            text = paste0(
+                "Symbol:           ", tmpData$symbol,  "</br>",
+                "Chromosome:       ", tmpData$chr,     "</br>",
+                "Start:            ", tmpData$start,   "</br>",
+                "End:              ", tmpData$end,     "</br>",
+                "raw counts:       ", tmpData$counts,  "</br>",
+                "raw other counts: ", tmpData$ocounts, "</br>",
+                "-log<sub>10</sub>(<i>P</i>-value):   ", round(tmpData$pvalue, 2), "</br>",
+                "Z-score:          ", round(tmpData$zscore, 2), "</br>",
+                "PSI-value:        ", round(tmpData$psival, 3)*100, "%</br>"
+            )
         )
     }
 
@@ -190,6 +200,21 @@ plotVolcano <- function(fds, sampleID, psiType, ylim=c(0,30), xlim=c(-5,5)){
 }
 
 rerunPlot <- function(){
+    library(htmlwidgets)
+    library(plotly)
+    library(FraseR)
+
+    fds
+    sampleID <- "SRR1087369"
+    psiType <- "psi3"
+    ylim=c(0,30)
+    xlim=c(-5,5)
+
+    na2false <- FraseR:::na2false
+    nameNoSpace <- FraseR:::nameNoSpace
+
+    plotSampleResults(fds, sampleID)
+
     source("./FraseR/R/plotResults.R")
     createMainPlotFraseR(fds, "sample1")
 }

@@ -10,12 +10,12 @@
 #' with biomaRt
 #'
 #' @export
-annotateRanges <- function(dataset, feature="hgnc_symbol",
+annotateRanges <- function(fds, feature="hgnc_symbol",
             biotype=list("protein_coding"), ensembl=NULL){
 
-    # TODO
-    message(date(), ": TODO: annotateRanges needs to be adapted to the new structure!")
-    return(dataset)
+    # check input
+    stopifnot(is(fds, "FraseRDataSet"))
+    if(length(fds) == 0) return(fds)
 
     if(is.null(ensembl)){
         tryCatch({
@@ -28,30 +28,30 @@ annotateRanges <- function(dataset, feature="hgnc_symbol",
                         " Could not connect to ENSEMBL."
                 )
         })
-    }
-    if(is.null(ensembl)){
-        message("Nothing was annotated!")
-        return(dataset)
+        if(is.null(ensembl)){
+            message("Nothing was annotated!")
+            return(fds)
+        }
     }
 
     # check if USCS naming scheme is used
-    useUSCS <- all(startsWith(seqlevels(dataset@splitReads), "chr"))
+    useUSCS <- all(startsWith(seqlevels(fds), "chr"))
 
     # get gene annotation
-    annotation <- .getFeatureAsGRange(ensembl, feature, biotype, useUSCS)
+    annotation <- getFeatureAsGRange(ensembl, feature, biotype, useUSCS)
 
     # annotate split reads
-    mcols(dataset@splitReads)[[feature]] <- .getAnnotationFeature(
-            rowRanges(dataset@splitReads), feature, annotation
+    mcols(fds, type="psi3")[[feature]] <- getAnnotationFeature(
+            data=rowRanges(fds), feature, annotation
     )
 
     # annotate splice sites
-    mcols(dataset@nonSplicedReads)[[feature]] <- .getAnnotationFeature(
-            data=rowRanges(dataset@nonSplicedReads),
+    mcols(fds, type="psiSite")[[feature]] <- getAnnotationFeature(
+            data=rowRanges(nonSplicedReads(fds)),
             feature, annotation
     )
 
-    return(dataset)
+    return(fds)
 }
 
 
@@ -59,7 +59,7 @@ annotateRanges <- function(dataset, feature="hgnc_symbol",
 #' use biomart to extract the current feature annotation
 #'
 #' @noRd
-.getFeatureAsGRange <- function(ensembl, feature, biotype, useUSCS=TRUE){
+getFeatureAsGRange <- function(ensembl, feature, biotype, useUSCS=TRUE){
 
     # contact biomaRt to retrive hgnc symbols
     ensemblResults <- getBM(
@@ -96,7 +96,7 @@ annotateRanges <- function(dataset, feature="hgnc_symbol",
 #' merge the retrieved annotations from a biomart with the ranges of our data
 #'
 #' @noRd
-.getAnnotationFeature <- function(data, feature, annotation){
+getAnnotationFeature <- function(data, feature, annotation){
 
     # find overlap with the query
     # suppress seqnames not in anothers object!

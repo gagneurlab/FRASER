@@ -32,7 +32,7 @@
 ### Plotting
 #'
 #' @importFrom graphics plot
-#' @importFrom plotly plot_ly subplot layout
+#' @importFrom plotly plot_ly subplot layout add_trace
 #' @importFrom htmlwidgets saveWidget
 #' @importFrom HDF5Array writeHDF5Array
 #' @importFrom DelayedArray rowMeans

@@ -20,7 +20,7 @@ biocViews: RNASeq, AlternativeSplicing, Sequencing,
     Software, Genetics, Coverage
 URL: https://i12g-gagneurweb.in.tum.de/gitlab/mertes/FraseR/
 RoxygenNote: 6.0.1
-Collate: 
+Collate:
     'FraseR-package.R'
     'FraseRDataSet-class.R'
     'AllGenerics.R'
@@ -36,4 +36,5 @@ Collate:
     'plotResults.R'
     'saveHDF5Objects.R'
 VignetteBuilder: knitr
-Suggests: BiocStyle, knitr, testthat
+Suggests: BiocStyle, knitr, testthat,
+    covr
