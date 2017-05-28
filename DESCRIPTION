@@ -38,3 +38,4 @@ Collate:
 VignetteBuilder: knitr
 Suggests: BiocStyle, knitr, testthat, covr
 
+

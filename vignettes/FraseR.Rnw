@@ -35,7 +35,10 @@ opts_chunk$set(
 @
 
 <<loadFraseR, echo=FALSE>>=
-library("FraseR")
+suppressPackageStartupMessages({
+    library(FraseR)
+    library(data.table)
+})
 @
 
 \author{Christian Mertes$^{1}$, Julien Gagneur$^{1}$ \\[1em]
@@ -91,12 +94,10 @@ settings <- createTestFraseRSettings()
 fds <- FraseR(settings)
 
 # annotate junctions and splice sites
-# TODO
-# fds <- annotateRanges(fds)
+fds <- annotateRanges(fds)
 
 # visualize results
-# TODO
-# plotSampleResults(fds, "sample1")
+plotSampleResults(fds, "sample1")
 @
 
 The result html will be discussed in the corresponding section \ref{sec:Results}
