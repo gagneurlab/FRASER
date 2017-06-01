@@ -157,6 +157,11 @@ setValidity("FraseRDataSet", validateFraseRDataSet)
 
 ## show method for FraseRDataSet
 showFraseRDataSet <- function(object) {
+    if(dim(object)[2] < 1){
+        cat("This Fraser object does not contain any sample! Please add one.")
+        return()
+    }
+
     # taken from SummarizedExperiment show function
     scat <- function(fmt, vals=character(), exdent=2, ...){
         vals <- ifelse(nzchar(vals), vals, "''")
@@ -175,13 +180,13 @@ showFraseRDataSet <- function(object) {
         )
     }
     show(sampleData)
-    cat("\n\n")
+    cat("\n")
     if(length(object) > 0){
         cat(paste0("Number of samples:      ", dim(object)[2]), "\n")
         cat(paste0("Number of junctions:    ", length(object)), "\n")
         cat(paste0("Number of splice sites: ", length(nonSplicedReads(object))), "\n")
         scat("assays(%d):    %s\n", assayNames(object))
-        cat("\n\n")
+        cat("\n")
     }
 
     cat("----------------------- Settings -----------------------\n")
@@ -189,14 +194,24 @@ showFraseRDataSet <- function(object) {
     cat(paste0("Statistical method:          ", method(object)), "\n")
     cat(paste0("Analysis is strand specific: ", strandSpecific(object)), "\n")
     cat(paste0("Working directory:           '", workingDir(object), "'"), "\n")
-    cat("\n\n")
+    cat("\n")
 
     cat("-------------------- Parallel backend ------------------\n")
-    show(parallel(object))
+    # show(parallel(object))
+    cat(paste0("Type: ", as.character(class(parallel(object))),
+            "\tWorkers: ", bpworkers(parallel(object)),
+            "\tTasks: ", bptasks(parallel(object))
+    ))
     cat("\n\n")
 
     cat("-------------------- BAM parameters --------------------\n")
-    show(scanBamParam(object))
+    if(identical(scanBamParam(FraseRDataSet()), scanBamParam(object))){
+        cat(paste0("Default used with: ",
+                "bamMapqFilter=", bamMapqFilter(scanBamParam(object))
+        ))
+    } else {
+        show(scanBamParam(object))
+    }
     cat("\n\n")
 }
 
