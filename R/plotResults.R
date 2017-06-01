@@ -127,21 +127,28 @@ plotVolcano <- function(fds, sampleID, psiType, ylim=c(0,30), xlim=c(-5,5)){
         # generate data to plot
         tmpFds <- fds
         if(psiType == "psiSite") tmpFds <- nonSplicedReads(fds)
+        if(is.null(mcols(fds, type=psiType)$hgnc_symbol)){
+            mcols(fds, type=psiType)$hgnc_symbol <- NA
+        }
         tmpData <- data.table(
-            zscore=zscore2plot,
-            pvalue=pvalue2plot,
-            psivalue=psivals,
-            symbol=mcols(fds, type=psiType)$hgnc_symbol,
-            chr   =as.character(seqnames(tmpFds)),
-            start =start(tmpFds),
-            end   =end(tmpFds),
-            counts=as.vector(counts(fds, type=psiType, side="ofInterest")[,sampleID]),
-            ocounts=as.vector(counts(fds, type=psiType, side="otherSide")[,sampleID])
+            zscore2p = zscore2plot,
+            pvalue2p = pvalue2plot,
+            zscore   = zscores,
+            pvalue   = pvalues,
+            psivalue = psivals,
+            symbol   = mcols(fds, type=psiType)$hgnc_symbol,
+            chr      = as.character(seqnames(tmpFds)),
+            start    = start(tmpFds),
+            end      = end(tmpFds),
+            counts   = as.vector(counts(
+                    fds, type=psiType, side="ofInterest")[,sampleID]),
+            ocounts  = as.vector(counts(
+                    fds, type=psiType, side="otherSide")[,sampleID])
         )[t]
 
         p <- p %>% add_trace(data=tmpData, type="scattergl", mode = "markers",
-            x=~zscore, y=~pvalue,
-            marker = list(color = ~pvalue,
+            x=~zscore2p, y=~pvalue2p,
+            marker = list(color = ~pvalue2p,
                     cmin = 0, cmax = max(ylim),
                     colorbar = list(y = 0.8, len = 0.4,
                             title = "-log<sub>10</sub> <i>P</i>-value"
@@ -152,15 +159,15 @@ plotVolcano <- function(fds, sampleID, psiType, ylim=c(0,30), xlim=c(-5,5)){
             showlegend = psiType=="psi3",
             visible = ifelse(i<=2, TRUE, "legendonly"),
             text = paste0(
-                "Symbol:           ", tmpData$symbol,  "</br>",
-                "Chromosome:       ", tmpData$chr,     "</br>",
-                "Start:            ", tmpData$start,   "</br>",
-                "End:              ", tmpData$end,     "</br>",
-                "raw counts:       ", tmpData$counts,  "</br>",
-                "raw other counts: ", tmpData$ocounts, "</br>",
-                "-log<sub>10</sub>(<i>P</i>-value):   ", round(tmpData$pvalue, 2), "</br>",
-                "Z-score:          ", round(tmpData$zscore, 2), "</br>",
-                "PSI-value:        ", round(tmpData$psival, 3)*100, "%</br>"
+                "Symbol:           ", tmpData$symbol,  "<br>",
+                "Chromosome:       ", tmpData$chr,     "<br>",
+                "Start:            ", tmpData$start,   "<br>",
+                "End:              ", tmpData$end,     "<br>",
+                "raw counts:       ", tmpData$counts,  "<br>",
+                "raw other counts: ", tmpData$ocounts, "<br>",
+                "-log<sub>10</sub>(<i>P</i>-value):   ", round(tmpData$pvalue, 2), "<br>",
+                "Z-score:          ", round(tmpData$zscore, 2), "<br>",
+                "PSI-value:        ", round(tmpData$psival, 3)*100, "%<br>"
             )
         )
     }
