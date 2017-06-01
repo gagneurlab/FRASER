@@ -9,6 +9,7 @@
 #'
 ### Parallel computing
 #'
+#' @importFrom parallel mclapply
 #' @import BiocParallel
 #' @importFrom BiocParallel SerialParam MulticoreParam
 #'
@@ -54,7 +55,7 @@
 #'
 ### Miscelenious functions
 #'
-#' @importFrom BBmisc isScalarCharacter isScalarLogical
+#' @importFrom BBmisc isScalarCharacter isScalarLogical chunk
 #' @importFrom R.utils renameFile
 #' @importFrom tools file_path_as_absolute
 #' @importFrom methods as callNextMethod is new slot slot<- validObject

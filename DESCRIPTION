@@ -15,8 +15,8 @@ Depends:
     SummarizedExperiment (>= 1.7.2)
 Imports:
     BBmisc, biomaRt, DelayedArray, GenomicAlignments, GenomicRanges,
-    IRanges, graphics, htmlwidgets, HDF5Array, methods, plotly (>= 4.6.0), 
-    rhdf5, Rsubread, R.utils, stats, tidyr, tools, VGAM
+    IRanges, graphics, htmlwidgets, HDF5Array, methods, parallel,
+    plotly (>= 4.6.0), rhdf5, Rsubread, R.utils, stats, tidyr, tools, VGAM
 biocViews: RNASeq, AlternativeSplicing, Sequencing,
     Software, Genetics, Coverage
 URL: https://i12g-gagneurweb.in.tum.de/gitlab/mertes/FraseR/

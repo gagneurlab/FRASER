@@ -8,7 +8,7 @@
 #'      fds <- FraseR()
 #'      plotSampleResults(fds, "sample1")
 #'      plotSampleResults(fds, "sample1", "result.html")
-plotSampleResults <- function(fds, sampleID=NULL, file=NULL, browseIt=FALSE){
+plotSampleResults <- function(fds, sampleID=NULL, file=NULL, dir=NULL, browseIt=FALSE){
 
     # check input
     stopifnot(class(fds) == "FraseRDataSet")
@@ -17,10 +17,18 @@ plotSampleResults <- function(fds, sampleID=NULL, file=NULL, browseIt=FALSE){
     if(is.null(sampleID)){
         if(!is.null(file))
             stop("Can't do multiple samples yet with file. File would be overriden!")
+
         samples2plot <- !is.na(condition(fds))
         sampleIDs2plot <- samples(fds)[samples2plot]
-        return(bplapply(sampleIDs2plot, plotSampleResults,
-                        fds=fds, BPPARAM=parallel(fds)
+        return(bplapply(sampleIDs2plot, fds=fds, dir=dir, BPPARAM=parallel(fds),
+            FUN=function(sampleID, fds, dir) {
+                require(FraseR)
+                if(!is.null(dir)){
+                    fileName <- paste0("FraseR-results-", sampleID, ".html")
+                    dir <- file.path(dir, fileName)
+                }
+                plotSampleResults(fds, sampleID, file=dir, browseIt=FALSE)
+            }
         ))
     }
 
@@ -28,7 +36,7 @@ plotSampleResults <- function(fds, sampleID=NULL, file=NULL, browseIt=FALSE){
     stopifnot(sampleID %in% samples(fds))
     if(is.null(file)){
         outDir <- file.path(workingDir(fds), "results", nameNoSpace(fds))
-        file <- file.path(outDir, paste0(sampleID, "-FraseR-results.html"))
+        file <- file.path(outDir, paste0("FraseR-results-", sampleID, ".html"))
     }
 
     # create folder if needed
