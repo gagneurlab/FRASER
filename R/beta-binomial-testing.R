@@ -115,8 +115,8 @@ testPsiWithBetaBinomialPerType <- function(fds, psiType, pvalFun){
         suppressPackageStartupMessages(require(FraseR))
 
         ## get read coverage (y == reads of interests, N == all reads)
-        y <- as.integer(as.vector(unlist(rawCounts[idx,])))
-        N <- y + as.integer(as.vector(unlist(rawOtherCounts[idx,])))
+        y <- as.integer(as.matrix(rawCounts[idx,]))
+        N <- y + as.integer(as.matrix(rawOtherCounts[idx,]))
 
         # TODO betabinom fails if only zeros in one row
         # add noise to avoid zero variants in alternative reads
@@ -142,11 +142,11 @@ testPsiWithBetaBinomialPerType <- function(fds, psiType, pvalFun){
         # plot(log10(N+1),log10(y+1))
 
         ## fitting
-        startTime <- Sys.time()
-        pv_res <- lapply(list(countMatrix),
-                FUN=tryCatchFactory(pvalFun), y=y, N=N
-        )[[1]]
-        timing <- Sys.time() - startTime
+        timing <- system.time(gcFirst=FALSE, expr={
+            pv_res <- lapply(list(countMatrix),
+                    FUN=tryCatchFactory(pvalFun), y=y, N=N
+            )[[1]]
+        })["user"]
 
         #
         # put pvalues into correct boundaries
@@ -162,11 +162,15 @@ testPsiWithBetaBinomialPerType <- function(fds, psiType, pvalFun){
         # add timing
         pv_res[[1]]$timing <- timing
 
+        # add index for later sorting
+        pv_res[[1]]$idx <- idx
+
         return(pv_res)
     })
 
     # sort table again
     pvalues_ls <- pvalues_ls[order(toTest)]
+    toTest <- sort(toTest)
 
     # print the vglm infos
     for(type in c("warn", "err")){
@@ -182,19 +186,19 @@ testPsiWithBetaBinomialPerType <- function(fds, psiType, pvalFun){
         alpha   = as.vector(sapply(pvalues_ls, function(x) x[[1]]$alpha)),
         beta    = as.vector(sapply(pvalues_ls, function(x) x[[1]]$beta)),
         timing  = as.vector(sapply(pvalues_ls, function(x) x[[1]]$timing)),
+        idx     = as.vector(sapply(pvalues_ls, function(x) x[[1]]$idx)),
         errStr  = vglmInfos2character(pvalues_ls, "err"),
         warnStr = vglmInfos2character(pvalues_ls, "warn")
     )
     for(i in seq_along(mcol_ls)){
         name <- paste0(psiType, "_", names(mcol_ls)[[i]])
-        mcols(fds, type=psiType)[[name]] <- NA
+        mcols(fds, type=psiType)[[name]] <- as(NA, class(mcol_ls[[i]]))
         mcols(fds, type=psiType)[[name]][toTest] <- mcol_ls[[i]]
     }
-    mcols(fds, type=psiType)[[name]][!toTest] <- FALSE
 
     # extract pvalues
     pvalues <- do.call(rbind,lapply(pvalues_ls, function(x) x[[1]]$pval))
-    pvalues_full <- matrix(as.numeric(NULL),
+    pvalues_full <- matrix(as.numeric(NA),
             nrow=dim(rawCounts)[1], ncol=dim(rawCounts)[2]
     )
     pvalues_full[toTest,] <- pvalues
