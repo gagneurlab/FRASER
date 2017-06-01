@@ -11,9 +11,10 @@ Description: Detection of rare aberrant splicing events in transcriptome
     rare diseases where RNA-seq is performed to identify splicing defects.
 License: Artistic-2.0
 Depends:
-    R (>= 3.4), SummarizedExperiment (>= 1.7.2), BiocParallel, Rsamtools
+    R (>= 3.4), BiocParallel, data.table, Rsamtools,
+    SummarizedExperiment (>= 1.7.2)
 Imports:
-    BBmisc, biomaRt, data.table, DelayedArray, GenomicAlignments, GenomicRanges,
+    BBmisc, biomaRt, DelayedArray, GenomicAlignments, GenomicRanges,
     IRanges, graphics, htmlwidgets, HDF5Array, methods, plotly (>= 4.6.0), 
     rhdf5, Rsubread, R.utils, stats, tidyr, tools, VGAM
 biocViews: RNASeq, AlternativeSplicing, Sequencing,
