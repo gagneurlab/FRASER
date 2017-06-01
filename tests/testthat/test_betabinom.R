@@ -3,7 +3,7 @@ context("Test betabinom pvalue calculations")
 test_that("Check test randomization is correct", {
     # get subset to speed up test
     fds <- getFraseR()
-    fds <- fds[which(mcols(fds1, type="psi3")$psi3_tested)[1:20]]
+    fds <- fds[which(mcols(fds, type="psi3")$psi3_tested)[1:20]]
     name(fds) <- "betabinomTest"
     parallel(fds) <- MulticoreParam(10)
 
