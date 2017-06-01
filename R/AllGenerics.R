@@ -492,3 +492,21 @@ setMethod("counts", "FraseRDataSet", function(object, type=NULL,
     }
     return(assays(object)[[aname]])
 })
+
+#'
+#' convertion of Delayed Matrix objects into a data.table
+#'
+setAs("DelayedMatrix", "data.table", function(from){
+    mc.cores=8
+    perChunk=5000
+    rbindlist(mclapply(chunk(1:dim(from)[1], perChunk), mc.cores=mc.cores,
+            FUN=function(x) as.data.table(from[x,])
+    ))
+})
+
+#'
+#' convertion of Delayed Matrix objects into a matrix
+#'
+setAs("DelayedMatrix", "matrix", function(from){
+    as.matrix(as(from, "data.table"))
+})
