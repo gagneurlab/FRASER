@@ -80,10 +80,32 @@ nameNoSpace <- function(name){
 #' convert the input of NA to FALSE
 #' @noRd
 na2false <- function(x){
+    if(any(class(x) %in% c("DataFrame", "matrix", "data.frame"))){
+        stopifnot(dim(x)[2] == 1)
+        x <- as.vector(as.matrix(x)[,1])
+    }
     x[is.na(x)] <- FALSE
     return(x)
 }
 
+#'
+#' the qq plot function
+#' @noRd
+fraserQQplot <- function(p, main=NULL, ...){
+    zeroOffset <- 10e-100
+
+    # my observerd and expected values
+    o = -log10(sort(p + zeroOffset, decreasing=FALSE))
+    e = -log10(ppoints(length(p)))[1:length(o)]
+
+    # plot it
+    plot(e, o, pch=19, cex=1, main=main, ...,
+         xlab=expression(Expected~~-log[10](italic(p))),
+         ylab=expression(Observed~~-log[10](italic(p))),
+         xlim=c(0,max(e)), ylim=c(0,max(o))
+    )
+    lines(e, e, col="red")
+}
 
 #'
 #' TODO this is not used yet or documented
