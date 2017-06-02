@@ -5,15 +5,16 @@ test_that("Check test randomization is correct", {
     fds <- getFraseR()
     fds <- fds[which(mcols(fds, type="psi3")$psi3_tested)[1:20]]
     name(fds) <- "betabinomTest"
-    parallel(fds) <- MulticoreParam(10)
+    fds <- saveFraseRDataSet(fds)
+    parallel(fds) <- MulticoreParam(5)
 
     for(psiType in c("psi3", "psi5", "psiSite")){
-        fds1 <- testPsiWithBetaBinomialPerType(fds, psiType, betabinVglmTest)
-        pv1 <- as(assays(fds1)[[paste0("pvalue_", psiType)]], "matrix")
-        fds2 <- testPsiWithBetaBinomialPerType(fds, psiType, betabinVglmTest)
-        pv2 <- as(assays(fds2)[[paste0("pvalue_", psiType)]], "matrix")
+        pvalls <- sapply(1:2, function(i){
+            tmpfds <- testPsiWithBetaBinomialPerType(fds, psiType, betabinVglmTest)
+            as.matrix(as.data.table(assays(tmpfds)[[paste0("pvalue_", psiType)]]))
+        })
 
-        expect_equal(pv1[,1], pv2[,1])
+        expect_equal(pvalls[[1]], pvalls[[1]])
     }
 
 })

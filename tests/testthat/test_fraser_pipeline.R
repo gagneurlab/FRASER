@@ -1,12 +1,11 @@
 context("Test FraseR pipeline")
 
-test_that("FraseRSettings", {
-    expect_equal("ok", "ok")
+test_that("FraseRDataSet create settings", {
     settings <- createTestFraseRDataSet()
     expect_is(settings, "FraseRDataSet")
 })
 
-test_that("FraseR", {
+test_that("FraseR function", {
     fds <- getFraseR()
     fds <- FraseR(settings=fds)
 
