@@ -125,7 +125,7 @@ plotVolcano <- function(fds, sampleID, psiType, ylim=c(0,30), xlim=c(-5,5)){
         "&#936; &#8801; NA" =        is.na(psivals[toplot]) # currently emtpy
     )
 
-    p <- plot_ly()
+    p <- plot_ly(type="scattergl", mode="markers")
     for(i in seq_along(plotTraces)){
         t <- which(toplot)[plotTraces[[i]]]
         if(length(t) == 0){
@@ -154,7 +154,7 @@ plotVolcano <- function(fds, sampleID, psiType, ylim=c(0,30), xlim=c(-5,5)){
                     fds, type=psiType, side="otherSide")[,sampleID])
         )[t]
 
-        p <- p %>% add_trace(data=tmpData, type="scattergl", mode = "markers",
+        p <- p %>% add_trace(data=tmpData,
             x=~zscore2p, y=~pvalue2p,
             marker = list(color = ~pvalue2p,
                     cmin = 0, cmax = max(ylim),
