@@ -6,12 +6,18 @@
 
 #'
 #' clear the files in the cache to start fresh
+#'
+#' @examples
+#'     fds <- createTestFraseRSettings()
+#'     cleanCache(fds)
+#'
 #' @export
 cleanCache <- function(fds, ...){
     stopifnot(class(fds) == "FraseRDataSet")
     # clean cache
     cacheDir <- file.path(workingDir(fds), "cache")
     if(dir.exists(cacheDir)){
+        message(date(), ": Remove directory: '", cacheDir, "'.")
         unlink(cacheDir, recursive=TRUE)
     }
 }
@@ -77,15 +83,29 @@ nameNoSpace <- function(name){
 }
 
 #'
-#' convert the input of NA to FALSE
+#' convert all NA's of a input vector or of a
+#' single dimension matrix/data.table to FALSE
+#'
+#' @examples
+#'   a <- c(TRUE, FALSE, NA, TRUE, NA)
+#'   na2false(a)
+#'
+#'   dt <- data.table(a)
+#'   na2false(dt)
 #'
 #' @export
 na2false <- function(x){
+    na2default(x, FALSE)
+}
+na2zero <- function(x){
+    na2default(x, 0)
+}
+na2default <- function(x, default=FALSE){
     if(any(class(x) %in% c("DataFrame", "matrix", "data.frame"))){
         stopifnot(dim(x)[2] == 1)
         x <- as.vector(as.matrix(x)[,1])
     }
-    x[is.na(x)] <- FALSE
+    x[is.na(x)] <- default
     return(x)
 }
 

@@ -9,3 +9,12 @@ FraseRShiny(fds, fdsres = NULL, options = list(), server = !interactive())
 \description{
 Present the FraseR results in a shiny app
 }
+\examples{
+    fds <- createTestFraseRDataSet()
+    # for interactive sessions
+    FraseRShiny(fds)
+
+    # for running a shiny application as server
+    FraseRShiny(fds, server=TRUE)
+
+}

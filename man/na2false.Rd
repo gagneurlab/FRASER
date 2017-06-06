@@ -2,10 +2,20 @@
 % Please edit documentation in R/helper-functions.R
 \name{na2false}
 \alias{na2false}
-\title{convert the input of NA to FALSE}
+\title{convert all NA's of a input vector or of a
+single dimension matrix/data.table to FALSE}
 \usage{
 na2false(x)
 }
 \description{
-convert the input of NA to FALSE
+convert all NA's of a input vector or of a
+single dimension matrix/data.table to FALSE
+}
+\examples{
+  a <- c(TRUE, FALSE, NA, TRUE, NA)
+  na2false(a)
+
+  dt <- data.table(a)
+  na2false(dt)
+
 }

@@ -117,6 +117,14 @@ serverMain <- function(input, output) {
 #'
 #' Present the FraseR results in a shiny app
 #'
+#' @examples
+#'     fds <- createTestFraseRDataSet()
+#'     # for interactive sessions
+#'     FraseRShiny(fds)
+#'
+#'     # for running a shiny application as server
+#'     FraseRShiny(fds, server=TRUE)
+#'
 #' @export
 FraseRShiny <- function(fds, fdsres=NULL, options=list(), server=!interactive()){
     if(is.null(fdsres)){
