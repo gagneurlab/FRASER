@@ -51,7 +51,7 @@
 ### P-Value calculation
 #'
 #' @importFrom stats sd rbinom fisher.test na.omit
-#' @importFrom VGAM rbetabinom vglm Coef pbetabinom betabinomial
+#' @importFrom VGAM rbetabinom vglm Coef pbetabinom pbetabinom.ab betabinomial
 #'
 ### Miscelenious functions
 #'

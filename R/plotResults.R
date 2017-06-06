@@ -23,11 +23,7 @@ plotSampleResults <- function(fds, sampleID=NULL, file=NULL, dir=NULL, browseIt=
         return(bplapply(sampleIDs2plot, fds=fds, dir=dir, BPPARAM=parallel(fds),
             FUN=function(sampleID, fds, dir) {
                 require(FraseR)
-                if(!is.null(dir)){
-                    fileName <- paste0("FraseR-results-", sampleID, ".html")
-                    dir <- file.path(dir, fileName)
-                }
-                plotSampleResults(fds, sampleID, file=dir, browseIt=FALSE)
+                plotSampleResults(fds, sampleID, dir=dir, browseIt=FALSE)
             }
         ))
     }
@@ -35,12 +31,14 @@ plotSampleResults <- function(fds, sampleID=NULL, file=NULL, dir=NULL, browseIt=
     # check the rest
     stopifnot(sampleID %in% samples(fds))
     if(is.null(file)){
-        outDir <- file.path(workingDir(fds), "results", nameNoSpace(fds))
-        file <- file.path(outDir, paste0("FraseR-results-", sampleID, ".html"))
+        if(is.null(dir)){
+            dir <- file.path(workingDir(fds), "results", nameNoSpace(fds))
+        }
+        file <- file.path(dir, paste0("FraseR-results-", sampleID, ".html"))
     }
 
     # create folder if needed
-    if(!is.null(file) && !dir.exists(dirname(file))){
+    if(!dir.exists(dirname(file))){
         dir.create(dirname(file), recursive=TRUE)
     }
 
@@ -90,15 +88,20 @@ createMainPlotFraseR <- function(fds, sampleID){
 #'
 #' @noRd
 plotVolcano <- function(fds, sampleID, psiType, ylim=c(0,30), xlim=c(-5,5)){
+
     # extract values
     zscores  <- assays(fds)[[paste0("zscore_", psiType)]][,sampleID]
     pvalues  <- -log10(assays(fds)[[paste0("pvalue_", psiType)]][,sampleID])
     psivals  <- assays(fds)[[psiType]][,sampleID]
+    counts   <- counts(fds, type=psiType, side="ofInterest")[,sampleID]
+    ocounts  <- counts(fds, type=psiType, side="otherSide")[,sampleID]
 
     # convert from HDF5 to memory array
     zscores <- as.vector(zscores[,1])
     pvalues <- as.vector(pvalues[,1])
     psivals <- as.vector(psivals[,1])
+    counts  <- as.vector(counts[,1])
+    ocounts <- as.vector(ocounts[,1])
 
     # remove NAs from data
     toplot <- !is.na(zscores) & !is.na(pvalues) & !is.infinite(pvalues)
@@ -117,18 +120,29 @@ plotVolcano <- function(fds, sampleID, psiType, ylim=c(0,30), xlim=c(-5,5)){
     zscore2plot[toplot & zscore2plot > max(xlim)] <- max(xlim)
     zscore2plot[toplot & zscore2plot < min(xlim)] <- min(xlim)
 
+    # filter bad betabinom results
+    filteredRes <- na2false(
+        (psivals <= 0.01 | psivals >= 0.99) &
+        abs(zscores) <= xCutoff &
+        counts + ocounts > 10000
+    )[toplot]
+
     # traces to plot
     plotTraces <- list(
-        "&#936; &#8804; 30%" =       na2false(psivals[toplot]<=0.3),
-        "30% < &#936; &#8804; 60%" = na2false(psivals[toplot]<=0.6 & psivals[toplot]>0.3),
-        "60% < &#936;" =             na2false(psivals[toplot]>0.6),
-        "&#936; &#8801; NA" =        is.na(psivals[toplot]) # currently emtpy
+        "&#936; &#8804; 30%"       = na2false(psivals[toplot] <= 0.3),
+        "30% < &#936; &#8804; 60%" = na2false(psivals[toplot] <= 0.6 & psivals[toplot] > 0.3),
+        "60% < &#936;"             = na2false(psivals[toplot] > 0.6),
+        "filtered"                 = filteredRes
     )
 
     p <- plot_ly(type="scattergl", mode="markers")
     for(i in seq_along(plotTraces)){
-        t <- which(toplot)[plotTraces[[i]]]
-        if(length(t) == 0){
+        if(names(plotTraces)[i] != 'filtered'){
+            t <- which(toplot)[plotTraces[[i]] & !filteredRes]
+        } else {
+            t <- which(toplot)[filteredRes]
+        }
+        if(length(t) == 0) {
             next
         }
 
@@ -148,13 +162,11 @@ plotVolcano <- function(fds, sampleID, psiType, ylim=c(0,30), xlim=c(-5,5)){
             chr      = as.character(seqnames(tmpFds)),
             start    = start(tmpFds),
             end      = end(tmpFds),
-            counts   = as.vector(counts(
-                    fds, type=psiType, side="ofInterest")[,sampleID]),
-            ocounts  = as.vector(counts(
-                    fds, type=psiType, side="otherSide")[,sampleID])
+            counts   = counts,
+            ocounts  = ocounts
         )[t]
 
-        p <- p %>% add_trace(data=tmpData,
+        p <- add_trace(p, data=tmpData,
             x=~zscore2p, y=~pvalue2p,
             marker = list(color = ~pvalue2p,
                     cmin = 0, cmax = max(ylim),
@@ -183,11 +195,11 @@ plotVolcano <- function(fds, sampleID, psiType, ylim=c(0,30), xlim=c(-5,5)){
     nxlim <- c(xlim[1]*1.05, xlim[2]*1.05)
     nylim <- c(ylim[1], ylim[2]*1.05)
 
-    p <- p %>% layout(
+    p <- layout(p,
         xaxis=list(range=nxlim, title=ifelse(psiType=="sitePSI", "Z-score", "")),
         # TODO P-value does not appear in italic
         yaxis=list(range=nylim, title=paste0("-log10 P-value for ", psiType)),
-        showlegend = FALSE
+        showlegend = FALSE,
         #annotations=list(
         #    x=0,
         #    y=yCutoff/2,
@@ -200,16 +212,13 @@ plotVolcano <- function(fds, sampleID, psiType, ylim=c(0,30), xlim=c(-5,5)){
         #    yref = paste0("y", subID),
         #    showarrow = FALSE
         #)
-    )
-
-    # add removed area
-    #p <- p %>% layout(shapes = list(
-    #        list(type = "rect",
-    #                fillcolor = "blue", line = list(color = "blue"), opacity = 0.3,
-    #                x0 = -xCutoff, x1 = xCutoff, xref = paste0("x", subID),
-    #                y0 = 0, y1 = yCutoff, yref = paste0("y", subID)
-    #        )
-    #))
+        shapes = list(
+            list(type = "rect", fillcolor = "blue",
+                line = list(color = "blue"), opacity = 0.3,
+                x0 = -xCutoff, x1 = xCutoff, xref = "x", # paste0("x", subID),
+                y0 = 0, y1 = yCutoff , yref = "y" # paste0("y", subID)
+            )
+    ))
 
     return(p)
 }
@@ -233,3 +242,4 @@ rerunPlot <- function(){
     source("./FraseR/R/plotResults.R")
     createMainPlotFraseR(fds, "sample1")
 }
+

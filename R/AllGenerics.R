@@ -497,11 +497,14 @@ setMethod("counts", "FraseRDataSet", function(object, type=NULL,
 #' convertion of Delayed Matrix objects into a data.table
 #'
 setAs("DelayedMatrix", "data.table", function(from){
-    mc.cores=8
+    mc.cores=min(24, max(1, detectCores() - 1))
     perChunk=5000
-    rbindlist(mclapply(chunk(1:dim(from)[1], perChunk), mc.cores=mc.cores,
-            FUN=function(x) as.data.table(from[x,])
-    ))
+    chunks <- chunk(1:dim(from)[1], perChunk)
+    ans <- mclapply(chunks, mc.cores=mc.cores,
+        FUN=function(x) as.data.table(from[x,])
+    )
+    ans <- rbindlist(ans)
+    ans
 })
 
 #'
@@ -510,3 +513,61 @@ setAs("DelayedMatrix", "data.table", function(from){
 setAs("DelayedMatrix", "matrix", function(from){
     as.matrix(as(from, "data.table"))
 })
+
+#'
+#' retrieve a single sample result object
+#' @noRd
+resultsSingleSample <- function(sampleID, grs, pvals, zscores, psivals,
+                                psiType, pvalueCut, zscoreCut){
+    goodCut <- na2false(
+        pvals[,get(sampleID) <= pvalueCut] &
+            zscores[,abs(get(sampleID)) >= zscoreCut]
+    )
+
+    ans <- granges(grs[goodCut])
+    mcols(ans)$type        <- psiType
+    mcols(ans)$sampleID    <- sampleID
+    mcols(ans)$hgnc_symbol <- mcols(grs[goodCut])$hgnc_symbol
+    mcols(ans)$zscore      <- round(zscores[goodCut,get(sampleID)], 2)
+    mcols(ans)$psiValue    <- round(psivals[goodCut,get(sampleID)], 2)
+    mcols(ans)$pvalue      <- pvals[goodCut,get(sampleID)]
+    mcols(ans)$p.hochberg  <- p.adjust(mcols(ans)$pvalue, method="hochberg")
+    mcols(ans)$fdr         <- p.adjust(mcols(ans)$pvalue, method="fdr")
+
+    return(ans[order(mcols(ans)$pvalue)])
+}
+
+#'
+#' obtain the results for the given analysis pipeline
+#' @export
+results <- function(fds, sampleIDs=samples(fds), pvalueCut=1e-5, zscoreCut=2){
+
+    resultsls <- sapply(c("psi3", "psi5", "psiSite"), function(psiType){
+        message(date(), "Collecting results for: ", psiType)
+
+        tested <- mcols(fds, type=psiType)[[paste0(psiType, "_tested")]]
+        tested <- na2false(tested)
+        pvals <- as(Class="data.table",
+                    object=assays(fds)[[paste0("pvalue_", psiType)]][tested,]
+        )
+        zscores <- as(Class="data.table",
+                      object=assays(fds)[[paste0("zscore_", psiType)]][tested,]
+        )
+        psivals <- as(Class="data.table",
+                      object=assays(fds)[[psiType]][tested,]
+        )
+        grs <- rowRanges(if(psiType=="psiSite") nonSplicedReads(fds) else fds)
+        grs <- grs[tested]
+
+        results <- unlist(GRangesList(sapply(sampleIDs,
+             resultsSingleSample, grs=grs, pvals=pvals,
+             zscores=zscores, psiType=psiType, psivals=psivals,
+             pvalueCut=pvalueCut, zscoreCut=zscoreCut
+        )))
+    })
+
+    ans <- unlist(GRangesList(resultsls))
+
+    return(ans)
+}
+
