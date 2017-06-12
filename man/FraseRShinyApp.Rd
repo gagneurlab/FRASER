@@ -11,10 +11,11 @@ Present the FraseR results as shiny app
 }
 \examples{
     fds <- createTestFraseRDataSet()
+
     # for interactive sessions
-    FraseRShiny(fds)
+    myShinyApp <- FraseRShinyApp(fds)
 
     # for running a shiny application as server
-    FraseRShiny(fds, server=TRUE)
+    myShinyAppObj <- FraseRShinyApp(fds, server=TRUE)
 
 }
