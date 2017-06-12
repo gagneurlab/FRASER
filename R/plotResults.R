@@ -11,7 +11,19 @@
 plotSampleResults <- function(fds, sampleID=NULL, file=NULL, dir=NULL, browseIt=FALSE){
 
     # check input
-    stopifnot(class(fds) == "FraseRDataSet")
+    # needsSave <- FALSE
+    # stopifnot(class(fds) == "FraseRDataSet")
+    # for(psiType in c("psi3", "psi5", "psiSite")){
+    #     aname <- paste0("pointPlotted_", psiType)
+    #     if(!aname %in% assayNames(fds)){
+    #         adim <- dim(assays(fds)[[psiType]])
+    #         assays(fds, type=psiType)[[aname]] <- matrix(FALSE, nrow=adim[1], ncol=adim[2])
+    #         needsSave <- TRUE
+    #     }
+    # }
+    # if(needsSave) {
+    #     fds <- saveFraseRDataSet(fds)
+    # }
 
     # if sample is empty create all plots for all samples
     if(is.null(sampleID)){
@@ -46,7 +58,7 @@ plotSampleResults <- function(fds, sampleID=NULL, file=NULL, dir=NULL, browseIt=
     mainplot <- createMainPlotFraseR(fds, sampleID)
 
     #
-    saveWidget(mainplot, file=file)
+    saveWidget(mainplot[["plot"]], file=file)
     if(browseIt){
         browseURL(file)
     }
@@ -56,30 +68,43 @@ plotSampleResults <- function(fds, sampleID=NULL, file=NULL, dir=NULL, browseIt=
 #'
 #' generate the main FraseR plot
 #' @noRd
-createMainPlotFraseR <- function(fds, sampleID){
+createMainPlotFraseR <- function(fds, sampleID, source=NULL){
+    ylim=c(0,30)
+    xlim=c(-5,5)
 
     # generate each sub plot
-    psi3plot <- plotVolcano(fds, sampleID, "psi3")
-    psi5plot <- plotVolcano(fds, sampleID, "psi5")
-    psisplot <- plotVolcano(fds, sampleID, "psiSite")
+    psi3plot <- plotVolcano(fds, sampleID, "psi3", source=source, xlim=xlim, ylim=ylim)
+    psi5plot <- plotVolcano(fds, sampleID, "psi5", source=source, xlim=xlim, ylim=ylim)
+    psisplot <- plotVolcano(fds, sampleID, "psiSite", source=source, xlim=xlim, ylim=ylim)
 
     # combine plots
-    mainplot <- subplot(psi3plot, psi5plot, psisplot, nrows = 3,
-            shareX = FALSE, shareY = FALSE, titleX = TRUE, titleY = TRUE
-    ) %>% layout(showlegend = TRUE,
-            #xaxis=list(title="Z-score"),
-            # TODO P-value does not appear in italic
-            #yaxis=list(title="-log10 P-value"),
-
-            legend = list(
-                    x = 1,
-                    y = 0.1,
-                    title = "&#936; filter"
-            ),
-            title = paste0("FraseR results for sample: <b>", sampleID, "</b>")
+    mainplot <- plotly::subplot(
+        psisplot[[1]], psi5plot[[1]], psi3plot[[1]],
+        nrows = 3, shareX = TRUE, shareY = TRUE
     )
 
-    return(mainplot)
+    nxlim <- c(xlim[1]*1.05, xlim[2]*1.05)
+    nylim <- c(ylim[1], ylim[2]*1.05)
+
+    mainplot <- layout(mainplot,
+        title = paste0("FraseR results for sample: <b>", sampleID, "</b>"),
+        showlegend = TRUE,
+        legend = list(
+            x = 1,
+            y = 0.2,
+            title = "&#936; filter"
+        ),
+        yaxis3=list(domain=c(0.68,1.00)),
+        yaxis2=list(domain=c(0.35,0.64)),
+        yaxis =list(domain=c(0.00,0.31))
+    )
+
+    return(list(
+        plot=mainplot,
+        pointPlotted_psi3=psi3plot[[2]],
+        pointPlotted_psi5=psi5plot[[2]],
+        pointPlotted_psiSite=psisplot[[2]]
+    ))
 }
 
 
@@ -87,7 +112,7 @@ createMainPlotFraseR <- function(fds, sampleID){
 #' generate a volcano plot
 #'
 #' @noRd
-plotVolcano <- function(fds, sampleID, psiType, ylim=c(0,30), xlim=c(-5,5)){
+plotVolcano <- function(fds, sampleID, psiType, ylim=c(0,30), xlim=c(-5,5), source=NULL){
 
     # extract values
     zscores  <- assays(fds)[[paste0("zscore_", psiType)]][,sampleID]
@@ -120,6 +145,10 @@ plotVolcano <- function(fds, sampleID, psiType, ylim=c(0,30), xlim=c(-5,5)){
     zscore2plot[toplot & zscore2plot > max(xlim)] <- max(xlim)
     zscore2plot[toplot & zscore2plot < min(xlim)] <- min(xlim)
 
+    # remember which points we plotted
+    # assays(fds)[[paste0("pointPlotted_", psiType)]][1,sampleID] = TRUE
+    # data.table(toplot)
+
     # filter bad betabinom results
     filteredRes <- na2false(
         (psivals <= 0.01 | psivals >= 0.99) &
@@ -135,7 +164,7 @@ plotVolcano <- function(fds, sampleID, psiType, ylim=c(0,30), xlim=c(-5,5)){
         "filtered"                 = filteredRes
     )
 
-    p <- plot_ly(type="scattergl", mode="markers")
+    p <- plot_ly(type="scatter", mode="markers", source=source)
     for(i in seq_along(plotTraces)){
         if(names(plotTraces)[i] != 'filtered'){
             t <- which(toplot)[plotTraces[[i]] & !filteredRes]
@@ -176,7 +205,7 @@ plotVolcano <- function(fds, sampleID, psiType, ylim=c(0,30), xlim=c(-5,5)){
             ),
             name = names(plotTraces)[i],
             legendgroup = names(plotTraces)[i],
-            showlegend = psiType=="psi3",
+            showlegend = psiType=="psiSite",
             visible = ifelse(i<=2, TRUE, "legendonly"),
             text = paste0(
                 "Symbol:           ", tmpData$symbol,  "<br>",
@@ -195,32 +224,13 @@ plotVolcano <- function(fds, sampleID, psiType, ylim=c(0,30), xlim=c(-5,5)){
     nxlim <- c(xlim[1]*1.05, xlim[2]*1.05)
     nylim <- c(ylim[1], ylim[2]*1.05)
 
-    p <- layout(p,
-        xaxis=list(range=nxlim, title=ifelse(psiType=="sitePSI", "Z-score", "")),
+    p <- layout(p, showlegend = TRUE,
+        xaxis=list(range=nxlim, title="Z-score"),
         # TODO P-value does not appear in italic
-        yaxis=list(range=nylim, title=paste0("-log10 P-value for ", psiType)),
-        showlegend = FALSE,
-        #annotations=list(
-        #    x=0,
-        #    y=yCutoff/2,
-        #    text="",
-        #text=paste("Removed points</br>",
-        #    round(sum(unsigni)/length(unsigni)*100, digits=2),
-        #    "% of points"
-        #),
-        #    xref = paste0("x", subID),
-        #    yref = paste0("y", subID),
-        #    showarrow = FALSE
-        #)
-        shapes = list(
-            list(type = "rect", fillcolor = "blue",
-                line = list(color = "blue"), opacity = 0.3,
-                x0 = -xCutoff, x1 = xCutoff, xref = "x", # paste0("x", subID),
-                y0 = 0, y1 = yCutoff , yref = "y" # paste0("y", subID)
-            )
-    ))
+        yaxis=list(range=nylim, title=paste0("-log10 P-value <br>", psiType))
+    )
 
-    return(p)
+    return(list(plot=p, plotted=toplot))
 }
 
 rerunPlot <- function(){
@@ -241,5 +251,34 @@ rerunPlot <- function(){
 
     source("./FraseR/R/plotResults.R")
     createMainPlotFraseR(fds, "sample1")
+
+
+
+
+
+    p <- layout(p,
+                xaxis=list(title=ifelse(psiType=="psiSite", "Z-score", "")),
+                # TODO P-value does not appear in italic
+                yaxis=list(title=paste0("-log10 P-value for ", psiType)),
+                showlegend = FALSE,
+                #annotations=list(
+                #    x=0,
+                #    y=yCutoff/2,
+                #    text="",
+                #text=paste("Removed points</br>",
+                #    round(sum(unsigni)/length(unsigni)*100, digits=2),
+                #    "% of points"
+                #),
+                #    xref = paste0("x", subID),
+                #    yref = paste0("y", subID),
+                #    showarrow = FALSE
+                #)
+                shapes = list(
+                    list(type = "rect", fillcolor = "blue",
+                         line = list(color = "blue"), opacity = 0.3,
+                         x0 = -xCutoff, x1 = xCutoff, xref = "x", # paste0("x", subID),
+                         y0 = 0, y1 = yCutoff , yref = "y" # paste0("y", subID)
+                    )
+                ))
 }
 

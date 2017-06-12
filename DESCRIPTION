@@ -1,7 +1,7 @@
 Package: FraseR
 Type: Package
 Title: Find RAre Splicing Events in RNA-Seq Data
-Version: 0.99.0
+Version: 0.99.1
 Date: 2017-05-27
 Author: Christian Mertes <mertes@in.tum.de>, Prof. Julien Gagneur
     <gagneur@in.tum.de>
@@ -14,9 +14,10 @@ Depends:
     R (>= 3.4), BiocParallel, data.table, Rsamtools,
     SummarizedExperiment (>= 1.7.2)
 Imports:
-    BBmisc, biomaRt, DelayedArray, GenomicAlignments, GenomicRanges,
+    BBmisc, biomaRt, DelayedArray, DT, GenomicAlignments, GenomicRanges,
     IRanges, graphics, htmlwidgets, HDF5Array, methods, parallel,
-    plotly (>= 4.6.0), rhdf5, Rsubread, R.utils, stats, tidyr, tools, VGAM
+    plotly (>= 4.6.0), rhdf5, Rsubread, R.utils, shiny, stats, tidyr, 
+    tools, VGAM
 biocViews: RNASeq, AlternativeSplicing, Sequencing,
     Software, Genetics, Coverage
 URL: https://i12g-gagneurweb.in.tum.de/gitlab/mertes/FraseR/
@@ -33,11 +34,12 @@ Collate:
     'calculateStats.R'
     'countRNAseqData.R'
     'example_functions.R'
+    'getURLs.R'
     'helper-functions.R'
     'plotResults.R'
     'saveHDF5Objects.R'
     'shiny.R'
 VignetteBuilder: knitr
-Suggests: BiocStyle, knitr, testthat, covr
+Suggests: BiocStyle, knitr, testthat, covr, RSelenium
 
 

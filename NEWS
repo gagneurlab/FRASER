@@ -1,1 +1,11 @@
-This is the initial setup of the FraseR package
+CHANGES IN VERSION 0.99.1
+-------------------------
+
+    o Introduction of the shinyApp
+
+CHANGES IN VERSION 0.99.0
+-------------------------
+
+    o This is the initial setup of the FraseR package.
+    o Use SummarizedExperiment as superclass
+    o Integrate package into the Bioconductor infrastructure

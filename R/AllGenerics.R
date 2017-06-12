@@ -525,6 +525,11 @@ resultsSingleSample <- function(sampleID, grs, pvals, zscores, psivals,
     )
 
     ans <- granges(grs[goodCut])
+
+    if(!any(goodCut)){
+        return(ans)
+    }
+
     mcols(ans)$type        <- psiType
     mcols(ans)$sampleID    <- sampleID
     mcols(ans)$hgnc_symbol <- mcols(grs[goodCut])$hgnc_symbol

@@ -39,6 +39,13 @@
 #' @importFrom DelayedArray rowMeans
 #' @importFrom rhdf5 h5ls
 #'
+### Shiny App
+#'
+#' @importFrom shiny fluidPage titlePanel h1 fluidRow column numericInput h3
+#' @importFrom shiny htmlOutput textInput sidebarLayout sidebarPanel mainPanel
+#' @importFrom shiny tabPanel navbarPage shinyApp selectInput p
+#' @importFrom DT dataTableOutput renderDataTable
+#' @importFrom plotly plotlyOutput renderPlotly
 #'
 ### Data handling
 #'
