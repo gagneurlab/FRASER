@@ -1,5 +1,5 @@
-context("Annotations methods2")
+context("Annotations methods")
 
-testa_that("annotateRanges2", {
+test_that("annotateRanges", {
     expect_that("TIMMDC1", equals("TIMMDC1"))
 })
