@@ -6,12 +6,18 @@
 
 #'
 #' clear the files in the cache to start fresh
+#'
+#' @examples
+#'     fds <- createTestFraseRSettings()
+#'     cleanCache(fds)
+#'
 #' @export
 cleanCache <- function(fds, ...){
     stopifnot(class(fds) == "FraseRDataSet")
     # clean cache
     cacheDir <- file.path(workingDir(fds), "cache")
     if(dir.exists(cacheDir)){
+        message(date(), ": Remove directory: '", cacheDir, "'.")
         unlink(cacheDir, recursive=TRUE)
     }
 }
@@ -77,61 +83,85 @@ nameNoSpace <- function(name){
 }
 
 #'
-#' convert the input of NA to FALSE
-#' @noRd
+#' convert all NA's of a input vector or of a
+#' single dimension matrix/data.table to FALSE
+#'
+#' @examples
+#'   a <- c(TRUE, FALSE, NA, TRUE, NA)
+#'   na2false(a)
+#'
+#'   dt <- data.table(a)
+#'   na2false(dt)
+#'
+#' @export
 na2false <- function(x){
-    x[is.na(x)] <- FALSE
+    na2default(x, FALSE)
+}
+na2zero <- function(x){
+    na2default(x, 0)
+}
+na2default <- function(x, default=FALSE){
+    if(any(class(x) %in% c("DataFrame", "matrix", "data.frame"))){
+        stopifnot(dim(x)[2] == 1)
+        x <- as.vector(as.matrix(x)[,1])
+    }
+    x[is.na(x)] <- default
     return(x)
 }
 
-
 #'
-#' TODO this is not used yet or documented
-#'
+#' the qq plot function
 #' @noRd
-convert_dataframe_columns_to_Rle <- function(data, index2convert = 1:dim(dataframe)[2]){
-
-    # convert all given indices
-    for (i in index2convert){
-        data[,i] <- Rle(data[,i])
+fraserQQplotPlotly <- function(pvalues, zscores=NULL, zscoreCutoff=0,
+                reducePoints=0, main="FraseR QQ-Plot", ...){
+    # cutoff by zscore before generating the qq plot
+    lpval <- ifelse(any(class(pvalues) == "numeric"),
+            length(pvalues), dim(pvalues)[1]
+    )
+    goodZscores <- rep(TRUE, lpval)
+    if(!is.null(zscores)){
+        stopifnot(zscoreCutoff >= 0 && zscoreCutoff <= 100)
+        absZscores <- as.matrix(abs(zscores))
+        goodZscores <- na2false(rowMaxs(absZscores, na.rm=TRUE) > zscoreCutoff)
     }
 
-    return(data)
+    # my observerd and expected values
+    zeroOffset <- 10e-100
+    observ <- -log10(pvalues[goodZscores] + zeroOffset)
+    expect <- -log10(ppoints(sum(goodZscores)))
+
+    p <- plot_ly(type="scattergl", mode="lines")
+    for(s in colnames(pvalues)){
+        dat <- data.table(
+            expect=expect,
+            observ=sort(observ[,get(s)], decreasing=TRUE, na.last=TRUE)
+        )
+        dat <- dat[!is.na(observ)]
+        ldat <- nrow(dat)
+        if(reducePoints){
+            nEdge <- 50
+            nBy   <- 10
+            if(numeric(reducePoints) && reducePoints[1] > 0
+                        && reducePoints[1] <= 100){
+                nEdge <- reducePoints[1]
+                if(length(reducePoints) == 2 && reducePoints[2] > 0
+                            && reducePoints[2] <= 100){
+                    nBy <- reducePoints[2]
+                }
+            }
+            dat <- dat[unique(c(1:nEdge, -(nEdge-1):0+ldat, seq(1, ldat, nBy)))]
+        }
+        p <- add_trace(p, data=dat, mode="markers",
+                       x=~expect, y=~observ, name=s, opacity=0.3
+        )
+    }
+    p <- add_trace(p, x=expect, y=expect, mode="lines", name="theoretical-line")
+    p <- layout(p, title=main,
+        xaxis=list(title="Expected -log10(<i>P-value)"),
+        yaxis=list(title="Observed -log10(<i>P-value)")
+    )
+    p
+    return(p)
 }
-
-
-
-
-#'
-#' Filter the data based on a minimum of expression level over all samples
-#' It removes the junction and also the corresponding Donor and Acceptor site
-#' within the SummarizedExperiment object
-#' @noRd
-filter_junction_data <- function(data, minExpRatio = 0.8){
-    # get only the junctions
-    junctions <- which(rowData(data)$type == "Junction")
-
-    # get the expression counts for each junction
-    dt <- get_assay_as_data_table(data, "counts", FALSE)[junctions]
-
-    # calculate the expression ratio per site
-    expression <- apply(dt, 1, function(x) sum(!(is.na(x) | x == 0)))
-    expression <- expression / dim(dt)[2]
-
-    cutoff <- expression >= minExpRatio
-
-    # get the hits (junction/acceptor/donor) in our full data set
-    hits <- unique(unlist(sapply(c("start", "end"), function(type){
-        findOverlaps(type = type,
-                rowRanges(data)[junctions][cutoff],
-                shift(rowRanges(data), ifelse(type == "start", 1, -1))
-        )@to
-    })))
-    junction_sites <- hits[rowData(data)$type[hits] != "Junction"]
-
-    # filter the object and return it
-    return(data[c(junction_sites, junctions[cutoff])])
-}
-
 
 

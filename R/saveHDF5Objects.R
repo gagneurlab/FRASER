@@ -19,7 +19,13 @@ loadFraseRDataSet <- function(dir, name=NULL){
     outDir <-file.path(dir, "savedObjects", nameNoSpace(name))
     if(!dir.exists(outDir)) stop("The analysis name does not exists: ", name)
 
-    fds <- readRDS(gsub("//+", "/", file.path(outDir, "fds-object.RDS")))
+    fdsFile <- gsub("//+", "/", file.path(outDir, "fds-object.RDS"))
+    if(!file.exists(fdsFile)) {
+        stop(paste("The main RDS file", fdsFile,
+                "does not exists. Did you saved it correctly before?"
+        ))
+    }
+    fds <- readRDS(fdsFile)
 
     # set working dir and name correct
     workingDir(fds) <- dir
@@ -29,6 +35,13 @@ loadFraseRDataSet <- function(dir, name=NULL){
     for(obj in c(fds, nonSplicedReads(fds))){
         for(aname in names(obj@assays$data@listData)){
             afile <- getFraseRHDF5File(fds, aname)
+            if(!file.exists(afile)){
+                stop(paste(
+                    "Can not find saved HDF5 file '", afile,
+                    "' for assay: ", aname, ".",
+                    "The saved object does not fit the saved assays!"
+                ))
+            }
             obj@assays$data@listData[[aname]]@seed@file <- afile
         }
     }
@@ -84,7 +97,7 @@ saveAsHDF5 <- function(fds, name, object=NULL){
     if(is.null(object)) object <- assay(fds, name)
 
     h5File <- getFraseRHDF5File(fds, name)
-    h5FileTmp <- gsub("$", ".save.tmp", h5File)
+    h5FileTmp <- paste0(h5File, ".", as.integer(abs(rnorm(1))*100), ".save.tmp")
     if(file.exists(h5FileTmp)) unlink(h5FileTmp)
 
     # dont rewrite it if already there

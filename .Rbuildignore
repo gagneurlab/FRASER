@@ -1,2 +1,2 @@
-vignettes/build
-.Rbuildignore
+^vignettes/build$
+^.Rbuildignore$

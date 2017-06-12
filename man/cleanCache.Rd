@@ -9,3 +9,8 @@ cleanCache(fds, ...)
 \description{
 clear the files in the cache to start fresh
 }
+\examples{
+    fds <- createTestFraseRSettings()
+    cleanCache(fds)
+
+}

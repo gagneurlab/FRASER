@@ -9,6 +9,7 @@
 #'
 ### Parallel computing
 #'
+#' @importFrom parallel mclapply
 #' @import BiocParallel
 #' @importFrom BiocParallel SerialParam MulticoreParam
 #'
@@ -32,7 +33,7 @@
 ### Plotting
 #'
 #' @importFrom graphics plot
-#' @importFrom plotly plot_ly subplot layout
+#' @importFrom plotly plot_ly subplot layout add_trace
 #' @importFrom htmlwidgets saveWidget
 #' @importFrom HDF5Array writeHDF5Array
 #' @importFrom DelayedArray rowMeans
@@ -50,11 +51,11 @@
 ### P-Value calculation
 #'
 #' @importFrom stats sd rbinom fisher.test na.omit
-#' @importFrom VGAM rbetabinom vglm Coef pbetabinom betabinomial
+#' @importFrom VGAM rbetabinom vglm Coef pbetabinom pbetabinom.ab betabinomial
 #'
 ### Miscelenious functions
 #'
-#' @importFrom BBmisc isScalarCharacter isScalarLogical
+#' @importFrom BBmisc isScalarCharacter isScalarLogical chunk
 #' @importFrom R.utils renameFile
 #' @importFrom tools file_path_as_absolute
 #' @importFrom methods as callNextMethod is new slot slot<- validObject

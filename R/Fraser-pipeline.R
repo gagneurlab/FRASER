@@ -25,16 +25,16 @@ FraseR <- function(settings=createTestFraseRSettings(), NcpuPerSample=1){
     # stopifnot(is(NcpuPerSample, "BiocParallelParam"))
 
     # count data
-    fds <<- countRNAData(settings, NcpuPerSample=NcpuPerSample)
+    fds <- countRNAData(settings, NcpuPerSample=NcpuPerSample)
 
     # calculate PSI values
-    fds <<- calculatePSIValues(fds)
+    fds <- calculatePSIValues(fds)
 
     # calculate ZScores
-    fds <<- calculateZScores(fds)
+    fds <- calculateZScores(fds)
 
     # calculte P-values
-    fds <<- calculatePValues(fds)
+    fds <- calculatePValues(fds)
 
     # return final analysis
     return(fds)
