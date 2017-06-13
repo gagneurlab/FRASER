@@ -547,8 +547,27 @@ resultsSingleSample <- function(sampleID, grs, pvals, zscores, psivals,
 #' @export
 results <- function(fds, sampleIDs=samples(fds), pvalueCut=1e-5, zscoreCut=2){
 
+    # check input
+    stopifnot(is.numeric(pvalueCut) && pvalueCut <= 1 && pvalueCut >= 0)
+    stopifnot(is.numeric(zscoreCut) && zscoreCut <= 100 && zscoreCut >= 0)
+    stopifnot(is(fds, "FraseRDataSet"))
+    stopifnot(all(sampleIDs %in% samples(fds)))
+
+    # check if we extacted it already
+    pvalueCut <- round(pvalueCut, 8)
+    zscoreCut <- round(zscoreCut, 2)
+    resName <- sprintf("Results: pc <= %g & abs(zc) >= %g",
+        pvalueCut, zscoreCut
+    )
+
+    # return cache if there
+    if(resName %in% names(metadata(fds))){
+        message(date(), ": Used result cache: ", resName)
+        return(metadata(fds)[[resName]])
+    }
+
     resultsls <- sapply(c("psi3", "psi5", "psiSite"), function(psiType){
-        message(date(), "Collecting results for: ", psiType)
+        message(date(), ": Collecting results for: ", psiType)
 
         tested <- mcols(fds, type=psiType)[[paste0(psiType, "_tested")]]
         tested <- na2false(tested)
@@ -572,6 +591,9 @@ results <- function(fds, sampleIDs=samples(fds), pvalueCut=1e-5, zscoreCut=2){
     })
 
     ans <- unlist(GRangesList(resultsls))
+
+    # save it for later
+    metadata(fds)[[resName]] <<- ans
 
     return(ans)
 }

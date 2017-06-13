@@ -46,7 +46,7 @@ uiMainResults <- fluidPage(
 #' @noRd
 getUiSampleResults <- function(fds){
     sidebarLayout(
-        sidebarPanel = sidebarPanel(width=4,
+        sidebarPanel = sidebarPanel(width=3,
             selectInput("sampleID", label="Select a sample",
                 choices = samples(fds), selected = 1
             )
@@ -76,13 +76,26 @@ getUiNavPage <- function(fds){
 }
 
 #'
+#' main sample results
+#' @noRd
+getMainPsiTypePanel <- function(sampleID, psiType, fds){
+    plotdata <- plotVolcano(fds, sampleID, psiType, source=psiType)
+    shinyPlotDF[[psiType]] <<- plotdata[["plotDF"]]
+    plotdata[["plot"]] %>% layout(dragmode="select", showlegend=TRUE,
+            legend = list(x = 1, y = 0.0, title = "&#936; filter")
+    )
+}
+
+#'
 #' FraseR shiny main server function
 #' @noRd
 serverMain <- function(input, output) {
     stopifnot(is(shinyFds, "FraseRDataSet"))
 
     # overview
-    output$sampleData <- DT::renderDataTable(as.data.table(colData(shinyFds)))
+    output$sampleData <- DT::renderDataTable(
+        as.data.table(colData(shinyFds)), escape = FALSE
+    )
     output$fraserShow <- renderUI(HTML(
         paste(capture.output(show(shinyFds)), collapse = "</br>")
     ))
@@ -130,64 +143,36 @@ serverMain <- function(input, output) {
         )
     }
 
-    # main sample results
+    # create main figure panel
     output$plotPsi3 <- renderPlotly({
-        plotdata <- plotVolcano(fds, input$sampleID, "psi3", source="psi3")
-        shinyPlotted_psi3 <<- plotdata[["pointPlotted_psi3"]]
-        plotdata[["plot"]] %>% layout(dragmode="select", showlegend=TRUE,
-                legend = list(x = 1, y = 0.2, title = "&#936; filter")
-        )
+        getMainPsiTypePanel(input$sampleID, "psi3", fds)
     })
     output$plotPsi5 <- renderPlotly({
-        plotdata <- plotVolcano(fds, input$sampleID, "psi5", source="psi5")
-        shinyPlotted_psi5 <<- plotdata[["pointPlotted_psi5"]]
-        plotdata[["plot"]] %>% layout(dragmode="select", showlegend=TRUE,
-                legend = list(x = 1, y = 0.2, title = "&#936; filter")
-        )
+        getMainPsiTypePanel(input$sampleID, "psi5", fds)
     })
     output$plotPsiSite <- renderPlotly({
-        plotdata <- plotVolcano(fds, input$sampleID, "psiSite", source="psiSite")
-        shinyPlotted_psiSite <<- plotdata[["pointPlotted_psiSite"]]
-        plotdata[["plot"]] %>% layout(dragmode="select", showlegend=TRUE,
-                legend = list(x = 1, y = 0.2, title = "&#936; filter")
-        )
+        getMainPsiTypePanel(input$sampleID, "psiSite", fds)
     })
 
-    output$selectedPoints <- DT::renderDataTable({
+    output$selectedPoints <- DT::renderDataTable(escape = FALSE, {
 
         # Get subset based on selection
         event.data <- lapply(c("psi3", "psi5", "psiSite"), function(x){
             ans <- event_data("plotly_selected", source = x)
-            as.data.table(ans)
+            shinyPlotDF[[x]][psiType==x &
+                    traceNr %in% ans$curveNumber &
+                    pointNr %in% ans$pointNumber
+            ]
         })
-        event.data <- rbindlist(event.data)
-
-        data.table(event.data)
-        #data.table(subset(
-        #       event.data, curveNumber == 0)$pointNumber + 1
-        #)
-
-#
-#         # Get number of malignant and benign cases from selection
-#         malig.class <- subset(plot.df, Class == "malignant")[subset(event.data, curveNumber == 0)$pointNumber + 1,]
-#         benign.class <- subset(plot.df, Class == "benign")[subset(event.data, curveNumber == 1)$pointNumber + 1,]
-#
-#         # Combine
-#         plot.subset <- rbind(malig.class, benign.class)
-#
-#         # Summarize
-#         plot.summ <- plot.subset %>%
-#             group_by(x, y, Class) %>%
-#             summarize(Count = n())
-#
-#         # Assign to parent frame
-#         plot.summ <<- plot.summ
-#
-#         # Plot
-#         plot_ly(plot.summ, x = ~Class, y = ~Count, type = "bar", source = "select", color = ~Class) %>%
-#             layout(title = "No. of Malignant and Benign cases <br> in Selection",
-#                    plot_bgcolor = "6A446F",
-#                    yaxis = list(domain = c(0, 0.9)))
+        # merge data.tables and the get the symbols and create the link table
+        pointsOfInterest <- rbindlist(event.data)
+        if(nrow(pointOfInterest) == 0){
+            data.table()
+        } else {
+            pointsOfInterest[,hgnc_symbol:=symbol]
+            pointsOfInterest[,seqnames:=chr]
+            createFullLinkTable(pointsOfInterest, TRUE)
+        }
     })
 }
 
@@ -212,6 +197,7 @@ FraseRShinyApp <- function(fds, fdsres=NULL, server=!interactive(), ...){
 
     shinyFds    <<- fds
     shinyFdsRes <<- fdsres
+    shinyPlotDF <<- list(psi3=NULL, psi5=NULL, psiSite=NULL)
 
     shinyObj <- list(
         shinyFds    = shinyFds,
