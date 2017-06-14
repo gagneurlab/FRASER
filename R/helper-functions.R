@@ -114,6 +114,7 @@ na2default <- function(x, default=FALSE){
 #' @noRd
 fraserQQplotPlotly <- function(pvalues, zscores=NULL, zscoreCutoff=0,
                 reducePoints=0, main="FraseR QQ-Plot", ...){
+
     # cutoff by zscore before generating the qq plot
     lpval <- ifelse(any(class(pvalues) == "numeric"),
             length(pvalues), dim(pvalues)[1]
@@ -149,7 +150,9 @@ fraserQQplotPlotly <- function(pvalues, zscores=NULL, zscoreCutoff=0,
                     nBy <- reducePoints[2]
                 }
             }
-            dat <- dat[unique(c(1:nEdge, -(nEdge-1):0+ldat, seq(1, ldat, nBy)))]
+            dat <- dat[sort(unique(c(
+                1:nEdge, -(nEdge-1):0+ldat, seq(1, ldat, nBy)
+            )))]
         }
         p <- add_trace(p, data=dat, mode="markers",
                        x=~expect, y=~observ, name=s, opacity=0.3
