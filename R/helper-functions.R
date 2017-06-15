@@ -110,9 +110,9 @@ na2default <- function(x, default=FALSE){
 }
 
 #'
-#' the qq plot function
+#' the qq plot function with confidence band of 5%
 #' @noRd
-fraserQQplotPlotly <- function(pvalues, zscores=NULL, zscoreCutoff=0,
+fraserQQplotPlotly <- function(pvalues, ci=TRUE, zscores=NULL, zscoreCutoff=0,
                 reducePoints=0, main="FraseR QQ-Plot", ...){
 
     # cutoff by zscore before generating the qq plot
@@ -126,12 +126,15 @@ fraserQQplotPlotly <- function(pvalues, zscores=NULL, zscoreCutoff=0,
         goodZscores <- na2false(rowMaxs(absZscores, na.rm=TRUE) > zscoreCutoff)
     }
 
+    # remove NAs from pvalues
+    naPvalues <- apply(pvalues, 1, function(x) all(sapply(x, is.na)))
+
     # my observerd and expected values
     zeroOffset <- 10e-100
-    observ <- -log10(pvalues[goodZscores] + zeroOffset)
-    expect <- -log10(ppoints(sum(goodZscores)))
+    observ <- -log10(pvalues[goodZscores & !naPvalues] + zeroOffset)
+    expect <- -log10(ppoints(sum(goodZscores & !naPvalues)))
 
-    p <- plot_ly(type="scattergl", mode="lines")
+    p <- plot_ly(type="scatter", mode="lines")
     for(s in colnames(pvalues)){
         dat <- data.table(
             expect=expect,
@@ -139,11 +142,11 @@ fraserQQplotPlotly <- function(pvalues, zscores=NULL, zscoreCutoff=0,
         )
         dat <- dat[!is.na(observ)]
         ldat <- nrow(dat)
-        if(reducePoints){
+        if(length(reducePoints) > 0 & is.numeric(reducePoints)){
             nEdge <- 50
             nBy   <- 10
-            if(numeric(reducePoints) && reducePoints[1] > 0
-                        && reducePoints[1] <= 100){
+            if(is.numeric(reducePoints) & reducePoints[1] > 0 &
+                        reducePoints[1] <= ldat){
                 nEdge <- reducePoints[1]
                 if(length(reducePoints) == 2 && reducePoints[2] > 0
                             && reducePoints[2] <= 100){
@@ -158,12 +161,29 @@ fraserQQplotPlotly <- function(pvalues, zscores=NULL, zscoreCutoff=0,
                        x=~expect, y=~observ, name=s, opacity=0.3
         )
     }
-    p <- add_trace(p, x=expect, y=expect, mode="lines", name="theoretical-line")
-    p <- layout(p, title=main,
-        xaxis=list(title="Expected -log10(<i>P-value)"),
-        yaxis=list(title="Observed -log10(<i>P-value)")
+
+    # add theoretical trace and
+    p <- add_trace(p, x=expect, y=expect, mode="lines",
+            line=list(color=col2hex("firebrick1")), name="theoretical-line"
     )
-    p
+    p <- layout(p, title=main,
+        xaxis=list(title="Expected -log<sub>10</sub>(<i>P</i>-value)"),
+        yaxis=list(title="Observed -log<sub>10</sub>(<i>P</i>-value)")
+    )
+
+    # add confidence interval
+    if(ci){
+        a <- 1:length(expect)
+        upper <- -log10(qbeta(0.05, rev(a), a))
+        lower <- -log10(qbeta(0.95, rev(a), a))
+        path  <- paste("L", c(rev(expect), expect), c(upper, rev(lower)))
+        p <- layout(p, shapes=list(list(
+            type="path", fillcolor="grey", opacity = 0.3,
+            path=paste("M 0 0", paste(path, collapse = " "), "Z")
+        )))
+    }
+
+    # return object
     return(p)
 }
 

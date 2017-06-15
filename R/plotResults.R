@@ -8,7 +8,8 @@
 #'      fds <- FraseR()
 #'      plotSampleResults(fds, "sample1")
 #'      plotSampleResults(fds, "sample1", "result.html")
-plotSampleResults <- function(fds, sampleID=NULL, file=NULL, dir=NULL, browseIt=FALSE){
+plotSampleResults <- function(fds, sampleID=NULL, file=NULL,
+            dir=NULL, browseIt=FALSE){
 
     # if sample is empty create all plots for all samples
     if(is.null(sampleID)){
@@ -184,13 +185,12 @@ plotVolcano <- function(fds, sampleID, psiType,
         plotDF <- rbind(plotDF, tmpData)
 
         # create trace
-        p <- add_trace(p, data=tmpData,
-            x=~zscore2p, y=~pvalue2p,
+        p <- add_trace(p, data=tmpData, x=~zscore2p, y=~pvalue2p,
             marker = list(color = ~pvalue2p,
-                    cmin = 0, cmax = max(ylim),
-                    colorbar = list(y = 0.8, len = 0.4,
-                            title = "-log<sub>10</sub> <i>P</i>-value"
-                    )
+                cmin = 0, cmax = max(ylim),
+                colorbar = list(y = 0.8, len = 0.4,
+                        title = "-log<sub>10</sub>(<i>P</i>-value)"
+                )
             ),
             name = names(plotTraces)[i],
             legendgroup = names(plotTraces)[i],
@@ -214,28 +214,26 @@ plotVolcano <- function(fds, sampleID, psiType,
     nylim <- c(ylim[1], ylim[2]*1.05)
 
     # TODO: see: https://github.com/ropensci/plotly/issues/1019
-    subID <- which(c("psi3", "psi5", "psiSite") == psiType)
+    subID <- ""
     subY0axisAdjusted <- 0
     subY1axisAdjusted <- yCutoff
     if(is.null(source)){
-        subY0axisAdjusted <- 1.0*(3-subID)
+        subID <- which(c("psi3", "psi5", "psiSite") == psiType)
+        subY0axisAdjusted <- 6.0*(3-subID)
         subY1axisAdjusted <- yCutoff*3 + subY0axisAdjusted
     }
 
     p <- layout(p, showlegend = TRUE,
         xaxis=list(range=nxlim, title="Z-score"),
         # TODO P-value does not appear in italic
-        yaxis=list(range=nylim, title=paste0("-log10 P-value <br>", psiType)),
-        shapes = list(
-            list(
-                type = "rect", fillcolor = "blue",
-                line = list(color = "blue"), opacity = 0.3,
-                x0 = -xCutoff, x1 = xCutoff,
-                xref = paste0("x", ifelse(!is.null(source), subID, "")),
-                y0 = subY0axisAdjusted, y1 = subY1axisAdjusted,
-                yref = paste0("y", ifelse(!is.null(source), subID, ""))
-            )
-        )
+        yaxis=list(range=nylim, title=paste0("-log<sub>10</sub>(<i>P</i>-value)<br>", psiType)),
+        shapes = list(list(
+            type = "rect", fillcolor = "blue",
+            line = list(color = "blue"), opacity = 0.3,
+            x0 = -xCutoff, x1 = xCutoff,
+            xref = paste0("x", subID), yref = paste0("y", subID),
+            y0 = subY0axisAdjusted, y1 = subY1axisAdjusted
+        ))
     )
 
     return(list(plot=p, plotDF=plotDF))
