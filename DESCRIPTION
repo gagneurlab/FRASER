@@ -12,10 +12,10 @@ Description: Detection of rare aberrant splicing events in transcriptome
 License: Artistic-2.0
 Depends:
     R (>= 3.4), BiocParallel, data.table, Rsamtools,
-    SummarizedExperiment (>= 1.7.2)
+    SummarizedExperiment (>= 1.6.3)
 Imports:
     BBmisc, biomaRt, DelayedArray, DT, GenomicAlignments, GenomicRanges,
-    IRanges, graphics, htmlwidgets, HDF5Array, methods, parallel,
+    IRanges, graphics, gplots, htmlwidgets, HDF5Array, methods, parallel,
     plotly (>= 4.6.0), rhdf5, Rsubread, R.utils, shiny, stats, tidyr, 
     tools, VGAM
 biocViews: RNASeq, AlternativeSplicing, Sequencing,

@@ -145,13 +145,13 @@ serverMain <- function(input, output) {
 
     # create main figure panel
     output$plotPsi3 <- renderPlotly({
-        getMainPsiTypePanel(input$sampleID, "psi3", fds)
+        getMainPsiTypePanel(input$sampleID, "psi3", shinyFds)
     })
     output$plotPsi5 <- renderPlotly({
-        getMainPsiTypePanel(input$sampleID, "psi5", fds)
+        getMainPsiTypePanel(input$sampleID, "psi5", shinyFds)
     })
     output$plotPsiSite <- renderPlotly({
-        getMainPsiTypePanel(input$sampleID, "psiSite", fds)
+        getMainPsiTypePanel(input$sampleID, "psiSite", shinyFds)
     })
 
     output$selectedPoints <- DT::renderDataTable(escape = FALSE, {
@@ -166,7 +166,7 @@ serverMain <- function(input, output) {
         })
         # merge data.tables and the get the symbols and create the link table
         pointsOfInterest <- rbindlist(event.data)
-        if(nrow(pointOfInterest) == 0){
+        if(nrow(pointsOfInterest) == 0){
             data.table()
         } else {
             pointsOfInterest[,hgnc_symbol:=symbol]

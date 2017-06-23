@@ -34,10 +34,8 @@
 #'
 #' @importFrom graphics plot
 #' @importFrom plotly plot_ly subplot layout add_trace
+#' @importFrom gplots col2hex
 #' @importFrom htmlwidgets saveWidget
-#' @importFrom HDF5Array writeHDF5Array
-#' @importFrom DelayedArray rowMeans
-#' @importFrom rhdf5 h5ls
 #'
 ### Shiny App
 #'
@@ -53,7 +51,8 @@
 #' @importFrom data.table := fread setnames
 #' @import tidyr
 #' @importFrom HDF5Array writeHDF5Array
-#'
+#' @importFrom DelayedArray rowMeans
+#' @importFrom rhdf5 h5ls
 #'
 ### P-Value calculation
 #'

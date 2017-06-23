@@ -173,9 +173,33 @@ fraserQQplotPlotly <- function(pvalues, ci=TRUE, zscores=NULL, zscoreCutoff=0,
 
     # add confidence interval
     if(ci){
-        a <- 1:length(expect)
-        upper <- -log10(qbeta(0.05, rev(a), a))
-        lower <- -log10(qbeta(0.95, rev(a), a))
+        if(FALSE){
+            # confidence qnorm based from car::qqPlot
+            o  <- abs(rnorm(10000)%%1*10^-seq(0, 3, length.out = 10000))
+            o  <- sort(o)
+            P  <- ppoints(o)
+            n  <- length(P)
+            zz <- qnorm(1-(1-0.95)/2)
+            SE <- (1/dnorm(P))*sqrt(P*(1 - P)/n)
+            lower <- zz*SE + P
+            upper <- P*P/lower
+            lower[lower==1] <- 0.999
+            upper[upper==1] <- 0.999
+            if(FALSE){
+                plot(-log10(P), -log10(o),type="n")
+                grid()
+                points(-log10(P), -log10(o))
+                abline(0,1, col="red")
+                lines(-log10(P), -log10(upper), col="blue")
+                lines(-log10(P), -log10(lower), col="green")
+            }
+        } else {
+            # confidence qbeta based from GWASTools::qqPlot
+            a <- 1:length(expect)
+            upper <- -log10(qbeta(0.025, rev(a), a))
+            lower <- -log10(qbeta(0.975, rev(a), a))
+        }
+
         path  <- paste("L", c(rev(expect), expect), c(upper, rev(lower)))
         p <- layout(p, shapes=list(list(
             type="path", fillcolor="grey", opacity = 0.3,

@@ -530,14 +530,19 @@ resultsSingleSample <- function(sampleID, grs, pvals, zscores, psivals,
         return(ans)
     }
 
+    # extract data
     mcols(ans)$type        <- psiType
     mcols(ans)$sampleID    <- sampleID
     mcols(ans)$hgnc_symbol <- mcols(grs[goodCut])$hgnc_symbol
     mcols(ans)$zscore      <- round(zscores[goodCut,get(sampleID)], 2)
     mcols(ans)$psiValue    <- round(psivals[goodCut,get(sampleID)], 2)
     mcols(ans)$pvalue      <- pvals[goodCut,get(sampleID)]
-    mcols(ans)$p.hochberg  <- p.adjust(mcols(ans)$pvalue, method="hochberg")
-    mcols(ans)$fdr         <- p.adjust(mcols(ans)$pvalue, method="fdr")
+
+    # correct for multiple testing
+    p <- mcols(ans)$pvalue
+    n <- length(goodCut)
+    mcols(ans)$p.hochberg  <- p.adjust(p, n=n, method="hochberg")
+    mcols(ans)$fdr         <- p.adjust(p, n=n, method="fdr")
 
     return(ans[order(mcols(ans)$pvalue)])
 }
@@ -545,7 +550,8 @@ resultsSingleSample <- function(sampleID, grs, pvals, zscores, psivals,
 #'
 #' obtain the results for the given analysis pipeline
 #' @export
-results <- function(fds, sampleIDs=samples(fds), pvalueCut=1e-5, zscoreCut=2){
+results <- function(fds, sampleIDs=samples(fds), pvalueCut=1e-5, zscoreCut=2,
+                    redo=FALSE){
 
     # check input
     stopifnot(is.numeric(pvalueCut) && pvalueCut <= 1 && pvalueCut >= 0)
@@ -556,12 +562,22 @@ results <- function(fds, sampleIDs=samples(fds), pvalueCut=1e-5, zscoreCut=2){
     # check if we extacted it already
     pvalueCut <- round(pvalueCut, 8)
     zscoreCut <- round(zscoreCut, 2)
-    resName <- sprintf("Results: pc <= %g & abs(zc) >= %g",
-        pvalueCut, zscoreCut
+
+    # get the name of the result
+    if(length(sampleIDs)==1){
+        sampleStr <- sampleIDs
+    } else if(length(sampleIDs == dim(fds)[2])) {
+        sampleStr <- "all"
+    } else {
+        sampleStr <- deparse(which(samples(fds) %in% sampleIDs))
+    }
+    resName <- sprintf(
+        "Results for samples: %s and cutoffs: pc <= %g & abs(zc) >= %g",
+        sampleStr, pvalueCut, zscoreCut
     )
 
     # return cache if there
-    if(resName %in% names(metadata(fds))){
+    if(redo==FALSE & resName %in% names(metadata(fds))){
         message(date(), ": Used result cache: ", resName)
         return(metadata(fds)[[resName]])
     }
@@ -572,14 +588,13 @@ results <- function(fds, sampleIDs=samples(fds), pvalueCut=1e-5, zscoreCut=2){
         tested <- mcols(fds, type=psiType)[[paste0(psiType, "_tested")]]
         tested <- na2false(tested)
         pvals <- as(Class="data.table",
-                    object=assays(fds)[[paste0("pvalue_", psiType)]][tested,]
+                object=assays(fds)[[paste0("pvalue_", psiType)]][tested,]
         )
         zscores <- as(Class="data.table",
-                      object=assays(fds)[[paste0("zscore_", psiType)]][tested,]
+                object=assays(fds)[[paste0("zscore_", psiType)]][tested,]
         )
-        psivals <- as(Class="data.table",
-                      object=assays(fds)[[psiType]][tested,]
-        )
+        psivals <- as(Class="data.table", object=assays(fds)[[psiType]][tested,])
+
         grs <- rowRanges(if(psiType=="psiSite") nonSplicedReads(fds) else fds)
         grs <- grs[tested]
 
@@ -592,9 +607,15 @@ results <- function(fds, sampleIDs=samples(fds), pvalueCut=1e-5, zscoreCut=2){
 
     ans <- unlist(GRangesList(resultsls))
 
-    # save it for later
-    metadata(fds)[[resName]] <<- ans
+    # save it for later into the orignial object
+    fdsObjName <- deparse(substitute(fds))
+    eval(parse(text = sprintf("%s <<- %s",
+            paste0("metadata(", fdsObjName, ")[['",resName, "']]"),
+            "ans"
+    )))
 
+    # return only the results
     return(ans)
 }
+
 

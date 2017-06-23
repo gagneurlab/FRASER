@@ -4,7 +4,8 @@
 \alias{results}
 \title{obtain the results for the given analysis pipeline}
 \usage{
-results(fds, sampleIDs = samples(fds), pvalueCut = 1e-05, zscoreCut = 2)
+results(fds, sampleIDs = samples(fds), pvalueCut = 1e-05, zscoreCut = 2,
+  redo = FALSE)
 }
 \description{
 obtain the results for the given analysis pipeline
