@@ -1,75 +1,8 @@
 #'
-#' this is the example betabinom test
-#'
-#' testing and examples
-#'
-#' @author Julien Gagneur
-#' @noRd
-.juliens_betabinom_test <- function(){
-    require(VGAM)
-
-    ## simulate data
-    n    = 100   ## number of samples
-    size = 1000  ## number of trials
-    prob = 0.2   ## prob of success per trial
-
-    ## simulate coverage (denominator of psi)
-    N = rbinom(n,size,prob)
-
-
-    mu  = 0.9   ## mean psi
-    rho = 0.2   ## some dispersion parameter, see ?rbetabinom
-
-    ## simulate split read counts (numerator of psi)
-    y  <- rbetabinom(n, size = N, prob = mu, rho = rho)
-
-
-    ## set the first one as an outlier
-    y[1] <- 1
-    plot(N,y)
-
-    ## fitting
-    countMatrix <- cbind(y=y, o=N-y)
-    fit <- vglm(cbind(y, N-y) ~ 1, betabinomial)
-    co  <- Coef(fit)
-
-    ## one-sided p-value (alternative = "less")
-    pv  <- pbetabinom(y, N, co[["mu"]], co[["rho"]])
-    plot(-log10(pv))
-}
-
-#'
-#' this tests each splice type for all samples
-#'
-#' @noRd
-testPsiWithBetaBinomial <- function(fds, internBPPARAM,
-                    pvalFun=betabinVglmTest){
-
-    # check, that the object is stored as HDF5 array!
-    if(any(sapply(assayNames(fds), function(x) any("DelayedArray" == is(x))))){
-        message(date(), ": The data is not stored in a HDF5Array. ",
-            "To improve the performance we will store now ",
-            "the data in HDF5 format.")
-        fds <- saveFraseRDataSet(fds)
-    }
-
-    # test all 3 different types
-    for(psiType in c("psi3", "psi5", "psiSite")){
-        fds <- testPsiWithBetaBinomialPerType(fds, psiType, pvalFun)
-        fds <- saveFraseRDataSet(fds)
-        gc()
-    }
-
-    # return the new datasets
-    return(fds)
-}
-
-
-#'
 #' calculates the pvalue per type (psi3,psi5,spliceSite) with beta-binomial
 #'
 #' @noRd
-testPsiWithBetaBinomialPerType <- function(fds, psiType, pvalFun){
+pvalueByBetaBinomialPerType <- function(fds, aname, psiType, pvalFun){
 
     message(date(), ": Calculate P-values for the ",
             psiType, " splice type ..."
@@ -204,7 +137,7 @@ testPsiWithBetaBinomialPerType <- function(fds, psiType, pvalFun){
     pvalues_full[toTest,] <- pvalues
 
     # transform it to a hdf5 assay and save it to the dataset
-    assays(fds, type=psiType)[[paste0("pvalue_", psiType)]] <- pvalues_full
+    assays(fds, type=psiType)[[aname]] <- pvalues_full
 
     # save the pvalue calculations in the SE ranged object
     return(fds)
@@ -236,28 +169,6 @@ betabinVglmTest <- function(countMatrix, y, N){
     ))
 }
 
-
-#'
-#' calculate the pvalues with method of moments and the betabinomial functions
-#' https://en.wikipedia.org/wiki/Beta-binomial_distribution#Method_of_moments
-#'
-#' @noRd
-.betabinMMTest <- function(mat, y, N){
-    #try{evalWithTimeout(timeout = expr={
-    # estimate mu1 and mu2
-    Ns <- dim(mat)[1]
-    n  <- ceiling(mean(rowSums(mat)))
-    m1 <- 1/Ns * sum(mat[,"y"])
-    m2 <- 1/Ns * sum(mat[,"y"]^2)
-
-    # estimate the shapes
-    nominator <- n*(m2/m1 - m1 - 1) + m1
-    a <- (n*m1 - m2) / nominator
-    b <- (n - m1)*(n - m2/m1) / nominator
-
-    # return the probability
-    pbetabinom.ab(y, N, max(0.1, a), max(0.1, b))
-}
 
 #'
 #' error/warning catching functions by martin morgan
@@ -311,23 +222,4 @@ table2character <- function(table){
     ))
 }
 
-
-
-.testingbetabinom <- function(){
-    fds <- createTestFraseRDataSet()
-
-    source("FraseR/R/beta-binomial-testing.R")
-    source("FraseR/R/helper-functions.R")
-    pvalFun=.betabinVglmTest
-    idx <- 1
-    readType <- fraserNames[idx,readType]
-    psiType <- fraserNames[idx,psiType]
-    internBPPARAM <- MulticoreParam(4,progressbar=TRUE)
-    parallel(fds@settings) <- MulticoreParam(4,progressbar=TRUE)
-    dataset <- fds
-
-    ## one-sided p-value (alternative = "less")
-    pbetabinom(y, N, co[["mu"]], co[["rho"]])
-
-}
 

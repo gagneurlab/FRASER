@@ -135,6 +135,17 @@ validateNonSplicedReadsType <- function(object) {
     NULL
 }
 
+validateAssays <- function(object){
+    if(length(assayNames(object)) > 1){
+        if(any(duplicated(assayNames(object)))){
+            return(
+                "FraseR enforces unique assay names! Please provie such names."
+            )
+        }
+    }
+    NULL
+}
+
 
 ## general validate function
 validateFraseRDataSet <- function(object) {
@@ -146,7 +157,8 @@ validateFraseRDataSet <- function(object) {
         validateBamParam(object),
         validateStrandSpecific(object),
         validateWorkingDir(object),
-        validateNonSplicedReadsType(object)
+        validateNonSplicedReadsType(object),
+        validateAssays(object)
     )
 }
 setValidity("FraseRDataSet", validateFraseRDataSet)

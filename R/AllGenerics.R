@@ -412,15 +412,16 @@ FraseRDataSet.assays.replace <-
     }
 
     # first replace all existing slots
-    n <- length(assayNames(x))
-    nj <- n - length(assays(nonSplicedReads(x)))
-    ns <- n - nj
-    jslots <- value[1:nj]
-    sslots <- value[(nj+1):n]
-    if(length(value) > n){
+    nj <- names(value) %in% assayNames(as(x, "SummarizedExperiment"))
+    ns <- names(value) %in% assayNames(nonSplicedReads(x))
+    jslots <- value[nj]
+    sslots <- value[ns]
+
+    # add new slots if there are some
+    if(sum(!(nj | ns)) > 0){
         type <- sapply(type, checkReadType, fds=x)
-        jslots <- c(jslots, value[(1+n):length(value)][type=="j"])
-        sslots <- c(sslots, value[(1+n):length(value)][type=="ss"])
+        jslots <- c(jslots, value[!(nj | ns)][type=="j"])
+        sslots <- c(sslots, value[!(nj | ns)][type=="ss"])
     }
 
     # assign new assays

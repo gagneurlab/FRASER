@@ -49,7 +49,10 @@ getUiSampleResults <- function(fds){
         sidebarPanel = sidebarPanel(width=3,
             selectInput("sampleID", label="Select a sample",
                 choices = samples(fds), selected = 1
-            )
+            ),
+            plotOutput("plotPsiDist"),
+            plotOutput("plotRawCountDist"),
+            plotOutput("plotZscoreDist")
         ),
         mainPanel = mainPanel(fluidPage(
             plotlyOutput("plotPsi3", height="250px"),
@@ -68,9 +71,30 @@ getUiNavPage <- function(fds){
         tabPanel("Main Overview", uiMainOverview),
         tabPanel("All Results", uiMainResults),
         tabPanel("Sample specific", getUiSampleResults(fds)),
-        tabPanel("About", p(paste(
-            "This shiny app is part of the package 'FraseR'",
-            "created by Christian Mertes and Julien Gagneur."))
+        tabPanel("About", uiAbout())
+    )
+}
+
+uiAbout <- function(){
+    fluidPage(
+        fluidRow(
+            h3(paste(
+                "This shiny app is part of the package 'FraseR'",
+                "created by Christian Mertes and Julien Gagneur."
+            ))
+        ),
+        fluidRow(
+            h3("Session Info"),
+            p(paste("This FraseR was compiled on: ",
+                    as.Date.POSIXct(min(unlist(
+                        file.info(system.file(package = "FraseR"))[
+                            paste0(c('c', 'm', 'a'),'time')
+                        ])
+                    ))
+            ))
+        ),
+        fluidRow(
+            htmlOutput("FraseRSessionInfo")
         )
     )
 }
@@ -85,6 +109,7 @@ getMainPsiTypePanel <- function(sampleID, psiType, fds){
             legend = list(x = 1, y = 0.0, title = "&#936; filter")
     )
 }
+
 
 #'
 #' FraseR shiny main server function
@@ -114,11 +139,11 @@ serverMain <- function(input, output) {
                       pattern=gsub("\\s+", "|", input$symbolReg, perl=TRUE),
                       x=mcols(tmpRes)$hgnc_symbol
                 )
-            ]
+                ]
         })
         tmpRes <- tmpRes[grepl(perl=TRUE, ignore.case=TRUE,
-            pattern=gsub("\\s+", "|", input$sampleReg, perl=TRUE),
-            x=mcols(tmpRes)$sampleID
+                               pattern=gsub("\\s+", "|", input$sampleReg, perl=TRUE),
+                               x=mcols(tmpRes)$sampleID
         )]
         as.data.table(tmpRes)
     })
@@ -129,10 +154,7 @@ serverMain <- function(input, output) {
             return(data.table())
         }
 
-        createFullLinkTable(
-            filteredResDT()[input$results_rows_selected],
-            TRUE
-        )
+        createFullLinkTable(filteredResDT()[input$results_rows_selected], TRUE)
 
     })
 
@@ -154,9 +176,8 @@ serverMain <- function(input, output) {
         getMainPsiTypePanel(input$sampleID, "psiSite", shinyFds)
     })
 
-    output$selectedPoints <- DT::renderDataTable(escape = FALSE, {
-
-        # Get subset based on selection
+    # Get subset based on selection
+    selectedPointsAsDT <- reactive({
         event.data <- lapply(c("psi3", "psi5", "psiSite"), function(x){
             ans <- event_data("plotly_selected", source = x)
             shinyPlotDF[[x]][psiType==x &
@@ -164,8 +185,18 @@ serverMain <- function(input, output) {
                     pointNr %in% ans$pointNumber
             ]
         })
+
         # merge data.tables and the get the symbols and create the link table
-        pointsOfInterest <- rbindlist(event.data)
+        if(is.null(event.data) || length(event.data) == 0){
+            return(data.table())
+        }
+        return(rbindlist(event.data))
+    })
+
+    output$selectedPoints <- DT::renderDataTable(escape = FALSE, {
+        #browser()
+        pointsOfInterest <- selectedPointsAsDT()
+
         if(nrow(pointsOfInterest) == 0){
             data.table()
         } else {
@@ -174,7 +205,93 @@ serverMain <- function(input, output) {
             createFullLinkTable(pointsOfInterest, TRUE)
         }
     })
+
+    output$plotPsiDist <- renderPlot({
+        getForSelectedPointsDistPlot(input$selectedPoints_rows_selected,
+                selectedPointsAsDT(), shinyFds,
+                dist="psi", sampleID=input$sampleID
+        )
+    })
+
+    output$plotRawCountDist <- renderPlot({
+        getForSelectedPointsDistPlot(input$selectedPoints_rows_selected,
+                selectedPointsAsDT(), shinyFds,
+                dist="counts", sampleID=input$sampleID
+        )
+    })
+
+    output$plotZscoreDist <- renderPlot({
+        getForSelectedPointsDistPlot(input$selectedPoints_rows_selected,
+                selectedPointsAsDT(), shinyFds,
+                dist="ocounts", sampleID=input$sampleID
+        )
+    })
+
+    output$FraseRSessionInfo <- renderPrint({
+        capture.output(sessionInfo())
+    })
 }
+
+getForSelectedPointsDistPlot <- function(selected, selectedFromDT, fds, ...){
+    if(is.null(selected)){
+        return(NULL)
+    }
+    ans <- getIdxForSelectedPoints(selected, selectedFromDT, fds)
+    if(length(ans) != 2){
+        return(NULL)
+    }
+    getDisttributionPlot(fds, idx = ans[["idx"]],
+            psiType = ans[["psiType"]], ...
+    )
+}
+
+getIdxForSelectedPoints <- function(selected, selectedFromDT, fds){
+    if(is.null(selected)){
+        return(logical(0))
+    }
+
+    selectedData <- selectedFromDT[selected[1]]
+    psiType <- selectedData[,psiType]
+    querygr <- makeGRangesFromDataFrame(selectedData[,.(chr,start,end)])
+    if(psiType=="psiSite"){
+        subjgr <- granges(nonSplicedReads(fds))
+    } else {
+        subjgr <- granges(fds)
+    }
+
+    idx <- to(findOverlaps(querygr, subjgr, type="equal"))
+
+    return(list(idx=idx, psiType=psiType))
+}
+
+getDisttributionPlot <- function(fds, psiType, dist, idx, sampleID=NULL, ...){
+
+    col <- rep("gray", dim(fds)[2])
+    dist <- switch(dist,
+            psi=psiType,
+            counts=ifelse(psiType=="psiSite", "rawCountsSS", "rawCountsJ"),
+            ocounts=paste0("rawOtherCounts_", psiType),
+            zscore=paste0("zscore_", psiType)
+    )
+    data <- as.vector(assays(fds)[[dist]][idx,])
+    names(data) <- samples(fds)
+    data <- sort(data)
+    if(!is.null(sampleID) && any(sampleID %in% names(data))){
+        message("color sample: ", sampleID, " on idx: ", which(sampleID %in% names(data)))
+        col[which(sampleID %in% names(data))] <- "firebrick"
+    }
+
+    par(cex=1.6)
+    plot(1:length(data), data, col = col, pch=20,
+        xlab="sample rank", ylab=dist, las=1,
+        main=paste("Distribution of:", dist)
+    )
+}
+
+# psiType="psi3"
+# dist     <- "psi3"
+# sampleID <- "sample1"
+# idx      <- 48
 
 
 #'

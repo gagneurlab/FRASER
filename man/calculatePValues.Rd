@@ -6,7 +6,7 @@
 The P-Value calculation is based on the given method in the
 FraseRSettings object}
 \usage{
-calculatePValues(dataset, internBPPARAM = SerialParam())
+calculatePValues(fds, internBPPARAM = SerialParam())
 }
 \description{
 calculates the P-Value for the given FraseR dataset object

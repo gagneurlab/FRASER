@@ -64,81 +64,77 @@ calculateZScorePerDataSet <- function(fds, psiType){
 #'   fds <- countRNAData(createTestFraseRSettings())
 #'   fds <- calculatePSIValues(fds)
 #'   fds <- calculatePValues(fds)
-calculatePValues <- function(dataset, internBPPARAM=SerialParam()){
+calculatePValues <- function(fds, internBPPARAM=SerialParam()){
     # check input
-    stopifnot(class(dataset) == "FraseRDataSet")
+    stopifnot(class(fds) == "FraseRDataSet")
+    enforceHDF5 <- FALSE
 
-    # check which method we should use
-    method <- method(dataset)
-
-    if(method == "betaBin"){
-        return(testPsiWithBetaBinomial(dataset, internBPPARAM,
-                pvalFun=betabinVglmTest
-        ))
-    }
-
-    if(method == "betaBinMM"){
-        return(testPsiWithBetaBinomial(dataset, internBPPARAM,
-                pvalFun=betabinMMTest
-        ))
-    }
-
-    if(method == "Fisher"){
-        return(testPsiWithFisher(dataset, internBPPARAM))
-    }
-
-    if(method == "Martin"){
-        stop("This method is not yet implemented.")
-    }
-
-    stop("The provided method is not present for this package.",
-            "Please set the method to one of the following:",
-            "Fisher, betaBin, DESeq2, Martin"
+    # get correct method:
+    FUN <- switch(method(fds),
+        betaBin = {
+            enforceHDF5 <- TRUE
+            list(FUN=pvalueByBetaBinomialPerType, pvalFun=betabinVglmTest)
+        },
+        Fisher  = {
+            list(FUN=pvalueByFisherPerType, internBPPARAM=internBPPARAM)
+        },
+        stop("The provided method is not present for this package.",
+             "Please set the method to one of the following:",
+             "Fisher, betaBin, DESeq2, Martin"
+        )
     )
-}
 
-#'
-#' calculates the pvalue with fisher
-#'
-#' @noRd
-.testPsiWithFisher <- function(dataset, internBPPARAM){
+
+    # check, that the object is stored as HDF5 array if requested
+    aIsHDF5 <- sapply(assays(fds), function(x) any("DelayedArray" == is(x)))
+    if(enforceHDF5 & !all(aIsHDF5)){
+        message(date(), ": The data is not stored in a HDF5Array. ",
+                "To improve the performance we will store now ",
+                "the data in HDF5 format.")
+        fds <- saveFraseRDataSet(fds)
+    }
 
     # test all 3 different types
-    assays(dataset@splitReads)$pvalue_psi3 <- .testPsiWithFisherPerType(
-            dataset, "splitReads", "psi3", internBPPARAM
-    )
-    assays(dataset@splitReads)$pvalue_psi5 <- .testPsiWithFisherPerType(
-            dataset, "splitReads", "psi5", internBPPARAM
-    )
-    assays(dataset@nonSplicedReads)$pvalue_sitePSI <- .testPsiWithFisherPerType(
-            dataset, "nonSplicedReads", "sitePSI", internBPPARAM
-    )
+    for(psiType in c("psi3", "psi5", "psiSite")){
+
+        aname <- paste0("pvalue_", psiType)
+        if(aname %in% assayNames(fds)){
+            message(date(), ": P-values are already present. ",
+                    "If you want to recompute them,",
+                    "\n\tplease remove the following assay:",
+                    " ", aname, " \n\tby issuing following command: ",
+                    "assays(fds)[['", aname, "']] <- NULL"
+            )
+            next
+        }
+
+        fds <- do.call(FUN[[1]],
+            c(fds=fds, aname=aname, psiType=psiType, FUN[-1])
+        )
+        fds <- saveFraseRDataSet(fds)
+        gc()
+    }
 
     # return the new datasets
-    return(dataset)
+    return(fds)
 }
+
 
 #'
 #' calculates the pvalue per type (psi3,psi5,spliceSite) with fisher
 #'
 #' @noRd
-.testPsiWithFisherPerType <- function(dataset, readType, psiType,
-                    internBPPARAM){
+pvalueByFisherPerType <- function(dataset, psiType, internBPPARAM){
     # go over each group but no NA's
-    group   <- sampleGroup(dataset@settings)
+    group   <- sampleGroup(dataset)
 
     # reads to test for abberent splicing (eg: nonSplicedReads)
-    rawCounts <- .getAssayAsDataTable(slot(dataset, readType), "rawCounts")
-
-    # other reads (eg: splitReads)
-    rawOtherCounts <- .getAssayAsDataTable(
-            slot(dataset, readType),
-            paste0("rawOtherCounts_", psiType)
-    )
+    rawCounts <- counts(dataset, type=psiType, side="ofIn")
+    rawOtherCounts <- counts(dataset, type=psiType, side="other")
 
     pvalues <- bplapply(unique(na.omit(group)), dataset=dataset,
             rawCounts=rawCounts, rawOtherCounts=rawOtherCounts,
-            BPPARAM=dataset@settings@parallel,
+            BPPARAM=parallel(dataset),
             internBPPARAM=internBPPARAM,
             FUN=.testPsiWithFisherPerGroup
     )
@@ -151,7 +147,7 @@ calculatePValues <- function(dataset, internBPPARAM=SerialParam()){
     )
 
     # transform it to a DataFrame and return it
-    return(.asDataFrame(pvalues_full, dataset@settings@sampleData[,sampleID]))
+    return(.asDataFrame(pvalues_full, samples(dataset)))
 }
 
 
