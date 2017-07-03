@@ -10,8 +10,9 @@ test_that("Check test randomization is correct", {
 
     for(psiType in c("psi3", "psi5", "psiSite")){
         pvalls <- sapply(1:2, function(i){
-            tmpfds <- testPsiWithBetaBinomialPerType(fds, psiType, betabinVglmTest)
-            as.matrix(as.data.table(assays(tmpfds)[[paste0("pvalue_", psiType)]]))
+            aname <- paste0("pvalue_", psiType)
+            tmpfds <- pvalueByBetaBinomialPerType(fds, aname, psiType, betabinVglmTest)
+            as.matrix(as.data.table(assays(tmpfds)[[aname]]))
         })
 
         expect_equal(pvalls[[1]], pvalls[[1]])

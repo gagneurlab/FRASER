@@ -13,10 +13,14 @@ getName <- function(){
     "test_that"
 }
 
-getFraseR <- function(){
+getFraseR <- function(clean=FALSE){
     fds <- NULL
     try({
         fds <- loadFraseRDataSet(getDir(), getName())
+        if(clean == TRUE){
+            cleanCache(fds)
+            fds <- getFraseR()
+        }
     }, silent=TRUE)
     if(class(fds) != "FraseRDataSet") {
         fds <- createTestFraseRSettings()
@@ -30,4 +34,4 @@ getFraseR <- function(){
     return(fds)
 }
 
-fds <- getFraseR()
+fds <- getFraseR(clean=TRUE)
