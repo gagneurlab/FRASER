@@ -32,16 +32,17 @@
 #'
 ### Plotting
 #'
-#' @importFrom graphics plot
+#' @importFrom graphics plot par
 #' @importFrom plotly plot_ly subplot layout add_trace
 #' @importFrom gplots col2hex
 #' @importFrom htmlwidgets saveWidget
 #'
 ### Shiny App
 #'
-#' @importFrom shiny fluidPage titlePanel h1 fluidRow column numericInput h3
-#' @importFrom shiny htmlOutput textInput sidebarLayout sidebarPanel mainPanel
-#' @importFrom shiny tabPanel navbarPage shinyApp selectInput p
+#' @import shiny
+## @importFrom shiny fluidPage titlePanel h1 fluidRow column numericInput h3
+## @importFrom shiny htmlOutput textInput sidebarLayout sidebarPanel mainPanel
+## @importFrom shiny tabPanel navbarPage shinyApp selectInput p
 #' @importFrom DT dataTableOutput renderDataTable
 #' @importFrom plotly plotlyOutput renderPlotly
 #'
@@ -56,7 +57,7 @@
 #'
 ### P-Value calculation
 #'
-#' @importFrom stats sd rbinom fisher.test na.omit
+#' @importFrom stats sd rbinom fisher.test na.omit p.adjust ppoints qbeta rnorm
 #' @importFrom VGAM rbetabinom vglm Coef pbetabinom pbetabinom.ab betabinomial
 #'
 ### Miscelenious functions
@@ -65,9 +66,11 @@
 #' @importFrom R.utils renameFile
 #' @importFrom tools file_path_as_absolute
 #' @importFrom methods as callNextMethod is new slot slot<- validObject
-#' @importFrom utils browseURL capture.output
+#' @importFrom utils browseURL capture.output sessionInfo
 #'
 #'
+
+
 
 NULL
 

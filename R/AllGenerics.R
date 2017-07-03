@@ -512,6 +512,14 @@ setAs("DelayedMatrix", "data.table", function(from){
 #' convertion of Delayed Matrix objects into a matrix
 #'
 setAs("DelayedMatrix", "matrix", function(from){
+    #mc.cores=min(24, max(1, detectCores() - 1))
+    #perChunk=30000
+    #chunks <- chunk(1:dim(from)[1], perChunk)
+    #ans <- mclapply(chunks, mc.cores=mc.cores,
+    #                FUN=function(x) as.matrix(from[x,])
+    #)
+    #ans1 <- rbindlist(ans1)
+    #ans
     as.matrix(as(from, "data.table"))
 })
 

@@ -28,7 +28,8 @@ pvalueByBetaBinomialPerType <- function(fds, aname, psiType, pvalFun){
 
     # select junctions to test take only junctions
     # with at least 5 reads in at least one sample
-    toTest <- which(apply(rawCounts,1,max) >= 5)
+    toTest <- which(apply(rawCounts,1,median) >= 5)
+    toTest <- which(apply(rawCounts,1,max) >= 10)
     message(date(), ": Sites to test: ", length(toTest))
 
     # TODO: IMPORTANT:
