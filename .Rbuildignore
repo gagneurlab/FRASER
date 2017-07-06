@@ -1,2 +1,8 @@
+# ignore the gitlab ci file
+.gitlab-ci.yaml
+
+# ignore all vignette builds
 ^vignettes/build$
+
+# ignore this file
 ^.Rbuildignore$
