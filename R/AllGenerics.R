@@ -560,13 +560,14 @@ resultsSingleSample <- function(sampleID, grs, pvals, zscores, psivals,
 #' obtain the results for the given analysis pipeline
 #' @export
 results <- function(fds, sampleIDs=samples(fds), pvalueCut=1e-5, zscoreCut=2,
-                    redo=FALSE){
+                    psiType=c("psi3", "psi5", "psiSite"), redo=FALSE){
 
     # check input
     stopifnot(is.numeric(pvalueCut) && pvalueCut <= 1 && pvalueCut >= 0)
     stopifnot(is.numeric(zscoreCut) && zscoreCut <= 100 && zscoreCut >= 0)
     stopifnot(is(fds, "FraseRDataSet"))
     stopifnot(all(sampleIDs %in% samples(fds)))
+    psiType <- match.arg(psiType, several.ok=TRUE)
 
     # check if we extacted it already
     pvalueCut <- round(pvalueCut, 8)
@@ -591,27 +592,31 @@ results <- function(fds, sampleIDs=samples(fds), pvalueCut=1e-5, zscoreCut=2,
         return(metadata(fds)[[resName]])
     }
 
-    resultsls <- sapply(c("psi3", "psi5", "psiSite"), function(psiType){
-        message(date(), ": Collecting results for: ", psiType)
+    resultsls <- sapply(psiType, function(type){
+        message(date(), ": Collecting results for: ", type)
 
-        tested <- mcols(fds, type=psiType)[[paste0(psiType, "_tested")]]
+        tested <- mcols(fds, type=type)[[paste0(type, "_tested")]]
         tested <- na2false(tested)
         pvals <- as(Class="data.table",
-                object=assays(fds)[[paste0("pvalue_", psiType)]][tested,]
+                object=assays(fds)[[paste0("pvalue_", type)]][tested,]
         )
-        zscores <- as(Class="data.table",
-                object=assays(fds)[[paste0("zscore_", psiType)]][tested,]
-        )
-        psivals <- as(Class="data.table", object=assays(fds)[[psiType]][tested,])
 
-        grs <- rowRanges(if(psiType=="psiSite") nonSplicedReads(fds) else fds)
+        zscores <- as(Class="data.table",
+                object=assays(fds)[[paste0("zscore_", type)]][tested,]
+        )
+
+        psivals <- as(Class="data.table", object=assays(fds)[[type]][tested,])
+
+        grs <- rowRanges(if(type=="psiSite") nonSplicedReads(fds) else fds)
         grs <- grs[tested]
 
-        results <- unlist(GRangesList(sapply(sampleIDs,
-             resultsSingleSample, grs=grs, pvals=pvals,
-             zscores=zscores, psiType=psiType, psivals=psivals,
-             pvalueCut=pvalueCut, zscoreCut=zscoreCut
-        )))
+        sampleRes <- sapply(sampleIDs,
+               resultsSingleSample, grs=grs, pvals=pvals,
+               zscores=zscores, psiType=type, psivals=psivals,
+               pvalueCut=pvalueCut, zscoreCut=zscoreCut
+        )
+
+        results <- unlist(GRangesList(sampleRes))
     })
 
     ans <- unlist(GRangesList(resultsls))

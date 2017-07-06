@@ -2,7 +2,7 @@
 #' get links
 #'
 #'
-createFullLinkTable <- function(data, addHRef){
+createFullLinkTable <- function(data, addHRef=TRUE){
     if(is.null(data) | length(data) < 1)
         return(data.table())
 
@@ -35,8 +35,8 @@ addHRef <- function(link, text, add=TRUE){
     }
 }
 
-getGoogleLink <- function(str, asHRef=TRUE){
-    addHRef(paste0("https://www.google.com/search?q=", str), str, asHRef)
+getGoogleLink <- function(text, asHRef=TRUE){
+    addHRef(paste0("https://www.google.com/search?q=", text), text, asHRef)
 }
 
 getHGNCLink <- function(symbol, asHRef=TRUE){

@@ -64,7 +64,7 @@ calculateZScorePerDataSet <- function(fds, psiType){
 #'   fds <- countRNAData(createTestFraseRSettings())
 #'   fds <- calculatePSIValues(fds)
 #'   fds <- calculatePValues(fds)
-calculatePValues <- function(fds, internBPPARAM=SerialParam()){
+calculatePValues <- function(fds, internBPPARAM=SerialParam(), ...){
     # check input
     stopifnot(class(fds) == "FraseRDataSet")
     enforceHDF5 <- FALSE
@@ -109,7 +109,7 @@ calculatePValues <- function(fds, internBPPARAM=SerialParam()){
         }
 
         fds <- do.call(FUN[[1]],
-            c(fds=fds, aname=aname, psiType=psiType, FUN[-1])
+            c(fds=fds, aname=aname, psiType=psiType, FUN[-1], ...)
         )
         fds <- saveFraseRDataSet(fds)
         gc()

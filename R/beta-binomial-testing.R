@@ -2,7 +2,7 @@
 #' calculates the pvalue per type (psi3,psi5,spliceSite) with beta-binomial
 #'
 #' @noRd
-pvalueByBetaBinomialPerType <- function(fds, aname, psiType, pvalFun){
+pvalueByBetaBinomialPerType <- function(fds, aname, psiType, pvalFun, minCov=5){
 
     message(date(), ": Calculate P-values for the ",
             psiType, " splice type ..."
@@ -28,8 +28,8 @@ pvalueByBetaBinomialPerType <- function(fds, aname, psiType, pvalFun){
 
     # select junctions to test take only junctions
     # with at least 5 reads in at least one sample
-    toTest <- which(apply(rawCounts,1,median) >= 5)
-    toTest <- which(apply(rawCounts,1,max) >= 10)
+    # toTest <- which(apply(rawCounts,1,median) >= 5)
+    toTest <- which(apply(rawCounts,1,max) >= minCov)
     message(date(), ": Sites to test: ", length(toTest))
 
     # TODO: IMPORTANT:
