@@ -1,8 +1,13 @@
 # ignore the gitlab ci file
-.gitlab-ci.yaml
+^.gitlab-ci.yaml$
 
 # ignore all vignette builds
 ^vignettes/build$
 
 # ignore this file
 ^.Rbuildignore$
+
+# ignore RStudio files
+^.Rproj$
+^fraser.Rproj$
+
