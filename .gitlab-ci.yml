@@ -14,10 +14,7 @@ before_script:
 R-coverage:
   tags: [shell]
   script:
-    - Rscript --vanilla -e "
-        devtools::load_all('$PKGDIR')
-        covr::package_coverage('$PKGDIR')
-    "
+    - Rscript --vanilla -e "devtools::load_all('$PKGDIR'); covr::package_coverage('$PKGDIR')"
     
 R-check:
   tags: [shell]
