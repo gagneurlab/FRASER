@@ -1,0 +1,36 @@
+variables:
+  PKGNAME:     FraseR
+  PKGDIR:      ./
+  RVER:        000-bioc6-devel
+  TEXVER:      "2016"
+  CI_DEBUG_TRACE: "true"
+  
+before_script:
+  - module load i12g/R/$RVER
+  - module load i12g/texlive/$TEXVER
+  - R --vanilla CMD build --no-build-vignettes --no-manual $PKGDIR
+  - PKG_FILE_NAME=$(ls -1t *.tar.gz | head -n 1)
+  
+R-coverage:
+  tags: [shell]
+  script:
+    - Rscript --vanilla -e "
+        devtools::load_all('$PKGDIR')
+        covr::package_coverage('$PKGDIR')
+    "
+    
+R-check:
+  tags: [shell]
+  script:
+    - R --vanilla CMD check --no-vignettes --timings ${PKG_FILE_NAME}
+
+R-BiocCheck:
+  tags: [shell]
+  script:
+    - R --vanilla CMD BiocCheck --new-package --no-check-vignettes ${PKG_FILE_NAME}
+
+R-check_vignettes:
+  tags: [shell]
+  script:
+    - R --vanilla CMD Sweave --engine=knitr::knitr --pdf $PKGDIR/vignettes/$PKGNAME.Rnw
+    
