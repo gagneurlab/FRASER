@@ -13,13 +13,13 @@ getName <- function(){
     "test_that"
 }
 
-getFraseR <- function(clean=FALSE){
+getFraseR <- function(clean=FALSE, count=TRUE){
     fds <- NULL
     try({
         fds <- loadFraseRDataSet(getDir(), getName())
         if(clean == TRUE){
             cleanCache(fds, all=TRUE)
-            fds <- getFraseR()
+            fds <- getFraseR(count=count)
         }
     }, silent=TRUE)
     if(is.null(fds)) {
@@ -28,8 +28,12 @@ getFraseR <- function(clean=FALSE){
         name(fds) <- getName()
         parallel(fds) <- MulticoreParam(4)
 
-        fds <- FraseR(settings=fds)
-        fds <- saveFraseRDataSet(fds)
+        if(count==TRUE){
+            fds <- FraseR(settings=fds)
+            fds <- saveFraseRDataSet(fds)
+        }
     }
     return(fds)
 }
+
+invisible(getFraseR(TRUE, FALSE))
