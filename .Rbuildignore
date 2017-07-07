@@ -11,3 +11,6 @@
 ^.Rproj$
 ^fraser.Rproj$
 
+# ignore the Rprofile
+.Rprofile
+
