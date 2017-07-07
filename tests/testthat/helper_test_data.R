@@ -1,12 +1,12 @@
 #
 # all functions to generate test objects
 #
-test_generate_count_example <- function(){
+test_generate_count_example <- function(recount=FALSE){
     # get a new object for only one sample
-    if("test_fdsSample3" %nin% ls()){
+    if(recount || !"test_fdsSample3" %in% ls()){
 
-        test_fdsSample3 <<- getFraseR()[,"sample3"]
-        name(test_fdsSample3) <<- "onlySample3"
+        test_fdsSample3 <- getFraseR()[,"sample3"]
+        name(test_fdsSample3) <- "onlySample3"
 
         # count the sample
         test_fdsSample3 <- countRNAData(test_fdsSample3)

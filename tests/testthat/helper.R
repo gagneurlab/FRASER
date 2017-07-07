@@ -3,10 +3,11 @@
 #
 
 getDir <- function(useHome=FALSE){
-    if(useHome)
+    if(useHome){
         file.path(Sys.getenv("HOME"),  "FraseR_test_that")
-    else
-        file.path(tempdir(check=TRUE), "FraseR_test_that")
+    } else {
+        file.path(tempdir(), "FraseR_test_that")
+    }
 }
 
 getName <- function(){
