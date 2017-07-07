@@ -4,7 +4,8 @@
 \alias{cleanCache}
 \title{clear the files in the cache to start fresh}
 \usage{
-cleanCache(fds, ...)
+cleanCache(fds, all = FALSE, cache = TRUE, assays = FALSE,
+  results = FALSE)
 }
 \description{
 clear the files in the cache to start fresh

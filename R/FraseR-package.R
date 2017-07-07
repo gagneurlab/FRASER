@@ -41,7 +41,7 @@
 #'
 ## @import shiny
 #' @importFrom shiny column fluidPage fluidRow h3 h1 htmlOutput mainPanel
-#' @importFrom shiny navbarPage numericInput p renderText selectInput
+#' @importFrom shiny navbarPage numericInput p plotOutput renderText selectInput
 #' @importFrom shiny sidebarLayout sidebarPanel shinyApp tabPanel textInput 
 #' @importFrom shiny titlePanel
 #' @importFrom DT dataTableOutput renderDataTable
