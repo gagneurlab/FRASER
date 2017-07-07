@@ -4,7 +4,7 @@
 \alias{createFullLinkTable}
 \title{get links}
 \usage{
-createFullLinkTable(data, addHRef)
+createFullLinkTable(data, addHRef = TRUE)
 }
 \description{
 get links

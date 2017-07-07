@@ -33,5 +33,3 @@ getFraseR <- function(clean=FALSE){
     }
     return(fds)
 }
-
-fds <- getFraseR(clean=TRUE)

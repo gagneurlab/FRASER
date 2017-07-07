@@ -39,10 +39,11 @@
 #'
 ### Shiny App
 #'
-#' @import shiny
-## @importFrom shiny fluidPage titlePanel h1 fluidRow column numericInput h3
-## @importFrom shiny htmlOutput textInput sidebarLayout sidebarPanel mainPanel
-## @importFrom shiny tabPanel navbarPage shinyApp selectInput p
+## @import shiny
+#' @importFrom shiny column fluidPage fluidRow h3 h1 htmlOutput mainPanel
+#' @importFrom shiny navbarPage numericInput p renderText selectInput
+#' @importFrom shiny sidebarLayout sidebarPanel shinyApp tabPanel textInput 
+#' @importFrom shiny titlePanel
 #' @importFrom DT dataTableOutput renderDataTable
 #' @importFrom plotly plotlyOutput renderPlotly
 #'
@@ -62,7 +63,7 @@
 #'
 ### Miscelenious functions
 #'
-#' @importFrom BBmisc isScalarCharacter isScalarLogical chunk
+#' @importFrom BBmisc isScalarCharacter isScalarLogical chunk %nin%
 #' @importFrom R.utils renameFile
 #' @importFrom tools file_path_as_absolute
 #' @importFrom methods as callNextMethod is new slot slot<- validObject
