@@ -113,7 +113,7 @@ validateWorkingDir <- function(object) {
         )
         dir.create(object@workingDir, recursive = TRUE)
     }
-    if(file.access(object@workingDir, mode = 2) != 0){
+    if(file.access(object@workingDir, mode = 4) != 0){
         return(paste("Make sure we can write to the given working directory '",
                 object@workingDir, "'."
         ))
