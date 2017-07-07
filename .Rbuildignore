@@ -8,9 +8,8 @@
 ^.Rbuildignore$
 
 # ignore RStudio files
-^.Rproj$
-^fraser.Rproj$
+^.*\.Rproj$
+^\.Rproj\.user$
 
 # ignore the Rprofile
 .Rprofile
-

@@ -330,8 +330,9 @@ setReplaceMethod("nonSplicedReads", "FraseRDataSet", function(object, value){
 #'     fds <- countRNAData(createTestFraseRSettings())
 #'     fds[1:10,1:10]
 #'     fds[,samples(fds) %in% c("sample1", "sample2")]
-setMethod("[", c("FraseRDataSet", "ANY", "ANY"), function(x, i, j) {
-    #browser()
+#'
+#' @rdname subset
+subsetFraseR <- function(x, i, j){
     if(missing(i) && missing(j)){
         return(x)
     }
@@ -351,19 +352,21 @@ setMethod("[", c("FraseRDataSet", "ANY", "ANY"), function(x, i, j) {
         ))
 
         # get the selection vector
-        iNSR <- rowData(x, type="ss")[['spliceSiteID']] %in% selectedIDs
+        idxNSR <- rowData(x, type="ss")[['spliceSiteID']] %in% selectedIDs
 
         # subset it
-        nsrObj <- nsrObj[unlist(iNSR),j]
+        nsrObj <- nsrObj[idxNSR,j]
     }
 
     # subset the inheritate SE object
-    #xsubset <- as(x, "SummarizedExperiment)[i,j]
-    x <- callNextMethod()
+    if(length(x) == 0){
+        i <- NULL
+    }
+    subX <- as(as(x, "RangedSummarizedExperiment")[i,j], "FraseRDataSet")
 
     # create new FraseRDataSet object
     newx <- new("FraseRDataSet",
-                x,
+                subX,
                 name            = name(x),
                 method          = method(x),
                 parallel        = parallel(x),
@@ -374,6 +377,9 @@ setMethod("[", c("FraseRDataSet", "ANY", "ANY"), function(x, i, j) {
     )
     validObject(newx)
     return(newx)
+}
+setMethod("[", c("FraseRDataSet", "ANY", "ANY"), function(x, i, j) {
+    subsetFraseR(x,i,j)
 })
 
 

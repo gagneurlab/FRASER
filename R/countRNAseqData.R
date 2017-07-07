@@ -372,7 +372,10 @@ countNonSplicedReads <- function(sampleID, spliceSiteCoords, settings,
 
         # we have all sites of interest cached
         if(all(1:length(spliceSiteCoords) %in% to(ov))){
-            return(cache[from(ov)])
+            cache2return <- cache[from(ov)]
+            cache2return$spliceSiteID <- spliceSiteCoords[to(ov)]$spliceSiteID
+            stopifnot(cache2return$type == spliceSiteCoords[to(ov)]$type)
+            return(cache2return)
         } else {
             message(paste("The cache file does not contain the needed",
                     "genomic positions. Adding the remaining sites to",
