@@ -18,11 +18,11 @@ getFraseR <- function(clean=FALSE){
     try({
         fds <- loadFraseRDataSet(getDir(), getName())
         if(clean == TRUE){
-            cleanCache(fds)
+            cleanCache(fds, all=TRUE)
             fds <- getFraseR()
         }
     }, silent=TRUE)
-    if(class(fds) != "FraseRDataSet") {
+    if(is.null(fds)) {
         fds <- createTestFraseRSettings()
         workingDir(fds) <- getDir()
         name(fds) <- getName()

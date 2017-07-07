@@ -12,13 +12,28 @@
 #'     cleanCache(fds)
 #'
 #' @export
-cleanCache <- function(fds, ...){
+cleanCache <- function(fds, all=FALSE, cache=TRUE, assays=FALSE, results=FALSE){
     stopifnot(class(fds) == "FraseRDataSet")
+
+    dirs2delete <- c()
+    fdsDirName <- nameNoSpace(fds)
+    if(cache == TRUE || all == TRUE){
+        dirs2delete <- "cache"
+    }
+    if(assays == TRUE || all == TRUE){
+        dirs2delete <- c(dirs2delete, file.path("savedObjects", fdsDirName))
+    }
+    if(results == TRUE || all == TRUE){
+        dirs2delete <- c(dirs2delete, file.path("results", fdsDirName))
+    }
+    
     # clean cache
-    cacheDir <- file.path(workingDir(fds), "cache")
-    if(dir.exists(cacheDir)){
-        message(date(), ": Remove directory: '", cacheDir, "'.")
-        unlink(cacheDir, recursive=TRUE)
+    for(d in dirs2delete){
+        full_dir <- file.path(workingDir(fds), d)
+        if(dir.exists(full_dir)){
+            message(date(), ": Remove directory: '", d, "'.")
+            unlink(full_dir, recursive=TRUE)
+        }
     }
 }
 
