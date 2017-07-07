@@ -2,7 +2,7 @@
 # helper scripts for the testing step
 #
 
-getDir <- function(useHome=TRUE){
+getDir <- function(useHome=FALSE){
     if(useHome)
         file.path(Sys.getenv("HOME"),  "FraseR_test_that")
     else

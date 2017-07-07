@@ -2,7 +2,7 @@ context("Test counting")
 
 test_that("Count junctions", {
     attach(test_generate_count_example())
-    
+
     expect_is(test_fdsSample3, "FraseRDataSet")
 
     # test how many ranges we found
@@ -16,7 +16,7 @@ test_that("Count junctions", {
 
 test_that("Test psi values", {
     attach(test_generate_count_example())
-    
+
     expect_equal(as.vector(counts(test_rangeFDS, type="psi3")), test_rawCountsJ)
     expect_equal(test_p3rawOCounts,
         as.vector(counts(test_rangeFDS, type="psi3", side="other"))
