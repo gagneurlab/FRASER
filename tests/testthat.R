@@ -1,5 +1,7 @@
 library(testthat)
-library(RSelenium)
 library(FraseR)
+
+# used for shiny-server testing
+library(RSelenium)
 
 test_check("FraseR")
