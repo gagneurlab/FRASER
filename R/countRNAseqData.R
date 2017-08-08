@@ -159,7 +159,17 @@ countSplitReads <- function(sampleID, settings, NcpuPerSample){
     # check cache if available
     cacheFile <- getSplitCountCacheFile(sampleID, settings)
     if(!is.null(cacheFile) && file.exists(cacheFile)){
-        return(readRDS(cacheFile))
+        cache <- readRDS(cacheFile)
+        bamWhich <- unlist(bamWhich(scanBamParam(settings)))
+        if(length(bamWhich) > 0){
+            userTargetGR <- GRanges(seqnames=names(unlist(bamWhich)),
+                    ranges=unlist(bamWhich), strand="*")
+            from <- unique(from(findOverlaps(cache, userTargetGR)))
+            cache <- cache[from]
+        }
+        if(length(cache) > 0){
+            return(cache)
+        }
     }
 
     # parallelize over chromosomes
@@ -374,7 +384,7 @@ countNonSplicedReads <- function(sampleID, spliceSiteCoords, settings,
         if(all(1:length(spliceSiteCoords) %in% to(ov))){
             cache2return <- cache[from(ov)]
             cache2return$spliceSiteID <- spliceSiteCoords[to(ov)]$spliceSiteID
-            stopifnot(cache2return$type == spliceSiteCoords[to(ov)]$type)
+            cache2return$type <- spliceSiteCoords[to(ov)]$type
             return(cache2return)
         } else {
             message(paste("The cache file does not contain the needed",

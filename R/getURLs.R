@@ -3,7 +3,7 @@
 #'
 #'
 createFullLinkTable <- function(data, addHRef=TRUE){
-    if(is.null(data) | length(data) < 1)
+    if(is.null(data) | nrow(data) < 1)
         return(data.table())
 
     selSymbols <- data[,hgnc_symbol]

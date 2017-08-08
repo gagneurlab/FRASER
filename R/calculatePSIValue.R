@@ -19,11 +19,16 @@ calculatePSIValues <- function(fds){
     stopifnot(class(fds) == "FraseRDataSet")
 
     # calculate 3/5' PSI for each sample
-    fds <- calculatePSIValuePrimeSite(fds, psiType="3")
     fds <- calculatePSIValuePrimeSite(fds, psiType="5")
+    fds <- calculatePSIValuePrimeSite(fds, psiType="3")
 
     # calculate siteSplice values
     fds <- calculateSitePSIValue(fds)
+
+    # calculate the delta psi value
+    for(psiType in c("psi3", "psi5", "psiSite")){
+        fds <- calculateDeltaPsiValue(fds, psiType)
+    }
 
     # return it
     return(fds)
@@ -37,12 +42,12 @@ calculatePSIValues <- function(fds){
 calculatePSIValuePrimeSite <- function(fds, psiType){
     stopifnot(class(fds) == "FraseRDataSet")
     stopifnot(isScalarCharacter(psiType))
-    stopifnot(psiType %in% c("3", "5"))
+    stopifnot(psiType %in% c("5", "3"))
 
     message(date(), ": Calculate the PSI", psiType, " values ...")
 
     # convert psi type to the position of interest
-    psiCol <- ifelse(psiType == "3", "start", "end")
+    psiCol <- ifelse(psiType == "5", "start", "end")
     psiName <- paste0("psi", psiType)
     psiROCName <- paste0("rawOtherCounts_psi", psiType)
 
@@ -171,4 +176,25 @@ calculateSitePSIValue <- function(fds){
     return(fds)
 }
 
+#'
+#' calculates the delta psi value and stores it as an assay
+#'
+calculateDeltaPsiValue <- function(fds, psiType){
 
+    message(date(), ": Calculate the delta for ", psiType, " values ...")
+
+    # get psi values
+    psiVal <- as.matrix(assays(fds)[[psiType]])
+
+    # psi - median(psi)
+    rowmedian <- rowMedians(psiVal, na.rm = TRUE)
+    deltaPsi  <- psiVal - rowmedian
+
+    # add it to the FraseR object
+    assayName <- paste0("delta_", psiType)
+
+    # use as.matrix to rewrite it as a new hdf5 array
+    assays(fds, type=psiType)[[assayName]] <- deltaPsi
+
+    return(fds)
+}

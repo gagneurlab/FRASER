@@ -25,6 +25,13 @@ FraseR: A package providing a workflow to detect aberrant splicing events
 This function performs a default analysis of RNA-seq data
 }
 \examples{
-  fds <- FraseR(createTestFraseRSettings())
+  fds <- createTestFraseRSettings()
+  fds <- FraseR(fds)
+
+  # save the final FraseR object
+  saveFraseRDataSet(fds)
+
+  # finally visualize the results
   plotSampleResults(fds)
+
 }

@@ -39,6 +39,7 @@ Collate:
     'plotResults.R'
     'saveHDF5Objects.R'
     'shiny.R'
+    'plotDistributions.R'
 VignetteBuilder: knitr
 Suggests: BiocStyle, knitr, testthat, covr, RSelenium
 

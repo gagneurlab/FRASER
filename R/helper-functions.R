@@ -26,7 +26,7 @@ cleanCache <- function(fds, all=FALSE, cache=TRUE, assays=FALSE, results=FALSE){
     if(results == TRUE || all == TRUE){
         dirs2delete <- c(dirs2delete, file.path("results", fdsDirName))
     }
-    
+
     # clean cache
     for(d in dirs2delete){
         full_dir <- file.path(workingDir(fds), d)
@@ -66,6 +66,14 @@ checkReadType <- function(fds, type){
             "It needs to be 'j' (junction) or 'ss' (splice sites)",
             "\nor an existing assay name within the given object."
     )
+}
+
+#'
+#' returns the corresonding PSI type to the given name
+#'
+#' @noRd
+whichPSIType <- function(type){
+    unlist(regmatches(type, gregexpr("psi(3|5|Site)", type, perl=TRUE)))
 }
 
 #'
@@ -127,63 +135,49 @@ na2default <- function(x, default=FALSE){
 #'
 #' the qq plot function with confidence band of 5%
 #' @noRd
-fraserQQplotPlotly <- function(pvalues, ci=TRUE, zscores=NULL, zscoreCutoff=0,
-                reducePoints=0, main="FraseR QQ-Plot", ...){
-
-    # cutoff by zscore before generating the qq plot
-    lpval <- ifelse(any(class(pvalues) == "numeric"),
-            length(pvalues), dim(pvalues)[1]
-    )
-    goodZscores <- rep(TRUE, lpval)
-    if(!is.null(zscores)){
-        stopifnot(zscoreCutoff >= 0 && zscoreCutoff <= 100)
-        absZscores <- as.matrix(abs(zscores))
-        goodZscores <- na2false(rowMaxs(absZscores, na.rm=TRUE) > zscoreCutoff)
+fraserQQplotPlotly <- function(pvalues, ci=TRUE, reducePoints=FALSE,
+                    sampleWise=TRUE, main="FraseR QQ-Plot"){
+    if(isTRUE(reducePoints)){
+        reducePoints <- c(50, 10)
     }
 
-    # remove NAs from pvalues
-    naPvalues <- apply(pvalues, 1, function(x) all(sapply(x, is.na)))
+    # convert it to matrix if its a vector
+    if(any(class(pvalues) == "numeric")){
+        pvalues <- matrix(pvalues)
+        colnames(pvalues) <- "observed pvalues"
+    } else if(!sampleWise){
+        pvalues <- t(pvalues)
+    }
+    if(!is.matrix(pvalues)){
+        pvalues <- as.matrix(pvalues)
+    }
+
+    # convert NA to 1
+    pvalues[is.na(pvalues)] <- 1
+
+    # length of pvalues
+    len_pval <- dim(pvalues)[1]
+
+    # check colnames
+    if(is.null(colnames(pvalues))){
+        colnames(pvalues) <- 1:dim(pvalues)[2]
+    }
 
     # my observerd and expected values
     zeroOffset <- 10e-100
-    observ <- -log10(pvalues[goodZscores & !naPvalues] + zeroOffset)
-    expect <- -log10(ppoints(sum(goodZscores & !naPvalues)))
+    observ <- -log10(pvalues + zeroOffset)
+    expect <- -log10(ppoints(len_pval))
 
+    # create main plot object
     p <- plot_ly(type="scatter", mode="lines")
-    for(s in colnames(pvalues)){
-        dat <- data.table(
-            expect=expect,
-            observ=sort(observ[,get(s)], decreasing=TRUE, na.last=TRUE)
-        )
-        dat <- dat[!is.na(observ)]
-        ldat <- nrow(dat)
-        if(length(reducePoints) > 0 & is.numeric(reducePoints)){
-            nEdge <- 50
-            nBy   <- 10
-            if(is.numeric(reducePoints) & reducePoints[1] > 0 &
-                        reducePoints[1] <= ldat){
-                nEdge <- reducePoints[1]
-                if(length(reducePoints) == 2 && reducePoints[2] > 0
-                            && reducePoints[2] <= 100){
-                    nBy <- reducePoints[2]
-                }
-            }
-            dat <- dat[sort(unique(c(
-                1:nEdge, -(nEdge-1):0+ldat, seq(1, ldat, nBy)
-            )))]
-        }
-        p <- add_trace(p, data=dat, mode="markers",
-                       x=~expect, y=~observ, name=s, opacity=0.3
-        )
-    }
 
-    # add theoretical trace and
+    # add theoretical trace
     p <- add_trace(p, x=expect, y=expect, mode="lines",
             line=list(color=col2hex("firebrick1")), name="theoretical-line"
     )
     p <- layout(p, title=main,
-        xaxis=list(title="Expected -log<sub>10</sub>(<i>P</i>-value)"),
-        yaxis=list(title="Observed -log<sub>10</sub>(<i>P</i>-value)")
+            xaxis=list(title="Expected -log<sub>10</sub>(<i>P</i>-value)"),
+            yaxis=list(title="Observed -log<sub>10</sub>(<i>P</i>-value)")
     )
 
     # add confidence interval
@@ -220,6 +214,31 @@ fraserQQplotPlotly <- function(pvalues, ci=TRUE, zscores=NULL, zscoreCutoff=0,
             type="path", fillcolor="grey", opacity = 0.3,
             path=paste("M 0 0", paste(path, collapse = " "), "Z")
         )))
+    }
+
+    for(idx in 1:dim(pvalues)[2]){
+        dat <- data.table(
+            expect=expect,
+            observ=sort(observ[,idx], decreasing=TRUE, na.last=TRUE)
+        )
+        if(length(reducePoints) > 0 & is.numeric(reducePoints)){
+            nEdge <- 50
+            nBy   <- 10
+            if(is.numeric(reducePoints) & reducePoints[1] > 0 &
+                        reducePoints[1] <= len_pval){
+                nEdge <- reducePoints[1]
+                if(length(reducePoints) == 2 && reducePoints[2] > 0
+                            && reducePoints[2] <= 100){
+                    nBy <- reducePoints[2]
+                }
+            }
+            dat <- dat[sort(unique(c(
+                1:nEdge, -(nEdge-1):0+ldat, seq(1, ldat, nBy)
+            )))]
+        }
+        p <- add_trace(p, data=dat, mode="markers",
+                x=~expect, y=~observ, name=colnames(pvalues)[idx], opacity=0.3
+        )
     }
 
     # return object
