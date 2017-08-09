@@ -15,7 +15,7 @@ Depends:
     SummarizedExperiment (>= 1.6.3)
 Imports:
     BBmisc, biomaRt, DelayedArray, DT, GenomicAlignments, GenomicRanges,
-    IRanges, graphics, gplots, htmlwidgets, HDF5Array, LSD, ´methods, parallel,
+    IRanges, graphics, gplots, htmlwidgets, HDF5Array, LSD, methods, parallel,
     plotly (>= 4.6.0), rhdf5, Rsubread, R.utils, shiny, stats, tidyr, 
     tools, VGAM
 biocViews: RNASeq, AlternativeSplicing, Sequencing,
