@@ -5,7 +5,8 @@
 \title{Visualisation of the distributions of the statistics used within FraseR.}
 \usage{
 plotJunctionDistribution(fds, gr, type = gr$type, sampleIDs = NULL,
-  rmZeroCts = FALSE, valueVsCounts = FALSE, qqplot = FALSE)
+  rmZeroCts = FALSE, valueVsCounts = FALSE, qqplot = FALSE,
+  plotLegend = TRUE)
 }
 \arguments{
 \item{fds}{A FraseR object}

@@ -16,7 +16,7 @@
 #'
 #' @export
 plotJunctionDistribution <- function(fds, gr, type=gr$type, sampleIDs=NULL,
-            rmZeroCts=FALSE, valueVsCounts=FALSE, qqplot=FALSE){
+            rmZeroCts=FALSE, valueVsCounts=FALSE, qqplot=FALSE, plotLegend=TRUE){
     stopifnot(is(fds, "FraseRDataSet"))
     if(is.data.table(gr)){
         gr <- makeGRangesFromDataFrame(gr, keep.extra.columns = TRUE)
@@ -37,7 +37,8 @@ plotJunctionDistribution <- function(fds, gr, type=gr$type, sampleIDs=NULL,
             data=data)
     plotSampleRank(gr, fds, type=type, sample=sampleIDs, rmZeroCts=rmZeroCts,
             delta=TRUE, data=data)
-    plotCountsAtSite(gr, fds, type=type, sample=sampleIDs, data=data)
+    plotCountsAtSite(gr, fds, type=type, sample=sampleIDs, data=data,
+            plotLegend=plotLegend)
     if(!missing(valueVsCounts) & (any(valueVsCounts %in% assayNames(fds)) |
                     is.logical(valueVsCounts) & valueVsCounts != FALSE)){
         type2plot <- ifelse(isTRUE(valueVsCounts), type, valueVsCounts)
@@ -107,24 +108,30 @@ getPlotDistributionData <- function(gr, fds, type, rmZeroCts=FALSE){
 #' @noRd
 plotCountsAtSite <- function(gr, fds, type, sample=NULL, plotLog=TRUE,
                     plotLegend=TRUE, data=NULL){
+    # get data to plot
     if(is.null(data)){
         data <- getPlotDistributionData(gr, fds, type)
     }
 
+    # raw counts
     rac <- data$rocts + data$rcts
     rx <- x <- rac
     ry <- y <- data$rcts
+    transformFun <- function(x) x
+    if(plotLog){
+        transformFun <- function(x) log10(1+x)
+    }
 
+    # do we plot it in log?
     logpre <- ""
     logsuf <- ""
     if(plotLog){
         logpre <- "log10(1 + "
         logsuf <- ")"
-        x <- log10(1 + x)
-        y <- log10(1 + y)
     }
 
-    heatscatter(x, y,
+    # main heatscatter plot
+    heatscatter(transformFun(x), transformFun(y),
             main=getTitle("Heatscatter of raw counts", data$se, type),
             ylab=paste0(logpre, "raw counts of site of interest", logsuf),
             xlab=paste0(logpre, "raw all counts", logsuf)
@@ -134,35 +141,82 @@ plotCountsAtSite <- function(gr, fds, type, sample=NULL, plotLog=TRUE,
     abline(0,1,col="gray", lty="dotted")
     grid()
 
-
+    # add prediction model
     a <- data$alpha
     b <- data$beta
     ab <- a + b
-    fitx <- 0:as.integer(max(rac)*1.1)
-    fity <- fitx * a/(a+b)
-    fityvar <- (fitx * a * b * (fitx + ab))/(ab**2 * (ab + 1))
-    fityvarbot <- fity - fityvar
-    fityvartop <- fity + fityvar
-    if(plotLog){
-        fitx       <- log10(1+fitx)
-        fity       <- log10(1+fity)
-        fityvarbot <- log10(1+fityvarbot)
-        fityvartop <- log10(1+fityvartop)
-    }
-    lines(fitx, fity, col="firebrick")
-    lines(fitx, fityvartop, col="firebrick", lty="dotted")
-    lines(fitx, fityvarbot, col="firebrick", lty="dotted")
+    fitx <- 0:as.integer(max(rac)*1.5)
+    fity <- bbmean(fitx, a, b)
+    lines(transformFun(fitx), transformFun(fity), col="firebrick")
 
+    # add 50%, 25% and 10% lines
+    curPlotPar <- data.table(fact=c(0.5, 0.25, 0.1), lty=c(2, 4, 3),
+            name=c("PSI = 50%", "PSI = 25%", "PSI = 10%"))
+    sapply(1:nrow(curPlotPar), function(idx){
+        y2plot <- fitx * curPlotPar[idx, fact]
+        lines(transformFun(fitx), transformFun(y2plot),
+                lty=curPlotPar[idx, lty], col=adjustcolor("black", 0.7))
+    })
+
+    # add variance
+    fityvar <- bbvariance(fitx, a, b)
+    #scewness <- bbscewness(fitx, a, b)
+    #scewness[1] <- 0
+    #scewFactor <- ifelse(scewnewss < 0, 1+abs(scewnewss), 1/abs(scewnewss))
+    sapply(c(-1, 1), function(varFactor) {
+        y <- fity + varFactor * fityvar # * scewFactor
+        lines(transformFun(fitx), transformFun(y),
+                lty="dotted", col=adjustcolor("firebrick", 0.5))
+    })
+
+    # add sample annotation
     if(!is.null(sample)){
         names(x) <- samples(fds)
         names(y) <- samples(fds)
-        sapply(sample, addSamplePoints, x=x, y=y)
+        sapply(sample, addSamplePoints, x=transformFun(x), y=transformFun(y))
     }
 
+    # add legend if requested
     if(plotLegend){
-        legend("topleft", c("Model fit", "+/- Variance"),
-                pch=20, lty=c(1,3), col="firebrick")
+        legend("topleft", c("Model fit", "+/- Variance", curPlotPar[,name]),
+                pch=20, lty=c(1,3, curPlotPar[,lty]),
+                col=c("firebrick",adjustcolor("firebrick", 0.5),
+                        rep(adjustcolor("black", 0.7), 3)))
     }
+}
+
+#'
+#' The implementation of the mean/variance/skewness of the
+#' Beta-Binomial distribution
+#'
+#' https://en.wikipedia.org/wiki/Beta-binomial_distribution
+#' @noRd
+bbmean <- function(size, a, b){
+    size * a / (a + b)
+}
+
+#'
+#' The implementation of the mean/variance/skewness of the
+#' Beta-Binomial distribution
+#'
+#' https://en.wikipedia.org/wiki/Beta-binomial_distribution
+#' @noRd
+bbvariance  <- function(size, a, b){
+    numerator   <- size * a * b * (a + b + size)
+    denuminator <- (a + b)^2 * (a + b + 1)
+    return(numerator/denuminator)
+}
+
+#'
+#' The implementation of the mean/variance/skewness of the
+#' Beta-Binomial distribution
+#'
+#' https://en.wikipedia.org/wiki/Beta-binomial_distribution
+#' @noRd
+bbscewness <- function(size, a, b){
+    presqrt  <- (a + b + 2 * size) * (b - a) / (a + b + 2)
+    sqrtpart <- (1 + a + b) / (size * a * b * (size + a + b))
+    return(presqrt * sqrt(sqrtpart))
 }
 
 #'
