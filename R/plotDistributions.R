@@ -84,7 +84,10 @@ getPlotDistributionData <- function(gr, fds, type, rmZeroCts=FALSE){
     rcts     = as.matrix(assays(seOfInterest)[[rctsname]])[1,]
     rocts    = as.matrix(assays(seOfInterest)[[roctsname]])[1,]
     if(rmZeroCts){
-        se <- se[,rcts + rocts > 0]
+        keepSample <- rcts + rocts > 0
+        se <- se[,keepSample]
+        rcts     = rcts[keepSample]
+        rocts    = rocts[keepSample]
     }
 
     return(list(
@@ -94,8 +97,8 @@ getPlotDistributionData <- function(gr, fds, type, rmZeroCts=FALSE){
         psi      = as.matrix(assays(seOfInterest)[[psiname]])[1,],
         deltaPsi = as.matrix(assays(seOfInterest)[[deltapsiname]])[1,],
         zscore   = as.matrix(assays(seOfInterest)[[zscorename]])[1,],
-        rcts     = as.matrix(assays(seOfInterest)[[rctsname]])[1,],
-        rocts    = as.matrix(assays(seOfInterest)[[roctsname]])[1,],
+        rcts     = rcts,
+        rocts    = rocts,
         alpha    = mcols(seOfInterest)[,paste0(type, "_alpha")],
         beta     = mcols(seOfInterest)[,paste0(type, "_beta")]
     ))
@@ -115,27 +118,31 @@ plotCountsAtSite <- function(gr, fds, type, sample=NULL, plotLog=TRUE,
 
     # raw counts
     rac <- data$rocts + data$rcts
-    rx <- x <- rac
-    ry <- y <- data$rcts
+    x <- rac
+    y <- data$rcts
     transformFun <- function(x) x
     if(plotLog){
-        transformFun <- function(x) log10(1+x)
+        transformFun <- function(x) suppressWarnings(log10(1+x))
     }
 
     # do we plot it in log?
-    logpre <- ""
-    logsuf <- ""
+    logpre <- logsuf <- ""
     if(plotLog){
         logpre <- "log10(1 + "
         logsuf <- ")"
     }
+    xlab <- paste0(logpre, "raw all counts", logsuf)
+    ylab <- paste0(logpre, "raw counts of site of interest", logsuf)
+
+    if(type=="psiSite"){
+        y <- data$rocts
+        ylab <- paste0(logpre, "raw counts of spliced reads", logsuf)
+    }
 
     # main heatscatter plot
-    heatscatter(transformFun(x), transformFun(y),
+    heatscatter(transformFun(x), transformFun(y), ylab=ylab, xlab=xlab,
             main=getTitle("Heatscatter of raw counts", data$se, type),
-            ylab=paste0(logpre, "raw counts of site of interest", logsuf),
-            xlab=paste0(logpre, "raw all counts", logsuf)
-    )
+            xlim=c(0, max(transformFun(x))), ylim=c(0, max(transformFun(y))))
 
     # grid and diagonal
     abline(0,1,col="gray", lty="dotted")
