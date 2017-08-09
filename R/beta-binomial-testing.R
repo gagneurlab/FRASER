@@ -1,3 +1,4 @@
+
 #'
 #' calculates the pvalue per type (psi3,psi5,spliceSite) with beta-binomial
 #'
@@ -130,7 +131,7 @@ pvalueByBetaBinomialPerType <- function(fds, aname, psiType, pvalFun,
 #' calculate the pvalues with vglm and the betabinomial functions
 #'
 #' @noRd
-betabinVglmTest <- function(cMat, alternativ="less", y=cMat[,1], N=cMat[,1] + cMat[,2]){
+betabinVglmTest <- function(cMat, alternative="less", y=cMat[,1], N=cMat[,1] + cMat[,2]){
     # get fit
     fit <- vglm(cMat ~ 1, betabinomial)
 
