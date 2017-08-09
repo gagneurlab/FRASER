@@ -38,11 +38,9 @@ pvalueByBetaBinomialPerType <- function(fds, aname, psiType, pvalFun,
 
     # TODO how to group groups?
     pvalues_ls <- bplapply(toTest, rawCounts=rawCounts,
-            rawOtherCounts=rawOtherCounts, pvalFun,
-            BPPARAM=parallel(fds),
-            addNoise=addNoise, removeHighLow=removeHighLow,
-            FUN= function(idx, rawCounts, rawOtherCounts,
-                    addNoise, removeHighLow, pvalFun){
+                    rawOtherCounts=rawOtherCounts, pvalFun,
+                    BPPARAM=parallel(fds), addNoise=addNoise, FUN=function(
+                            idx, rawCounts, rawOtherCounts, addNoise, pvalFun){
         # idx <- toTest[[2]]
         suppressPackageStartupMessages(require(FraseR))
 
@@ -57,21 +55,8 @@ pvalueByBetaBinomialPerType <- function(fds, aname, psiType, pvalFun,
         }
 
         # count matrix per site
-        countMatrix <- cbind(y=y, o=N-y)
-
-        # remove outliers (highest and lowest sample)
-        tmp_removeHighLow = removeHighLow
-        while(tmp_removeHighLow > 0){
-            tmp_removeHighLow = tmp_removeHighLow -1
-            countMatrix <- countMatrix[!1:dim(countMatrix)[1] %in%
-                c(
-                    which.min(rowSums(countMatrix)),
-                    which.max(rowSums(countMatrix))
-                ),
-            ]
-        }
-
         # plot(log10(N+1),log10(y+1))
+        countMatrix <- cbind(y=y, o=N-y)
 
         ## fitting
         timing <- sum(system.time(gcFirst=FALSE, expr={
