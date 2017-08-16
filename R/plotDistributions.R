@@ -28,7 +28,8 @@ plotJunctionDistribution <- function(fds, gr, type=gr$type, sampleIDs=NULL,
         sampleIDs <-  gr$sampleID
     }
 
-    old.par <- par(no.readonly=TRUE)
+    opar <- par(no.readonly=TRUE)
+    on.exit(par(opar))
 
     data <- getPlotDistributionData(gr, fds, type, rmZeroCts)
 
@@ -51,8 +52,6 @@ plotJunctionDistribution <- function(fds, gr, type=gr$type, sampleIDs=NULL,
     if(qqplot){
         plotQQplot(gr, fds, type=type, data=data)
     }
-
-    invisible(eval(par(old.par), envir = parent.frame()))
 }
 
 #'
@@ -302,18 +301,45 @@ getTitle <- function(plotMainTxt, gr, psiType){
             "\nRange: ", seqnames(gr), ":", start(gr), "-", end(gr))
 }
 
-plotQQplot <- function(gr, fds, type, data=NULL){
+plotQQplot <- function(gr, fds, type, data=NULL, maxOutlier=2){
     # get data
     if(is.null(data)){
-        data    <- getPlotDistributionData(gr, fds, type)
+        data <- getPlotDistributionData(gr, fds, type)
     }
-    o       <- sort(data$pvalues)
-    e       <- ppoints(length(o))
 
-    o[is.na(o)] <- 1
-    plot(-log10(e), -log10(o), main="QQ-plot", pch=16)
+    obs <- -log10(sort(data$pvalues))
+    exp <- -log10(ppoints(length(obs)))
+    len <- length(exp)
+
+    obs[is.na(obs)] <- 0
+    maxPoint <- max(c(exp, obs))
+    ylim <- range(0, min(exp[1]*maxOutlier, maxPoint))
+
+    # main plot area
+    plot(NA, main="QQ-plot", xlim=range(exp), ylim=ylim,
+            xlab=paste0(expression(log[10]), "(expected)"),
+            ylab=paste0(expression(log[10]), "(observed)"))
+
+    # confidence band
+    # http://genome.sph.umich.edu/wiki/Code_Sample:_Generating_QQ_Plots_in_R
+    upper <- qbeta(0.025, 1:len, rev(1:len))
+    lower <- qbeta(0.975, 1:len, rev(1:len))
+    polygon(x=c(rev(exp), exp), y=-log10(c(rev(upper), lower)),
+            col="gray", border="gray")
+
+    # add the points
+    points(exp, obs, pch=16)
+
+    # diagonal and grid
     abline(0,1,col="firebrick")
     grid()
+
+    # plot outliers
+    outOfRange <- which(obs > max(ylim))
+    if(length(outOfRange) > 0){
+        points(exp[outOfRange], exp[1]*maxOutlier, pch=2, col='red')
+    }
+
 }
 
 #' testing function
