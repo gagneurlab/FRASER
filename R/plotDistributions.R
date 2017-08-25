@@ -16,7 +16,9 @@
 #'
 #' @export
 plotJunctionDistribution <- function(fds, gr, type=gr$type, sampleIDs=NULL,
-            rmZeroCts=FALSE, valueVsCounts=FALSE, qqplot=FALSE, plotLegend=TRUE){
+            rmZeroCts=FALSE, plotRank=paste0(c("", "delta_", "zscore_"), type),
+            plotCounts=TRUE, plotValVsCounts=type, qqplot=TRUE,
+            plotLegend=TRUE){
     stopifnot(is(fds, "FraseRDataSet"))
     if(is.data.table(gr)){
         gr <- makeGRangesFromDataFrame(gr, keep.extra.columns = TRUE)
@@ -28,28 +30,35 @@ plotJunctionDistribution <- function(fds, gr, type=gr$type, sampleIDs=NULL,
         sampleIDs <-  gr$sampleID
     }
 
+    # get number of plots
+    numPlots <- sum(sapply(list(plotRank, plotValVsCounts),
+                    function(x){ ifelse(is.logical(x), sum(x), length(x)) })) +
+            sum(qqplot) + sum(plotCounts)
+
     opar <- par(no.readonly=TRUE)
     on.exit(par(opar))
 
     data <- getPlotDistributionData(gr, fds, type, rmZeroCts)
 
-    par(mfrow=c(2,ifelse(qqplot, 3, 2)), cex=1)
-    plotSampleRank(gr, fds, type=type, sample=sampleIDs, rmZeroCts=rmZeroCts,
-            data=data)
-    plotSampleRank(gr, fds, type=type, sample=sampleIDs, rmZeroCts=rmZeroCts,
-            delta=TRUE, data=data)
-    plotCountsAtSite(gr, fds, type=type, sample=sampleIDs, data=data,
-            plotLegend=plotLegend)
-    if(!missing(valueVsCounts) & (any(valueVsCounts %in% assayNames(fds)) |
-                    is.logical(valueVsCounts) & valueVsCounts != FALSE)){
-        type2plot <- ifelse(isTRUE(valueVsCounts), type, valueVsCounts)
-        plotValueVsCounts(gr, fds, type2plot, sampleIDs, plotlog=TRUE,
-                rmZeroCts=rmZeroCts, data=data)
-    } else {
-        plotSampleRank(gr, fds, type=paste0("zscore_", type), sample=sampleIDs,
-                rmZeroCts=rmZeroCts, data=data)
+    par(mfrow=c(ceiling(numPlots/3),3), cex=1)
+
+    # plot sample rank if requested
+    if(!(length(plotRank) == 0 | isFALSE(plotRank))){
+        sapply(plotRank, plotSampleRank, gr=gr, fds=fds, sample=sampleIDs,
+            rmZeroCts=rmZeroCts, data=data)
     }
-    if(qqplot){
+    # plot counts
+    if(isTRUE(plotCounts)){
+        plotCountsAtSite(gr, fds, type=type, sample=sampleIDs, data=data,
+                plotLegend=plotLegend)
+    }
+    # plot values versus counts
+    if(!(length(valueVsCounts) == 0 | isFALSE(valueVsCounts))){
+        sapply(plotValVsCounts, plotValueVsCounts, gr=gr, fds=fds, data=data,
+                sampleIDs=sampleIDs, plotlog=TRUE, rmZeroCts=rmZeroCts)
+    }
+    # plot qq plot
+    if(isTRUE(qqplot)){
         plotQQplot(gr, fds, type=type, data=data)
     }
 }
