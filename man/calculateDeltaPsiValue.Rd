@@ -4,7 +4,7 @@
 \alias{calculateDeltaPsiValue}
 \title{calculates the delta psi value and stores it as an assay}
 \usage{
-calculateDeltaPsiValue(fds, psiType)
+calculateDeltaPsiValue(fds, psiType, assayName)
 }
 \description{
 calculates the delta psi value and stores it as an assay

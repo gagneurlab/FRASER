@@ -245,4 +245,19 @@ fraserQQplotPlotly <- function(pvalues, ci=TRUE, reducePoints=FALSE,
     return(p)
 }
 
+#'
+#' check if the given assay already exists within the object
+#'
+assayExists <- function(fds, assayName){
+    stopifnot(isScalarCharacter(assayName))
+    stopifnot(is(fds, "FraseRDataSet"))
 
+    aexists <- assayName %in% assayNames(fds)
+    if(aexists){
+        message(date(), ": The ", assayName, " are already computed and will ",
+                "be used now. If you want to recompute them, please remove ",
+                "the following assay: ", assayName, " by issuing following ",
+                "command: assays(fds)[['", assayName, "']] <- NULL")
+    }
+    return(aexists)
+}
