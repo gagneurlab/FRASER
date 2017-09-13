@@ -26,7 +26,7 @@ cleanCache <- function(fds, all=FALSE, cache=TRUE, assays=FALSE, results=FALSE){
     if(results == TRUE || all == TRUE){
         dirs2delete <- c(dirs2delete, file.path("results", fdsDirName))
     }
-    
+
     # clean cache
     for(d in dirs2delete){
         full_dir <- file.path(workingDir(fds), d)
@@ -226,4 +226,21 @@ fraserQQplotPlotly <- function(pvalues, ci=TRUE, zscores=NULL, zscoreCutoff=0,
     return(p)
 }
 
+#'
+#' logger function for internal use only
+#'
+logger <- function(type="INFO", name=flog.namespace(), ...){
+    stopifnot(isScalarCharacter(type))
+    type <- toupper(type)
+    stopifnot(type %in% c("TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"))
 
+    fun <- switch(type,
+            TRACE=flog.trace,
+            DEBUG=flog.debug,
+            INFO=flog.info,
+            WARN=flog.warn,
+            ERROR=flog.error,
+            FATAL=flog.fatal
+    )
+    fun(name=name, ...)
+}
