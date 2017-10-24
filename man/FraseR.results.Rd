@@ -5,7 +5,7 @@
 \title{obtain the results for the given analysis pipeline}
 \usage{
 FraseR.results(x, sampleIDs = samples(x), fdrCut = 0.05, zscoreCut = 2,
-  psiType = c("psi3", "psi5", "psiSite"), redo = FALSE)
+  dPsiCut = 0.01, psiType = c("psi3", "psi5", "psiSite"), redo = FALSE)
 }
 \description{
 obtain the results for the given analysis pipeline

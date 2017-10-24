@@ -573,9 +573,10 @@ setAs("DataFrame", "matrix", function(from){
 #' retrieve a single sample result object
 #' @noRd
 resultsSingleSample <- function(sampleID, grs, pvals, zscores, psivals,
-                    deltaPsiVals, psiType, fdrCut, zscoreCut){
+                    deltaPsiVals, psiType, fdrCut, zscoreCut, dPsiCut){
 
     goodCut <- na2false(zscores[,abs(get(sampleID)) >= zscoreCut])
+    goodCut <- goodCut & na2false(deltaPsiVals[,abs(get(sampleID)) >= dPsiCut])
     pval    <- pvals[,get(sampleID)]
     p.adj   <- rep(as.numeric(NA), length(pval))
     p.adj[goodCut] <- p.adjust(pval[goodCut], method="hochberg")
@@ -608,17 +609,20 @@ resultsSingleSample <- function(sampleID, grs, pvals, zscores, psivals,
 #' obtain the results for the given analysis pipeline
 #'
 FraseR.results <- function(x, sampleIDs=samples(x), fdrCut=0.05, zscoreCut=2,
-            psiType=c("psi3", "psi5", "psiSite"), redo=FALSE){
+            dPsiCut=0.01, psiType=c("psi3", "psi5", "psiSite"), redo=FALSE){
 
     # check input
-    stopifnot(is.numeric(fdrCut) && fdrCut <= 1 && fdrCut >= 0)
+    stopifnot(is.numeric(fdrCut)    && fdrCut    <= 1   && fdrCut    >= 0)
+    stopifnot(is.numeric(dPsiCut)   && dPsiCut   <= 1   && dPsiCut   >= 0)
     stopifnot(is.numeric(zscoreCut) && zscoreCut <= 100 && zscoreCut >= 0)
+
     stopifnot(is(x, "FraseRDataSet"))
     stopifnot(all(sampleIDs %in% samples(x)))
     psiType <- match.arg(psiType, several.ok=TRUE)
 
     # check if we extacted it already
-    fdrCut <- round(fdrCut, 3)
+    fdrCut    <- round(fdrCut, 3)
+    dPsiCut   <- round(dPsiCut, 2)
     zscoreCut <- round(zscoreCut, 2)
 
     # get the name of the result
@@ -629,9 +633,9 @@ FraseR.results <- function(x, sampleIDs=samples(x), fdrCut=0.05, zscoreCut=2,
     } else {
         sampleStr <- paste(sort(sampleIDs), collapse=", ")
     }
-    resName <- sprintf(
-        "Results for samples: %s, type: %s, and cutoffs: pc <= %g & abs(zc) >= %g",
-        sampleStr, paste(psiType, collapse=" + "), fdrCut, zscoreCut
+    resName <- sprintf(paste0("Results for samples: %s, type: %s, ",
+                "and cutoffs: padjc <= %g & abs(zc) >= %g & abs(dpsic) >= %g"),
+        sampleStr, paste(psiType, collapse=" + "), fdrCut, zscoreCut, dPsiCut
     )
 
     # return cache if there
@@ -665,7 +669,7 @@ FraseR.results <- function(x, sampleIDs=samples(x), fdrCut=0.05, zscoreCut=2,
                 resultsSingleSample, grs=grs, pvals=pvals,
                 zscores=zscores, psiType=type, psivals=psivals,
                 deltaPsiVals=deltaPsiVals,
-                fdrCut=fdrCut, zscoreCut=zscoreCut)
+                fdrCut=fdrCut, zscoreCut=zscoreCut, dPsiCut=dPsiCut)
 
         # return combined result
         return(unlist(GRangesList(sampleRes)))
