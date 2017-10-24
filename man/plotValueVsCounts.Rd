@@ -5,7 +5,9 @@
 \title{plot a given value against the counts}
 \usage{
 plotValueVsCounts(gr, fds, type, sample = NULL, delta = FALSE,
-  plotLog = FALSE, rmZeroCts = FALSE, data = NULL, ...)
+  main = paste0(type, " versus total raw counts"),
+  xlab = "Number of all observed split reads", ylab = NULL,
+  zeroVal = 0.64, rmZeroCts = FALSE, data = NULL, ...)
 }
 \description{
 plot a given value against the counts

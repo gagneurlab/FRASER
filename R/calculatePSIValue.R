@@ -55,8 +55,7 @@ calculatePSIValuePrimeSite <- function(fds, psiType){
 
     # convert psi type to the position of interest
     psiCol <- ifelse(psiType == "psi5", "start", "end")
-    psiName <- paste0("psi", psiType)
-    psiROCName <- paste0("rawOtherCounts_psi", psiType)
+    psiROCName <- paste0("rawOtherCounts_", psiType)
 
     # generate a data.table from granges
     countData <- data.table(
@@ -98,7 +97,7 @@ calculatePSIValuePrimeSite <- function(fds, psiType){
     names(psiValues) <- samples(fds)
 
     # merge it to a DataFrame and assign it to our object
-    assays(fds, type="j")[[psiName]] <- DataFrame(
+    assays(fds, type="j")[[psiType]] <- DataFrame(
         lapply(psiValues, "[[", "psiValue")
     )
     assays(fds, type="j")[[psiROCName]] <- DataFrame(

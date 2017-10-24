@@ -16,9 +16,9 @@
 #'
 #' @export
 plotJunctionDistribution <- function(fds, gr, type=gr$type, sampleIDs=NULL,
-            rmZeroCts=FALSE, plotRank=paste0(c("", "delta_", "zscore_"), type),
-            plotCounts=TRUE, plotValVsCounts=type, qqplot=TRUE,
-            plotLegend=TRUE){
+                                     rmZeroCts=FALSE, plotRank=paste0(c("", "delta_", "zscore_"), type),
+                                     plotCounts=TRUE, plotValVsCounts=type, qqplot=TRUE,
+                                     plotLegend=TRUE){
     stopifnot(is(fds, "FraseRDataSet"))
     if(is.data.table(gr)){
         gr <- makeGRangesFromDataFrame(gr, keep.extra.columns = TRUE)
@@ -32,8 +32,8 @@ plotJunctionDistribution <- function(fds, gr, type=gr$type, sampleIDs=NULL,
 
     # get number of plots
     numPlots <- sum(sapply(list(plotRank, plotValVsCounts),
-                    function(x){ ifelse(is.logical(x), sum(x), length(x)) })) +
-            sum(qqplot) + sum(plotCounts)
+                           function(x){ ifelse(is.logical(x), sum(x), length(x)) })) +
+        sum(qqplot) + sum(plotCounts)
 
     opar <- par(no.readonly=TRUE)
     on.exit(par(opar))
@@ -45,17 +45,17 @@ plotJunctionDistribution <- function(fds, gr, type=gr$type, sampleIDs=NULL,
     # plot sample rank if requested
     if(!(length(plotRank) == 0 | isFALSE(plotRank))){
         sapply(plotRank, plotSampleRank, gr=gr, fds=fds, sample=sampleIDs,
-            rmZeroCts=rmZeroCts, data=data)
+               rmZeroCts=rmZeroCts, data=data)
     }
     # plot counts
     if(isTRUE(plotCounts)){
         plotCountsAtSite(gr, fds, type=type, sample=sampleIDs, data=data,
-                plotLegend=plotLegend)
+                         plotLegend=plotLegend)
     }
     # plot values versus counts
-    if(!(length(valueVsCounts) == 0 | isFALSE(valueVsCounts))){
-        sapply(plotValVsCounts, plotValueVsCounts, gr=gr, fds=fds, data=data,
-                sampleIDs=sampleIDs, plotlog=TRUE, rmZeroCts=rmZeroCts)
+    if(!(length(plotValVsCounts) == 0 | isFALSE(plotValVsCounts))){
+        sapply(plotValVsCounts, plotValueVsCounts, gr=gr, fds=fds, data=NULL,
+               sampleIDs=sampleIDs, plotlog=TRUE, rmZeroCts=FALSE)
     }
     # plot qq plot
     if(isTRUE(qqplot)){
@@ -81,7 +81,7 @@ getPlotDistributionData <- function(gr, fds, type, rmZeroCts=FALSE){
 
     mapping      <- c("pvalues", "psi", "deltaPsi", "zscore", "rcts", "rocts")
     names(mapping) <- c(pvaluename, psiname, deltapsiname, zscorename, rctsname,
-            roctsname)
+                        roctsname)
 
     ov <- from(findOverlaps(granges(se), gr, type="equal"))
     if(!isScalarInteger(ov)){
@@ -118,7 +118,7 @@ getPlotDistributionData <- function(gr, fds, type, rmZeroCts=FALSE){
 #'
 #' @noRd
 plotCountsAtSite <- function(gr, fds, type, sample=NULL, plotLog=TRUE,
-                    plotLegend=TRUE, data=NULL){
+                             plotLegend=TRUE, data=NULL){
     # get data to plot
     if(is.null(data)){
         data <- getPlotDistributionData(gr, fds, type)
@@ -130,7 +130,11 @@ plotCountsAtSite <- function(gr, fds, type, sample=NULL, plotLog=TRUE,
     y <- data$rcts
     transformFun <- function(x) x
     if(plotLog){
-        transformFun <- function(x) suppressWarnings(log10(1+x))
+        transformFun <- function(x) {
+            x[x == 0 | is.na(x)] <- 0.7
+            x
+            #suppressWarnings(log10(1+x))
+        }
     }
 
     # do we plot it in log?
@@ -149,8 +153,9 @@ plotCountsAtSite <- function(gr, fds, type, sample=NULL, plotLog=TRUE,
 
     # main heatscatter plot
     heatscatter(transformFun(x), transformFun(y), ylab=ylab, xlab=xlab,
-            main=getTitle("Heatscatter of raw counts", data$se, type),
-            xlim=c(0, max(transformFun(x))), ylim=c(0, max(transformFun(y))))
+                main=getTitle("Heatscatter of raw counts", data$se, type),
+                xlim=c(0.7, max(transformFun(x))), ylim=c(0.7, max(transformFun(y))),
+                log=ifelse(plotLog, "xy", ""))
 
     # grid and diagonal
     abline(0,1,col="gray", lty="dotted")
@@ -160,17 +165,17 @@ plotCountsAtSite <- function(gr, fds, type, sample=NULL, plotLog=TRUE,
     a <- data$alpha
     b <- data$beta
     ab <- a + b
-    fitx <- 0:as.integer(max(rac)*1.5)
+    fitx <- 1:as.integer(max(rac)*1.5)
     fity <- bbmean(fitx, a, b)
-    lines(transformFun(fitx), transformFun(fity), col="firebrick")
+    lines(c(0.7, transformFun(fitx)), c(0.7, transformFun(fity)), col="firebrick")
 
     # add 50%, 25% and 10% lines
     curPlotPar <- data.table(fact=c(0.5, 0.25, 0.1), lty=c(2, 4, 3),
-            name=c("PSI = 50%", "PSI = 25%", "PSI = 10%"))
+                             name=c("PSI = 50%", "PSI = 25%", "PSI = 10%"))
     sapply(1:nrow(curPlotPar), function(idx){
         y2plot <- fitx * curPlotPar[idx, fact]
         lines(transformFun(fitx), transformFun(y2plot),
-                lty=curPlotPar[idx, lty], col=adjustcolor("black", 0.7))
+              lty=curPlotPar[idx, lty], col=adjustcolor("black", 0.7))
     })
 
     # add variance
@@ -181,7 +186,7 @@ plotCountsAtSite <- function(gr, fds, type, sample=NULL, plotLog=TRUE,
     sapply(c(-1, 1), function(varFactor) {
         y <- fity + varFactor * fityvar # * scewFactor
         lines(transformFun(fitx), transformFun(y),
-                lty="dotted", col=adjustcolor("firebrick", 0.5))
+              lty="dotted", col=adjustcolor("firebrick", 0.5))
     })
 
     # add sample annotation
@@ -194,9 +199,9 @@ plotCountsAtSite <- function(gr, fds, type, sample=NULL, plotLog=TRUE,
     # add legend if requested
     if(plotLegend){
         legend("topleft", c("Model fit", "+/- Variance", curPlotPar[,name]),
-                pch=20, lty=c(1,3, curPlotPar[,lty]),
-                col=c("firebrick",adjustcolor("firebrick", 0.5),
-                        rep(adjustcolor("black", 0.7), 3)))
+               pch=20, lty=c(1,3, curPlotPar[,lty]),
+               col=c("firebrick",adjustcolor("firebrick", 0.5),
+                     rep(adjustcolor("black", 0.7), 3)))
     }
 }
 
@@ -239,7 +244,7 @@ bbscewness <- function(size, a, b){
 #'
 #' @noRd
 plotSampleRank <- function(gr, fds, type, sample=NULL, delta=FALSE,
-                    plotLog=FALSE, rmZeroCts=FALSE, data=NULL, ...){
+                           plotLog=FALSE, rmZeroCts=FALSE, data=NULL, ...){
     # get data
     if(is.null(data)){
         data <- getPlotDistributionData(gr, fds, type, rmZeroCts)
@@ -252,10 +257,10 @@ plotSampleRank <- function(gr, fds, type, sample=NULL, delta=FALSE,
         ylab=paste0("delta_median( ", ylab, " )")
     }
     plot(sort(p),
-        main=getTitle("Sample rank", data$se,
-                paste0(ifelse(delta, "delta ", ""), type)),
-        ylab=ylab, xlab="sample rank",
-        pch=16, col="gray"
+         main=getTitle("Sample rank", data$se,
+                       paste0(ifelse(delta, "delta ", ""), type)),
+         ylab=ylab, xlab="sample rank",
+         pch=16, col="gray"
     )
     if(!is.null(sample)){
         sapply(sample, addSamplePoints, x=rank(p), y=p)
@@ -266,27 +271,35 @@ plotSampleRank <- function(gr, fds, type, sample=NULL, delta=FALSE,
 #' plot a given value against the counts
 #'
 plotValueVsCounts <- function(gr, fds, type, sample=NULL, delta=FALSE,
-                    plotLog=FALSE, rmZeroCts=FALSE, data=NULL, ...){
+                    main=paste0(type, " versus total raw counts"), 
+                    xlab="Number of all observed split reads", ylab=NULL, 
+                    zeroVal=0.64, rmZeroCts=FALSE, data=NULL, ...){
     # get data
     if(is.null(data)){
-        data    <- getPlotDistributionData(gr, fds, type, rmZeroCts)
+        data <- getPlotDistributionData(gr, fds, type, rmZeroCts)
     }
-    p       <- data[[data$mapping[type]]]
-    rcts    <- data$rcts
-    rocts   <- data$rocts
-    l10tcts <- log10(rcts + rocts)
+    val <- data[[data$mapping[type]]]
+    tcts <- data$rcts + data$rocts
+    tcts[tcts == 0] <- zeroVal
 
-    ylab=type
-    if(delta){
-        p <- data$deltaPsi
-        ylab=paste0("delta_median( ", ylab, " )")
+    if(is.null(ylab)){
+        ylab=type
+        if(delta){
+            val <- data$deltaPsi
+            ylab=paste0("delta_median( ", ylab, " )")
+        }
     }
-    heatscatter(l10tcts, p,
-            main=paste0("Heatscatter of ", type, " versus total raw counts"),
-            xlab="log10(total raw counts)", ylab=type)
-
+    
+    heatscatter(tcts, val, main="", xlab=xlab, log="x", ylab=ylab)
+    title(main=main)
+    grid(equilogs = FALSE)
+    
+    if(any(tcts < 1)){
+        abline(v=zeroVal, col="gray", lty="dotted")
+        axis(side=1, at=zeroVal, labels = "0", tick = TRUE)
+    }
     if(!is.null(sample)){
-        sapply(sample, addSamplePoints, x=l10tcts, y=p)
+        sapply(sample, addSamplePoints, x=tcts, y=val)
     }
 }
 
@@ -307,7 +320,7 @@ addSamplePoints <- function(x, y, sample, pch=20, col="red", ...){
 #' @noRd
 getTitle <- function(plotMainTxt, gr, psiType){
     paste0(plotMainTxt, " for type: ", psiType,
-            "\nRange: ", seqnames(gr), ":", start(gr), "-", end(gr))
+           "\nRange: ", seqnames(gr), ":", start(gr), "-", end(gr))
 }
 
 plotQQplot <- function(gr, fds, type, data=NULL, maxOutlier=2){
@@ -326,8 +339,8 @@ plotQQplot <- function(gr, fds, type, data=NULL, maxOutlier=2){
 
     # main plot area
     plot(NA, main="QQ-plot", xlim=range(exp), ylim=ylim,
-            xlab=paste0(expression(log[10]), "(expected)"),
-            ylab=paste0(expression(log[10]), "(observed)"))
+         xlab=paste0(expression(log[10]), "(expected)"),
+         ylab=paste0(expression(log[10]), "(observed)"))
 
     # confidence band
     # http://genome.sph.umich.edu/wiki/Code_Sample:_Generating_QQ_Plots_in_R
@@ -358,10 +371,10 @@ testPlotting <- function(){
     if(!testset){
         fds  <- loadFraseRDataSet(
             "/s/project/fraser/analysis/datasets", "kremer-bader-et-al")
-        grdt <- as.data.table(metadata(fds)[[3]])[p.adj < 1]
+        grdt <- as.data.table(metadata(fds)[[6]])[p.adj < 1 & abs(deltaPsi) > 0.1]
         gra   <- makeGRangesFromDataFrame(keep.extra.columns = TRUE,
-                grdt[order(p.adj)][
-                        hgnc_symbol %in% c("MCOLN1", "TIMMDC1")][c(1,3,5)])
+                                          grdt[order(p.adj)][
+                                              hgnc_symbol %in% c("MCOLN1", "TIMMDC1")][c(1,3,5)])
     } else {
         fds  <- annotateRanges(FraseR())
         grdt <- as.data.table(results(fds, fdrCut=1))
@@ -370,19 +383,25 @@ testPlotting <- function(){
     }
 
     pdf("result-distribution-top50.pdf")
-        idx2plot <- sample(1:min(3000, length(gra)), min(200, length(gra)))
-        for(i in sort(idx2plot)){
-            gr        <- gra[i]
-            sampleIDs <- gra[i]$sampleID
+    idx2plot <- sample(1:min(3000, length(gra)), min(200, length(gra)))
+    for(i in sort(idx2plot)){
+        gr        <- gra[i]
+        sampleIDs <- gra[i]$sampleID
 
-            plotJunctionDistribution(fds=fds, gr=gr, sampleIDs=sampleIDs)
-        }
+        plotJunctionDistribution(fds=fds, gr=gr, sampleIDs=sampleIDs)
+    }
     dev.off()
     browseURL("result-distribution-top50.pdf")
 
     debug(plotJunctionDistribution)
     debug(getPlotDistributionData)
+    debug(plotCountsAtSite)
+    debug(plotValueVsCounts)
     debug(plotSampleRank)
     debug(plotQQplot)
     plotJunctionDistribution(fds, curgr, valueVsCounts = TRUE, qqplot = TRUE)
+    plot(1,1)
+    plotJunctionDistribution(fds, gra[1], rmZeroCts = FALSE)
+    plotCountsAtSite(gra[1], fds, gra[1]$type)
+    plotValueVsCounts(gra[1], fds, gra[1]$type, plotLog=TRUE, rmZeroCts=FALSE)
 }
