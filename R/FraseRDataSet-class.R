@@ -48,6 +48,9 @@ validateSampleAnnotation <- function(object) {
     if(!any("bamFile" %in% colnames(sampleData))){
         return("Please provide a 'bamFile' column.")
     }
+    if(any(samples(object) != rownames(colData(object)))){
+        return("Please set the rownames of your colData to the sampleIDs")
+    }
     NULL
 }
 
@@ -249,6 +252,9 @@ FraseRDataSet <- function(colData=NULL, ...) {
     if(!is.null(colData)){
         if(is.data.table(colData)){
             colData <- DataFrame(colData)
+        }
+        if(is.null(rownames(colData))){
+            rownames(colData) <- colData[['sampleID']]
         }
         return(new("FraseRDataSet", colData=colData, ...))
     }

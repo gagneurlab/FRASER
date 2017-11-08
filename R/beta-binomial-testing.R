@@ -1,18 +1,17 @@
+
 #'
 #' calculates the pvalue per type (psi3,psi5,spliceSite) with beta-binomial
 #'
 #' @noRd
-pvalueByBetaBinomialPerType <- function(fds, aname, psiType, pvalFun, minCov=5){
+pvalueByBetaBinomialPerType <- function(fds, aname, psiType, pvalFun,
+            minCov=5, alternative="less"){
 
     message(date(), ": Calculate P-values for the ",
-            psiType, " splice type ..."
-    )
+            psiType, " splice type ...")
 
     # go over each group but no NA's
     group         <- condition(fds)
     addNoise      <- TRUE
-    removeHighLow <- 0
-    #removeHighLow <- length(group)/4
 
     # raw reads to test for abberent splicing
     rawCounts      <- counts(fds, type=psiType, side="ofInterest")
@@ -40,11 +39,9 @@ pvalueByBetaBinomialPerType <- function(fds, aname, psiType, pvalFun, minCov=5){
 
     # TODO how to group groups?
     pvalues_ls <- bplapply(toTest, rawCounts=rawCounts,
-            rawOtherCounts=rawOtherCounts, pvalFun,
-            BPPARAM=parallel(fds),
-            addNoise=addNoise, removeHighLow=removeHighLow,
-            FUN= function(idx, rawCounts, rawOtherCounts,
-                    addNoise, removeHighLow, pvalFun){
+                    rawOtherCounts=rawOtherCounts, pvalFun,
+                    BPPARAM=parallel(fds), addNoise=addNoise, FUN=function(
+                            idx, rawCounts, rawOtherCounts, addNoise, pvalFun){
         # idx <- toTest[[2]]
         suppressPackageStartupMessages(require(FraseR))
 
@@ -59,28 +56,14 @@ pvalueByBetaBinomialPerType <- function(fds, aname, psiType, pvalFun, minCov=5){
         }
 
         # count matrix per site
+        # plot(log10(N+1),log10(y+1))
         countMatrix <- cbind(y=y, o=N-y)
 
-        # remove outliers (highest and lowest sample)
-        tmp_removeHighLow = removeHighLow
-        while(tmp_removeHighLow > 0){
-            tmp_removeHighLow = tmp_removeHighLow -1
-            countMatrix <- countMatrix[!1:dim(countMatrix)[1] %in%
-                c(
-                    which.min(rowSums(countMatrix)),
-                    which.max(rowSums(countMatrix))
-                ),
-            ]
-        }
-
-        # plot(log10(N+1),log10(y+1))
-
         ## fitting
-        timing <- system.time(gcFirst=FALSE, expr={
-            pv_res <- lapply(list(countMatrix),
-                    FUN=tryCatchFactory(pvalFun), y=y, N=N
-            )[[1]]
-        })["user"]
+        timing <- sum(system.time(gcFirst=FALSE, expr={
+            pv_res <- lapply(list(countMatrix), FUN=tryCatchFactory(pvalFun),
+                    y=y, N=N, alternative=alternative)[[1]]
+        })[c("user.self", "sys.self")])
 
         #
         # put pvalues into correct boundaries
@@ -148,9 +131,9 @@ pvalueByBetaBinomialPerType <- function(fds, aname, psiType, pvalFun, minCov=5){
 #' calculate the pvalues with vglm and the betabinomial functions
 #'
 #' @noRd
-betabinVglmTest <- function(countMatrix, y, N){
+betabinVglmTest <- function(cMat, alternative="less", y=cMat[,1], N=cMat[,1] + cMat[,2]){
     # get fit
-    fit <- vglm(countMatrix ~ 1, betabinomial)
+    fit <- vglm(cMat ~ 1, betabinomial)
 
     # get the shape values
     co  <- Coef(fit)
@@ -162,6 +145,14 @@ betabinVglmTest <- function(countMatrix, y, N){
     # get the pvalues
     # one-sided p-value (alternative = "less")
     pval <- pbetabinom.ab(y, N, alpha, beta)
+
+    # two sieded test
+    if(alternative == "two.sided"){
+        pval <- apply(cbind(pval, 1-pval), 1, min)*2
+    # one-sided greater test
+    } else if(alternative == "greater"){
+        pval <- 1-pval
+    }
 
     return(list(
         pval = pval,

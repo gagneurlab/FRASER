@@ -22,7 +22,11 @@ calculateZScores <- function(fds){
 
     # calculate zscore for each psi type
     for(psiType in c("psi3", "psi5", "psiSite")){
-        fds <- calculateZScorePerDataSet(fds, psiType)
+        assayName <- paste0("zscore_", psiType)
+        if(assayExists(fds, assayName)){
+            next
+        }
+        fds <- calculateZScorePerDataSet(fds, psiType, assayName)
     }
 
     return(fds)
@@ -33,7 +37,7 @@ calculateZScores <- function(fds){
 #' and adds it directly to the dataset itself
 #'
 #' @noRd
-calculateZScorePerDataSet <- function(fds, psiType){
+calculateZScorePerDataSet <- function(fds, psiType, assayName){
 
     message(date(), ": Calculate the Zscore for ", psiType, " values ...")
 
@@ -44,9 +48,6 @@ calculateZScorePerDataSet <- function(fds, psiType){
     rowmean <- rowMeans(psiVal, na.rm = TRUE)
     rowsd   <- apply(psiVal, 1, sd, na.rm = TRUE)
     zscores <- (psiVal - rowmean) / rowsd
-
-    # add it to the FraseR object
-    assayName <- paste0("zscore_", psiType)
 
     # use as.matrix to rewrite it as a new hdf5 array
     assays(fds, type=psiType)[[assayName]] <- as.matrix(zscores)
@@ -98,13 +99,7 @@ calculatePValues <- function(fds, internBPPARAM=SerialParam(), ...){
     for(psiType in c("psi3", "psi5", "psiSite")){
 
         aname <- paste0("pvalue_", psiType)
-        if(aname %in% assayNames(fds)){
-            message(date(), ": P-values are already present. ",
-                    "If you want to recompute them,",
-                    "\n\tplease remove the following assay:",
-                    " ", aname, " \n\tby issuing following command: ",
-                    "assays(fds)[['", aname, "']] <- NULL"
-            )
+        if(assayExists(fds, aname)){
             next
         }
 

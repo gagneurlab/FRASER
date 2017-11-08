@@ -127,25 +127,30 @@ serverMain <- function(input, output) {
 
     # main results
     filteredResDT <- reactive({
-        tmpRes <- shinyFdsRes[
-            mcols(shinyFdsRes)$pvalue      <= input$pvalue &
-                mcols(shinyFdsRes)$psiValue    <= input$psivalue &
-                abs(mcols(shinyFdsRes)$zscore) >= input$zscore
-            ]
-        try(silent=TRUE, expr={
-            tmpRes <- tmpRes[!is.na(mcols(shinyFdsRes)$hgnc_symbol)]
-            tmpRes <- tmpRes[
-                grepl(perl=TRUE, ignore.case=TRUE,
-                      pattern=gsub("\\s+", "|", input$symbolReg, perl=TRUE),
-                      x=mcols(tmpRes)$hgnc_symbol
-                )
-                ]
-        })
-        tmpRes <- tmpRes[grepl(perl=TRUE, ignore.case=TRUE,
-                               pattern=gsub("\\s+", "|", input$sampleReg, perl=TRUE),
-                               x=mcols(tmpRes)$sampleID
-        )]
-        as.data.table(tmpRes)
+        browser()
+
+        # convert to data.table
+        tmpRes <- as.data.table(shinyFdsRes)
+
+        # filter default values
+        tmpRes <- tmpRes[
+                pvalue      <= input$pvalue   &
+                psiValue    <= input$psivalue &
+                abs(zscore) >= input$zscore]
+
+        # filter gene names
+        if("hgnc_symbol" %in% colnames(tmpRes)){
+            tmpRes <- tmpRes[!is.na(hgnc_symbol)]
+            tmpRes <- tmpRes[grepl(
+                    x=hgnc_symbol, perl=TRUE, ignore.case=TRUE,
+                    pattern=gsub("\\s+", "|", input$symbolReg, perl=TRUE))]
+        }
+
+        # filter samples
+        tmpRes <- tmpRes[grepl(
+                x=sampleID, perl=TRUE, ignore.case=TRUE,
+                pattern=gsub("\\s+", "|", input$sampleReg, perl=TRUE))]
+
     })
 
     getSelectedLinks <- reactive({
@@ -281,7 +286,9 @@ getDisttributionPlot <- function(fds, psiType, dist, idx, sampleID=NULL, ...){
         col[which(sampleID %in% names(data))] <- "firebrick"
     }
 
-    par(cex=1.6)
+    opar <- par(cex=1.6)
+    on.exit(par(opar))
+
     plot(1:length(data), data, col = col, pch=20,
         xlab="sample rank", ylab=dist, las=1,
         main=paste("Distribution of:", dist)

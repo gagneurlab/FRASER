@@ -61,6 +61,10 @@ setGeneric("nonSplicedReads",   function(object) standardGeneric("nonSplicedRead
 #' @export
 setGeneric("nonSplicedReads<-", signature = "object", function(object, value) standardGeneric("nonSplicedReads<-"))
 
+# non spliced reads function
+#' @export
+setGeneric("results",   function(x, ...) standardGeneric("results"))
+
 
 #'
 #'  Getter/Setter for the sampleIDs
@@ -82,6 +86,7 @@ setMethod("samples", "FraseRDataSet", function(object) {
 #' @rdname samples
 setReplaceMethod("samples", "FraseRDataSet", function(object, value) {
     colData(object)[,"sampleID"] <- as.character(value)
+    rownames(colData(object)) <- colData(object)[,"sampleID"]
     validObject(object)
     return(object)
 })
@@ -325,14 +330,17 @@ setReplaceMethod("nonSplicedReads", "FraseRDataSet", function(object, value){
 #' @param x A \code{FraseRDataSet} object
 #' @param i A integer vector to subset the rows/ranges
 #' @param j A integer vector to subset the columns/samples
+#' @param by a character (j or ss) definig if we subset by
+#'             junctions or splice sites
 #' @return A subsetted \code{FraseRDataSet} object
 #' @examples
 #'     fds <- countRNAData(createTestFraseRSettings())
 #'     fds[1:10,1:10]
 #'     fds[,samples(fds) %in% c("sample1", "sample2")]
+#'     fds[1:10,by="ss"]
 #'
 #' @rdname subset
-subsetFraseR <- function(x, i, j){
+subsetFraseR <- function(x, i, j, by){
     if(missing(i) && missing(j)){
         return(x)
     }
@@ -343,8 +351,25 @@ subsetFraseR <- function(x, i, j){
         j <- TRUE
     }
 
-    # first subset non spliced reads if needed
+    if(is(i, "RangedSummarizedExperiment") | is(i, "GRanges")){
+        if(by=="ss"){
+            i <- unique(to(findOverlaps(i, nonSplicedReads(x))))
+        } else {
+            i <- unique(to(findOverlaps(i, x)))
+        }
+    }
+
     nsrObj <- nonSplicedReads(x)
+    if(length(nsrObj) == 0 & by=="ss"){
+        stop("Cannot subset by splice sites, if you not counted them!")
+    }
+    if(by == "ss"){
+        ssIdx <- unlist(rowData(nonSplicedReads(x)[i])["spliceSiteID"])
+        i <- as.vector(unlist(rowData(x, typ="psi3")["startID"]) %in% ssIdx |
+            unlist(rowData(x, typ="psi3")["endID"]) %in% ssIdx)
+    }
+
+    # first subset non spliced reads if needed
     if(length(nsrObj) > 0){
         # get selected splice site IDs
         selectedIDs <- unique(unlist(
@@ -366,21 +391,23 @@ subsetFraseR <- function(x, i, j){
 
     # create new FraseRDataSet object
     newx <- new("FraseRDataSet",
-                subX,
-                name            = name(x),
-                method          = method(x),
-                parallel        = parallel(x),
-                bamParam        = scanBamParam(x),
-                strandSpecific  = strandSpecific(x),
-                workingDir      = workingDir(x),
-                nonSplicedReads = nsrObj
+            subX,
+            name            = name(x),
+            method          = method(x),
+            parallel        = parallel(x),
+            bamParam        = scanBamParam(x),
+            strandSpecific  = strandSpecific(x),
+            workingDir      = workingDir(x),
+            nonSplicedReads = nsrObj
     )
     validObject(newx)
     return(newx)
 }
-setMethod("[", c("FraseRDataSet", "ANY", "ANY"), function(x, i, j) {
-    subsetFraseR(x,i,j)
-})
+setMethod("[", c("FraseRDataSet", "ANY", "ANY"),
+    function(x, i, j, by=c("j", "ss")) {
+        by <- match.arg(by)
+        subsetFraseR(x, i, j, by)}
+)
 
 
 #'
@@ -400,7 +427,7 @@ setMethod("assayNames", "FraseRDataSet", function(x) {
 setMethod("assays", "FraseRDataSet", function(x, ..., type=NULL, withDimnames=TRUE){
     return(c(
         callNextMethod(),
-        assays(nonSplicedReads(x, ...))
+        assays(nonSplicedReads(x), ..., withDimnames=withDimnames)
     ))
 })
 FraseRDataSet.assays.replace <-
@@ -507,9 +534,14 @@ setAs("DelayedMatrix", "data.table", function(from){
     mc.cores=min(24, max(1, detectCores() - 1))
     perChunk=5000
     chunks <- chunk(1:dim(from)[1], perChunk)
-    ans <- mclapply(chunks, mc.cores=mc.cores,
-        FUN=function(x) as.data.table(from[x,])
-    )
+    fun <- function(x, from) as.data.table(from[x,])
+
+    if(length(chunks) < 4){
+        ans <- lapply(chunks, fun, from=from)
+    } else {
+        ans <- mclapply(chunks, fun, from=from, mc.cores=mc.cores)
+    }
+
     ans <- rbindlist(ans)
     ans
 })
@@ -518,14 +550,22 @@ setAs("DelayedMatrix", "data.table", function(from){
 #' convertion of Delayed Matrix objects into a matrix
 #'
 setAs("DelayedMatrix", "matrix", function(from){
-    #mc.cores=min(24, max(1, detectCores() - 1))
-    #perChunk=30000
-    #chunks <- chunk(1:dim(from)[1], perChunk)
-    #ans <- mclapply(chunks, mc.cores=mc.cores,
-    #                FUN=function(x) as.matrix(from[x,])
-    #)
-    #ans1 <- rbindlist(ans1)
-    #ans
+    as.matrix(as(from, "data.table"))
+})
+
+
+#'
+#' convertion of DataFram to data.table
+#'
+setAs("DataFrame", "data.table", function(from){
+    as.data.table(from)
+})
+
+
+#'
+#' convertion of DataFram to data.table
+#'
+setAs("DataFrame", "matrix", function(from){
     as.matrix(as(from, "data.table"))
 })
 
@@ -533,11 +573,14 @@ setAs("DelayedMatrix", "matrix", function(from){
 #' retrieve a single sample result object
 #' @noRd
 resultsSingleSample <- function(sampleID, grs, pvals, zscores, psivals,
-                                psiType, pvalueCut, zscoreCut){
-    goodCut <- na2false(
-        pvals[,get(sampleID) <= pvalueCut] &
-            zscores[,abs(get(sampleID)) >= zscoreCut]
-    )
+                    deltaPsiVals, psiType, fdrCut, zscoreCut, dPsiCut){
+
+    goodCut <- na2false(zscores[,abs(get(sampleID)) >= zscoreCut])
+    goodCut <- goodCut & na2false(deltaPsiVals[,abs(get(sampleID)) >= dPsiCut])
+    pval    <- pvals[,get(sampleID)]
+    p.adj   <- rep(as.numeric(NA), length(pval))
+    p.adj[goodCut] <- p.adjust(pval[goodCut], method="hochberg")
+    goodCut <- na2false(!is.na(p.adj) & p.adj <= fdrCut & goodCut)
 
     ans <- granges(grs[goodCut])
 
@@ -549,93 +592,133 @@ resultsSingleSample <- function(sampleID, grs, pvals, zscores, psivals,
     mcols(ans)$type        <- psiType
     mcols(ans)$sampleID    <- sampleID
     mcols(ans)$hgnc_symbol <- mcols(grs[goodCut])$hgnc_symbol
-    mcols(ans)$zscore      <- round(zscores[goodCut,get(sampleID)], 2)
-    mcols(ans)$psiValue    <- round(psivals[goodCut,get(sampleID)], 2)
-    mcols(ans)$pvalue      <- pvals[goodCut,get(sampleID)]
+    mcols(ans)$zscore      <- round(zscores[goodCut,get(sampleID)], 3)
+    mcols(ans)$psiValue    <- round(psivals[goodCut,get(sampleID)], 3)
+    mcols(ans)$pvalue      <- pval[goodCut]
+    mcols(ans)$deltaPsi    <- round(deltaPsiVals[goodCut,get(sampleID)], 3)
 
     # correct for multiple testing
     p <- mcols(ans)$pvalue
-    n <- length(goodCut)
-    mcols(ans)$p.hochberg  <- p.adjust(p, n=n, method="hochberg")
-    mcols(ans)$fdr         <- p.adjust(p, n=n, method="fdr")
+    n <- length(grs)
+    mcols(ans)$p.adj       <- p.adj[goodCut]
 
     return(ans[order(mcols(ans)$pvalue)])
 }
 
 #'
 #' obtain the results for the given analysis pipeline
-#' @export
-results <- function(fds, sampleIDs=samples(fds), pvalueCut=1e-5, zscoreCut=2,
-                    psiType=c("psi3", "psi5", "psiSite"), redo=FALSE){
+#'
+FraseR.results <- function(x, sampleIDs=samples(x), fdrCut=0.05, zscoreCut=2,
+            dPsiCut=0.01, psiType=c("psi3", "psi5", "psiSite"), redo=FALSE){
 
     # check input
-    stopifnot(is.numeric(pvalueCut) && pvalueCut <= 1 && pvalueCut >= 0)
+    stopifnot(is.numeric(fdrCut)    && fdrCut    <= 1   && fdrCut    >= 0)
+    stopifnot(is.numeric(dPsiCut)   && dPsiCut   <= 1   && dPsiCut   >= 0)
     stopifnot(is.numeric(zscoreCut) && zscoreCut <= 100 && zscoreCut >= 0)
-    stopifnot(is(fds, "FraseRDataSet"))
-    stopifnot(all(sampleIDs %in% samples(fds)))
+
+    stopifnot(is(x, "FraseRDataSet"))
+    stopifnot(all(sampleIDs %in% samples(x)))
     psiType <- match.arg(psiType, several.ok=TRUE)
 
     # check if we extacted it already
-    pvalueCut <- round(pvalueCut, 8)
+    fdrCut    <- round(fdrCut, 3)
+    dPsiCut   <- round(dPsiCut, 2)
     zscoreCut <- round(zscoreCut, 2)
 
     # get the name of the result
     if(length(sampleIDs)==1){
         sampleStr <- sampleIDs
-    } else if(length(sampleIDs == dim(fds)[2])) {
+    } else if(all(samples(x) %in% sampleIDs)){
         sampleStr <- "all"
     } else {
-        sampleStr <- deparse(which(samples(fds) %in% sampleIDs))
+        sampleStr <- paste(sort(sampleIDs), collapse=", ")
     }
-    resName <- sprintf(
-        "Results for samples: %s and cutoffs: pc <= %g & abs(zc) >= %g",
-        sampleStr, pvalueCut, zscoreCut
+    resName <- sprintf(paste0("Results for samples: %s, type: %s, ",
+                "and cutoffs: padjc <= %g & abs(zc) >= %g & abs(dpsic) >= %g"),
+        sampleStr, paste(psiType, collapse=" + "), fdrCut, zscoreCut, dPsiCut
     )
 
     # return cache if there
-    if(redo==FALSE & resName %in% names(metadata(fds))){
+    if(redo==FALSE & resName %in% names(metadata(x))){
         message(date(), ": Used result cache: ", resName)
-        return(metadata(fds)[[resName]])
+        return(metadata(x)[[resName]])
     }
 
     resultsls <- sapply(psiType, function(type){
         message(date(), ": Collecting results for: ", type)
 
-        tested <- mcols(fds, type=type)[[paste0(type, "_tested")]]
+        tested <- mcols(x, type=type)[[paste0(type, "_tested")]]
         tested <- na2false(tested)
-        pvals <- as(Class="data.table",
-                object=assays(fds)[[paste0("pvalue_", type)]][tested,]
-        )
 
-        zscores <- as(Class="data.table",
-                object=assays(fds)[[paste0("zscore_", type)]][tested,]
-        )
-
-        psivals <- as(Class="data.table", object=assays(fds)[[type]][tested,])
-
-        grs <- rowRanges(if(type=="psiSite") nonSplicedReads(fds) else fds)
+        # get ranges
+        grs <- rowRanges(if(type=="psiSite") nonSplicedReads(x) else x)
         grs <- grs[tested]
 
-        sampleRes <- sapply(sampleIDs,
-               resultsSingleSample, grs=grs, pvals=pvals,
-               zscores=zscores, psiType=type, psivals=psivals,
-               pvalueCut=pvalueCut, zscoreCut=zscoreCut
-        )
 
-        results <- unlist(GRangesList(sampleRes))
+        # extract values
+        pvals <- as(Class="data.table",
+                object=assays(x)[[paste0("pvalue_", type)]][tested,])
+        zscores <- as(Class="data.table",
+                object=assays(x)[[paste0("zscore_", type)]][tested,])
+        psivals <- as(Class="data.table", object=assays(x)[[type]][tested,])
+        deltaPsiVals <- as(Class="data.table", object=assays(x)[[
+                paste0("delta_", type)]][tested,])
+
+        # create reult table
+        sampleRes <- sapply(sampleIDs,
+                resultsSingleSample, grs=grs, pvals=pvals,
+                zscores=zscores, psiType=type, psivals=psivals,
+                deltaPsiVals=deltaPsiVals,
+                fdrCut=fdrCut, zscoreCut=zscoreCut, dPsiCut=dPsiCut)
+
+        # return combined result
+        return(unlist(GRangesList(sampleRes)))
     })
 
+    # merge results
     ans <- unlist(GRangesList(resultsls))
 
     # save it for later into the orignial object
-    fdsObjName <- deparse(substitute(fds))
-    eval(parse(text = sprintf("%s <<- %s",
-            paste0("metadata(", fdsObjName, ")[['",resName, "']]"),
-            "ans"
-    )))
+    metadata(x)[[resName]] <- ans
+
+    # try to set it in the user environemnt
+    try({
+        sysCall <- sys.calls()
+        resCall <- deparse(sysCall[[length(sysCall)-2]])
+        fdsName <- strsplit(resCall, "[(,]")[[1]][2]
+        if(fdsName %in% ls(envir = parent.frame(3))){
+            message(date(), ": Caching the results in the object: '", fdsName,
+                    "' under the metadata with the name: '", resName, "'.")
+            assign(fdsName, x, envir = parent.frame(3))
+        }
+    })
 
     # return only the results
     return(ans)
+}
+#' @export
+setMethod("results", "FraseRDataSet", function(x, sampleIDs=samples(x), ...){
+    FraseR.results(x, sampleIDs=sampleIDs, ...)
+})
+
+#'
+#' mapping of the chromosome names
+#'
+#' @export
+mapSeqlevels <- function(fds, style="UCSC", ...){
+
+    mappings <- na.omit(GenomeInfoDb::mapSeqlevels(seqlevels(fds), style, ...))
+
+    if(length(mappings) != length(seqlevels(fds))){
+        message(date(), ": Dropping non standard chromosomes for compatibility.")
+    }
+    fds <- fds[seqnames(fds) %in% names(mappings)]
+    seqlevels(fds) <- names(mappings)
+    seqlevels(fds) <- as.vector(mappings)
+    seqlevels(nonSplicedReads(fds)) <- names(mappings)
+    seqlevels(nonSplicedReads(fds)) <- as.vector(mappings)
+
+    return(fds)
 }
 
 

@@ -18,12 +18,20 @@ calculatePSIValues <- function(fds){
     # check input
     stopifnot(class(fds) == "FraseRDataSet")
 
-    # calculate 3/5' PSI for each sample
-    fds <- calculatePSIValuePrimeSite(fds, psiType="3")
-    fds <- calculatePSIValuePrimeSite(fds, psiType="5")
+    # calculate PSI value for each sample
+    for(psiType in c("psi5", "psi3", "psiSite")){
+        if(!assayExists(fds, psiType)){
+            fds <- calculatePSIValuePrimeSite(fds, psiType=psiType)
+        }
+    }
 
-    # calculate siteSplice values
-    fds <- calculateSitePSIValue(fds)
+    # calculate the delta psi value
+    for(psiType in c("psi3", "psi5", "psiSite")){
+        assayName <- paste0("delta_", psiType)
+        if(!assayExists(fds, assayName)){
+            fds <- calculateDeltaPsiValue(fds, psiType, assayName)
+        }
+    }
 
     # return it
     return(fds)
@@ -37,14 +45,17 @@ calculatePSIValues <- function(fds){
 calculatePSIValuePrimeSite <- function(fds, psiType){
     stopifnot(class(fds) == "FraseRDataSet")
     stopifnot(isScalarCharacter(psiType))
-    stopifnot(psiType %in% c("3", "5"))
+    stopifnot(psiType %in% c("psi5", "psi3", "psiSite"))
+
+    if(psiType=="psiSite"){
+        return(calculateSitePSIValue(fds))
+    }
 
     message(date(), ": Calculate the PSI", psiType, " values ...")
 
     # convert psi type to the position of interest
-    psiCol <- ifelse(psiType == "3", "start", "end")
-    psiName <- paste0("psi", psiType)
-    psiROCName <- paste0("rawOtherCounts_psi", psiType)
+    psiCol <- ifelse(psiType == "psi5", "start", "end")
+    psiROCName <- paste0("rawOtherCounts_", psiType)
 
     # generate a data.table from granges
     countData <- data.table(
@@ -86,7 +97,7 @@ calculatePSIValuePrimeSite <- function(fds, psiType){
     names(psiValues) <- samples(fds)
 
     # merge it to a DataFrame and assign it to our object
-    assays(fds, type="j")[[psiName]] <- DataFrame(
+    assays(fds, type="j")[[psiType]] <- DataFrame(
         lapply(psiValues, "[[", "psiValue")
     )
     assays(fds, type="j")[[psiROCName]] <- DataFrame(
@@ -171,4 +182,22 @@ calculateSitePSIValue <- function(fds){
     return(fds)
 }
 
+#'
+#' calculates the delta psi value and stores it as an assay
+#'
+calculateDeltaPsiValue <- function(fds, psiType, assayName){
 
+    message(date(), ": Calculate the delta for ", psiType, " values ...")
+
+    # get psi values
+    psiVal <- as.matrix(assays(fds)[[psiType]])
+
+    # psi - median(psi)
+    rowmedian <- rowMedians(psiVal, na.rm = TRUE)
+    deltaPsi  <- psiVal - rowmedian
+
+    # use as.matrix to rewrite it as a new hdf5 array
+    assays(fds, type=psiType)[[assayName]] <- deltaPsi
+
+    return(fds)
+}

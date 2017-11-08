@@ -61,7 +61,7 @@ createMainPlotFraseR <- function(fds, sampleID, source=NULL){
     nylim <- c(ylim[1], ylim[2]*1.05)
 
     # generate each sub plot
-    plotls <- lapply(c("psi3", "psi5", "psiSite"), function(x){
+    plotls <- lapply(c("psi5", "psi3", "psiSite"), function(x){
             plotVolcano(fds, sampleID, x, source=source, xlim=xlim, ylim=ylim)
     })
 
@@ -94,24 +94,23 @@ createMainPlotFraseR <- function(fds, sampleID, source=NULL){
 #'
 #' @noRd
 plotVolcano <- function(fds, sampleID, psiType,
-            ylim=c(0,30), xlim=c(-5,5), source=NULL){
+            ylim=c(0,30), xlim=c(-5,5), source=NULL, deltaPsiCutoff=0.05){
+
+    getAssayAsVector <- function(fds, prefix, psiType, sampleID){
+        as.vector(assays(fds)[[paste0(prefix, psiType)]][,sampleID][,1])
+    }
 
     # extract values
-    zscores  <- assays(fds)[[paste0("zscore_", psiType)]][,sampleID]
-    pvalues  <- -log10(assays(fds)[[paste0("pvalue_", psiType)]][,sampleID])
-    psivals  <- assays(fds)[[psiType]][,sampleID]
-    counts   <- counts(fds, type=psiType, side="ofInterest")[,sampleID]
-    ocounts  <- counts(fds, type=psiType, side="otherSide")[,sampleID]
-
-    # convert from HDF5 to memory array
-    zscores <- as.vector(zscores[,1])
-    pvalues <- as.vector(pvalues[,1])
-    psivals <- as.vector(psivals[,1])
-    counts  <- as.vector(counts[,1])
-    ocounts <- as.vector(ocounts[,1])
+    zscores  <- getAssayAsVector(fds, "zscore_", psiType, sampleID)
+    pvalues  <- -log10(getAssayAsVector(fds, "pvalue_", psiType, sampleID))
+    psivals  <- getAssayAsVector(fds, "", psiType, sampleID)
+    deltaPsiVals <- getAssayAsVector(fds, "delta_", psiType, sampleID)
+    counts   <- as.vector(counts(fds, type=psiType, side="ofInt")[,sampleID])
+    ocounts  <- as.vector(counts(fds, type=psiType, side="other")[,sampleID])
 
     # remove NAs from data
-    toplot <- !is.na(zscores) & !is.na(pvalues) & !is.infinite(pvalues)
+    toplot <- abs(deltaPsiVals) >= deltaPsiCutoff & !is.na(zscores) &
+            !is.na(pvalues) & !is.infinite(pvalues)
 
     # remove unsignificant data (to keep plotly responsive)
     # max 50k points

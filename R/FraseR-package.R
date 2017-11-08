@@ -36,13 +36,14 @@
 #' @importFrom plotly plot_ly subplot layout add_trace
 #' @importFrom gplots col2hex
 #' @importFrom htmlwidgets saveWidget
+#' @importFrom LSD heatscatter
 #'
 ### Shiny App
 #'
 ## @import shiny
 #' @importFrom shiny column fluidPage fluidRow h3 h1 htmlOutput mainPanel
 #' @importFrom shiny navbarPage numericInput p plotOutput renderText selectInput
-#' @importFrom shiny sidebarLayout sidebarPanel shinyApp tabPanel textInput 
+#' @importFrom shiny sidebarLayout sidebarPanel shinyApp tabPanel textInput
 #' @importFrom shiny titlePanel
 #' @importFrom DT dataTableOutput renderDataTable
 #' @importFrom plotly plotlyOutput renderPlotly

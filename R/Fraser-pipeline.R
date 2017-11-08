@@ -16,8 +16,15 @@
 #' @return FraseRDataSet
 #' @export
 #' @examples
-#'   fds <- FraseR(createTestFraseRSettings())
+#'   fds <- createTestFraseRSettings()
+#'   fds <- FraseR(fds)
+#'
+#'   # save the final FraseR object
+#'   saveFraseRDataSet(fds)
+#'
+#'   # finally visualize the results
 #'   plotSampleResults(fds)
+#'
 FraseR <- function(settings=createTestFraseRSettings(), NcpuPerSample=1){
 
     # Check input
