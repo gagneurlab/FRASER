@@ -261,8 +261,10 @@ plotCountsAtSite <- function(gr, fds, type, sample=NULL, plotLog=TRUE){
     if(plotLog){
         logpre <- "log10(1 + "
         logsuf <- ")"
-        rcx <- log10(1 + rcx)
-        rocy <- log10(1 + rocy)
+        rcx[rcx==0] <- 0.8
+        rocy[rocy==0] <- 0.8
+        rcx <- log10(rcx)
+        rocy <- log10(rocy)
     }
 
     heatscatter(rcx, rocy,
