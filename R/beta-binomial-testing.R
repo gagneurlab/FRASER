@@ -4,7 +4,7 @@
 #'
 #' @noRd
 pvalueByBetaBinomialPerType <- function(fds, aname, psiType, pvalFun,
-            minCov=5, alternative="less"){
+            minCov=5, alternative="two.sided", renjin=FALSE){
 
     message(date(), ": Calculate P-values for the ",
             psiType, " splice type ...")
@@ -38,10 +38,7 @@ pvalueByBetaBinomialPerType <- function(fds, aname, psiType, pvalFun,
     toTest <- sample(toTest)
 
     # TODO how to group groups?
-    pvalues_ls <- bplapply(toTest, rawCounts=rawCounts,
-                    rawOtherCounts=rawOtherCounts, pvalFun,
-                    BPPARAM=parallel(fds), addNoise=addNoise, FUN=function(
-                            idx, rawCounts, rawOtherCounts, addNoise, pvalFun){
+    testFUN <- function(idx, rawCounts, rawOtherCounts, addNoise, pvalFun){
         # idx <- toTest[[2]]
         suppressPackageStartupMessages(require(FraseR))
 
@@ -62,7 +59,7 @@ pvalueByBetaBinomialPerType <- function(fds, aname, psiType, pvalFun,
         ## fitting
         timing <- sum(system.time(gcFirst=FALSE, expr={
             pv_res <- lapply(list(countMatrix), FUN=tryCatchFactory(pvalFun),
-                    y=y, N=N, alternative=alternative)[[1]]
+                             y=y, N=N, alternative=alternative)[[1]]
         })[c("user.self", "sys.self")])
 
         #
@@ -83,7 +80,18 @@ pvalueByBetaBinomialPerType <- function(fds, aname, psiType, pvalFun,
         pv_res[[1]]$idx <- idx
 
         return(pv_res)
-    })
+    }
+
+    if(!missing("renjin") && renjin == TRUE){
+        FUN <- function(...){
+            renjin::renjin({testFUN(...)})
+        }
+    } else {
+        FUN <- function(...){ testFUN(...) }
+    }
+    pvalues_ls <- bplapply(toTest, rawCounts=rawCounts,
+                    rawOtherCounts=rawOtherCounts, pvalFun,
+                    BPPARAM=parallel(fds), addNoise=addNoise, FUN=FUN)
 
     # sort table again
     pvalues_ls <- pvalues_ls[order(toTest)]
@@ -131,7 +139,8 @@ pvalueByBetaBinomialPerType <- function(fds, aname, psiType, pvalFun,
 #' calculate the pvalues with vglm and the betabinomial functions
 #'
 #' @noRd
-betabinVglmTest <- function(cMat, alternative="less", y=cMat[,1], N=cMat[,1] + cMat[,2]){
+betabinVglmTest <- function(cMat, alternative="two.sided",
+                    y=cMat[,1], N=cMat[,1] + cMat[,2]){
     # get fit
     fit <- vglm(cMat ~ 1, betabinomial)
 
@@ -148,7 +157,7 @@ betabinVglmTest <- function(cMat, alternative="less", y=cMat[,1], N=cMat[,1] + c
 
     # two sieded test
     if(alternative == "two.sided"){
-        pval <- apply(cbind(pval, 1-pval), 1, min)*2
+        pval <- apply(cbind(pval, abs(1-pval)), 1, min)*2
     # one-sided greater test
     } else if(alternative == "greater"){
         pval <- 1-pval
@@ -215,3 +224,23 @@ table2character <- function(table){
 }
 
 
+testing <- function(){
+    ocMat <- cMat
+
+    ccMat <- ocMat
+    rcMat <- rowSums(ccMat)
+    targetQ <- 0.75
+    targetDepth <- quantile(rowSums(ccMat), targetQ)
+
+    sizeFactor <- targetDepth / rcMat
+
+    ncMat <- ceiling(ccMat * sizeFactor)+1
+
+    cMat <- ncMat[2:101,]
+    y <- cMat[,1]
+    N <- rowSums(cMat)
+
+    plot(-log10((1:length(pval))/length(pval)), -log10(sort(pval)))
+    abline(0,1)
+    grid()
+}
