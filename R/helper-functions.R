@@ -246,6 +246,25 @@ fraserQQplotPlotly <- function(pvalues, ci=TRUE, reducePoints=FALSE,
 }
 
 #'
+#' logger function for internal use only
+#'
+logger <- function(type="INFO", name=flog.namespace(), ...){
+    stopifnot(isScalarCharacter(type))
+    type <- toupper(type)
+    stopifnot(type %in% c("TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"))
+
+    fun <- switch(type,
+            TRACE=flog.trace,
+            DEBUG=flog.debug,
+            INFO=flog.info,
+            WARN=flog.warn,
+            ERROR=flog.error,
+            FATAL=flog.fatal
+    )
+    fun(name=name, ...)
+}
+
+#'
 #' check if the given assay already exists within the object
 #'
 assayExists <- function(fds, assayName){

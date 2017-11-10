@@ -41,6 +41,6 @@ Collate:
     'shiny.R'
     'plotDistributions.R'
 VignetteBuilder: knitr
-Suggests: BiocStyle, knitr, testthat, covr, RSelenium
+Suggests: BiocStyle, knitr, rmarkdown, testthat, covr, RSelenium
 
 
