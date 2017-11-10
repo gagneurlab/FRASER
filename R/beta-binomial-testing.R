@@ -142,9 +142,11 @@ betabinVglmTest <- function(cMat, alternative="less", y=cMat[,1], N=cMat[,1] + c
     alpha <- prob * (1 - rho)/rho
     beta  <- (1 - prob) * (1 - rho)/rho
 
-    # get the pvalues
+    # get the pvalues only for non zero values
     # one-sided p-value (alternative = "less")
-    pval <- pbetabinom.ab(y, N, alpha, beta)
+    naValues <- is.na(y + N) | y + N == 0
+    pval <- pbetabinom.ab(y[!naValues], N[!naValues], alpha, beta)
+    pval <- sapply(pval, min, 1)
 
     # two sieded test
     if(alternative == "two.sided"){
@@ -154,10 +156,19 @@ betabinVglmTest <- function(cMat, alternative="less", y=cMat[,1], N=cMat[,1] + c
         pval <- 1-pval
     }
 
+    # set NA values for non tested samples
+    if(any(naValues)){
+        tmp <- rep(NA, length(naValues))
+        tmp[!naValues] <- pval
+        pval <- tmp
+    }
+
     return(list(
-        pval = pval,
+        pval  = pval,
         alpha = alpha,
-        beta = beta
+        beta  = beta,
+        prob  = prob,
+        rho   = rho
     ))
 }
 
