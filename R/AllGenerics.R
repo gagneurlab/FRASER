@@ -531,12 +531,11 @@ setMethod("counts", "FraseRDataSet", function(object, type=NULL,
 #' convertion of Delayed Matrix objects into a data.table
 #'
 setAs("DelayedMatrix", "data.table", function(from){
-    mc.cores=min(24, max(1, detectCores() - 1))
-    perChunk=5000
-    chunks <- chunk(1:dim(from)[1], perChunk)
+    mc.cores <- min(options()$`FraseR-hdf5-cors`, max(1, detectCores() - 1))
+    chunks <- chunk(1:dim(from)[1], options()$`FraseR-hdf5-chunks`)
     fun <- function(x, from) as.data.table(from[x,])
 
-    if(length(chunks) < 4){
+    if(length(chunks) < options()$`FraseR-hdf5-num-chunks`){
         ans <- lapply(chunks, fun, from=from)
     } else {
         ans <- mclapply(chunks, fun, from=from, mc.cores=mc.cores)
@@ -545,6 +544,9 @@ setAs("DelayedMatrix", "data.table", function(from){
     ans <- rbindlist(ans)
     ans
 })
+options("FraseR-hdf5-chunks"=5000)
+options("FraseR-hdf5-cores"=24)
+options("FraseR-hdf5-num-chunks"=6)
 
 #'
 #' convertion of Delayed Matrix objects into a matrix
