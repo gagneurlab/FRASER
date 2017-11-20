@@ -32,8 +32,8 @@ plotJunctionDistribution <- function(fds, gr, type=gr$type, sampleIDs=NULL,
 
     # get number of plots
     numPlots <- sum(sapply(list(plotRank, plotValVsCounts),
-                           function(x){ ifelse(is.logical(x), sum(x), length(x)) })) +
-        sum(qqplot) + sum(plotCounts)
+            function(x){ ifelse(is.logical(x), sum(x), length(x)) })) +
+            sum(qqplot) + sum(plotCounts)
 
     opar <- par(no.readonly=TRUE)
     on.exit(par(opar))
@@ -118,82 +118,73 @@ getPlotDistributionData <- function(gr, fds, type, rmZeroCts=FALSE){
 #'
 #' @noRd
 plotCountsAtSite <- function(gr, fds, type, sample=NULL, plotLog=TRUE,
-                             plotLegend=TRUE, data=NULL){
+                             plotLegend=TRUE, data=NULL, zeroVal=0.64){
     # get data to plot
     if(is.null(data)){
         data <- getPlotDistributionData(gr, fds, type)
     }
 
     # raw counts
-    rac <- data$rocts + data$rcts
-    x <- rac
+    x <- data$rocts + data$rcts
     y <- data$rcts
-    transformFun <- function(x) x
-    if(plotLog){
-        transformFun <- function(x) {
-            x[x == 0 | is.na(x)] <- 0.7
-            x
-            #suppressWarnings(log10(1+x))
-        }
-    }
+    x[x == 0] <- zeroVal
+    y[y == 0] <- zeroVal
 
-    # do we plot it in log?
-    logpre <- logsuf <- ""
-    if(plotLog){
-        logpre <- "log10(1 + "
-        logsuf <- ")"
-    }
-    xlab <- paste0(logpre, "raw all counts", logsuf)
-    ylab <- paste0(logpre, "raw counts of site of interest", logsuf)
+    # x and y lables
+    xlab <- "All read counts"
+    ylab <- "Read counts for side of interest"
+    main <- getTitle("Heatscatter of raw counts", data$se, type)
 
     if(type=="psiSite"){
-        y <- data$rocts
-        ylab <- paste0(logpre, "raw counts of spliced reads", logsuf)
+        y <- x - y
+        ylab <- "Non spliced read counts"
     }
 
     # main heatscatter plot
-    heatscatter(transformFun(x), transformFun(y), ylab=ylab, xlab=xlab,
-                main=getTitle("Heatscatter of raw counts", data$se, type),
-                xlim=c(0.7, max(transformFun(x))), ylim=c(0.7, max(transformFun(y))),
-                log=ifelse(plotLog, "xy", ""))
+    heatscatter(x, y, ylab=ylab, xlab=xlab, main=main, log="xy")
 
     # grid and diagonal
     abline(0,1,col="gray", lty="dotted")
     grid()
 
+    if(any(x < 1)){
+        abline(v=zeroVal, col="gray", lty="dotted")
+        axis(side=1, at=zeroVal, labels = "0", tick = TRUE)
+    }
+    if(any(y < 1)){
+        abline(h=zeroVal, col="gray", lty="dotted")
+        axis(side=2, at=zeroVal, labels = "0", tick = TRUE)
+    }
+
     # add prediction model
     a <- data$alpha
     b <- data$beta
     ab <- a + b
-    fitx <- 1:as.integer(max(rac)*1.5)
+    fitx <- 1:as.integer(max(x)*1.5)
     fity <- bbmean(fitx, a, b)
-    lines(c(0.7, transformFun(fitx)), c(0.7, transformFun(fity)), col="firebrick")
+    lines(c(zeroVal, fitx), c(zeroVal, fity), col="firebrick")
 
     # add 50%, 25% and 10% lines
     curPlotPar <- data.table(fact=c(0.5, 0.25, 0.1), lty=c(2, 4, 3),
-                             name=c("PSI = 50%", "PSI = 25%", "PSI = 10%"))
+            name=c("PSI = 50%", "PSI = 25%", "PSI = 10%"))
     sapply(1:nrow(curPlotPar), function(idx){
         y2plot <- fitx * curPlotPar[idx, fact]
-        lines(transformFun(fitx), transformFun(y2plot),
-              lty=curPlotPar[idx, lty], col=adjustcolor("black", 0.7))
+        lines(fitx, y2plot, lty=curPlotPar[idx, lty],
+                col=adjustcolor("black", 0.7))
     })
 
     # add variance
     fityvar <- bbvariance(fitx, a, b)
-    #scewness <- bbscewness(fitx, a, b)
-    #scewness[1] <- 0
-    #scewFactor <- ifelse(scewnewss < 0, 1+abs(scewnewss), 1/abs(scewnewss))
     sapply(c(-1, 1), function(varFactor) {
         y <- fity + varFactor * fityvar # * scewFactor
-        lines(transformFun(fitx), transformFun(y),
-              lty="dotted", col=adjustcolor("firebrick", 0.5))
+        lines(fitx, y, lty="dotted", col=adjustcolor("firebrick", 0.5))
     })
 
     # add sample annotation
     if(!is.null(sample)){
         names(x) <- samples(fds)
         names(y) <- samples(fds)
-        sapply(sample, addSamplePoints, x=transformFun(x), y=transformFun(y))
+        sapply(sample, addSamplePoints, x=x, y=y)
     }
 
     # add legend if requested
@@ -271,8 +262,8 @@ plotSampleRank <- function(gr, fds, type, sample=NULL, delta=FALSE,
 #' plot a given value against the counts
 #'
 plotValueVsCounts <- function(gr, fds, type, sample=NULL, delta=FALSE,
-                    main=paste0(type, " versus total raw counts"), 
-                    xlab="Number of all observed split reads", ylab=NULL, 
+                    main=paste0(type, " versus total raw counts"),
+                    xlab="Number of all observed split reads", ylab=NULL,
                     zeroVal=0.64, rmZeroCts=FALSE, data=NULL, ...){
     # get data
     if(is.null(data)){
@@ -289,11 +280,11 @@ plotValueVsCounts <- function(gr, fds, type, sample=NULL, delta=FALSE,
             ylab=paste0("delta_median( ", ylab, " )")
         }
     }
-    
+
     heatscatter(tcts, val, main="", xlab=xlab, log="x", ylab=ylab)
     title(main=main)
     grid(equilogs = FALSE)
-    
+
     if(any(tcts < 1)){
         abline(v=zeroVal, col="gray", lty="dotted")
         axis(side=1, at=zeroVal, labels = "0", tick = TRUE)
@@ -329,18 +320,25 @@ plotQQplot <- function(gr, fds, type, data=NULL, maxOutlier=2){
         data <- getPlotDistributionData(gr, fds, type)
     }
 
+    # points
     obs <- -log10(sort(data$pvalues))
+    obs[is.na(obs)] <- 0
+    if(any(is.na(obs)) | length(obs) < 2){
+        warning("There are no pvalues or all are NA!")
+        return(FALSE)
+    }
+    obs <- breakTies(obs)
     exp <- -log10(ppoints(length(obs)))
     len <- length(exp)
 
-    obs[is.na(obs)] <- 0
+    # limits for nice plotting
     maxPoint <- max(c(exp, obs))
     ylim <- range(0, min(exp[1]*maxOutlier, maxPoint))
 
     # main plot area
     plot(NA, main="QQ-plot", xlim=range(exp), ylim=ylim,
-         xlab=paste0(expression(log[10]), "(expected)"),
-         ylab=paste0(expression(log[10]), "(observed)"))
+         xlab=expression(log[10] ~  "(expected)"),
+         ylab=expression(log[10] ~ "(observed)"))
 
     # confidence band
     # http://genome.sph.umich.edu/wiki/Code_Sample:_Generating_QQ_Plots_in_R
@@ -349,19 +347,44 @@ plotQQplot <- function(gr, fds, type, data=NULL, maxOutlier=2){
     polygon(x=c(rev(exp), exp), y=-log10(c(rev(upper), lower)),
             col="gray", border="gray")
 
+    # grid
+    grid()
+
     # add the points
     points(exp, obs, pch=16)
 
     # diagonal and grid
     abline(0,1,col="firebrick")
-    grid()
 
     # plot outliers
     outOfRange <- which(obs > max(ylim))
     if(length(outOfRange) > 0){
-        points(exp[outOfRange], exp[1]*maxOutlier, pch=2, col='red')
+        points(exp[outOfRange], rep(max(ylim), length(outOfRange)),
+                pch=2, col='red')
     }
+}
 
+#'
+#' breaks ties in a qq plot to get a better distributed p-value plot
+#'
+breakTies <- function(x, logVal=TRUE, decrease=TRUE){
+    intervals <- sort(unique(c(0, x)))
+    idxintervals <- findInterval(x, intervals)
+    for(idx in as.integer(names(which(table(idxintervals) > 1)))){
+        if(logVal){
+            minval <- 10^-intervals[idx+1]
+            maxval <- 10^-intervals[idx]
+            rand   <- -log10(runif(sum(idxintervals==idx), minval, maxval))
+        } else {
+            minval <- intervals[idx]
+            maxval <- intervals[idx+1]
+            rand   <- runif(sum(idxintervals==idx), minval, maxval)
+        }
+        x[idxintervals==idx] <- rand
+    }
+    if(!is.na(decrease)){
+        x <- sort(x, decreasing=TRUE)
+    }
 }
 
 #' testing function
