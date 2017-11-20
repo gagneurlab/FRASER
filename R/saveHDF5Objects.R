@@ -36,13 +36,16 @@ loadFraseRDataSet <- function(dir, name=NULL){
         for(aname in names(obj@assays$data@listData)){
             afile <- getFraseRHDF5File(fds, aname)
             if(!file.exists(afile)){
-                stop(paste(
-                    "Can not find saved HDF5 file '", afile,
-                    "' for assay: ", aname, ".",
-                    "The saved object does not fit the saved assays!"
-                ))
+                warning(paste("Can not find assay file: ", aname))
+
+                #stop(paste(
+                #    "Can not find saved HDF5 file '", afile,
+                #    "' for assay: ", aname, ".",
+                #    "The saved object does not fit the saved assays!"
+                #))
+            } else {
+                obj@assays$data@listData[[aname]]@seed@file <- afile
             }
-            obj@assays$data@listData[[aname]]@seed@file <- afile
         }
     }
 
