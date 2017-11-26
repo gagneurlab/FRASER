@@ -331,7 +331,7 @@ plotQQplot <- function(gr=NULL, fds=NULL, type=NULL, data=NULL, maxOutlier=2,
         warning("There are no pvalues or all are NA!")
         return(FALSE)
     }
-    obs <- breakTies(obs)
+    obs <- breakTies(obs, logBase=10, sort=TRUE)
     exp <- -log10(ppoints(length(obs)))
     len <- length(exp)
 
@@ -373,14 +373,15 @@ plotQQplot <- function(gr=NULL, fds=NULL, type=NULL, data=NULL, maxOutlier=2,
 #'
 #' breaks ties in a qq plot to get a better distributed p-value plot
 #'
-breakTies <- function(x, logVal=TRUE, decrease=TRUE){
+breakTies <- function(x, logBase=10, decreasing=TRUE){
     intervals <- sort(unique(c(0, x)))
     idxintervals <- findInterval(x, intervals)
     for(idx in as.integer(names(which(table(idxintervals) > 1)))){
         if(logVal){
-            minval <- 10^-intervals[idx+1]
-            maxval <- 10^-intervals[idx]
-            rand   <- -log10(runif(sum(idxintervals==idx), minval, maxval))
+            minval <- logBase^-intervals[idx+1]
+            maxval <- logBase^-intervals[idx]
+            rand   <- runif(sum(idxintervals==idx), minval, maxval)
+            rand   <- -log(rand, logBase)
         } else {
             minval <- intervals[idx]
             maxval <- intervals[idx+1]
@@ -388,7 +389,7 @@ breakTies <- function(x, logVal=TRUE, decrease=TRUE){
         }
         x[idxintervals==idx] <- rand
     }
-    if(!is.na(decrease)){
+    if(!is.na(decreasing)){
         x <- sort(x, decreasing=TRUE)
     }
 }
