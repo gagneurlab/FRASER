@@ -16,9 +16,9 @@
 #'
 #' @export
 plotJunctionDistribution <- function(fds, gr, type=gr$type, sampleIDs=NULL,
-                                     rmZeroCts=FALSE, plotRank=paste0(c("", "delta_", "zscore_"), type),
-                                     plotCounts=TRUE, plotValVsCounts=type, qqplot=TRUE,
-                                     plotLegend=TRUE){
+            rmZeroCts=FALSE, plotRank=paste0(c("", "delta_", "zscore_"), type),
+            plotCounts=TRUE, plotValVsCounts=type, qqplot=TRUE,
+            plotLegend=TRUE, cex=1){
     stopifnot(is(fds, "FraseRDataSet"))
     if(is.data.table(gr)){
         gr <- makeGRangesFromDataFrame(gr, keep.extra.columns = TRUE)
@@ -40,7 +40,7 @@ plotJunctionDistribution <- function(fds, gr, type=gr$type, sampleIDs=NULL,
 
     data <- getPlotDistributionData(gr, fds, type, rmZeroCts)
 
-    par(mfrow=c(ceiling(numPlots/3),3), cex=1)
+    par(mfrow=c(ceiling(numPlots/3),3), cex=cex)
 
     # plot sample rank if requested
     if(!(length(plotRank) == 0 | isFALSE(plotRank))){
@@ -314,9 +314,13 @@ getTitle <- function(plotMainTxt, gr, psiType){
            "\nRange: ", seqnames(gr), ":", start(gr), "-", end(gr))
 }
 
-plotQQplot <- function(gr, fds, type, data=NULL, maxOutlier=2){
+plotQQplot <- function(gr=NULL, fds=NULL, type=NULL, data=NULL, maxOutlier=2,
+                    ci=TRUE){
     # get data
     if(is.null(data)){
+        if(is.null(gr) | is.null(fds) | is.null(type)){
+            stop("If data is not provided gr, fds and type needs to be passed on.")
+        }
         data <- getPlotDistributionData(gr, fds, type)
     }
 
@@ -342,10 +346,12 @@ plotQQplot <- function(gr, fds, type, data=NULL, maxOutlier=2){
 
     # confidence band
     # http://genome.sph.umich.edu/wiki/Code_Sample:_Generating_QQ_Plots_in_R
-    upper <- qbeta(0.025, 1:len, rev(1:len))
-    lower <- qbeta(0.975, 1:len, rev(1:len))
-    polygon(x=c(rev(exp), exp), y=-log10(c(rev(upper), lower)),
-            col="gray", border="gray")
+    if(ci){
+        upper <- qbeta(0.025, 1:len, rev(1:len))
+        lower <- qbeta(0.975, 1:len, rev(1:len))
+        polygon(x=c(rev(exp), exp), y=-log10(c(rev(upper), lower)),
+                col="gray", border="gray")
+    }
 
     # grid
     grid()
