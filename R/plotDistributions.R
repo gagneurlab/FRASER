@@ -331,7 +331,7 @@ plotQQplot <- function(gr=NULL, fds=NULL, type=NULL, data=NULL, maxOutlier=2,
         warning("There are no pvalues or all are NA!")
         return(FALSE)
     }
-    obs <- breakTies(obs, logBase=10, sort=TRUE)
+    obs <- breakTies(obs, logBase=10, decreasing=TRUE)
     exp <- -log10(ppoints(length(obs)))
     len <- length(exp)
 
@@ -377,7 +377,7 @@ breakTies <- function(x, logBase=10, decreasing=TRUE){
     intervals <- sort(unique(c(0, x)))
     idxintervals <- findInterval(x, intervals)
     for(idx in as.integer(names(which(table(idxintervals) > 1)))){
-        if(logVal){
+        if(is.numeric(logBase)){
             minval <- logBase^-intervals[idx+1]
             maxval <- logBase^-intervals[idx]
             rand   <- runif(sum(idxintervals==idx), minval, maxval)

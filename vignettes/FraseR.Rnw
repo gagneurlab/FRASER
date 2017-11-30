@@ -1,14 +1,15 @@
-%\VignetteIndexEntry{FraseR: Find RAre Splicing Evens in RNA-seq Data}
+%\VignetteIndexEntry{FraseR: Find RAre Splicing Evens in RNA-seq D
 %\VignettePackage{FraseR}
 %\VignetteEngine{knitr::knitr}
 %\VignetteEncoding{UTF-8}
 
 % To compile this document
 \if12
-    source("./src/r/config.R")
-    repackFraseR=FALSE
-    #repackFraseR=TRUE
-    buildVignetteFraseR(repackFraseR)
+    devtools::document()
+    devtools::install()
+    # Sweave2knitr(file.path(srcDir, "FraseR/vignettes/FraseR.Rnw"))
+    knit("./vignettes/FraseR.Rnw", "./vignettes/FraseR.tex")
+    system("cd vignettes; pdflatex FraseR; pdflatex FraseR")
 \fi
 
 \documentclass[11pt]{article}

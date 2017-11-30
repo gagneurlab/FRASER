@@ -4,7 +4,7 @@
 \alias{breakTies}
 \title{breaks ties in a qq plot to get a better distributed p-value plot}
 \usage{
-breakTies(x, logVal = TRUE, decrease = TRUE)
+breakTies(x, logBase = 10, decreasing = TRUE)
 }
 \description{
 breaks ties in a qq plot to get a better distributed p-value plot

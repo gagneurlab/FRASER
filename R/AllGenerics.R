@@ -1,67 +1,65 @@
-#'
-#' @author Christian Mertes
-#'
-#' This file contains all generic functions
-#' some of them are also accessor/getter functions for the FraseRDataSet object
 
-# samples (get the sampleID) functions
 #' @export
 setGeneric("samples",           function(object) standardGeneric("samples"))
+
 #' @export
 setGeneric("samples<-",         signature = "object", function(object, value) standardGeneric("samples<-"))
 
-# condition (get the group/condition of a sample) functions
 #' @export
 setGeneric("condition",         function(object) standardGeneric("condition"))
+
 #' @export
 setGeneric("condition<-",       signature = "object", function(object, value) standardGeneric("condition<-"))
 
-# bamFile (get the bamFile of a sample) functions
 #' @export
 setGeneric("bamFile",           function(object) standardGeneric("bamFile"))
+
 #' @export
 setGeneric("bamFile<-",         signature = "object", function(object, value) standardGeneric("bamFile<-"))
 
 #' @export
 setGeneric("name",              function(object) standardGeneric("name"))
+
 #' @export
 setGeneric("name<-",            signature = "object", function(object, value) standardGeneric("name<-"))
 
 #' @export
 setGeneric("method",            function(object) standardGeneric("method"))
+
 #' @export
 setGeneric("method<-",          signature = "object", function(object, value) standardGeneric("method<-"))
 
 #' @export
 setGeneric("strandSpecific",    function(object) standardGeneric("strandSpecific"))
+
 #' @export
 setGeneric("strandSpecific<-",  signature = "object", function(object, value) standardGeneric("strandSpecific<-"))
 
-# working directory functions
 #' @export
 setGeneric("workingDir",        function(object) standardGeneric("workingDir"))
+
 #' @export
 setGeneric("workingDir<-",      signature = "object", function(object, value) standardGeneric("workingDir<-"))
 
-# scanBamParam functions
 #' @export
 setGeneric("scanBamParam",      function(object) standardGeneric("scanBamParam"))
+
 #' @export
 setGeneric("scanBamParam<-",    signature = "object", function(object, value) standardGeneric("scanBamParam<-"))
 
-# parallel functions
 #' @export
 setGeneric("parallel",          function(object) standardGeneric("parallel"))
+
 #' @export
 setGeneric("parallel<-",        signature = "object", function(object, value) standardGeneric("parallel<-"))
 
-# non spliced reads function
 #' @export
 setGeneric("nonSplicedReads",   function(object) standardGeneric("nonSplicedReads"))
+
 #' @export
 setGeneric("nonSplicedReads<-", signature = "object", function(object, value) standardGeneric("nonSplicedReads<-"))
 
-# non spliced reads function
+#' @rdname results
 #' @export
 setGeneric("results",   function(x, ...) standardGeneric("results"))
 
@@ -76,14 +74,15 @@ setGeneric("results",   function(x, ...) standardGeneric("results"))
 #' samples(fds)
 #' samples(fds) <- 1:dim(fds)[2]
 #' @author Christian Mertes \email{mertes@@in.tum.de}
-#' @export
+#'
 #' @rdname samples
+#' @export
 setMethod("samples", "FraseRDataSet", function(object) {
     return(colData(object)[,"sampleID"])
 })
 
-#' @export
 #' @rdname samples
+#' @export
 setReplaceMethod("samples", "FraseRDataSet", function(object, value) {
     colData(object)[,"sampleID"] <- as.character(value)
     rownames(colData(object)) <- colData(object)[,"sampleID"]
@@ -527,9 +526,10 @@ setMethod("counts", "FraseRDataSet", function(object, type=NULL,
     return(assays(object)[[aname]])
 })
 
-#'
-#' convertion of Delayed Matrix objects into a data.table
-#'
+
+options("FraseR-hdf5-chunks"=5000)
+options("FraseR-hdf5-cores"=24)
+options("FraseR-hdf5-num-chunks"=6)
 setAs("DelayedMatrix", "data.table", function(from){
     mc.cores <- min(options()$`FraseR-hdf5-cors`, max(1, detectCores() - 1))
     chunks <- chunk(1:dim(from)[1], options()$`FraseR-hdf5-chunks`)
@@ -544,29 +544,15 @@ setAs("DelayedMatrix", "data.table", function(from){
     ans <- rbindlist(ans)
     ans
 })
-options("FraseR-hdf5-chunks"=5000)
-options("FraseR-hdf5-cores"=24)
-options("FraseR-hdf5-num-chunks"=6)
 
-#'
-#' convertion of Delayed Matrix objects into a matrix
-#'
 setAs("DelayedMatrix", "matrix", function(from){
     as.matrix(as(from, "data.table"))
 })
 
-
-#'
-#' convertion of DataFram to data.table
-#'
 setAs("DataFrame", "data.table", function(from){
     as.data.table(from)
 })
 
-
-#'
-#' convertion of DataFram to data.table
-#'
 setAs("DataFrame", "matrix", function(from){
     as.matrix(as(from, "data.table"))
 })
@@ -607,11 +593,8 @@ resultsSingleSample <- function(sampleID, grs, pvals, zscores, psivals,
     return(ans[order(mcols(ans)$pvalue)])
 }
 
-#'
-#' obtain the results for the given analysis pipeline
-#'
-FraseR.results <- function(x, sampleIDs=samples(x), fdrCut=0.05, zscoreCut=2,
-            dPsiCut=0.01, psiType=c("psi3", "psi5", "psiSite"), redo=FALSE){
+FraseR.results <- function(x, sampleIDs, fdrCut, zscoreCut, dPsiCut,
+                    psiType, redo){
 
     # check input
     stopifnot(is.numeric(fdrCut)    && fdrCut    <= 1   && fdrCut    >= 0)
@@ -698,9 +681,20 @@ FraseR.results <- function(x, sampleIDs=samples(x), fdrCut=0.05, zscoreCut=2,
     # return only the results
     return(ans)
 }
+
+#'
+#' Extracting results
+#'
+#' The result function extracts the results from the given analysis object
+#' based on the given options and cutoffs.
+#'
+#' @rdname results
 #' @export
-setMethod("results", "FraseRDataSet", function(x, sampleIDs=samples(x), ...){
-    FraseR.results(x, sampleIDs=sampleIDs, ...)
+setMethod("results", "FraseRDataSet", function(x, sampleIDs=samples(x),
+                    fdrCut=0.05, zscoreCut=2, redo=FALSE,
+                    dPsiCut=0.01, psiType=c("psi3", "psi5", "psiSite")){
+    FraseR.results(x, sampleIDs=sampleIDs, fdrCut=fdrCut, zscoreCut=zscoreCut,
+            redo=redo, dPsiCut=dPsiCut, psiType=psiType)
 })
 
 #'
