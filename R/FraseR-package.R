@@ -11,7 +11,6 @@
 #'
 #' @importFrom parallel mclapply
 #' @import BiocParallel
-#' @importFrom BiocParallel SerialParam MulticoreParam
 #'
 #'
 ### GRange/Experiment/bamFile packages
@@ -21,8 +20,8 @@
 #' @import GenomicRanges
 #' @importFrom IRanges subsetByOverlaps from to IRanges
 #' @importFrom Rsubread featureCounts
-#' @importFrom Rsamtools ScanBamParam scanBamHeader
-#' @importFrom Rsamtools bamMapqFilter bamWhich bamWhich<-
+#' @importFrom Rsamtools ScanBamParam scanBamHeader bamMapqFilter
+#'          bamWhich bamWhich<-
 #'
 #'
 ### Annotation
@@ -42,16 +41,15 @@
 #'
 ## @import shiny
 #' @importFrom shiny column fluidPage fluidRow h3 h1 htmlOutput mainPanel
-#' @importFrom shiny navbarPage numericInput p plotOutput renderText selectInput
-#' @importFrom shiny sidebarLayout sidebarPanel shinyApp tabPanel textInput
-#' @importFrom shiny titlePanel
+#'          navbarPage numericInput p plotOutput renderText selectInput
+#'          sidebarLayout sidebarPanel shinyApp tabPanel textInput titlePanel
 #' @importFrom DT dataTableOutput renderDataTable
 #' @importFrom plotly plotlyOutput renderPlotly
 #'
 ### Data handling
 #'
-#' @importFrom data.table data.table as.data.table is.data.table
-#' @importFrom data.table := fread setnames
+#' @importFrom data.table data.table as.data.table is.data.table := fread
+#'          setnames
 #' @import tidyr
 #' @importFrom HDF5Array writeHDF5Array
 #' @importFrom DelayedArray rowMeans
@@ -61,10 +59,12 @@
 #'
 #' @importFrom stats sd rbinom fisher.test na.omit p.adjust ppoints qbeta rnorm
 #' @importFrom VGAM rbetabinom vglm Coef pbetabinom pbetabinom.ab betabinomial
+#'          dbetabinom.ab
 #'
 ### Miscelenious functions
 #'
 #' @importFrom BBmisc isScalarCharacter isScalarLogical chunk %nin%
+#'          isScalarInteger isFALSE
 #' @importFrom R.utils renameFile
 #' @importFrom tools file_path_as_absolute
 #' @importFrom methods as callNextMethod is new slot slot<- validObject

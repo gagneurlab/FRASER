@@ -14,6 +14,13 @@
 #' @param ... Additional paramerters which are pased on to
 #'              the underlying plotting functions
 #'
+#' @examples
+#'
+#' fds <- createTestFraseRDataSet()
+#'
+#' plotJunctionDistribution(fds, results(fds)[1])
+#' plotJunctionDistribution(fds, results(fds)[3])
+#'
 #' @export
 plotJunctionDistribution <- function(fds, gr, type=gr$type, sampleIDs=NULL,
             rmZeroCts=FALSE, plotRank=paste0(c("", "delta_", "zscore_"), type),
@@ -260,7 +267,7 @@ plotSampleRank <- function(gr, fds, type, sample=NULL, delta=FALSE,
 
 #'
 #' plot a given value against the counts
-#'
+#' @noRd
 plotValueVsCounts <- function(gr, fds, type, sample=NULL, delta=FALSE,
                     main=paste0(type, " versus total raw counts"),
                     xlab="Number of all observed split reads", ylab=NULL,
@@ -314,6 +321,10 @@ getTitle <- function(plotMainTxt, gr, psiType){
            "\nRange: ", seqnames(gr), ":", start(gr), "-", end(gr))
 }
 
+#'
+#' qqplot
+#'
+#' @noRd
 plotQQplot <- function(gr=NULL, fds=NULL, type=NULL, data=NULL, maxOutlier=2,
                     ci=TRUE){
     # get data
@@ -341,7 +352,7 @@ plotQQplot <- function(gr=NULL, fds=NULL, type=NULL, data=NULL, maxOutlier=2,
 
     # main plot area
     plot(NA, main="QQ-plot", xlim=range(exp), ylim=ylim,
-         xlab=expression(log[10] ~  "(expected)"),
+         xlab=expression(log[10] ~ "(expected)"),
          ylab=expression(log[10] ~ "(observed)"))
 
     # confidence band
@@ -370,9 +381,21 @@ plotQQplot <- function(gr=NULL, fds=NULL, type=NULL, data=NULL, maxOutlier=2,
     }
 }
 
+#' sample qq
+#'
+#' @noRd
+plotSampleQQ <- function(fds, type=c("psi5", "psi3", "psiSite")){
+    pvals <- sapply(type, function(x){
+        readType <- whichReadType(fds, x)
+        tested <- na2false(mcols(fds, type=x)[,paste0(x, "_tested")])
+        as(assays(fds[tested,by=readType])[[paste0('pvalue_', x)]], "matrix")
+    })
+    plotQQplot(data=list(pvalues=na.omit(unlist(pvals))))
+}
+
 #'
 #' breaks ties in a qq plot to get a better distributed p-value plot
-#'
+#' @noRd
 breakTies <- function(x, logBase=10, decreasing=TRUE){
     intervals <- sort(unique(c(0, x)))
     idxintervals <- findInterval(x, intervals)

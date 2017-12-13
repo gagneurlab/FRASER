@@ -60,7 +60,7 @@ checkReadType <- function(fds, type){
 
     # check assay names
     atype <- whichReadType(fds, type)
-    if(isCorrectType(atype)) return(atype)
+    if(!is.na(atype)) return(atype)
 
     stop("Given read type: '", type, "' not recognized. ",
             "It needs to be 'j' (junction) or 'ss' (splice sites)",
