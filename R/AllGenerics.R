@@ -502,7 +502,7 @@ setReplaceMethod("mcols", "FraseRDataSet", function(x, type=NULL, ..., value){
 #' getter for count data
 #'
 setMethod("counts", "FraseRDataSet", function(object, type=NULL,
-            side=c("ofInterest", "otherSide")){
+            side=c("ofInterest", "otherSide"), normalized=FALSE){
     side <- match.arg(side)
     if(side=="ofInterest"){
         type <- checkReadType(object, type)
@@ -527,8 +527,8 @@ setMethod("counts", "FraseRDataSet", function(object, type=NULL,
 })
 
 
-options("FraseR-hdf5-chunks"=5000)
-options("FraseR-hdf5-cores"=24)
+options("FraseR-hdf5-chunks"=50000)
+options("FraseR-hdf5-cores"=8)
 options("FraseR-hdf5-num-chunks"=6)
 setAs("DelayedMatrix", "data.table", function(from){
     mc.cores <- min(options()$`FraseR-hdf5-cors`, max(1, detectCores() - 1))
@@ -539,6 +539,11 @@ setAs("DelayedMatrix", "data.table", function(from){
         ans <- lapply(chunks, fun, from=from)
     } else {
         ans <- mclapply(chunks, fun, from=from, mc.cores=mc.cores)
+        isDT <- sapply(ans, is.data.table)
+        if(sum(isDT) != length(chunks)){
+            # error happend during extractions, redo
+            ans[!isDT] <- lapply(chunks[!isDT], fun, from=from)
+        }
     }
 
     ans <- rbindlist(ans)
@@ -603,7 +608,6 @@ FraseR.results <- function(x, sampleIDs, fdrCut, zscoreCut, dPsiCut,
 
     stopifnot(is(x, "FraseRDataSet"))
     stopifnot(all(sampleIDs %in% samples(x)))
-    psiType <- match.arg(psiType, several.ok=TRUE)
 
     # check if we extacted it already
     fdrCut    <- round(fdrCut, 3)
@@ -694,11 +698,20 @@ setMethod("results", "FraseRDataSet", function(x, sampleIDs=samples(x),
                     fdrCut=0.05, zscoreCut=2, redo=FALSE,
                     dPsiCut=0.01, psiType=c("psi3", "psi5", "psiSite")){
     FraseR.results(x, sampleIDs=sampleIDs, fdrCut=fdrCut, zscoreCut=zscoreCut,
-            redo=redo, dPsiCut=dPsiCut, psiType=psiType)
+            redo=redo, dPsiCut=dPsiCut,
+            psiType=match.arg(psiType, several.ok=TRUE))
 })
 
 #'
-#' mapping of the chromosome names
+#' Mapping of chromosome names
+#'
+#' @examples
+#'
+#' fds <- countRNAData(createTestFraseRSettings())
+#'
+#' seqlevels(mapSeqlevels(fds, style="UCSC"))
+#' seqlevels(mapSeqlevels(fds, style="Ensembl"))
+#' seqlevels(mapSeqlevels(fds, style="dbSNP"))
 #'
 #' @export
 mapSeqlevels <- function(fds, style="UCSC", ...){
@@ -706,12 +719,14 @@ mapSeqlevels <- function(fds, style="UCSC", ...){
     mappings <- na.omit(GenomeInfoDb::mapSeqlevels(seqlevels(fds), style, ...))
 
     if(length(mappings) != length(seqlevels(fds))){
-        message(date(), ": Dropping non standard chromosomes for compatibility.")
+        message(date(), ": Drop non standard chromosomes for compatibility.")
+        fds <- keepStandardChromosomes(fds)
+        nonSplicedReads(fds) <- keepStandardChromosomes(nonSplicedReads(fds))
+        validObject(fds)
     }
-    fds <- fds[seqnames(fds) %in% names(mappings)]
-    seqlevels(fds) <- names(mappings)
+    fds <- fds[as.vector(seqnames(fds)) %in% names(mappings)]
+
     seqlevels(fds) <- as.vector(mappings)
-    seqlevels(nonSplicedReads(fds)) <- names(mappings)
     seqlevels(nonSplicedReads(fds)) <- as.vector(mappings)
 
     return(fds)

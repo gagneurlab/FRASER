@@ -1,11 +1,29 @@
 #'
-#' Load a saved FraseR object into memory
+#' Loading/Saving FraseRDataSets
 #'
-#' @param dir a path to the working directory of FraseR
+#' This is a convinient function to load and save a FraseRDataSet object.
+#' It looks and saves the FraseRDataSet objects and HDF5 files on disk under
+#' the given working dir. Internally it uses HDF5 files for all assays.
+#'
+#' @param fds A FraseRDataSet object ot be saved
+#' @param dir A path where to save the objects (replaces the working directory)
+#' @param name The analysis name of the project (saved within the `dir`)
+#' @param rewrite logical if the object should be rewritten. This makes sense if
+#'             you have filtered or subsetted the object and want to save only
+#'             the subsetted version
 #'
 #' @examples
-#'   loadFraseRDataSet(file.path(Sys.getenv("HOME"), "FraseR"))
+#' fds <- countRNAData(createTestFraseRSettings())
+#' fdsSaved <- saveFraseRDataSet(fds)
+#' fdsSaved
 #'
+#' fdsLoaded <- loadFraseRDataSet(dir=workingDir(fds), name=name(fds))
+#' fdsLoaded
+#'
+#' testthat::expect_equivalent(fdsSaved, fdsLoaded)
+#'
+#' @aliases loadFraseRDataSet saveFraseRDataSet
+#' @rdname loadFraseRDataSet
 #' @export
 loadFraseRDataSet <- function(dir, name=NULL){
     # check dir
@@ -36,13 +54,9 @@ loadFraseRDataSet <- function(dir, name=NULL){
         for(aname in names(obj@assays$data@listData)){
             afile <- getFraseRHDF5File(fds, aname)
             if(!file.exists(afile)){
-                warning(paste("Can not find assay file: ", aname))
-
-                #stop(paste(
-                #    "Can not find saved HDF5 file '", afile,
-                #    "' for assay: ", aname, ".",
-                #    "The saved object does not fit the saved assays!"
-                #))
+                warning(paste("Can not find assay file: ", aname, ".",
+                        "The assay will be removed from the object."))
+                assays(fds)[[aname]] <- NULL
             } else {
                 obj@assays$data@listData[[aname]]@seed@file <- afile
             }
@@ -53,35 +67,25 @@ loadFraseRDataSet <- function(dir, name=NULL){
 }
 
 
-#'
-#' Saves the FraseRDataSet object on disk under the given working dir.
-#' It furthermore uses HDF5 to save all internal assays
-#'
-#' After saving this can be loaded again with the corresnonding load function
-#'
-#' @param fds A FraseRDataSet object ot be saved
-#' @param dir a directory name where to save the objects
-#'             (replaces the working directory)
-#' @examples
-#'     fds <- countRNAData(createTestFraseRSettings())
-#'     saveFraseRDataSet(fds)
-#'
+#' @rdname loadFraseRDataSet
 #' @export
-saveFraseRDataSet <- function(fds, dir=NULL) {
+saveFraseRDataSet <- function(fds, dir=NULL, name=NULL, rewrite=FALSE) {
 
     # check input
     stopifnot(class(fds) == "FraseRDataSet")
     if(is.null(dir)) dir <- workingDir(fds)
     stopifnot(isScalarCharacter(dir))
+    if(is.null(name)) name <- name(fds)
+    stopifnot(isScalarCharacter(name))
 
-    outDir <- file.path(dir, "savedObjects", nameNoSpace(fds))
+    outDir <- file.path(dir, "savedObjects", nameNoSpace(name))
     if(!dir.exists(outDir)) dir.create(outDir, recursive=TRUE)
 
     # over each assay object
     assays <- assays(fds)
     for(aname in names(assays)){
         assay <- assay(fds, aname)
-        assays[[aname]] <- saveAsHDF5(fds, aname, assay)
+        assays[[aname]] <- saveAsHDF5(fds, aname, assay, rewrite=rewrite)
     }
     assays(fds) <- assays
 
@@ -96,7 +100,7 @@ saveFraseRDataSet <- function(fds, dir=NULL) {
 #'
 #' saves the given assay as HDF5 array on disk
 #' @noRd
-saveAsHDF5 <- function(fds, name, object=NULL){
+saveAsHDF5 <- function(fds, name, object=NULL, rewrite=FALSE){
     if(is.null(object)) object <- assay(fds, name)
 
     h5File <- getFraseRHDF5File(fds, name)
@@ -104,7 +108,8 @@ saveAsHDF5 <- function(fds, name, object=NULL){
     if(file.exists(h5FileTmp)) unlink(h5FileTmp)
 
     # dont rewrite it if already there
-    if("DelayedMatrix" %in% is(object) && object@seed@file == h5File){
+    if(!rewrite && "DelayedMatrix" %in% is(object) &&
+                object@seed@file == h5File){
         return(object)
     }
 
@@ -112,7 +117,7 @@ saveAsHDF5 <- function(fds, name, object=NULL){
     message(date(), ": Preparing data for HDF5 conversion: ", name)
     aMat <- as(object, "matrix")
     message(date(), ": Writing data: ", name, " to file: ", h5File)
-    h5 <- writeHDF5Array(aMat, h5FileTmp, name, verbose=TRUE)
+    h5 <- writeHDF5Array(aMat, h5FileTmp, name, verbose=FALSE, level=0)
 
     # override old h5 file if present and move tmp to correct place
     if(file.exists(h5File)) unlink(h5File)

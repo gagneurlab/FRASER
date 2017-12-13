@@ -34,6 +34,7 @@ Collate:
     'calculateStats.R'
     'countRNAseqData.R'
     'example_functions.R'
+    filterExpression.R
     'getURLs.R'
     'helper-functions.R'
     'plotResults.R'
