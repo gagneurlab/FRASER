@@ -2,17 +2,38 @@
 % Please edit documentation in R/saveHDF5Objects.R
 \name{loadFraseRDataSet}
 \alias{loadFraseRDataSet}
-\title{Load a saved FraseR object into memory}
+\alias{saveFraseRDataSet}
+\alias{saveFraseRDataSet}
+\title{Loading/Saving FraseRDataSets}
 \usage{
 loadFraseRDataSet(dir, name = NULL)
+
+saveFraseRDataSet(fds, dir = NULL, name = NULL, rewrite = FALSE)
 }
 \arguments{
-\item{dir}{a path to the working directory of FraseR}
+\item{dir}{A path where to save the objects (replaces the working directory)}
+
+\item{name}{The analysis name of the project (saved within the `dir`)}
+
+\item{fds}{A FraseRDataSet object ot be saved}
+
+\item{rewrite}{logical if the object should be rewritten. This makes sense if
+you have filtered or subsetted the object and want to save only
+the subsetted version}
 }
 \description{
-Load a saved FraseR object into memory
+This is a convinient function to load and save a FraseRDataSet object.
+It looks and saves the FraseRDataSet objects and HDF5 files on disk under
+the given working dir. Internally it uses HDF5 files for all assays.
 }
 \examples{
-  loadFraseRDataSet(file.path(Sys.getenv("HOME"), "FraseR"))
+fds <- countRNAData(createTestFraseRSettings())
+fdsSaved <- saveFraseRDataSet(fds)
+fdsSaved
+
+fdsLoaded <- loadFraseRDataSet(dir=workingDir(fds), name=name(fds))
+fdsLoaded
+
+testthat::expect_equivalent(fdsSaved, fdsLoaded)
 
 }

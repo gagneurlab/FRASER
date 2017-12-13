@@ -27,3 +27,11 @@ the underlying plotting functions}
 \description{
 This can be used for quality control plots as well.
 }
+\examples{
+
+fds <- createTestFraseRDataSet()
+
+plotJunctionDistribution(fds, results(fds)[1])
+plotJunctionDistribution(fds, results(fds)[3])
+
+}

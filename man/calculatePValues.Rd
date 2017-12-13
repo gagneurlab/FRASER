@@ -6,7 +6,7 @@
 The P-Value calculation is based on the given method in the
 FraseRSettings object}
 \usage{
-calculatePValues(fds, internBPPARAM = SerialParam(), ...)
+calculatePValues(fds, internBPPARAM = bpparam(), ...)
 }
 \description{
 calculates the P-Value for the given FraseR dataset object
@@ -17,4 +17,5 @@ FraseRSettings object
   fds <- countRNAData(createTestFraseRSettings())
   fds <- calculatePSIValues(fds)
   fds <- calculatePValues(fds)
+complete memory reduction if possible
 }
