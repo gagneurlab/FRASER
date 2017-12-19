@@ -14,14 +14,15 @@
 #' @examples
 #'   fds <- countRNAData(createTestFraseRSettings())
 #'   fds <- calculatePSIValues(fds)
-calculatePSIValues <- function(fds){
+calculatePSIValues <- function(fds, overwriteCts=FALSE){
     # check input
     stopifnot(class(fds) == "FraseRDataSet")
 
     # calculate PSI value for each sample
     for(psiType in c("psi5", "psi3", "psiSite")){
         if(!assayExists(fds, psiType)){
-            fds <- calculatePSIValuePrimeSite(fds, psiType=psiType)
+            fds <- calculatePSIValuePrimeSite(fds, psiType=psiType,
+                    overwriteCts=overwriteCts)
         }
     }
 
@@ -42,13 +43,13 @@ calculatePSIValues <- function(fds){
 #' calculates the PSI value for the given prime site of the junction
 #'
 #' @noRd
-calculatePSIValuePrimeSite <- function(fds, psiType){
+calculatePSIValuePrimeSite <- function(fds, psiType, overwriteCts){
     stopifnot(class(fds) == "FraseRDataSet")
     stopifnot(isScalarCharacter(psiType))
     stopifnot(psiType %in% c("psi5", "psi3", "psiSite"))
 
     if(psiType=="psiSite"){
-        return(calculateSitePSIValue(fds))
+        return(calculateSitePSIValue(fds, overwriteCts))
     }
 
     message(date(), ": Calculate the PSI", psiType, " values ...")
@@ -56,6 +57,9 @@ calculatePSIValuePrimeSite <- function(fds, psiType){
     # convert psi type to the position of interest
     psiCol <- ifelse(psiType == "psi5", "start", "end")
     psiROCName <- paste0("rawOtherCounts_", psiType)
+    if(! psiROCName %in% assayNames(fds)){
+        overwriteCts <- TRUE
+    }
 
     # generate a data.table from granges
     countData <- data.table(
@@ -68,19 +72,25 @@ calculatePSIValuePrimeSite <- function(fds, psiType){
 
     # calculate psi value
     psiValues <- bplapply(samples(fds), countData=countData, psiCol=psiCol,
-        BPPARAM=parallel(fds), FUN = function(sample, countData, psiCol){
+        overwriteCts=overwriteCts, psiType=psiType, BPPARAM=parallel(fds), FUN =
+                    function(sample, countData, psiCol, overwriteCts, psiType){
             suppressPackageStartupMessages(library(FraseR))
 
             # add sample specific counts to the data.table
             sample <- as.character(sample)
-            sampleCounts <- as.data.table(assays(fds)[["rawCountsJ"]][,sample])
+            sampleCounts <- as((counts(fds, type="j")[,sample]), "data.table")
             colnames(sampleCounts) <- sample
             countData <- cbind(countData, sampleCounts)
 
             # calculate other split read counts
-            countData[,rawOtherCounts:=sum(get(sample)) - get(sample),
-                    by=eval(paste0("chr,", psiCol, ",strand"))
-            ]
+            if(isFALSE(overwriteCts)){
+                countData[,rawOtherCounts:=as.vector(counts(fds, type=psiType,
+                        side="oth")[,sample])]
+            } else {
+                countData[,rawOtherCounts:=sum(get(sample)) - get(sample),
+                        by=eval(paste0("chr,", psiCol, ",strand"))
+                ]
+            }
 
             # calculate psi value
             countData[,psiValue:=get(sample)/(get(sample) + rawOtherCounts)]
@@ -100,9 +110,11 @@ calculatePSIValuePrimeSite <- function(fds, psiType){
     assays(fds, type="j")[[psiType]] <- DataFrame(
         lapply(psiValues, "[[", "psiValue")
     )
-    assays(fds, type="j")[[psiROCName]] <- DataFrame(
-        lapply(psiValues, "[[", "rawOtherCounts")
-    )
+    if(isTRUE(overwriteCts)){
+        assays(fds, type="j")[[psiROCName]] <- DataFrame(
+            lapply(psiValues, "[[", "rawOtherCounts")
+        )
+    }
 
     return(fds)
 }
@@ -113,7 +125,7 @@ calculatePSIValuePrimeSite <- function(fds, psiType){
 #' based on the FraseRDataSet object
 #'
 #' @noRd
-calculateSitePSIValue <- function(fds){
+calculateSitePSIValue <- function(fds, overwriteCts){
 
     # check input
     stopifnot(class(fds) == "FraseRDataSet")
@@ -122,6 +134,9 @@ calculateSitePSIValue <- function(fds){
 
     psiName <- "psiSite"
     psiROCName <- "rawOtherCounts_psiSite"
+    if(!psiROCName %in% assayNames(fds)){
+        overwriteCts <- TRUE
+    }
 
     # prepare data table for calculating the psi value
     countData <- data.table(
@@ -137,7 +152,8 @@ calculateSitePSIValue <- function(fds){
     )
 
     psiSiteValues <- bplapply(samples(fds), countData=countData, fds=fds,
-        BPPARAM=parallel(fds), FUN = function(sample, countData, fds){
+        overwriteCts=overwriteCts, BPPARAM=parallel(fds), FUN =
+                    function(sample, countData, fds, overwriteCts){
 
             # add sample specific counts to the data.table
             sample <- as.character(sample)
@@ -149,9 +165,13 @@ calculateSitePSIValue <- function(fds){
             countData <- cbind(countData, sampleCounts)
 
             # calculate other split read counts
-            countData[,rawOtherCounts:=sum(get(sample)) - get(sample),
-                    by="spliceSiteID"
-            ]
+            if(isTRUE(overwriteCts)){
+                countData[,rawOtherCounts:=sum(get(sample)) - get(sample),
+                        by="spliceSiteID"]
+            } else {
+                countData[,rawOtherCounts:=as.vector(
+                        counts(fds, type="psiSite", side="oth")[,sample])]
+            }
 
             # remove the junction part since we only want to calculate the
             # psi values for the splice site itself
@@ -173,11 +193,11 @@ calculateSitePSIValue <- function(fds){
 
     # merge it to a DataFrame and assign it to our object
     assays(fds, type="ss")[[psiName]] <- DataFrame(
-        lapply(psiSiteValues, "[[", "psiValue")
-    )
-    assays(fds, type="ss")[[psiROCName]] <- DataFrame(
-        lapply(psiSiteValues, "[[", "rawOtherCounts")
-    )
+        lapply(psiSiteValues, "[[", "psiValue"))
+    if(isTRUE(overwriteCts)){
+        assays(fds, type="ss")[[psiROCName]] <- DataFrame(
+            lapply(psiSiteValues, "[[", "rawOtherCounts"))
+    }
 
     return(fds)
 }

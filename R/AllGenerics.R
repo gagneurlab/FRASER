@@ -526,8 +526,28 @@ setMethod("counts", "FraseRDataSet", function(object, type=NULL,
     return(assays(object)[[aname]])
 })
 
+#'
+#' setter for count data
+#'
+setReplaceMethod("counts", "FraseRDataSet", function(object, type=NULL,
+                    side=c("ofInterest", "otherSide"), value){
+    side <- match.arg(side)
 
-options("FraseR-hdf5-chunks"=50000)
+    if(side=="ofInterest"){
+        type <- checkReadType(object, type)
+        aname <- paste0("rawCounts", toupper(type))
+    } else {
+        type <- unlist(
+                regmatches(type, gregexpr("psi(3|5|Site)", type, perl=TRUE)))
+        aname <- paste0("rawOtherCounts_", type)
+    }
+    assays(object)[[aname]] <- as.matrix(value)
+    validObject(value)
+    return(object)
+})
+
+
+options("FraseR-hdf5-chunks"=2000)
 options("FraseR-hdf5-cores"=8)
 options("FraseR-hdf5-num-chunks"=6)
 setAs("DelayedMatrix", "data.table", function(from){
