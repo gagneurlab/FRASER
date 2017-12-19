@@ -45,9 +45,9 @@ plotJunctionDistribution <- function(fds, gr, type=gr$type, sampleIDs=NULL,
     opar <- par(no.readonly=TRUE)
     on.exit(par(opar))
 
-    data <- getPlotDistributionData(gr, fds, type, rmZeroCts)
+    data <- getPlotDistributionData(gr=gr, fds=fds, type=type, rmZeroCts)
 
-    par(mfrow=c(ceiling(numPlots/3),3), cex=cex)
+    par(mfrow=c(ceiling(numPlots/3),ifelse(numPlots < 3, numPlots, 3)), cex=cex)
 
     # plot sample rank if requested
     if(!(length(plotRank) == 0 | isFALSE(plotRank))){
@@ -326,7 +326,11 @@ getTitle <- function(plotMainTxt, gr, psiType){
 #'
 #' @noRd
 plotQQplot <- function(gr=NULL, fds=NULL, type=NULL, data=NULL, maxOutlier=2,
-                    ci=TRUE){
+                    conf.alpha=0.05, sample=FALSE, breakTies=TRUE){
+    if(isScalarLogical(conf.alpha)){
+        conf.alpha <- ifelse(isTRUE(conf.alpha), 0.05, NA)
+    }
+
     # get data
     if(is.null(data)){
         if(is.null(gr) | is.null(fds) | is.null(type)){
@@ -338,11 +342,13 @@ plotQQplot <- function(gr=NULL, fds=NULL, type=NULL, data=NULL, maxOutlier=2,
     # points
     obs <- -log10(sort(data$pvalues))
     obs[is.na(obs)] <- 0
-    if(any(is.na(obs)) | length(obs) < 2){
+    if(length(unique(obs)) < 2 | length(obs) < 2){
         warning("There are no pvalues or all are NA!")
         return(FALSE)
     }
-    obs <- breakTies(obs, logBase=10, decreasing=TRUE)
+    if(breakTies){
+        obs <- breakTies(obs, logBase=10, decreasing=TRUE)
+    }
     exp <- -log10(ppoints(length(obs)))
     len <- length(exp)
 
@@ -357,40 +363,63 @@ plotQQplot <- function(gr=NULL, fds=NULL, type=NULL, data=NULL, maxOutlier=2,
 
     # confidence band
     # http://genome.sph.umich.edu/wiki/Code_Sample:_Generating_QQ_Plots_in_R
-    if(ci){
-        upper <- qbeta(0.025, 1:len, rev(1:len))
-        lower <- qbeta(0.975, 1:len, rev(1:len))
-        polygon(x=c(rev(exp), exp), y=-log10(c(rev(upper), lower)),
-                col="gray", border="gray")
+    if(is.numeric(conf.alpha)){
+        getY <- function(x, exp){
+            x1 <- exp[2]
+            x2 <- exp[1]
+            y1 <- -log10(x[2])
+            y2 <- -log10(x[1])
+            m <- (y2-y1)/(x2-x1)
+            return(10^-(y1 + m*((x2+1)-x1)))
+        }
+        upper <- qbeta(conf.alpha/2,   1:len, rev(1:len))
+        lower <- qbeta(1-conf.alpha/2, 1:len, rev(1:len))
+        polygon(col="gray", border="gray", x=c(rev(exp), max(exp)+c(1,1), exp),
+                y=-log10(c(
+                        rev(upper), getY(upper, exp), getY(lower, exp), lower)))
     }
 
     # grid
     grid()
 
+    plotPoint <- TRUE
+    if(isTRUE(sample)){
+        lo <- length(obs)
+        plotPoint <- 1:lo %in% unique(c(1:min(lo, 100), sort(sample(1:lo,
+                size = min(lo, 30000), prob=log10(1+lo:1)/sum(log10(1+lo:1))))))
+    }
+
     # add the points
-    points(exp, obs, pch=16)
+    outOfRange <- obs > max(ylim)
+    points(exp[plotPoint & !outOfRange], obs[plotPoint & !outOfRange], pch=16)
 
     # diagonal and grid
     abline(0,1,col="firebrick")
 
     # plot outliers
-    outOfRange <- which(obs > max(ylim))
-    if(length(outOfRange) > 0){
-        points(exp[outOfRange], rep(max(ylim), length(outOfRange)),
+    if(sum(outOfRange) > 0){
+        points(exp[plotPoint & outOfRange], rep(max(ylim), sum(outOfRange)),
                 pch=2, col='red')
+    }
+
+    if(is.numeric(conf.alpha)){
+        legend("bottomright", paste0("CI (alpha = ",
+                signif(conf.alpha, 2), ")"), lty=1, lwd=7, col="gray")
     }
 }
 
 #' sample qq
 #'
 #' @noRd
-plotSampleQQ <- function(fds, type=c("psi5", "psi3", "psiSite")){
+plotSampleQQ <- function(fds, type=c("psi5", "psi3", "psiSite"), sample=TRUE,
+                    ci=FALSE, ...){
     pvals <- sapply(type, function(x){
         readType <- whichReadType(fds, x)
         tested <- na2false(mcols(fds, type=x)[,paste0(x, "_tested")])
         as(assays(fds[tested,by=readType])[[paste0('pvalue_', x)]], "matrix")
     })
-    plotQQplot(data=list(pvalues=na.omit(unlist(pvals))))
+    plotQQplot(data=list(pvalues=as.vector(unlist(pvals))), sample=sample,
+            ci=ci, ...)
 }
 
 #'

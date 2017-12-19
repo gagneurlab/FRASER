@@ -5,6 +5,9 @@
 .Rhistory
 .RData
 
+# ignore tmp files
+inst/tmp
+
 # ignore vignette artefacts
 FraseR.pdf
 cache
