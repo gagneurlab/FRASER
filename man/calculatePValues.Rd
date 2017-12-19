@@ -17,5 +17,4 @@ FraseRSettings object
   fds <- countRNAData(createTestFraseRSettings())
   fds <- calculatePSIValues(fds)
   fds <- calculatePValues(fds)
-complete memory reduction if possible
 }

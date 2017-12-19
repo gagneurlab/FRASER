@@ -106,7 +106,7 @@ calculatePValues <- function(fds, internBPPARAM=bpparam(), ...){
         )
         fds <- saveFraseRDataSet(fds)
 
-        #' complete memory reduction if possible
+        # complete memory reduction if possible
         name <- name(fds)
         dir  <- workingDir(fds)
         rm(fds)
