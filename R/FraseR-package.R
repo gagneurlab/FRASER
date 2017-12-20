@@ -71,8 +71,30 @@
 #' @importFrom utils browseURL capture.output sessionInfo
 #'
 #'
+#
+### To be added into the functions above
+#
+#' @importFrom S4Vectors DataFrame metadata
+#' @importFrom grDevices dev.off adjustcolor pdf
+#' @importFrom graphics abline axis grid legend lines title text points polygon
+#' @importFrom plotly event_data
+#' @importFrom GenomeInfoDb seqlevels<- seqlevels seqlengths
+#'          keepStandardChromosomes
+#' @importFrom shiny renderUI reactive renderPrint renderPlot
+#' @importFrom DelayedArray rowMaxs
+#' @importFrom data.table rbindlist
+#' @importFrom matrixStats rowQuantiles rowMedians
+#' @importFrom stats runif median quantile
 
 
 
 NULL
+
+#' TODO: Should be removed in the end!
+#' @noRd
+globalVariables(c(".N", ".asDataFrame", "End", "FN", "HTML", "Start", "TP",
+        "deltaPsi", "curgr", "gene", "lty", "hgnc_symbol", "id",
+        "ldat", "p.adj", "pval", "pvalue", "shinyFds", "shinyFdsRes",
+        "sampleID", "sampleGroup", "chr", "symbol"),
+        package="FraseR")
 

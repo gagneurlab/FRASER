@@ -551,11 +551,15 @@ options("FraseR-hdf5-chunks"=2000)
 options("FraseR-hdf5-cores"=8)
 options("FraseR-hdf5-num-chunks"=6)
 setAs("DelayedMatrix", "data.table", function(from){
-    mc.cores <- min(options()$`FraseR-hdf5-cors`, max(1, detectCores() - 1))
-    chunks <- chunk(1:dim(from)[1], options()$`FraseR-hdf5-chunks`)
+    chunk.size <- max(2000, options()[['FraseR-hdf5-chunks']])
+    mc.cores   <- max(8,    options()[['FraseR-hdf5-cors']])
+    num.chunks <- max(6,    options()[['FraseR-hdf5-num-chunks']])
+
+    mc.cores <- min(mc.cores, max(1, detectCores() - 1))
+    chunks <- chunk(1:dim(from)[1], chunk.size)
     fun <- function(x, from) as.data.table(from[x,])
 
-    if(length(chunks) < options()$`FraseR-hdf5-num-chunks`){
+    if(length(chunks) < num.chunks){
         ans <- lapply(chunks, fun, from=from)
     } else {
         ans <- mclapply(chunks, fun, from=from, mc.cores=mc.cores)

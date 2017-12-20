@@ -14,10 +14,10 @@ Depends:
     R (>= 3.4), BiocParallel, data.table, Rsamtools,
     SummarizedExperiment (>= 1.6.3)
 Imports:
-    BBmisc, biomaRt, DelayedArray, DT, GenomicAlignments, GenomicRanges,
-    IRanges, graphics, gplots, htmlwidgets, HDF5Array, LSD, methods, parallel,
-    plotly (>= 4.6.0), rhdf5, Rsubread, R.utils, shiny, stats, tidyr, 
-    tools, VGAM
+    BBmisc, biomaRt, DelayedArray, DT, GenomeInfoDb, GenomicAlignments, 
+    GenomicRanges, IRanges, graphics, gplots, htmlwidgets, HDF5Array, LSD, 
+    matrixStats, methods, parallel, plotly (>= 4.6.0), rhdf5, Rsubread, R.utils,
+    S4Vectors, shiny, stats, tidyr, tools, utils, VGAM
 biocViews: RNASeq, AlternativeSplicing, Sequencing,
     Software, Genetics, Coverage
 URL: https://i12g-gagneurweb.in.tum.de/gitlab/mertes/FraseR/

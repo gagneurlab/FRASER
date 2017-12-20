@@ -1,4 +1,4 @@
-%\VignetteIndexEntry{FraseR: Find RAre Splicing Evens in RNA-seq D
+%\VignetteIndexEntry{FraseR: Find RAre Splicing Evens in RNA-seq Data}
 %\VignettePackage{FraseR}
 %\VignetteEngine{knitr::knitr}
 %\VignetteEncoding{UTF-8}

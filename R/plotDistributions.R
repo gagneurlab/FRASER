@@ -412,14 +412,13 @@ plotQQplot <- function(gr=NULL, fds=NULL, type=NULL, data=NULL, maxOutlier=2,
 #'
 #' @noRd
 plotSampleQQ <- function(fds, type=c("psi5", "psi3", "psiSite"), sample=TRUE,
-                    ci=FALSE, ...){
+                    ...){
     pvals <- sapply(type, function(x){
         readType <- whichReadType(fds, x)
         tested <- na2false(mcols(fds, type=x)[,paste0(x, "_tested")])
         as(assays(fds[tested,by=readType])[[paste0('pvalue_', x)]], "matrix")
     })
-    plotQQplot(data=list(pvalues=as.vector(unlist(pvals))), sample=sample,
-            ci=ci, ...)
+    plotQQplot(data=list(pvalues=as.vector(unlist(pvals))), sample=sample, ...)
 }
 
 #'
