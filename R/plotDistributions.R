@@ -51,12 +51,12 @@ plotJunctionDistribution <- function(fds, gr, type=gr$type, sampleIDs=NULL,
 
     # plot sample rank if requested
     if(!(length(plotRank) == 0 | isFALSE(plotRank))){
-        sapply(plotRank, plotSampleRank, gr=gr, fds=fds, sample=sampleIDs,
+        sapply(plotRank, plotSampleRank, gr=gr, fds=fds, sampleIDs=sampleIDs,
                rmZeroCts=rmZeroCts, data=data)
     }
     # plot counts
     if(isTRUE(plotCounts)){
-        plotCountsAtSite(gr, fds, type=type, sample=sampleIDs, data=data,
+        plotCountsAtSite(gr, fds, type=type, sampleIDs=sampleIDs, data=data,
                          plotLegend=plotLegend)
     }
     # plot values versus counts
@@ -105,17 +105,23 @@ getPlotDistributionData <- function(gr, fds, type, rmZeroCts=FALSE){
         rocts    = rocts[keepSample]
     }
 
+    alpha <- beta <- NA
+    if(paste0(type, "_alpha") %in% colnames(mcols(seOfInterest))){
+        alpha <- mcols(seOfInterest)[,paste0(type, "_alpha")]
+        beta  <- mcols(seOfInterest)[,paste0(type, "_beta")]
+    }
+
     return(list(
         se       = seOfInterest,
         mapping  = mapping,
-        pvalues  = as.matrix(assays(seOfInterest)[[pvaluename]])[1,],
-        psi      = as.matrix(assays(seOfInterest)[[psiname]])[1,],
-        deltaPsi = as.matrix(assays(seOfInterest)[[deltapsiname]])[1,],
-        zscore   = as.matrix(assays(seOfInterest)[[zscorename]])[1,],
         rcts     = rcts,
         rocts    = rocts,
-        alpha    = mcols(seOfInterest)[,paste0(type, "_alpha")],
-        beta     = mcols(seOfInterest)[,paste0(type, "_beta")]
+        pvalues  = as.matrix(null2na(assays(seOfInterest)[[pvaluename]]))[1,],
+        psi      = as.matrix(null2na(assays(seOfInterest)[[psiname]]))[1,],
+        deltaPsi = as.matrix(null2na(assays(seOfInterest)[[deltapsiname]]))[1,],
+        zscore   = as.matrix(null2na(assays(seOfInterest)[[zscorename]]))[1,],
+        alpha    = alpha,
+        beta     = beta
     ))
 }
 
@@ -124,11 +130,14 @@ getPlotDistributionData <- function(gr, fds, type, rmZeroCts=FALSE){
 #' plot count distribution
 #'
 #' @noRd
-plotCountsAtSite <- function(gr, fds, type, sample=NULL, plotLog=TRUE,
-                             plotLegend=TRUE, data=NULL, zeroVal=0.64){
+plotCountsAtSite <- function(gr, fds, type, sampleIDs=NULL, plotLegend=TRUE,
+                    data=NULL, zeroVal=0.64){
     # get data to plot
     if(is.null(data)){
         data <- getPlotDistributionData(gr, fds, type)
+    }
+    if(isTRUE(plotLegend)){
+        plotLegend <- "topleft"
     }
 
     # raw counts
@@ -188,15 +197,15 @@ plotCountsAtSite <- function(gr, fds, type, sample=NULL, plotLog=TRUE,
     })
 
     # add sample annotation
-    if(!is.null(sample)){
+    if(!is.null(sampleIDs)){
         names(x) <- samples(fds)
         names(y) <- samples(fds)
-        sapply(sample, addSamplePoints, x=x, y=y)
+        sapply(sampleIDs, addSamplePoints, x=x, y=y)
     }
 
     # add legend if requested
-    if(plotLegend){
-        legend("topleft", c("Model fit", "+/- Variance", curPlotPar[,name]),
+    if(isScalarCharacter(plotLegend)){
+        legend(plotLegend, c("Model fit", "+/- Variance", curPlotPar[,name]),
                pch=20, lty=c(1,3, curPlotPar[,lty]),
                col=c("firebrick",adjustcolor("firebrick", 0.5),
                      rep(adjustcolor("black", 0.7), 3)))
@@ -241,7 +250,7 @@ bbscewness <- function(size, a, b){
 #' generic function to plot any value as a sample rank plot
 #'
 #' @noRd
-plotSampleRank <- function(gr, fds, type, sample=NULL, delta=FALSE,
+plotSampleRank <- function(gr, fds, type, sampleIDs=NULL, delta=FALSE,
                            plotLog=FALSE, rmZeroCts=FALSE, data=NULL, ...){
     # get data
     if(is.null(data)){
@@ -260,15 +269,15 @@ plotSampleRank <- function(gr, fds, type, sample=NULL, delta=FALSE,
          ylab=ylab, xlab="sample rank",
          pch=16, col="gray"
     )
-    if(!is.null(sample)){
-        sapply(sample, addSamplePoints, x=rank(p), y=p)
+    if(!is.null(sampleIDs)){
+        sapply(sampleIDs, addSamplePoints, x=rank(p), y=p)
     }
 }
 
 #'
 #' plot a given value against the counts
 #' @noRd
-plotValueVsCounts <- function(gr, fds, type, sample=NULL, delta=FALSE,
+plotValueVsCounts <- function(gr, fds, type, sampleIDs=NULL, delta=FALSE,
                     main=paste0(type, " versus total raw counts"),
                     xlab="Number of all observed split reads", ylab=NULL,
                     zeroVal=0.64, rmZeroCts=FALSE, data=NULL, ...){
@@ -296,8 +305,8 @@ plotValueVsCounts <- function(gr, fds, type, sample=NULL, delta=FALSE,
         abline(v=zeroVal, col="gray", lty="dotted")
         axis(side=1, at=zeroVal, labels = "0", tick = TRUE)
     }
-    if(!is.null(sample)){
-        sapply(sample, addSamplePoints, x=tcts, y=val)
+    if(!is.null(sampleIDs)){
+        sapply(sampleIDs, addSamplePoints, x=tcts, y=val)
     }
 }
 
