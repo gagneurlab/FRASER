@@ -337,8 +337,8 @@ plotQQplot <- function(gr, fds, type, data=NULL, maxOutlier=2){
 
     # main plot area
     plot(NA, main="QQ-plot", xlim=range(exp), ylim=ylim,
-         xlab=expression(log[10] ~  "(expected)"),
-         ylab=expression(log[10] ~ "(observed)"))
+         xlab=expression(-log[10] ~  "(expected p-value)"),
+         ylab=expression(-log[10] ~ "(observed p-value)"))
 
     # confidence band
     # http://genome.sph.umich.edu/wiki/Code_Sample:_Generating_QQ_Plots_in_R
