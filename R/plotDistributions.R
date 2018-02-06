@@ -335,7 +335,8 @@ getTitle <- function(plotMainTxt, gr, psiType){
 #'
 #' @noRd
 plotQQplot <- function(gr=NULL, fds=NULL, type=NULL, data=NULL, maxOutlier=2,
-                    conf.alpha=0.05, sample=FALSE, breakTies=TRUE){
+                    conf.alpha=0.05, sample=FALSE, breakTies=TRUE, 
+                    mainName = "QQ-plot"){
     if(isScalarLogical(conf.alpha)){
         conf.alpha <- ifelse(isTRUE(conf.alpha), 0.05, NA)
     }
@@ -366,7 +367,7 @@ plotQQplot <- function(gr=NULL, fds=NULL, type=NULL, data=NULL, maxOutlier=2,
     ylim <- range(0, min(exp[1]*maxOutlier, maxPoint))
 
     # main plot area
-    plot(NA, main="QQ-plot", xlim=range(exp), ylim=ylim,
+    plot(NA, main=mainName, xlim=range(exp), ylim=ylim,
          xlab=expression(-log[10] ~  "(expected P-value)"),
          ylab=expression(-log[10] ~ "(observed P-value)"))
 
