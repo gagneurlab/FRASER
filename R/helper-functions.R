@@ -60,7 +60,7 @@ checkReadType <- function(fds, type){
 
     # check assay names
     atype <- whichReadType(fds, type)
-    if(isCorrectType(atype)) return(atype)
+    if(!is.na(atype)) return(atype)
 
     stop("Given read type: '", type, "' not recognized. ",
             "It needs to be 'j' (junction) or 'ss' (splice sites)",
@@ -106,8 +106,12 @@ nameNoSpace <- function(name){
 }
 
 #'
-#' convert all NA's of a input vector or of a
+#' Convert to default values
+#'
+#' Convert all NA's of a input vector or of a
 #' single dimension matrix/data.table to FALSE
+#'
+#' Convert NULL to NA or to another default value
 #'
 #' @examples
 #'   a <- c(TRUE, FALSE, NA, TRUE, NA)
@@ -116,13 +120,12 @@ nameNoSpace <- function(name){
 #'   dt <- data.table(a)
 #'   na2false(dt)
 #'
+#'   null2na(NULL)
+#'   null2na(1:10)
+#'
+#' @rdname na2default
+#' @aliases na2false na2zero null2na null2default
 #' @export
-na2false <- function(x){
-    na2default(x, FALSE)
-}
-na2zero <- function(x){
-    na2default(x, 0)
-}
 na2default <- function(x, default=FALSE){
     if(any(class(x) %in% c("DataFrame", "matrix", "data.frame"))){
         stopifnot(dim(x)[2] == 1)
@@ -130,6 +133,33 @@ na2default <- function(x, default=FALSE){
     }
     x[is.na(x)] <- default
     return(x)
+}
+
+#' @rdname na2default
+#' @export
+null2default <- function(x, default=NA){
+    if(is.null(x)){
+        return(default)
+    }
+    return(x)
+}
+
+#' @rdname na2default
+#' @export
+na2false <- function(x){
+    na2default(x, FALSE)
+}
+
+#' @rdname na2default
+#' @export
+na2zero <- function(x){
+    na2default(x, 0)
+}
+
+#' @rdname na2default
+#' @export
+null2na <- function(x){
+    null2default(x, NA)
 }
 
 #'

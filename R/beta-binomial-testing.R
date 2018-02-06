@@ -89,6 +89,8 @@ pvalueByBetaBinomialPerType <- function(fds, aname, psiType, pvalFun,
     } else {
         FUN <- function(...){ testFUN(...) }
     }
+    gc()
+    gc()
     pvalues_ls <- bplapply(toTest, rawCounts=rawCounts,
                     rawOtherCounts=rawOtherCounts, pvalFun,
                     BPPARAM=parallel(fds), addNoise=addNoise, FUN=FUN)

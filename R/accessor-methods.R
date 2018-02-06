@@ -1,8 +1,3 @@
-#'
-#' @author Christian Mertes
-#'
-#' This file contains accessor functions for the FraseRDataSet object
-#'
 
 .getReadTypeFromPsiType <- function(psiType){
     stopifnot(length(psiType) == 1 && class(psiType) == "")

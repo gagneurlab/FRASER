@@ -2,10 +2,19 @@
 % Please edit documentation in R/AllGenerics.R
 \name{mapSeqlevels}
 \alias{mapSeqlevels}
-\title{mapping of the chromosome names}
+\title{Mapping of chromosome names}
 \usage{
 mapSeqlevels(fds, style = "UCSC", ...)
 }
 \description{
-mapping of the chromosome names
+Mapping of chromosome names
+}
+\examples{
+
+fds <- countRNAData(createTestFraseRSettings())
+
+seqlevels(mapSeqlevels(fds, style="UCSC"))
+seqlevels(mapSeqlevels(fds, style="Ensembl"))
+seqlevels(mapSeqlevels(fds, style="dbSNP"))
+
 }

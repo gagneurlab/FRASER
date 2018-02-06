@@ -21,7 +21,7 @@ calculateZScores <- function(fds){
     stopifnot(class(fds) == "FraseRDataSet")
 
     # calculate zscore for each psi type
-    for(psiType in c("psi3", "psi5", "psiSite")){
+    for(psiType in c("psi5", "psi3", "psiSite")){
         assayName <- paste0("zscore_", psiType)
         if(assayExists(fds, assayName)){
             next
@@ -65,7 +65,7 @@ calculateZScorePerDataSet <- function(fds, psiType, assayName){
 #'   fds <- countRNAData(createTestFraseRSettings())
 #'   fds <- calculatePSIValues(fds)
 #'   fds <- calculatePValues(fds)
-calculatePValues <- function(fds, internBPPARAM=SerialParam(), ...){
+calculatePValues <- function(fds, internBPPARAM=bpparam(), ...){
     # check input
     stopifnot(class(fds) == "FraseRDataSet")
     enforceHDF5 <- FALSE
@@ -96,18 +96,23 @@ calculatePValues <- function(fds, internBPPARAM=SerialParam(), ...){
     }
 
     # test all 3 different types
-    for(psiType in c("psi3", "psi5", "psiSite")){
-
+    for(psiType in c("psi5", "psi3", "psiSite")){
         aname <- paste0("pvalue_", psiType)
         if(assayExists(fds, aname)){
             next
         }
-
         fds <- do.call(FUN[[1]],
             c(fds=fds, aname=aname, psiType=psiType, FUN[-1], ...)
         )
         fds <- saveFraseRDataSet(fds)
+
+        # complete memory reduction if possible
+        name <- name(fds)
+        dir  <- workingDir(fds)
+        rm(fds)
         gc()
+        gc()
+        fds <- loadFraseRDataSet(dir, name)
     }
 
     # return the new datasets

@@ -7,7 +7,7 @@
 plotJunctionDistribution(fds, gr, type = gr$type, sampleIDs = NULL,
   rmZeroCts = FALSE, plotRank = paste0(c("", "delta_", "zscore_"), type),
   plotCounts = TRUE, plotValVsCounts = type, qqplot = TRUE,
-  plotLegend = TRUE)
+  plotLegend = TRUE, cex = 1)
 }
 \arguments{
 \item{fds}{A FraseR object}
@@ -26,4 +26,12 @@ the underlying plotting functions}
 }
 \description{
 This can be used for quality control plots as well.
+}
+\examples{
+
+fds <- createTestFraseRDataSet()
+
+plotJunctionDistribution(fds, results(fds)[1])
+plotJunctionDistribution(fds, results(fds)[3])
+
 }

@@ -14,11 +14,18 @@
 #' @param ... Additional paramerters which are pased on to
 #'              the underlying plotting functions
 #'
+#' @examples
+#'
+#' fds <- createTestFraseRDataSet()
+#'
+#' plotJunctionDistribution(fds, results(fds)[1])
+#' plotJunctionDistribution(fds, results(fds)[3])
+#'
 #' @export
 plotJunctionDistribution <- function(fds, gr, type=gr$type, sampleIDs=NULL,
-                                     rmZeroCts=FALSE, plotRank=paste0(c("", "delta_", "zscore_"), type),
-                                     plotCounts=TRUE, plotValVsCounts=type, qqplot=TRUE,
-                                     plotLegend=TRUE){
+            rmZeroCts=FALSE, plotRank=paste0(c("", "delta_", "zscore_"), type),
+            plotCounts=TRUE, plotValVsCounts=type, qqplot=TRUE,
+            plotLegend=TRUE, cex=1){
     stopifnot(is(fds, "FraseRDataSet"))
     if(is.data.table(gr)){
         gr <- makeGRangesFromDataFrame(gr, keep.extra.columns = TRUE)
@@ -38,18 +45,18 @@ plotJunctionDistribution <- function(fds, gr, type=gr$type, sampleIDs=NULL,
     opar <- par(no.readonly=TRUE)
     on.exit(par(opar))
 
-    data <- getPlotDistributionData(gr, fds, type, rmZeroCts)
+    data <- getPlotDistributionData(gr=gr, fds=fds, type=type, rmZeroCts)
 
-    par(mfrow=c(ceiling(numPlots/3),3), cex=1)
+    par(mfrow=c(ceiling(numPlots/3),ifelse(numPlots < 3, numPlots, 3)), cex=cex)
 
     # plot sample rank if requested
     if(!(length(plotRank) == 0 | isFALSE(plotRank))){
-        sapply(plotRank, plotSampleRank, gr=gr, fds=fds, sample=sampleIDs,
+        sapply(plotRank, plotSampleRank, gr=gr, fds=fds, sampleIDs=sampleIDs,
                rmZeroCts=rmZeroCts, data=data)
     }
     # plot counts
     if(isTRUE(plotCounts)){
-        plotCountsAtSite(gr, fds, type=type, sample=sampleIDs, data=data,
+        plotCountsAtSite(gr, fds, type=type, sampleIDs=sampleIDs, data=data,
                          plotLegend=plotLegend)
     }
     # plot values versus counts
@@ -98,17 +105,23 @@ getPlotDistributionData <- function(gr, fds, type, rmZeroCts=FALSE){
         rocts    = rocts[keepSample]
     }
 
+    alpha <- beta <- NA
+    if(paste0(type, "_alpha") %in% colnames(mcols(seOfInterest))){
+        alpha <- mcols(seOfInterest)[,paste0(type, "_alpha")]
+        beta  <- mcols(seOfInterest)[,paste0(type, "_beta")]
+    }
+
     return(list(
         se       = seOfInterest,
         mapping  = mapping,
-        pvalues  = as.matrix(assays(seOfInterest)[[pvaluename]])[1,],
-        psi      = as.matrix(assays(seOfInterest)[[psiname]])[1,],
-        deltaPsi = as.matrix(assays(seOfInterest)[[deltapsiname]])[1,],
-        zscore   = as.matrix(assays(seOfInterest)[[zscorename]])[1,],
         rcts     = rcts,
         rocts    = rocts,
-        alpha    = mcols(seOfInterest)[,paste0(type, "_alpha")],
-        beta     = mcols(seOfInterest)[,paste0(type, "_beta")]
+        pvalues  = as.matrix(null2na(assays(seOfInterest)[[pvaluename]]))[1,],
+        psi      = as.matrix(null2na(assays(seOfInterest)[[psiname]]))[1,],
+        deltaPsi = as.matrix(null2na(assays(seOfInterest)[[deltapsiname]]))[1,],
+        zscore   = as.matrix(null2na(assays(seOfInterest)[[zscorename]]))[1,],
+        alpha    = alpha,
+        beta     = beta
     ))
 }
 
@@ -117,11 +130,14 @@ getPlotDistributionData <- function(gr, fds, type, rmZeroCts=FALSE){
 #' plot count distribution
 #'
 #' @noRd
-plotCountsAtSite <- function(gr, fds, type, sample=NULL, plotLog=TRUE,
-                             plotLegend=TRUE, data=NULL, zeroVal=0.64){
+plotCountsAtSite <- function(gr, fds, type, sampleIDs=NULL, plotLegend=TRUE,
+                    data=NULL, zeroVal=0.64){
     # get data to plot
     if(is.null(data)){
         data <- getPlotDistributionData(gr, fds, type)
+    }
+    if(isTRUE(plotLegend)){
+        plotLegend <- "topleft"
     }
 
     # raw counts
@@ -181,15 +197,15 @@ plotCountsAtSite <- function(gr, fds, type, sample=NULL, plotLog=TRUE,
     })
 
     # add sample annotation
-    if(!is.null(sample)){
+    if(!is.null(sampleIDs)){
         names(x) <- samples(fds)
         names(y) <- samples(fds)
-        sapply(sample, addSamplePoints, x=x, y=y)
+        sapply(sampleIDs, addSamplePoints, x=x, y=y)
     }
 
     # add legend if requested
-    if(plotLegend){
-        legend("topleft", c("Model fit", "+/- Variance", curPlotPar[,name]),
+    if(isScalarCharacter(plotLegend)){
+        legend(plotLegend, c("Model fit", "+/- Variance", curPlotPar[,name]),
                pch=20, lty=c(1,3, curPlotPar[,lty]),
                col=c("firebrick",adjustcolor("firebrick", 0.5),
                      rep(adjustcolor("black", 0.7), 3)))
@@ -234,7 +250,7 @@ bbscewness <- function(size, a, b){
 #' generic function to plot any value as a sample rank plot
 #'
 #' @noRd
-plotSampleRank <- function(gr, fds, type, sample=NULL, delta=FALSE,
+plotSampleRank <- function(gr, fds, type, sampleIDs=NULL, delta=FALSE,
                            plotLog=FALSE, rmZeroCts=FALSE, data=NULL, ...){
     # get data
     if(is.null(data)){
@@ -253,15 +269,15 @@ plotSampleRank <- function(gr, fds, type, sample=NULL, delta=FALSE,
          ylab=ylab, xlab="sample rank",
          pch=16, col="gray"
     )
-    if(!is.null(sample)){
-        sapply(sample, addSamplePoints, x=rank(p), y=p)
+    if(!is.null(sampleIDs)){
+        sapply(sampleIDs, addSamplePoints, x=rank(p), y=p)
     }
 }
 
 #'
 #' plot a given value against the counts
-#'
-plotValueVsCounts <- function(gr, fds, type, sample=NULL, delta=FALSE,
+#' @noRd
+plotValueVsCounts <- function(gr, fds, type, sampleIDs=NULL, delta=FALSE,
                     main=paste0(type, " versus total raw counts"),
                     xlab="Number of all observed split reads", ylab=NULL,
                     zeroVal=0.64, rmZeroCts=FALSE, data=NULL, ...){
@@ -289,8 +305,8 @@ plotValueVsCounts <- function(gr, fds, type, sample=NULL, delta=FALSE,
         abline(v=zeroVal, col="gray", lty="dotted")
         axis(side=1, at=zeroVal, labels = "0", tick = TRUE)
     }
-    if(!is.null(sample)){
-        sapply(sample, addSamplePoints, x=tcts, y=val)
+    if(!is.null(sampleIDs)){
+        sapply(sampleIDs, addSamplePoints, x=tcts, y=val)
     }
 }
 
@@ -314,20 +330,34 @@ getTitle <- function(plotMainTxt, gr, psiType){
            "\nRange: ", seqnames(gr), ":", start(gr), "-", end(gr))
 }
 
-plotQQplot <- function(gr, fds, type, data=NULL, maxOutlier=2){
+#'
+#' qqplot
+#'
+#' @noRd
+plotQQplot <- function(gr=NULL, fds=NULL, type=NULL, data=NULL, maxOutlier=2,
+                    conf.alpha=0.05, sample=FALSE, breakTies=TRUE){
+    if(isScalarLogical(conf.alpha)){
+        conf.alpha <- ifelse(isTRUE(conf.alpha), 0.05, NA)
+    }
+
     # get data
     if(is.null(data)){
+        if(is.null(gr) | is.null(fds) | is.null(type)){
+            stop("If data is not provided gr, fds and type needs to be passed on.")
+        }
         data <- getPlotDistributionData(gr, fds, type)
     }
 
     # points
     obs <- -log10(sort(data$pvalues))
     obs[is.na(obs)] <- 0
-    if(any(is.na(obs)) | length(obs) < 2){
+    if(length(unique(obs)) < 2 | length(obs) < 2){
         warning("There are no pvalues or all are NA!")
         return(FALSE)
     }
-    obs <- breakTies(obs)
+    if(breakTies){
+        obs <- breakTies(obs, logBase=10, decreasing=TRUE)
+    }
     exp <- -log10(ppoints(length(obs)))
     len <- length(exp)
 
@@ -337,44 +367,82 @@ plotQQplot <- function(gr, fds, type, data=NULL, maxOutlier=2){
 
     # main plot area
     plot(NA, main="QQ-plot", xlim=range(exp), ylim=ylim,
-         xlab=expression(-log[10] ~  "(expected p-value)"),
-         ylab=expression(-log[10] ~ "(observed p-value)"))
+         xlab=expression(-log[10] ~  "(expected P-value)"),
+         ylab=expression(-log[10] ~ "(observed P-value)"))
+
 
     # confidence band
     # http://genome.sph.umich.edu/wiki/Code_Sample:_Generating_QQ_Plots_in_R
-    upper <- qbeta(0.025, 1:len, rev(1:len))
-    lower <- qbeta(0.975, 1:len, rev(1:len))
-    polygon(x=c(rev(exp), exp), y=-log10(c(rev(upper), lower)),
-            col="gray", border="gray")
+    if(is.numeric(conf.alpha)){
+        getY <- function(x, exp){
+            x1 <- exp[2]
+            x2 <- exp[1]
+            y1 <- -log10(x[2])
+            y2 <- -log10(x[1])
+            m <- (y2-y1)/(x2-x1)
+            return(10^-(y1 + m*((x2+1)-x1)))
+        }
+        upper <- qbeta(conf.alpha/2,   1:len, rev(1:len))
+        lower <- qbeta(1-conf.alpha/2, 1:len, rev(1:len))
+        polygon(col="gray", border="gray", x=c(rev(exp), max(exp)+c(1,1), exp),
+                y=-log10(c(
+                        rev(upper), getY(upper, exp), getY(lower, exp), lower)))
+    }
 
     # grid
     grid()
 
+    plotPoint <- TRUE
+    if(isTRUE(sample)){
+        lo <- length(obs)
+        plotPoint <- 1:lo %in% unique(c(1:min(lo, 100), sort(sample(1:lo,
+                size = min(lo, 30000), prob=log10(1+lo:1)/sum(log10(1+lo:1))))))
+    }
+
     # add the points
-    points(exp, obs, pch=16)
+    outOfRange <- obs > max(ylim)
+    points(exp[plotPoint & !outOfRange], obs[plotPoint & !outOfRange], pch=16)
 
     # diagonal and grid
     abline(0,1,col="firebrick")
 
     # plot outliers
-    outOfRange <- which(obs > max(ylim))
-    if(length(outOfRange) > 0){
-        points(exp[outOfRange], rep(max(ylim), length(outOfRange)),
+    if(sum(outOfRange) > 0){
+        points(exp[plotPoint & outOfRange], rep(max(ylim), sum(outOfRange)),
                 pch=2, col='red')
     }
+
+    if(is.numeric(conf.alpha)){
+        legend("bottomright", paste0("CI (alpha = ",
+                signif(conf.alpha, 2), ")"), lty=1, lwd=7, col="gray")
+    }
+}
+
+#' sample qq
+#'
+#' @noRd
+plotSampleQQ <- function(fds, type=c("psi5", "psi3", "psiSite"), sample=TRUE,
+                    ...){
+    pvals <- sapply(type, function(x){
+        readType <- whichReadType(fds, x)
+        tested <- na2false(mcols(fds, type=x)[,paste0(x, "_tested")])
+        as(assays(fds[tested,by=readType])[[paste0('pvalue_', x)]], "matrix")
+    })
+    plotQQplot(data=list(pvalues=as.vector(unlist(pvals))), sample=sample, ...)
 }
 
 #'
 #' breaks ties in a qq plot to get a better distributed p-value plot
-#'
-breakTies <- function(x, logVal=TRUE, decrease=TRUE){
+#' @noRd
+breakTies <- function(x, logBase=10, decreasing=TRUE){
     intervals <- sort(unique(c(0, x)))
     idxintervals <- findInterval(x, intervals)
     for(idx in as.integer(names(which(table(idxintervals) > 1)))){
-        if(logVal){
-            minval <- 10^-intervals[idx+1]
-            maxval <- 10^-intervals[idx]
-            rand   <- -log10(runif(sum(idxintervals==idx), minval, maxval))
+        if(is.numeric(logBase)){
+            minval <- logBase^-intervals[idx+1]
+            maxval <- logBase^-intervals[idx]
+            rand   <- runif(sum(idxintervals==idx), minval, maxval)
+            rand   <- -log(rand, logBase)
         } else {
             minval <- intervals[idx]
             maxval <- intervals[idx+1]
@@ -382,7 +450,7 @@ breakTies <- function(x, logVal=TRUE, decrease=TRUE){
         }
         x[idxintervals==idx] <- rand
     }
-    if(!is.na(decrease)){
+    if(!is.na(decreasing)){
         x <- sort(x, decreasing=TRUE)
     }
 }

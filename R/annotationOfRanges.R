@@ -6,8 +6,14 @@
 ##
 
 #'
-#' Annotates the given FraseRDataSet with the HGNC symbol
-#' with biomaRt
+#' Annotates the given FraseRDataSet with the HGNC symbol with biomaRt
+#'
+#' @examples
+#'
+#' fds <- countRNAData(createTestFraseRSettings())
+#' fds <- annotateRanges(fds)
+#'
+#' rowRanges(fds)[,"hgnc_symbol"]
 #'
 #' @export
 annotateRanges <- function(fds, feature="hgnc_symbol",

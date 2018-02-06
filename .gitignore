@@ -4,3 +4,13 @@
 # ignore R files
 .Rhistory
 .RData
+
+# ignore tmp files
+inst/tmp
+
+# ignore vignette artefacts
+FraseR.pdf
+cache
+vignettes/*.pdf
+vignettes/*.tex
+vignettes/*.txt

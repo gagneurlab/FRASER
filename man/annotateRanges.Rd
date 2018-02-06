@@ -2,13 +2,19 @@
 % Please edit documentation in R/annotationOfRanges.R
 \name{annotateRanges}
 \alias{annotateRanges}
-\title{Annotates the given FraseRDataSet with the HGNC symbol
-with biomaRt}
+\title{Annotates the given FraseRDataSet with the HGNC symbol with biomaRt}
 \usage{
 annotateRanges(fds, feature = "hgnc_symbol",
   biotype = list("protein_coding"), ensembl = NULL)
 }
 \description{
-Annotates the given FraseRDataSet with the HGNC symbol
-with biomaRt
+Annotates the given FraseRDataSet with the HGNC symbol with biomaRt
+}
+\examples{
+
+fds <- countRNAData(createTestFraseRSettings())
+fds <- annotateRanges(fds)
+
+rowRanges(fds)[,"hgnc_symbol"]
+
 }
