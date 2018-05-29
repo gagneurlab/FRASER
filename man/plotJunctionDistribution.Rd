@@ -7,7 +7,7 @@
 plotJunctionDistribution(fds, gr, type = gr$type, sampleIDs = NULL,
   rmZeroCts = FALSE, plotRank = paste0(c("", "delta_", "zscore_"), type),
   plotCounts = TRUE, plotValVsCounts = type, qqplot = TRUE,
-  plotLegend = TRUE, cex = 1)
+  plotLegend = TRUE, cex = 1, mfrow = 3, ...)
 }
 \arguments{
 \item{fds}{A FraseR object}
@@ -17,12 +17,12 @@ Needs to match a junction or splice site within the FraseR obj.
 Also it needs to have a type column specifying
 the site of interest ("psi3", "psi5", "psiSite").}
 
+\item{...}{Additional paramerters which are pased on to
+the underlying plotting functions}
+
 \item{sample}{A vector of sampleIDs which should be highlighted.
 If this value is not set but the gr object contains a sampleID
 column it will take this column to highlight samples.}
-
-\item{...}{Additional paramerters which are pased on to
-the underlying plotting functions}
 }
 \description{
 This can be used for quality control plots as well.

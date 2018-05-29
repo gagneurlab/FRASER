@@ -5,7 +5,7 @@
 \title{plot count distribution}
 \usage{
 plotCountsAtSite(gr, fds, type, sampleIDs = NULL, plotLegend = TRUE,
-  data = NULL, zeroVal = 0.64)
+  data = NULL, zeroVal = NA)
 }
 \description{
 plot count distribution

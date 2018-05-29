@@ -23,6 +23,8 @@ calculatePSIValues <- function(fds, overwriteCts=FALSE){
         if(!assayExists(fds, psiType)){
             fds <- calculatePSIValuePrimeSite(fds, psiType=psiType,
                     overwriteCts=overwriteCts)
+            fds <- saveFraseRDataSet(fds)
+            gc()
         }
     }
 
@@ -31,6 +33,8 @@ calculatePSIValues <- function(fds, overwriteCts=FALSE){
         assayName <- paste0("delta_", psiType)
         if(!assayExists(fds, assayName)){
             fds <- calculateDeltaPsiValue(fds, psiType, assayName)
+            fds <- saveFraseRDataSet(fds)
+            gc()
         }
     }
 

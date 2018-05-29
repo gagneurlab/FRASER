@@ -16,7 +16,7 @@
 #' rowRanges(fds)[,"hgnc_symbol"]
 #'
 #' @export
-annotateRanges <- function(fds, feature="hgnc_symbol",
+annotateRanges <- function(fds, feature="hgnc_symbol", featureName=feature,
             biotype=list("protein_coding"), ensembl=NULL){
 
     # check input
@@ -44,17 +44,18 @@ annotateRanges <- function(fds, feature="hgnc_symbol",
     useUSCS <- all(startsWith(seqlevels(fds), "chr"))
 
     # get gene annotation
-    annotation <- getFeatureAsGRange(ensembl, feature, biotype, useUSCS)
+    annotation <- getFeatureAsGRange(ensembl, feature, featureName,
+            biotype, useUSCS)
 
     # annotate split reads
-    mcols(fds, type="psi3")[[feature]] <- getAnnotationFeature(
-            data=rowRanges(fds), feature, annotation
+    mcols(fds, type="psi3")[[featureName]] <- getAnnotationFeature(
+            data=rowRanges(fds), featureName, annotation
     )
 
     # annotate splice sites
-    mcols(fds, type="psiSite")[[feature]] <- getAnnotationFeature(
+    mcols(fds, type="psiSite")[[featureName]] <- getAnnotationFeature(
             data=rowRanges(nonSplicedReads(fds)),
-            feature, annotation
+            featureName, annotation
     )
 
     return(fds)
@@ -65,7 +66,8 @@ annotateRanges <- function(fds, feature="hgnc_symbol",
 #' use biomart to extract the current feature annotation
 #'
 #' @noRd
-getFeatureAsGRange <- function(ensembl, feature, biotype, useUSCS=TRUE){
+getFeatureAsGRange <- function(ensembl, feature, featureName,
+                    biotype, useUSCS=TRUE){
 
     # contact biomaRt to retrive hgnc symbols
     ensemblResults <- getBM(
@@ -76,10 +78,11 @@ getFeatureAsGRange <- function(ensembl, feature, biotype, useUSCS=TRUE){
         values=list(biotype=biotype),
         mart=ensembl
     )
+    setnames(ensemblResults, feature, featureName)
 
     # remove emtpy symbols or non standard chromosomes
-    ensemblResults <- ensemblResults[!is.na(ensemblResults[[feature]]),]
-    ensemblResults <- ensemblResults[ensemblResults[[feature]] != "",]
+    ensemblResults <- ensemblResults[!is.na(ensemblResults[[featureName]]),]
+    ensemblResults <- ensemblResults[ensemblResults[[featureName]] != "",]
     ensemblResults <- ensemblResults[
             !grepl("_|\\.", ensemblResults$chromosome_name),
     ]
