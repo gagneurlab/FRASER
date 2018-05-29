@@ -18,7 +18,7 @@
 \newcommand{\fraser}{\textit{FraseR}}
 
 <<style, eval=TRUE, echo=FALSE, results="asis">>=
-BiocStyle::latex2()
+BiocStyle::latex()
 @
 
 <<knitr, echo=FALSE, cache=FALSE, results="hide">>=
