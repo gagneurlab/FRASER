@@ -3,6 +3,7 @@ variables:
   PKGDIR:      "./"
   RVER:        "3.5.0-Bioc3.7"
   TEXVER:      "2016"
+  R_LIBS_U:    "tmp_libs"
 #  CI_DEBUG_TRACE: "true"
   
 before_script:
@@ -11,23 +12,44 @@ before_script:
   - R --vanilla CMD build --no-build-vignettes --no-manual $PKGDIR
   - PKG_FILE_NAME=$(ls -1t *.tar.gz | head -n 1)
   
-R-coverage:
-  tags: [shell]
-  script:
-    - Rscript --vanilla -e "devtools::load_all('$PKGDIR'); covr::package_coverage('$PKGDIR')"
-    
+stages:
+  - RCheck
+  - BiocCheck
+  - CovR
+  - Vignette
+
+before_script:
+  - module load "i12g/R/$RVER"
+  - module load "i12g/texlive/$TEXVER"
+  - R --vanilla CMD build --no-build-vignettes --no-manual $PKGDIR
+  - PKG_FILE_NAME=$(ls -1t *.tar.gz | head -n 1)
+  - mkdir $R_LIBS_U/$CI_JOB_ID -p
+  - R_LIBS_USER=$R_LIBS_U/$CI_JOB_ID Rscript --vanilla -e "install.packages('${PKG_FILE_NAME}', lib='$R_LIBS_U/$CI_JOB_ID', repo=NULL)"
+
 R-check:
+  stage: RCheck
+  when: always
   tags: [shell]
   script:
-    - R --vanilla CMD check --no-vignettes --timings "${PKG_FILE_NAME}"
+    - R_LIBS_USER=$R_LIBS_U/$CI_JOB_ID R --vanilla CMD check --no-vignettes --timings "${PKG_FILE_NAME}"
 
 R-BiocCheck:
+  stage: BiocCheck
+  when: always
   tags: [shell]
   script:
-    - R --vanilla CMD BiocCheck --new-package --no-check-vignettes "${PKG_FILE_NAME}"
+    - R_LIBS_USER=$R_LIBS_U/$CI_JOB_ID R --vanilla CMD BiocCheck --new-package --no-check-vignettes "${PKG_FILE_NAME}"
+
+R-coverage:
+  stage: CovR
+  when: always
+  tags: [shell]
+  script:
+    - R_LIBS_USER=$R_LIBS_U/$CI_JOB_ID Rscript --vanilla -e "library('scared'); covr::package_coverage('$PKGDIR')"
 
 R-check_vignettes:
+  stage: Vignette
+  when: always
   tags: [shell]
   script:
-    - R --vanilla CMD Sweave --engine=knitr::knitr --pdf "$PKGDIR/vignettes/$PKGNAME.Rnw"
-    
+    - R_LIBS_USER=$R_LIBS_U/$CI_JOB_ID R --vanilla CMD Sweave --engine=knitr::knitr --pdf "$PKGDIR/vignettes/$PKGNAME.Rnw"
