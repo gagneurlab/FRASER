@@ -32,6 +32,6 @@ This function performs a default analysis of RNA-seq data
   saveFraseRDataSet(fds)
 
   # finally visualize the results
-  plotSampleResults(fds)
+  plotSampleResults(fds, 'sample1')
 
 }

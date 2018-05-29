@@ -19,9 +19,9 @@ plotSampleResults <- function(fds, sampleID=NULL, file=NULL,
         samples2plot <- !is.na(condition(fds))
         sampleIDs2plot <- samples(fds)[samples2plot]
         return(bplapply(sampleIDs2plot, fds=fds, dir=dir, BPPARAM=parallel(fds),
-            FUN=function(sampleID, fds, dir) {
+            FUN=function(sID, fds, dir) {
                 require(FraseR)
-                plotSampleResults(fds, sampleID, dir=dir, browseIt=FALSE)
+                plotSampleResults(fds, sID, dir=dir, browseIt=FALSE)
             }
         ))
     }
@@ -97,7 +97,7 @@ plotVolcano <- function(fds, sampleID, psiType,
             ylim=c(0,30), xlim=c(-5,5), source=NULL, deltaPsiCutoff=0.05){
 
     getAssayAsVector <- function(fds, prefix, psiType, sampleID){
-        as.vector(assays(fds)[[paste0(prefix, psiType)]][,sampleID][,1])
+        as.vector(assay(fds, paste0(prefix, psiType))[,sampleID])
     }
 
     # extract values

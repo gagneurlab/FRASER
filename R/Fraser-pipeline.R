@@ -23,7 +23,7 @@
 #'   saveFraseRDataSet(fds)
 #'
 #'   # finally visualize the results
-#'   plotSampleResults(fds)
+#'   plotSampleResults(fds, 'sample1')
 #'
 FraseR <- function(settings=createTestFraseRSettings(), NcpuPerSample=1){
 
