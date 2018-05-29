@@ -15,6 +15,7 @@
 #'
 ### GRange/Experiment/bamFile packages
 #'
+#' @importFrom BiocGenerics updateObject
 #' @import GenomicAlignments
 #' @import SummarizedExperiment
 #' @import GenomicRanges
@@ -52,7 +53,7 @@
 #'          setnames
 #' @import tidyr
 #' @importFrom HDF5Array writeHDF5Array
-#' @importFrom DelayedArray rowMeans
+#' @importFrom DelayedArray rowMeans path<-
 #' @importFrom rhdf5 h5ls
 #'
 ### P-Value calculation
