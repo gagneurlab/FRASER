@@ -21,9 +21,9 @@ stages:
 before_script:
   - module load "i12g/R/$RVER"
   - module load "i12g/texlive/$TEXVER"
-  - mkdir $R_LIBS_U/$CI_JOB_ID -p
   - R --vanilla CMD build --no-build-vignettes --no-manual $PKGDIR
   - PKG_FILE_NAME=$(ls -1t *.tar.gz | head -n 1)
+  - mkdir $R_LIBS_U/$CI_JOB_ID -p
   - R_LIBS_USER=$R_LIBS_U/$CI_JOB_ID Rscript --vanilla -e "install.packages('${PKG_FILE_NAME}', lib='$R_LIBS_U/$CI_JOB_ID', repo=NULL)"
 
 R-check:
