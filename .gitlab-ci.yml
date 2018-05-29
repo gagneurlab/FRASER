@@ -3,6 +3,7 @@ variables:
   PKGDIR:      "./"
   RVER:        "3.5.0-Bioc3.7"
   TEXVER:      "2016"
+  R_LIBS_USER: "tmp_libs"
 #  CI_DEBUG_TRACE: "true"
   
 before_script:
