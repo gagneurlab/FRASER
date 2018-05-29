@@ -11,13 +11,34 @@ Description: Detection of rare aberrant splicing events in transcriptome
     rare diseases where RNA-seq is performed to identify splicing defects.
 License: Artistic-2.0
 Depends:
-    R (>= 3.4), BiocParallel, data.table, Rsamtools,
+    R (>= 3.5),
+    BiocParallel,
+    data.table,
+    Rsamtools,
     SummarizedExperiment (>= 1.6.3)
 Imports:
-    BBmisc, biomaRt, DelayedArray, DT, GenomeInfoDb, GenomicAlignments, 
-    GenomicRanges, IRanges, graphics, gplots, htmlwidgets, HDF5Array, LSD, 
+    BBmisc,
+    BiocGenerics,
+    biomaRt,
+    DelayedArray (>= 0.5.14),
+    DT,
+    GenomeInfoDb,
+    GenomicAlignments, 
+    GenomicRanges,
+    IRanges,
+    graphics,
+    gplots,
+    htmlwidgets,
+    HDF5Array, LSD, 
     matrixStats, methods, parallel, plotly (>= 4.6.0), rhdf5, Rsubread, R.utils,
     S4Vectors, shiny, stats, tidyr, tools, utils, VGAM
+Suggests: 
+    BiocStyle,
+    knitr,
+    rmarkdown,
+    testthat,
+    covr,
+    RSelenium
 biocViews: RNASeq, AlternativeSplicing, Sequencing,
     Software, Genetics, Coverage
 URL: https://i12g-gagneurweb.in.tum.de/gitlab/mertes/FraseR/
@@ -42,6 +63,3 @@ Collate:
     'shiny.R'
     'plotDistributions.R'
 VignetteBuilder: knitr
-Suggests: BiocStyle, knitr, rmarkdown, testthat, covr, RSelenium
-
-

@@ -49,14 +49,11 @@ loadFraseRDataSet <- function(dir, name=NULL, upgrade=FALSE){
         if(grepl("DelayedMatrix .* representation .* Please update it ",
                 as.character(e))){
             if(isTRUE(upgrade)){
-                for(i in seq_along(fds@assays)){
-                    obj <- updateObject(fds@assays[[i]], verbose=TRUE)
-                    fds@assays$data[[i]] <- obj
-                }
-                for(i in seq_along(fds@nonSplicedReads@assays)){
-                    obj <- updateObject(fds@nonSplicedReads@assays[[i]],
-                            verbose=TRUE)
-                    fds@nonSplicedReads@assays$data[[i]] <- obj
+                for(a in list(fds@assays, fds@nonSplicedReads@assays)){
+                    for(i in names(a)){
+                        obj <- updateObject(a[[i]], verbose=TRUE)
+                        a$data[[i]] <- obj
+                    }
                 }
             } else {
                 stop(paste('Please upgrade the DelayedMatrix',
@@ -128,8 +125,7 @@ saveAsHDF5 <- function(fds, name, object=NULL, rewrite=FALSE){
     if(file.exists(h5FileTmp)) unlink(h5FileTmp)
 
     # dont rewrite it if already there
-    if(!rewrite && "DelayedMatrix" %in% is(object) &&
-                object@seed@file == h5File){
+    if(!rewrite && "DelayedMatrix" %in% is(object) && path(object) == h5File){
         return(object)
     }
 
