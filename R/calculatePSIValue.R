@@ -82,9 +82,8 @@ calculatePSIValuePrimeSite <- function(fds, psiType, overwriteCts){
 
             # add sample specific counts to the data.table
             sample <- as.character(sample)
-            sampleCounts <- as((counts(fds, type="j")[,sample]), "data.table")
-            colnames(sampleCounts) <- sample
-            countData <- cbind(countData, sampleCounts)
+            sampleCounts <- as(counts(fds, type="j")[,sample], 'matrix')
+            countData[,c(sample):=list(sampleCounts)]
 
             # calculate other split read counts
             if(isFALSE(overwriteCts)){
