@@ -25,7 +25,7 @@
 #' @aliases loadFraseRDataSet saveFraseRDataSet
 #' @rdname loadFraseRDataSet
 #' @export
-loadFraseRDataSet <- function(dir, name=NULL){
+loadFraseRDataSet <- function(dir, name=NULL, upgrade=FALSE){
     # check dir
     if(is.null(dir)) stop("dir: can not be NULL")
     if(!isScalarCharacter(dir)) stop("dir: needs to be a character path name.")
@@ -44,21 +44,41 @@ loadFraseRDataSet <- function(dir, name=NULL){
         ))
     }
     fds <- readRDS(fdsFile)
+    e <- try(assays(fds), silent=TRUE)
+    if(is.error(e)){
+        if(grepl("DelayedMatrix .* representation .* Please update it ",
+                as.character(e))){
+            if(isTRUE(upgrade)){
+                for(i in seq_along(fds@assays)){
+                    obj <- updateObject(fds@assays[[i]], verbose=TRUE)
+                    fds@assays$data[[i]] <- obj
+                }
+                for(i in seq_along(fds@nonSplicedReads@assays)){
+                    obj <- updateObject(fds@nonSplicedReads@assays[[i]],
+                            verbose=TRUE)
+                    fds@nonSplicedReads@assays$data[[i]] <- obj
+                }
+            } else {
+                stop(paste('Please upgrade the DelayedMatrix',
+                        'objects or set the update option to TRUE\n\n'), e)
+            }
+        }
+    }
 
     # set working dir and name correct
     workingDir(fds) <- dir
     name(fds) <- name
 
     # set the correct path of the assay seed file (if folder changed)
-    for(obj in c(fds, nonSplicedReads(fds))){
-        for(aname in names(obj@assays$data@listData)){
+    for(obj in list(fds, nonSplicedReads(fds))){
+        for(aname in assayNames(obj)){
             afile <- getFraseRHDF5File(fds, aname)
             if(!file.exists(afile)){
                 warning(paste("Can not find assay file: ", aname, ".",
                         "The assay will be removed from the object."))
-                assays(fds)[[aname]] <- NULL
+                assay(fds, aname) <- NULL
             } else {
-                obj@assays$data@listData[[aname]]@seed@file <- afile
+                path(assay(fds, aname)) <- afile
             }
         }
     }
