@@ -15,7 +15,7 @@
 #'
 ### GRange/Experiment/bamFile packages
 #'
-#' @importFrom BiocGenerics updateObject
+#' @importFrom BiocGenerics updateObject counts
 #' @import GenomicAlignments
 #' @import SummarizedExperiment
 #' @import GenomicRanges
@@ -52,7 +52,7 @@
 #' @importFrom data.table data.table as.data.table is.data.table := fread
 #'          setnames
 #' @import tidyr
-#' @importFrom HDF5Array writeHDF5Array
+#' @importFrom HDF5Array writeHDF5Array path
 #' @importFrom DelayedArray rowMeans path<-
 #' @importFrom rhdf5 h5ls
 #'
@@ -96,6 +96,6 @@ NULL
 globalVariables(c(".N", ".asDataFrame", "End", "FN", "HTML", "Start", "TP",
         "deltaPsi", "curgr", "gene", "lty", "hgnc_symbol", "id",
         "ldat", "p.adj", "pval", "pvalue", "shinyFds", "shinyFdsRes",
-        "sampleID", "sampleGroup", "chr", "symbol"),
+        "sampleID", "sampleGroup", "chr", "symbol", "type"),
         package="FraseR")
 
