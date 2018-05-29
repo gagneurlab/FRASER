@@ -3,7 +3,7 @@ variables:
   PKGDIR:      "./"
   RVER:        "3.5.0-Bioc3.7"
   TEXVER:      "2016"
-  R_LIBS_U: "tmp_libs"
+  R_LIBS_U:    "tmp_libs"
 #  CI_DEBUG_TRACE: "true"
   
 before_script:
@@ -21,7 +21,7 @@ stages:
 before_script:
   - module load "i12g/R/$RVER"
   - module load "i12g/texlive/$TEXVER"
-  - mkdir $R_LIBS_U/$CI_JOB_ID
+  - mkdir $R_LIBS_U/$CI_JOB_ID -p
   - R --vanilla CMD build --no-build-vignettes --no-manual $PKGDIR
   - PKG_FILE_NAME=$(ls -1t *.tar.gz | head -n 1)
   - R_LIBS_USER=$R_LIBS_U/$CI_JOB_ID Rscript --vanilla -e "install.packages('${PKG_FILE_NAME}', lib='$R_LIBS_U/$CI_JOB_ID', repo=NULL)"
