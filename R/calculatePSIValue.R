@@ -42,12 +42,18 @@ calculatePSIValues <- function(fds, overwriteCts=FALSE){
     return(fds)
 }
 
-
+library(VGAM)
 #'
 #' calculates the PSI value for the given prime site of the junction
 #'
 #' @noRd
-calculatePSIValuePrimeSite <- function(fds, psiType, overwriteCts){
+#'
+#' we can get psi much simpler:
+#' counts(fds, type='psi3', side='ofInterest')/
+#' ( counts(fds, type='psi3', side='ofInterest')+ counts(fds, type='psi3', side='otherSide'))
+#'
+#'
+calculatePSIValuePrimeSite <- function(fds, psiType, overwriteCts, logit=FALSE){
     stopifnot(class(fds) == "FraseRDataSet")
     stopifnot(isScalarCharacter(psiType))
     stopifnot(psiType %in% c("psi5", "psi3", "psiSite"))
@@ -96,7 +102,11 @@ calculatePSIValuePrimeSite <- function(fds, psiType, overwriteCts){
             }
 
             # calculate psi value
-            countData[,psiValue:=get(sample)/(get(sample) + rawOtherCounts)]
+            if(isTRUE(logit)){
+                countData[,psiValue:=logit(get(sample)/(get(sample) + rawOtherCounts + 1))]
+            } else {
+                countData[,psiValue:=get(sample)/(get(sample) + rawOtherCounts)]
+            }
 
             # if psi is NA this means there were no reads at all so set it to 0
             countData[is.na(psiValue),psiValue:=0]
