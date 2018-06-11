@@ -141,10 +141,10 @@ pvalueByBetaBinomialPerType <- function(fds, aname, psiType, pvalFun,
 #' calculate the pvalues with vglm and the betabinomial functions
 #'
 #' @noRd
-betabinVglmTest <- function(cMat, alternative="two.sided",
+betabinVglmTest <- function(cMat, latent=1, alternative="two.sided",
                     y=cMat[,1], N=cMat[,1] + cMat[,2]){
     # get fit
-    fit <- vglm(cMat ~ 1, betabinomial)
+    fit <- vglm(cMat ~ latent, betabinomial)
 
     # get the shape values
     co  <- Coef(fit)
