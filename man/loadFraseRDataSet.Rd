@@ -6,7 +6,7 @@
 \alias{saveFraseRDataSet}
 \title{Loading/Saving FraseRDataSets}
 \usage{
-loadFraseRDataSet(dir, name = NULL)
+loadFraseRDataSet(dir, name = NULL, upgrade = FALSE)
 
 saveFraseRDataSet(fds, dir = NULL, name = NULL, rewrite = FALSE)
 }

@@ -15,6 +15,7 @@
 #'
 ### GRange/Experiment/bamFile packages
 #'
+#' @importFrom BiocGenerics updateObject counts
 #' @import GenomicAlignments
 #' @import SummarizedExperiment
 #' @import GenomicRanges
@@ -51,8 +52,8 @@
 #' @importFrom data.table data.table as.data.table is.data.table := fread
 #'          setnames
 #' @import tidyr
-#' @importFrom HDF5Array writeHDF5Array
-#' @importFrom DelayedArray rowMeans
+#' @importFrom HDF5Array writeHDF5Array path
+#' @importFrom DelayedArray rowMeans path<-
 #' @importFrom rhdf5 h5ls
 #'
 ### P-Value calculation
@@ -64,7 +65,7 @@
 ### Miscelenious functions
 #'
 #' @importFrom BBmisc isScalarCharacter isScalarLogical chunk %nin%
-#'          isScalarInteger isFALSE
+#'          isScalarInteger isFALSE is.error
 #' @importFrom R.utils renameFile
 #' @importFrom tools file_path_as_absolute
 #' @importFrom methods as callNextMethod is new slot slot<- validObject
@@ -95,6 +96,6 @@ NULL
 globalVariables(c(".N", ".asDataFrame", "End", "FN", "HTML", "Start", "TP",
         "deltaPsi", "curgr", "gene", "lty", "hgnc_symbol", "id",
         "ldat", "p.adj", "pval", "pvalue", "shinyFds", "shinyFdsRes",
-        "sampleID", "sampleGroup", "chr", "symbol"),
+        "sampleID", "sampleGroup", "chr", "symbol", "type"),
         package="FraseR")
 

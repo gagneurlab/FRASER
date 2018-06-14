@@ -40,3 +40,41 @@ filterExpression <- function(fds, minExpressionInOneSample=5, quantile=0.7,
     validObject(fds)
     return(fds)
 }
+
+
+
+filterExpressionDelayed <- function(fds, minExpressionInOneSample=5, quantile=0.7,
+                                    quantileMinExpression=1, filter=FALSE){
+
+    # extract counts
+    cts  <- counts(fds, type="j", side="of")
+    cts5 <- counts(fds, type="psi5", side="ot")
+    cts3 <- counts(fds, type="psi3", side="ot")
+
+    # cutoff functions
+    # add annotation to object
+    mcols(fds, type="j")['maxCount'] <- rowMaxs(cts)
+    mcols(fds, type="j")['quantileValue5'] <-
+        rowQuantiles(cts + cts5, probs=quantile, drop=FALSE)
+    mcols(fds, type="j")['quantileValue3'] <-
+        rowQuantiles(cts + cts3, probs=quantile, drop=FALSE)
+    mcols(fds, type="j")['passed'] <-
+        as.matrix(mcols(fds, type="j")['maxCount']) >= minExpressionInOneSample &
+        (as.matrix(mcols(fds, type="j")['quantileValue5']) >= quantileMinExpression |
+             as.matrix(mcols(fds, type="j")['quantileValue3']) >= quantileMinExpression)
+
+    # filter if requested
+    if(filter==TRUE){
+        numFilt <- sum(mcols(fds, type="j")[,'passed'])
+        warning(paste0("Keeping ", numFilt, " junctions out of ", length(fds),
+                       ". This is ", signif(numFilt/length(fds)*100, 3),
+                       "% of the junctions"))
+        fds <- fds[mcols(fds, type="j")[,'passed']]
+    }
+
+    validObject(fds)
+    return(fds)
+}
+
+
+

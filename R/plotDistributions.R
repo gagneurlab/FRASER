@@ -25,7 +25,7 @@
 plotJunctionDistribution <- function(fds, gr, type=gr$type, sampleIDs=NULL,
             rmZeroCts=FALSE, plotRank=paste0(c("", "delta_", "zscore_"), type),
             plotCounts=TRUE, plotValVsCounts=type, qqplot=TRUE,
-            plotLegend=TRUE, cex=1){
+            plotLegend=TRUE, cex=1, mfrow=3, ...){
     stopifnot(is(fds, "FraseRDataSet"))
     if(is.data.table(gr)){
         gr <- makeGRangesFromDataFrame(gr, keep.extra.columns = TRUE)
@@ -47,17 +47,19 @@ plotJunctionDistribution <- function(fds, gr, type=gr$type, sampleIDs=NULL,
 
     data <- getPlotDistributionData(gr=gr, fds=fds, type=type, rmZeroCts)
 
-    par(mfrow=c(ceiling(numPlots/3),ifelse(numPlots < 3, numPlots, 3)), cex=cex)
+    par(mfrow=c(ceiling(numPlots/mfrow),ifelse(numPlots < mfrow, numPlots, mfrow)), cex=cex)
 
     # plot sample rank if requested
     if(!(length(plotRank) == 0 | isFALSE(plotRank))){
-        sapply(plotRank, plotSampleRank, gr=gr, fds=fds, sampleIDs=sampleIDs,
-               rmZeroCts=rmZeroCts, data=data)
+        for(i in seq_along(plotRank)){
+            plotSampleRank(gr=gr, fds=fds, type=plotRank[i],
+                    sampleIDs=sampleIDs, rmZeroCts=rmZeroCts, data=data)
+        }
     }
     # plot counts
     if(isTRUE(plotCounts)){
         plotCountsAtSite(gr, fds, type=type, sampleIDs=sampleIDs, data=data,
-                         plotLegend=plotLegend)
+                plotLegend=plotLegend)
     }
     # plot values versus counts
     if(!(length(plotValVsCounts) == 0 | isFALSE(plotValVsCounts))){
@@ -66,7 +68,7 @@ plotJunctionDistribution <- function(fds, gr, type=gr$type, sampleIDs=NULL,
     }
     # plot qq plot
     if(isTRUE(qqplot)){
-        plotQQplot(gr, fds, type=type, data=data)
+        plotQQplot(gr, fds, type=type, data=data, ...)
     }
 }
 
@@ -125,13 +127,31 @@ getPlotDistributionData <- function(gr, fds, type, rmZeroCts=FALSE){
     ))
 }
 
+#'
+#' This returns the zero value replacement in log plots for counts
+#'
+#' @noRd
+getZeroReplacement <- function(..., currZeroVal){
+    if(!is.na(currZeroVal) && numeric(currZeroVal) &&
+                currZeroVal < 1 && currZeroVal > 0.2){
+        return(currZeroVal)
+    }
+    maxVal <- max(unlist(...))
+    if(maxVal < 1000){
+        return(0.64)
+    }
+    if(maxVal < 5000){
+        return(0.68)
+    }
+    return(0.7)
+}
 
 #'
 #' plot count distribution
 #'
 #' @noRd
 plotCountsAtSite <- function(gr, fds, type, sampleIDs=NULL, plotLegend=TRUE,
-                    data=NULL, zeroVal=0.64){
+                    data=NULL, zeroVal=NA){
     # get data to plot
     if(is.null(data)){
         data <- getPlotDistributionData(gr, fds, type)
@@ -143,6 +163,7 @@ plotCountsAtSite <- function(gr, fds, type, sampleIDs=NULL, plotLegend=TRUE,
     # raw counts
     x <- data$rocts + data$rcts
     y <- data$rcts
+    zeroVal <- getZeroReplacement(x, y, currZeroVal=zeroVal)
     x[x == 0] <- zeroVal
     y[y == 0] <- zeroVal
 
@@ -280,13 +301,14 @@ plotSampleRank <- function(gr, fds, type, sampleIDs=NULL, delta=FALSE,
 plotValueVsCounts <- function(gr, fds, type, sampleIDs=NULL, delta=FALSE,
                     main=paste0(type, " versus total raw counts"),
                     xlab="Number of all observed split reads", ylab=NULL,
-                    zeroVal=0.64, rmZeroCts=FALSE, data=NULL, ...){
+                    zeroVal=NA, rmZeroCts=FALSE, data=NULL, ...){
     # get data
     if(is.null(data)){
         data <- getPlotDistributionData(gr, fds, type, rmZeroCts)
     }
     val <- data[[data$mapping[type]]]
     tcts <- data$rcts + data$rocts
+    zeroVal <- getZeroReplacement(tcts, currZeroVal=zeroVal)
     tcts[tcts == 0] <- zeroVal
 
     if(is.null(ylab)){
@@ -335,8 +357,8 @@ getTitle <- function(plotMainTxt, gr, psiType){
 #'
 #' @noRd
 plotQQplot <- function(gr=NULL, fds=NULL, type=NULL, data=NULL, maxOutlier=2,
-                    conf.alpha=0.05, sample=FALSE, breakTies=TRUE, 
-                    mainName = "QQ-plot"){
+                    conf.alpha=0.05, sample=FALSE, breakTies=TRUE,
+                    legendPos="bottomright"){
     if(isScalarLogical(conf.alpha)){
         conf.alpha <- ifelse(isTRUE(conf.alpha), 0.05, NA)
     }
@@ -414,7 +436,7 @@ plotQQplot <- function(gr=NULL, fds=NULL, type=NULL, data=NULL, maxOutlier=2,
     }
 
     if(is.numeric(conf.alpha)){
-        legend("bottomright", paste0("CI (alpha = ",
+        legend(legendPos, paste0("CI (alpha = ",
                 signif(conf.alpha, 2), ")"), lty=1, lwd=7, col="gray")
     }
 }

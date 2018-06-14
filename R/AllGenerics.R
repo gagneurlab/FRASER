@@ -61,7 +61,7 @@ setGeneric("nonSplicedReads<-", signature = "object", function(object, value) st
 
 #' @rdname results
 #' @export
-setGeneric("results",   function(x, ...) standardGeneric("results"))
+setGeneric("results", function(x, ...) standardGeneric("results"))
 
 
 #'
@@ -508,20 +508,22 @@ setMethod("counts", "FraseRDataSet", function(object, type=NULL,
         type <- checkReadType(object, type)
         aname <- paste0("rawCounts", toupper(type))
         if(!aname %in% assayNames(object)){
-            stop("Missing rawCounts. Please count your data first. ",
-                 "And then try again."
-            )
+            stop(paste0("Missing rawCounts for '", type, "'. ",
+                    "Please count your data first. And then try again."))
         }
         return(assays(object)[[aname]])
     }
 
     # extract psi value from type
     type <- unlist(regmatches(type, gregexpr("psi(3|5|Site)", type, perl=TRUE)))
+    if(length(type) == 0){
+        stop(paste0("Please provide a correct psi type: psi5, psi3, and psiSite.",
+                "Not the given one: '", type, "'."))
+    }
     aname <- paste0("rawOtherCounts_", type)
     if(!aname %in% assayNames(object)){
-        stop("Missing rawOtherCounts. Please calculate PSIValues first. ",
-             "And then try again."
-        )
+        stop(paste0("Missing rawOtherCounts for type '", type, "'.",
+                "Please calculate PSIValues first. And then try again."))
     }
     return(assays(object)[[aname]])
 })
@@ -589,8 +591,9 @@ setAs("DataFrame", "matrix", function(from){
 #'
 #' retrieve a single sample result object
 #' @noRd
-resultsSingleSample <- function(sampleID, grs, pvals, zscores, psivals,
-                    deltaPsiVals, psiType, fdrCut, zscoreCut, dPsiCut){
+resultsSingleSample <- function(sampleID, grs, pvals, zscores, psivals, rawCts,
+                    rawOtherCts, deltaPsiVals, psiType, fdrCut, zscoreCut,
+                    dPsiCut){
 
     goodCut <- na2false(zscores[,abs(get(sampleID)) >= zscoreCut])
     goodCut <- goodCut & na2false(deltaPsiVals[,abs(get(sampleID)) >= dPsiCut])
@@ -606,13 +609,17 @@ resultsSingleSample <- function(sampleID, grs, pvals, zscores, psivals,
     }
 
     # extract data
-    mcols(ans)$type        <- psiType
-    mcols(ans)$sampleID    <- sampleID
-    mcols(ans)$hgnc_symbol <- mcols(grs[goodCut])$hgnc_symbol
-    mcols(ans)$zscore      <- round(zscores[goodCut,get(sampleID)], 3)
-    mcols(ans)$psiValue    <- round(psivals[goodCut,get(sampleID)], 3)
-    mcols(ans)$pvalue      <- pval[goodCut]
-    mcols(ans)$deltaPsi    <- round(deltaPsiVals[goodCut,get(sampleID)], 3)
+    mcols(ans)$type         <- psiType
+    mcols(ans)$sampleID     <- sampleID
+    mcols(ans)$hgnc_symbol  <- mcols(grs[goodCut])$hgnc_symbol
+    mcols(ans)$zscore       <- round(zscores[goodCut,get(sampleID)], 3)
+    mcols(ans)$psiValue     <- round(psivals[goodCut,get(sampleID)], 3)
+    mcols(ans)$pvalue       <- pval[goodCut]
+    mcols(ans)$deltaPsi     <- round(deltaPsiVals[goodCut,get(sampleID)], 3)
+    mcols(ans)$meanCts      <- rowMeans(rawCts[goodCut])
+    mcols(ans)$meanOtherCts <- rowMeans(rawOtherCts[goodCut])
+    mcols(ans)$expression   <- rawCts[goodCut, get(sampleID)]
+    mcols(ans)$expressionOther <- rawOtherCts[goodCut, get(sampleID)]
 
     # correct for multiple testing
     p <- mcols(ans)$pvalue
@@ -670,19 +677,23 @@ FraseR.results <- function(x, sampleIDs, fdrCut, zscoreCut, dPsiCut,
 
         # extract values
         pvals <- as(Class="data.table",
-                object=assays(x)[[paste0("pvalue_", type)]][tested,])
+                object=assay(x, paste0("pvalue_", type))[tested,])
         zscores <- as(Class="data.table",
-                object=assays(x)[[paste0("zscore_", type)]][tested,])
+                object=assay(x, paste0("zscore_", type))[tested,])
         psivals <- as(Class="data.table", object=assays(x)[[type]][tested,])
         deltaPsiVals <- as(Class="data.table", object=assays(x)[[
                 paste0("delta_", type)]][tested,])
+        rawCts <- as(Class="data.table", counts(x, type=type)[tested,])
+        rawOtherCts <- as(Class="data.table",
+                counts(x, type=type, side="other")[tested,])
 
         # create reult table
         sampleRes <- sapply(sampleIDs,
                 resultsSingleSample, grs=grs, pvals=pvals,
                 zscores=zscores, psiType=type, psivals=psivals,
-                deltaPsiVals=deltaPsiVals,
-                fdrCut=fdrCut, zscoreCut=zscoreCut, dPsiCut=dPsiCut)
+                deltaPsiVals=deltaPsiVals, rawCts=rawCts,
+                rawOtherCts=rawOtherCts, fdrCut=fdrCut, zscoreCut=zscoreCut,
+                dPsiCut=dPsiCut)
 
         # return combined result
         return(unlist(GRangesList(sampleRes)))

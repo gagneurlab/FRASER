@@ -1,6 +1,7 @@
 # ignore the gitlab ci file
 ^.gitlab-ci.yaml$
 ^.gitlab-ci.yml$
+^tmp_libs/$
 
 # ignore all vignette builds
 ^vignettes/build$

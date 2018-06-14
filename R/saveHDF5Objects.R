@@ -25,7 +25,7 @@
 #' @aliases loadFraseRDataSet saveFraseRDataSet
 #' @rdname loadFraseRDataSet
 #' @export
-loadFraseRDataSet <- function(dir, name=NULL){
+loadFraseRDataSet <- function(dir, name=NULL, upgrade=FALSE){
     # check dir
     if(is.null(dir)) stop("dir: can not be NULL")
     if(!isScalarCharacter(dir)) stop("dir: needs to be a character path name.")
@@ -44,21 +44,38 @@ loadFraseRDataSet <- function(dir, name=NULL){
         ))
     }
     fds <- readRDS(fdsFile)
+    e <- try(assays(fds), silent=TRUE)
+    if(is.error(e)){
+        if(grepl("DelayedMatrix .* representation .* Please update it ",
+                as.character(e))){
+            if(isTRUE(upgrade)){
+                for(a in list(fds@assays, fds@nonSplicedReads@assays)){
+                    for(i in names(a)){
+                        obj <- updateObject(a[[i]], verbose=TRUE)
+                        a$data[[i]] <- obj
+                    }
+                }
+            } else {
+                stop(paste('Please upgrade the DelayedMatrix',
+                        'objects or set the update option to TRUE\n\n'), e)
+            }
+        }
+    }
 
     # set working dir and name correct
     workingDir(fds) <- dir
     name(fds) <- name
 
     # set the correct path of the assay seed file (if folder changed)
-    for(obj in c(fds, nonSplicedReads(fds))){
-        for(aname in names(obj@assays$data@listData)){
+    for(obj in list(fds, nonSplicedReads(fds))){
+        for(aname in assayNames(obj)){
             afile <- getFraseRHDF5File(fds, aname)
             if(!file.exists(afile)){
                 warning(paste("Can not find assay file: ", aname, ".",
                         "The assay will be removed from the object."))
-                assays(fds)[[aname]] <- NULL
+                assay(fds, aname) <- NULL
             } else {
-                obj@assays$data@listData[[aname]]@seed@file <- afile
+                path(assay(fds, aname)) <- afile
             }
         }
     }
@@ -108,8 +125,7 @@ saveAsHDF5 <- function(fds, name, object=NULL, rewrite=FALSE){
     if(file.exists(h5FileTmp)) unlink(h5FileTmp)
 
     # dont rewrite it if already there
-    if(!rewrite && "DelayedMatrix" %in% is(object) &&
-                object@seed@file == h5File){
+    if(!rewrite && "DelayedMatrix" %in% is(object) && path(object) == h5File){
         return(object)
     }
 
@@ -122,7 +138,7 @@ saveAsHDF5 <- function(fds, name, object=NULL, rewrite=FALSE){
     # override old h5 file if present and move tmp to correct place
     if(file.exists(h5File)) unlink(h5File)
     renameFile(h5FileTmp, h5File)
-    h5@seed@file <- h5File
+    path(h5) <- h5File
 
     return(h5)
 }

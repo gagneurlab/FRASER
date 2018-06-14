@@ -101,6 +101,7 @@ calculatePValues <- function(fds, internBPPARAM=bpparam(), ...){
         if(assayExists(fds, aname)){
             next
         }
+        gc()
         fds <- do.call(FUN[[1]],
             c(fds=fds, aname=aname, psiType=psiType, FUN[-1], ...)
         )
@@ -110,7 +111,6 @@ calculatePValues <- function(fds, internBPPARAM=bpparam(), ...){
         name <- name(fds)
         dir  <- workingDir(fds)
         rm(fds)
-        gc()
         gc()
         fds <- loadFraseRDataSet(dir, name)
     }
