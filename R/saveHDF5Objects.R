@@ -102,6 +102,7 @@ saveFraseRDataSet <- function(fds, dir=NULL, name=NULL, rewrite=FALSE) {
     assays <- assays(fds)
     for(aname in names(assays)){
         assay <- assay(fds, aname)
+        name(fds) <- name
         assays[[aname]] <- saveAsHDF5(fds, aname, assay, rewrite=rewrite)
     }
     assays(fds) <- assays
