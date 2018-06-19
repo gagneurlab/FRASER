@@ -55,6 +55,7 @@
 #' @importFrom HDF5Array writeHDF5Array path
 #' @importFrom DelayedArray rowMeans path<-
 #' @importFrom rhdf5 h5ls
+#' @importFrom DelayedMatrixStats rowMedians rowMeans2
 #'
 ### P-Value calculation
 #'

@@ -42,7 +42,7 @@ calculatePSIValues <- function(fds, overwriteCts=FALSE){
     return(fds)
 }
 
-library(VGAM)
+
 #'
 #' calculates the PSI value for the given prime site of the junction
 #'
@@ -223,11 +223,10 @@ calculateDeltaPsiValue <- function(fds, psiType, assayName){
     message(date(), ": Calculate the delta for ", psiType, " values ...")
 
     # get psi values
-    psiVal <- as.matrix(assays(fds)[[psiType]])
+    psiVal <- assays(fds)[[psiType]]
 
     # psi - median(psi)
-    rowmedian <- rowMedians(psiVal, na.rm = TRUE)
-    deltaPsi  <- psiVal - rowmedian
+    deltaPsi  <- psiVal - rowMedians(psiVal, na.rm = TRUE)
 
     # use as.matrix to rewrite it as a new hdf5 array
     assays(fds, type=psiType)[[assayName]] <- deltaPsi
