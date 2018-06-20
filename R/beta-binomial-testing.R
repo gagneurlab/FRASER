@@ -2,6 +2,14 @@
 #'
 #' calculates the pvalue per type (psi3,psi5,spliceSite) with beta-binomial
 #'
+#' @examples
+#' fds <- countRNAData(createTestFraseRSettings())
+#' fds <- calculatePSIValues(fds)
+#' parallel(fds) <- SerialParam()
+#' debug(FraseR:::betabinVglmTest)
+#' fds <- pvalueByBetaBinomialPerType(fds, "testPval", "psi5",
+#'         FraseR:::betabinVglmTest)
+#'
 #' @noRd
 pvalueByBetaBinomialPerType <- function(fds, aname, psiType, pvalFun,
             minCov=5, alternative="two.sided", renjin=FALSE){
