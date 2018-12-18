@@ -14,3 +14,9 @@ cache
 vignettes/*.pdf
 vignettes/*.tex
 vignettes/*.txt
+
+
+# ignore cpp files
+*.o
+*.dll
+
