@@ -8,9 +8,9 @@
 \usage{
 results(x, ...)
 
-\S4method{results}{FraseRDataSet}(x, sampleIDs = samples(x), fdrCut = 0.05,
-  zscoreCut = 2, redo = FALSE, dPsiCut = 0.01, psiType = c("psi3",
-  "psi5", "psiSite"))
+\S4method{results}{FraseRDataSet}(x, sampleIDs = samples(x),
+  fdrCut = 0.05, zscoreCut = 2, redo = FALSE, dPsiCut = 0.01,
+  psiType = c("psi3", "psi5", "psiSite"))
 }
 \description{
 The result function extracts the results from the given analysis object

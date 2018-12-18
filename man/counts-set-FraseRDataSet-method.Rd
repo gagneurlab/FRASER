@@ -5,8 +5,8 @@
 \alias{counts<-,FraseRDataSet-method}
 \title{setter for count data}
 \usage{
-\S4method{counts}{FraseRDataSet}(object, type = NULL, side = c("ofInterest",
-  "otherSide")) <- value
+\S4method{counts}{FraseRDataSet}(object, type = NULL,
+  side = c("ofInterest", "otherSide")) <- value
 }
 \description{
 setter for count data

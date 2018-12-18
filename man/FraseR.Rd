@@ -2,7 +2,6 @@
 % Please edit documentation in R/FraseR-package.R, R/Fraser-pipeline.R
 \name{FraseR}
 \alias{FraseR}
-\alias{FraseR}
 \title{FraseR: A package providing a workflow to detect aberrant splicing events
     in RNA sequencing data in a rare disease cohort}
 \usage{
@@ -19,9 +18,6 @@ parallel backend of the internal loop for counting}
 FraseRDataSet
 }
 \description{
-FraseR: A package providing a workflow to detect aberrant splicing events
-    in RNA sequencing data in a rare disease cohort
-
 This function performs a default analysis of RNA-seq data
 }
 \examples{

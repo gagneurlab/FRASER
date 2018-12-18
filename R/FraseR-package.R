@@ -20,7 +20,6 @@
 #' @import SummarizedExperiment
 #' @import GenomicRanges
 #' @importFrom IRanges subsetByOverlaps from to IRanges
-#' @importFrom Rsubread featureCounts
 #' @importFrom Rsamtools ScanBamParam scanBamHeader bamMapqFilter
 #'          bamWhich bamWhich<-
 #'
@@ -86,6 +85,10 @@
 #' @importFrom data.table rbindlist
 #' @importFrom matrixStats rowQuantiles rowMedians
 #' @importFrom stats runif median quantile
+#'
+#'
+#' @useDynLib FraseR
+#'
 
 
 

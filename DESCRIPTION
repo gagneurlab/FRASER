@@ -30,19 +30,23 @@ Imports:
     gplots,
     htmlwidgets,
     HDF5Array, LSD, 
-    matrixStats, methods, parallel, plotly (>= 4.6.0), rhdf5, Rsubread, R.utils,
+    matrixStats, methods, parallel, plotly (>= 4.6.0), rhdf5, R.utils,
     S4Vectors, shiny, stats, tidyr, tools, utils, VGAM
 Suggests: 
     BiocStyle,
     knitr,
     rmarkdown,
+    Rsubread,
     testthat,
     covr,
     RSelenium
+LinkingTo:
+    Rcpp,
+    RcppArmadillo
 biocViews: RNASeq, AlternativeSplicing, Sequencing,
     Software, Genetics, Coverage
 URL: https://i12g-gagneurweb.in.tum.de/gitlab/mertes/FraseR/
-RoxygenNote: 6.0.1
+RoxygenNote: 6.1.1
 Collate:
     'FraseR-package.R'
     'FraseRDataSet-class.R'

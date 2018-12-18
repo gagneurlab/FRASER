@@ -6,10 +6,6 @@
 \alias{na2zero}
 \alias{null2na}
 \alias{null2default}
-\alias{null2default}
-\alias{na2false}
-\alias{na2zero}
-\alias{null2na}
 \title{Convert to default values}
 \usage{
 na2default(x, default = FALSE)

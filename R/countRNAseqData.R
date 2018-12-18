@@ -399,7 +399,7 @@ countNonSplicedReads <- function(sampleID, spliceSiteCoords, settings,
 
     # extract the counts with Rsubread
     anno <- GRanges2SAF(spliceSiteCoords)
-    rsubreadCounts <- featureCounts(files=bamFile, annot.ext=anno,
+    rsubreadCounts <- Rsubreads::featureCounts(files=bamFile, annot.ext=anno,
             minOverlap=2, allowMultiOverlap=TRUE, checkFragLength=FALSE,
             minMQS=bamMapqFilter(scanBamParam(settings)),
             strandSpecific=strandSpecific(settings),
