@@ -42,7 +42,7 @@ Suggests:
 biocViews: RNASeq, AlternativeSplicing, Sequencing,
     Software, Genetics, Coverage
 URL: https://i12g-gagneurweb.in.tum.de/gitlab/mertes/FraseR/
-RoxygenNote: 6.0.1
+RoxygenNote: 6.1.1
 Collate:
     'FraseR-package.R'
     'FraseRDataSet-class.R'

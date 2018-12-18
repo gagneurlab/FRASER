@@ -96,10 +96,6 @@ createMainPlotFraseR <- function(fds, sampleID, source=NULL){
 plotVolcano <- function(fds, sampleID, psiType,
             ylim=c(0,30), xlim=c(-5,5), source=NULL, deltaPsiCutoff=0.05){
 
-    getAssayAsVector <- function(fds, prefix, psiType, sampleID){
-        as.vector(assay(fds, paste0(prefix, psiType))[,sampleID])
-    }
-
     # extract values
     zscores  <- getAssayAsVector(fds, "zscore_", psiType, sampleID)
     pvalues  <- -log10(getAssayAsVector(fds, "pvalue_", psiType, sampleID))

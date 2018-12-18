@@ -5,8 +5,8 @@
 \alias{counts,FraseRDataSet-method}
 \title{getter for count data}
 \usage{
-\S4method{counts}{FraseRDataSet}(object, type = NULL, side = c("ofInterest",
-  "otherSide"), normalized = FALSE)
+\S4method{counts}{FraseRDataSet}(object, type = NULL,
+  side = c("ofInterest", "otherSide"), normalized = FALSE)
 }
 \description{
 getter for count data

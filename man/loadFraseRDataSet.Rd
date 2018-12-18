@@ -3,7 +3,6 @@
 \name{loadFraseRDataSet}
 \alias{loadFraseRDataSet}
 \alias{saveFraseRDataSet}
-\alias{saveFraseRDataSet}
 \title{Loading/Saving FraseRDataSets}
 \usage{
 loadFraseRDataSet(dir, name = NULL, upgrade = FALSE)

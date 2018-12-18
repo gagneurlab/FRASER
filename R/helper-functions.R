@@ -310,3 +310,7 @@ assayExists <- function(fds, assayName){
     }
     return(aexists)
 }
+
+getAssayAsVector <- function(fds, prefix, psiType, sampleID){
+    as.vector(assay(fds, paste0(prefix, psiType))[,sampleID])
+}

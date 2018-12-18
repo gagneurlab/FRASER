@@ -5,8 +5,8 @@
 \title{Visualisation of the distributions of the statistics used within FraseR.}
 \usage{
 plotJunctionDistribution(fds, gr, type = gr$type, sampleIDs = NULL,
-  rmZeroCts = FALSE, plotRank = paste0(c("", "delta_", "zscore_"), type),
-  plotCounts = TRUE, plotValVsCounts = type, qqplot = TRUE,
+  rmZeroCts = FALSE, plotRank = paste0(c("", "delta_", "zscore_"),
+  type), plotCounts = TRUE, plotValVsCounts = type, qqplot = TRUE,
   plotLegend = TRUE, cex = 1, mfrow = 3, ...)
 }
 \arguments{
