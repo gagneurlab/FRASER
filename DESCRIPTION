@@ -39,6 +39,9 @@ Suggests:
     testthat,
     covr,
     RSelenium
+LinkingTo:
+    Rcpp,
+    RcppArmadillo
 biocViews: RNASeq, AlternativeSplicing, Sequencing,
     Software, Genetics, Coverage
 URL: https://i12g-gagneurweb.in.tum.de/gitlab/mertes/FraseR/
@@ -61,5 +64,6 @@ Collate:
     'plotResults.R'
     'saveHDF5Objects.R'
     'shiny.R'
-    'plotDistributions.R'
+    'plotDistributions.R',
+    RcppExports.R
 VignetteBuilder: knitr

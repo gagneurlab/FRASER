@@ -6,35 +6,6 @@
 
 using namespace Rcpp;
 
-// predictMatY
-arma::mat predictMatY(arma::mat x, arma::mat E, arma::mat D, arma::vec b);
-RcppExport SEXP _FraseR_predictMatY(SEXP xSEXP, SEXP ESEXP, SEXP DSEXP, SEXP bSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::mat >::type x(xSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type E(ESEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type D(DSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type b(bSEXP);
-    rcpp_result_gen = Rcpp::wrap(predictMatY(x, E, D, b));
-    return rcpp_result_gen;
-END_RCPP
-}
-// predictMatC
-arma::mat predictMatC(arma::mat x, arma::mat E, arma::mat D, arma::vec b, arma::vec sf);
-RcppExport SEXP _FraseR_predictMatC(SEXP xSEXP, SEXP ESEXP, SEXP DSEXP, SEXP bSEXP, SEXP sfSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::mat >::type x(xSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type E(ESEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type D(DSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type b(bSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type sf(sfSEXP);
-    rcpp_result_gen = Rcpp::wrap(predictMatC(x, E, D, b, sf));
-    return rcpp_result_gen;
-END_RCPP
-}
 // truncNLL_db
 double truncNLL_db(arma::vec par, arma::mat H, arma::vec k, arma::vec n, double rho);
 RcppExport SEXP _FraseR_truncNLL_db(SEXP parSEXP, SEXP HSEXP, SEXP kSEXP, SEXP nSEXP, SEXP rhoSEXP) {
@@ -65,12 +36,46 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// truncNLL_e
+double truncNLL_e(arma::vec par, arma::mat x, arma::mat D, arma::vec b, arma::mat k, arma::mat n, arma::vec rho);
+RcppExport SEXP _FraseR_truncNLL_e(SEXP parSEXP, SEXP xSEXP, SEXP DSEXP, SEXP bSEXP, SEXP kSEXP, SEXP nSEXP, SEXP rhoSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::vec >::type par(parSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type x(xSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type D(DSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type b(bSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type k(kSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type n(nSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type rho(rhoSEXP);
+    rcpp_result_gen = Rcpp::wrap(truncNLL_e(par, x, D, b, k, n, rho));
+    return rcpp_result_gen;
+END_RCPP
+}
+// truncGrad_e
+arma::mat truncGrad_e(arma::vec par, arma::mat x, arma::mat D, arma::vec b, arma::mat k, arma::mat n, arma::vec rho);
+RcppExport SEXP _FraseR_truncGrad_e(SEXP parSEXP, SEXP xSEXP, SEXP DSEXP, SEXP bSEXP, SEXP kSEXP, SEXP nSEXP, SEXP rhoSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::vec >::type par(parSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type x(xSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type D(DSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type b(bSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type k(kSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type n(nSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type rho(rhoSEXP);
+    rcpp_result_gen = Rcpp::wrap(truncGrad_e(par, x, D, b, k, n, rho));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_FraseR_predictMatY", (DL_FUNC) &_FraseR_predictMatY, 4},
-    {"_FraseR_predictMatC", (DL_FUNC) &_FraseR_predictMatC, 5},
     {"_FraseR_truncNLL_db", (DL_FUNC) &_FraseR_truncNLL_db, 5},
     {"_FraseR_truncGrad_db", (DL_FUNC) &_FraseR_truncGrad_db, 5},
+    {"_FraseR_truncNLL_e", (DL_FUNC) &_FraseR_truncNLL_e, 7},
+    {"_FraseR_truncGrad_e", (DL_FUNC) &_FraseR_truncGrad_e, 7},
     {NULL, NULL, 0}
 };
 
