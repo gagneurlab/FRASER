@@ -17,9 +17,14 @@ void prints(std::string s){
 void printmat(arma::mat x){
     printv(Rcpp::wrap(x.n_cols));
     printv(Rcpp::wrap(x.n_rows));
-    if(x.n_rows >= 1){
-        x = x.head_rows(5);
-        x = x.head_cols(5);
+    if(x.n_rows >= 1 & x.n_cols >= 1){
+        int nCols = as<int>(wrap(x.n_cols));
+        int nRows = as<int>(wrap(x.n_rows));
+        nCols = std::min<int>(nCols, 5);
+        nRows = std::min<int>(nRows, 5);
+
+        x = x.head_rows(nRows);
+        x = x.head_cols(nCols);
         printv(Rcpp::wrap(x));
     } else {
         prints("No rows exists here!");
@@ -27,13 +32,14 @@ void printmat(arma::mat x){
     return;
 }
 
-void printrv(arma::rowvec v){
-    printv(Rcpp::wrap(v));
+void printvec(arma::vec v){
+    int nElem = as<int>(wrap(v.n_elem));
+    nElem = std::min<int>(nElem, 20);
+    printv(Rcpp::wrap(v.head(nElem)));
 }
 
-void printvec(arma::vec v){
-    printv(Rcpp::wrap(v));
-    //.head(std::min(v.n_elem-0.1, 5 - 0.1) + 0.1))
+void printrv(arma::rowvec v){
+    printvec(arma::vectorise(v));
 }
 
 void printd(double x){
