@@ -5,8 +5,9 @@
 
 using namespace Rcpp;
 
-const double epsilonU      = 1e-20;
+//const double epsilonU      = 1e-20;
 const double MAX_EXP_VALUE = 700;
+//const double lambda = 100;
 
 arma::mat trimmVal(arma::mat y){
     arma::uvec idx;
@@ -40,7 +41,7 @@ arma::mat rcppdigammamat(arma::mat x){
 }
 
 // [[Rcpp::export()]]
-double truncNLL_db(arma::vec par, arma::mat H, arma::vec k, arma::vec n, double rho){
+double truncNLL_db(arma::vec par, arma::mat H, arma::vec k, arma::vec n, double rho, double lambda){
     double b, rhoa, rhob;
     arma::vec d, y, ey, p, u, v, alpha, alphaK, beta, betaNK, nll;
 
@@ -48,7 +49,7 @@ double truncNLL_db(arma::vec par, arma::mat H, arma::vec k, arma::vec n, double 
     d = par.subvec(1, par.n_elem-1);
 
     y = H * d + b;
-    y = trimmVal(y);
+    //y = trimmVal(y);
     ey = arma::exp(y);
 
     rhoa = (1 - rho)/rho;
@@ -57,18 +58,22 @@ double truncNLL_db(arma::vec par, arma::mat H, arma::vec k, arma::vec n, double 
     u    = -1/(1 + ey) * rhob;
     v    = ey/arma::square(1 + ey);
 
-    alpha  = arma::lgamma(p * rhoa + epsilonU);
+    alpha  = arma::lgamma(p * rhoa );
+    //alpha  = arma::lgamma(p * rhoa + epsilonU);
     alphaK = arma::lgamma(p * rhoa + k + 0.5);
-    beta   = arma::lgamma(u + epsilonU);
+    beta   = arma::lgamma(u);
+    //beta   = arma::lgamma(u + epsilonU);
     betaNK = arma::lgamma(u + n - k + 0.5);
 
     nll = arma::accu(alpha + beta - alphaK - betaNK)/k.n_elem;
+    
+    nll = nll + (lambda/k.n_elem) * arma::accu(d % d); 
 
     return arma::as_scalar(nll);
 }
 
 // [[Rcpp::export()]]
-arma::vec truncGrad_db(arma::vec par, arma::mat H, arma::vec k, arma::vec n, double rho){
+arma::vec truncGrad_db(arma::vec par, arma::mat H, arma::vec k, arma::vec n, double rho, double lambda){
     double b, rhoa, rhob;
     arma::vec d, y, ey, p, u, v, alpha, alphaK, beta, betaNK, grb, grd;
 
@@ -76,7 +81,7 @@ arma::vec truncGrad_db(arma::vec par, arma::mat H, arma::vec k, arma::vec n, dou
     d = par.subvec(1, par.n_elem-1);
 
     y = H * d + b;
-    y = trimmVal(y);
+    //y = trimmVal(y);
     ey = arma::exp(y);
 
     rhoa = (1 - rho)/rho;
@@ -85,14 +90,18 @@ arma::vec truncGrad_db(arma::vec par, arma::mat H, arma::vec k, arma::vec n, dou
     u    = -1/(1 + ey) * rhob;
     v    = ey/arma::square(1 + ey);
 
-    alpha  = rcppdigamma(p * rhoa + epsilonU) * rhoa;
+    alpha  = rcppdigamma(p * rhoa) * rhoa;
+    //alpha  = rcppdigamma(p * rhoa + epsilonU) * rhoa;
     alphaK = rcppdigamma(p * rhoa + k + 0.5) * rhoa;
-    beta   = rcppdigamma(u + epsilonU) * rhob;
+    beta   = rcppdigamma(u) * rhob;
+    //beta   = rcppdigamma(u + epsilonU) * rhob;
     betaNK = rcppdigamma(u + n - k + 0.5) * rhob;
 
     grb = arma::accu((alpha + beta - alphaK - betaNK) % v)/k.n_elem;
     grd = (alpha + beta - alphaK - betaNK) % v;
     grd = colMeans(grd % H.each_col());
+    
+    grd = grd + (2*lambda/k.n_elem) * d;
 
     arma::mat ans = arma::join_cols(grb, grd);
     return ans.col(0);
@@ -108,7 +117,7 @@ double truncNLL_e(arma::vec par, arma::mat x, arma::mat D, arma::vec b,
 
     y = x * E * D.t();
     y = y.each_row() + b.t();
-    y = trimmVal(y);
+    //y = trimmVal(y);
     ey = arma::exp(y);
 
     rhoa = (1 - rho)/rho;
@@ -119,9 +128,11 @@ double truncNLL_e(arma::vec par, arma::mat x, arma::mat D, arma::vec b,
     v    = ey/arma::square(1 + ey);
 
     aT = p.each_row() % rhoa.t();
-    alpha  = arma::lgamma(aT + epsilonU);
+    alpha  = arma::lgamma(aT);
+    //alpha  = arma::lgamma(aT + epsilonU);
     alphaK = arma::lgamma(aT + k.t() + 0.5);
-    beta   = arma::lgamma(u + epsilonU);
+    beta   = arma::lgamma(u);
+    //beta   = arma::lgamma(u + epsilonU);
     betaNK = arma::lgamma(u + n.t() - k.t() + 0.5);
 
     nll = arma::accu(alpha + beta - alphaK - betaNK)/k.n_elem;
@@ -139,7 +150,7 @@ arma::mat truncGrad_e(arma::vec par, arma::mat x, arma::mat D, arma::vec b,
 
     y = x * E * D.t();
     y = y.each_row() + b.t();
-    y = trimmVal(y);
+    //y = trimmVal(y);
     ey = arma::exp(y);
 
     rhoa = (1 - rho)/rho;
@@ -151,8 +162,10 @@ arma::mat truncGrad_e(arma::vec par, arma::mat x, arma::mat D, arma::vec b,
 
     aT  = p.each_row() % rhoa.t();
     akT = rcppdigammamat(aT + k.t() + 0.5);
-    aT  = rcppdigammamat(aT + epsilonU);
-    bT  = rcppdigammamat(u + epsilonU);
+    aT  = rcppdigammamat(aT);
+    //aT  = rcppdigammamat(aT + epsilonU);
+    bT  = rcppdigammamat(u);
+    //bT  = rcppdigammamat(u + epsilonU);
     bnkT = rcppdigammamat(u + n.t() - k.t() + 0.5);
 
     alpha  = aT.each_row() % rhoa.t();
@@ -164,4 +177,64 @@ arma::mat truncGrad_e(arma::vec par, arma::mat x, arma::mat D, arma::vec b,
     gr = (x.t() * gr * D)/y.n_elem;
 
     return gr;
+}
+
+// [[Rcpp::export()]]
+arma::mat predictMuCpp(arma::mat H, arma::mat D, arma::vec b){
+  
+  arma::mat y, ey, mu;
+  
+  y = H * D.t();
+  y = y.each_row() + b.t();
+  ey = arma::exp(y);
+  mu = ey/(1 + ey);
+  
+  return mu;
+}
+
+// [[Rcpp::export()]]
+double truncNLL_rho(double rho, arma::vec mui, arma::vec ki, arma::vec ni){
+  arma::vec u, alpha, alphaK, beta, betaNK, alphaBeta, nll;
+  double rhoa, rhob;
+  
+  rhoa = (1 - rho)/rho;
+  rhob = (rho - 1)/rho;
+  u    = (mui-1) * rhob;
+  
+  alpha  = arma::lgamma(mui * rhoa);
+  //alpha  = arma::lgamma(p % rhoa + epsilonU);
+  alphaK = arma::lgamma(mui * rhoa + ki + 0.5);
+  beta   = arma::lgamma(u);
+  //beta   = arma::lgamma(u + epsilonU);
+  betaNK = arma::lgamma(u + ni - ki + 0.5);
+  alphaBeta = arma::lgamma(rhoa + ni + 1) - lgamma(rhoa);;
+  
+  nll = arma::accu(alpha + beta - alphaK - betaNK + alphaBeta)/ki.n_elem;
+  
+  return arma::as_scalar(nll);
+}
+
+// [[Rcpp::export()]]
+double fullNLL(arma::mat mu, arma::mat rho, arma::mat k, arma::mat n, arma::mat D, double lambda){
+  arma::mat rhoa, rhob;
+  arma::mat u, alpha, alphaK, beta, betaNK, nonTruncTerms, nll, aT;
+  
+  
+  rhoa = (1 - rho)/rho;
+  rhob = -rhoa;
+  aT = mu % rhoa;
+  u    = mu - 1;
+  u    = u % rhob;
+  
+  alpha  = arma::lgamma(aT);
+  alphaK = arma::lgamma(aT + k + 0.5);
+  beta   = arma::lgamma(u);
+  betaNK = arma::lgamma(u + n - k + 0.5);
+  nonTruncTerms = - arma::lgamma(n+1+1) + arma::lgamma(k+1+0.5) + arma::lgamma(n-k+1+0.5) + arma::lgamma(rhoa + n + 1) - arma::lgamma(rhoa);
+  
+  nll = arma::accu(alpha + beta - alphaK - betaNK + nonTruncTerms)/k.n_elem;
+  
+  nll = nll + (lambda/k.n_elem) * arma::accu(D % D); 
+  
+  return arma::as_scalar(nll);
 }

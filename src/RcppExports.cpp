@@ -7,8 +7,8 @@
 using namespace Rcpp;
 
 // truncNLL_db
-double truncNLL_db(arma::vec par, arma::mat H, arma::vec k, arma::vec n, double rho);
-RcppExport SEXP _FraseR_truncNLL_db(SEXP parSEXP, SEXP HSEXP, SEXP kSEXP, SEXP nSEXP, SEXP rhoSEXP) {
+double truncNLL_db(arma::vec par, arma::mat H, arma::vec k, arma::vec n, double rho, double lambda);
+RcppExport SEXP _FraseR_truncNLL_db(SEXP parSEXP, SEXP HSEXP, SEXP kSEXP, SEXP nSEXP, SEXP rhoSEXP, SEXP lambdaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -17,13 +17,14 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< arma::vec >::type k(kSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type n(nSEXP);
     Rcpp::traits::input_parameter< double >::type rho(rhoSEXP);
-    rcpp_result_gen = Rcpp::wrap(truncNLL_db(par, H, k, n, rho));
+    Rcpp::traits::input_parameter< double >::type lambda(lambdaSEXP);
+    rcpp_result_gen = Rcpp::wrap(truncNLL_db(par, H, k, n, rho, lambda));
     return rcpp_result_gen;
 END_RCPP
 }
 // truncGrad_db
-arma::vec truncGrad_db(arma::vec par, arma::mat H, arma::vec k, arma::vec n, double rho);
-RcppExport SEXP _FraseR_truncGrad_db(SEXP parSEXP, SEXP HSEXP, SEXP kSEXP, SEXP nSEXP, SEXP rhoSEXP) {
+arma::vec truncGrad_db(arma::vec par, arma::mat H, arma::vec k, arma::vec n, double rho, double lambda);
+RcppExport SEXP _FraseR_truncGrad_db(SEXP parSEXP, SEXP HSEXP, SEXP kSEXP, SEXP nSEXP, SEXP rhoSEXP, SEXP lambdaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -32,7 +33,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< arma::vec >::type k(kSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type n(nSEXP);
     Rcpp::traits::input_parameter< double >::type rho(rhoSEXP);
-    rcpp_result_gen = Rcpp::wrap(truncGrad_db(par, H, k, n, rho));
+    Rcpp::traits::input_parameter< double >::type lambda(lambdaSEXP);
+    rcpp_result_gen = Rcpp::wrap(truncGrad_db(par, H, k, n, rho, lambda));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -70,12 +72,58 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// predictMuCpp
+arma::mat predictMuCpp(arma::mat H, arma::mat D, arma::vec b);
+RcppExport SEXP _FraseR_predictMuCpp(SEXP HSEXP, SEXP DSEXP, SEXP bSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat >::type H(HSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type D(DSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type b(bSEXP);
+    rcpp_result_gen = Rcpp::wrap(predictMuCpp(H, D, b));
+    return rcpp_result_gen;
+END_RCPP
+}
+// truncNLL_rho
+double truncNLL_rho(double rho, arma::vec mui, arma::vec ki, arma::vec ni);
+RcppExport SEXP _FraseR_truncNLL_rho(SEXP rhoSEXP, SEXP muiSEXP, SEXP kiSEXP, SEXP niSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type rho(rhoSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type mui(muiSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type ki(kiSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type ni(niSEXP);
+    rcpp_result_gen = Rcpp::wrap(truncNLL_rho(rho, mui, ki, ni));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fullNLL
+double fullNLL(arma::mat mu, arma::mat rho, arma::mat k, arma::mat n, arma::mat D, double lambda);
+RcppExport SEXP _FraseR_fullNLL(SEXP muSEXP, SEXP rhoSEXP, SEXP kSEXP, SEXP nSEXP, SEXP DSEXP, SEXP lambdaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat >::type mu(muSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type rho(rhoSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type k(kSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type n(nSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type D(DSEXP);
+    Rcpp::traits::input_parameter< double >::type lambda(lambdaSEXP);
+    rcpp_result_gen = Rcpp::wrap(fullNLL(mu, rho, k, n, D, lambda));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_FraseR_truncNLL_db", (DL_FUNC) &_FraseR_truncNLL_db, 5},
-    {"_FraseR_truncGrad_db", (DL_FUNC) &_FraseR_truncGrad_db, 5},
+    {"_FraseR_truncNLL_db", (DL_FUNC) &_FraseR_truncNLL_db, 6},
+    {"_FraseR_truncGrad_db", (DL_FUNC) &_FraseR_truncGrad_db, 6},
     {"_FraseR_truncNLL_e", (DL_FUNC) &_FraseR_truncNLL_e, 7},
     {"_FraseR_truncGrad_e", (DL_FUNC) &_FraseR_truncGrad_e, 7},
+    {"_FraseR_predictMuCpp", (DL_FUNC) &_FraseR_predictMuCpp, 3},
+    {"_FraseR_truncNLL_rho", (DL_FUNC) &_FraseR_truncNLL_rho, 4},
+    {"_FraseR_fullNLL", (DL_FUNC) &_FraseR_fullNLL, 6},
     {NULL, NULL, 0}
 };
 
