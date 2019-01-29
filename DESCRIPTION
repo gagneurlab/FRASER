@@ -64,6 +64,11 @@ Collate:
     'plotResults.R'
     'saveHDF5Objects.R'
     'shiny.R'
-    'plotDistributions.R',
-    RcppExports.R
+    'plotDistributions.R'
+    'RcppExports.R'
+    'autoencoder.R'
+    'updateD.R'
+    'updateE.R'
+    'updateRho.R'
+    'getNSetterFuns.R'
 VignetteBuilder: knitr

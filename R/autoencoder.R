@@ -119,12 +119,13 @@ updateLossList <- function(fds, lossList, i, stepText, lambda, verbose){
 lossED <- function(fds, lambda){
   K <- as.matrix(K(fds))
   N <- as.matrix(N(fds))
-  mu <- predictMu(fds)
+  #mu <- predictMu(fds)
   rho <- matrix(rho(fds), ncol=ncol(fds), nrow = nrow(fds))
   #rho <- matrix(rho(fds), nrow=ncol(fds), ncol = nrow(fds), byrow = TRUE)
   D <- D(fds)
+  y <- predictY(fds)
 
-  return(fullNLL(mu, rho, K, N, D, lambda))
+  return(fullNLL(y, rho, K, N, D, lambda))
 }
 
 # lossED <- function(fds){

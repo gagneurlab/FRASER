@@ -7,14 +7,14 @@ updateRho <- function(fds, rhoRange, BPPARAM, verbose){
   k <- as.matrix(counts(fds, type="psi3", side="ofInterest"))
   o <- as.matrix(counts(fds, type="psi3", side="other"))
   n <- k + o
-  mu <- predictMu(fds)
+  y <- predictY(fds)
   
   #fitparameters <- bplapply(seq_along(fds), estRho, 
   #                          k=k, n=n, mu=mu, rhoRange=rhoRange,
   #                          BPPARAM=BPPARAM, nll=negLogLikelihoodRho)
   
   fitparameters <- bplapply(seq_along(fds), estRho, 
-                            k=k, n=n, mu=mu, rhoRange=rhoRange,
+                            k=k, n=n, y=y, rhoRange=rhoRange,
                             BPPARAM=BPPARAM, nll=truncNLL_rho)
   
   rho(fds) <- vapply(fitparameters, "[[", double(1), "minimum")
@@ -27,12 +27,12 @@ updateRho <- function(fds, rhoRange, BPPARAM, verbose){
   return(fds)
 }
 
-estRho <- function(idx, k, n, mu, rhoRange, nll, control=list()){
+estRho <- function(idx, k, n, y, rhoRange, nll, control=list()){
   ki <- k[idx,]
   ni <- n[idx,]
-  mui <- mu[idx,]
+  yi <- y[idx,]
   
-  est <- optimize(f=nll, interval=rhoRange, mui=mui, ki=ki, ni=ni, maximum = FALSE, tol=0.0000001)
+  est <- optimize(f=nll, interval=rhoRange, yi=yi, ki=ki, ni=ni, maximum = FALSE, tol=0.0000001)
 }
 
 negLogLikelihoodRho <- function(rho, ki, ni, mui){

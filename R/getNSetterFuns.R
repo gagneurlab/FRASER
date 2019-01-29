@@ -67,11 +67,17 @@ rho <- function(fds){
 }
 
 predictMu <- function(fds){
+  y <- predictY(fds)
+  mu <- predictMuCpp(y)
+  return(mu)
+}
+
+predictY <- function(fds){
   D <- D(fds)
   b <- b(fds)
   H <- H(fds)
   
-  mu <- predictMuCpp(H, D, b)
+  y <- predictYCpp(H, D, b)
   
-  return(t(mu))
+  return(t(y))
 }

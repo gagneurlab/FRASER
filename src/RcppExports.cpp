@@ -6,6 +6,56 @@
 
 using namespace Rcpp;
 
+// predictYCpp
+arma::mat predictYCpp(arma::mat H, arma::mat D, arma::vec b);
+RcppExport SEXP _FraseR_predictYCpp(SEXP HSEXP, SEXP DSEXP, SEXP bSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat >::type H(HSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type D(DSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type b(bSEXP);
+    rcpp_result_gen = Rcpp::wrap(predictYCpp(H, D, b));
+    return rcpp_result_gen;
+END_RCPP
+}
+// predictMuCpp
+arma::mat predictMuCpp(arma::mat y);
+RcppExport SEXP _FraseR_predictMuCpp(SEXP ySEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat >::type y(ySEXP);
+    rcpp_result_gen = Rcpp::wrap(predictMuCpp(y));
+    return rcpp_result_gen;
+END_RCPP
+}
+// estLgammaAlpha
+arma::vec estLgammaAlpha(arma::vec y, arma::uvec pos, double ar);
+RcppExport SEXP _FraseR_estLgammaAlpha(SEXP ySEXP, SEXP posSEXP, SEXP arSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::vec >::type y(ySEXP);
+    Rcpp::traits::input_parameter< arma::uvec >::type pos(posSEXP);
+    Rcpp::traits::input_parameter< double >::type ar(arSEXP);
+    rcpp_result_gen = Rcpp::wrap(estLgammaAlpha(y, pos, ar));
+    return rcpp_result_gen;
+END_RCPP
+}
+// estLgammaBeta
+arma::vec estLgammaBeta(arma::vec y, arma::uvec pos, double br);
+RcppExport SEXP _FraseR_estLgammaBeta(SEXP ySEXP, SEXP posSEXP, SEXP brSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::vec >::type y(ySEXP);
+    Rcpp::traits::input_parameter< arma::uvec >::type pos(posSEXP);
+    Rcpp::traits::input_parameter< double >::type br(brSEXP);
+    rcpp_result_gen = Rcpp::wrap(estLgammaBeta(y, pos, br));
+    return rcpp_result_gen;
+END_RCPP
+}
 // truncNLL_db
 double truncNLL_db(arma::vec par, arma::mat H, arma::vec k, arma::vec n, double rho, double lambda);
 RcppExport SEXP _FraseR_truncNLL_db(SEXP parSEXP, SEXP HSEXP, SEXP kSEXP, SEXP nSEXP, SEXP rhoSEXP, SEXP lambdaSEXP) {
@@ -72,56 +122,46 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// predictMuCpp
-arma::mat predictMuCpp(arma::mat H, arma::mat D, arma::vec b);
-RcppExport SEXP _FraseR_predictMuCpp(SEXP HSEXP, SEXP DSEXP, SEXP bSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::mat >::type H(HSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type D(DSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type b(bSEXP);
-    rcpp_result_gen = Rcpp::wrap(predictMuCpp(H, D, b));
-    return rcpp_result_gen;
-END_RCPP
-}
 // truncNLL_rho
-double truncNLL_rho(double rho, arma::vec mui, arma::vec ki, arma::vec ni);
-RcppExport SEXP _FraseR_truncNLL_rho(SEXP rhoSEXP, SEXP muiSEXP, SEXP kiSEXP, SEXP niSEXP) {
+double truncNLL_rho(double rho, arma::vec yi, arma::vec ki, arma::vec ni);
+RcppExport SEXP _FraseR_truncNLL_rho(SEXP rhoSEXP, SEXP yiSEXP, SEXP kiSEXP, SEXP niSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< double >::type rho(rhoSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type mui(muiSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type yi(yiSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type ki(kiSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type ni(niSEXP);
-    rcpp_result_gen = Rcpp::wrap(truncNLL_rho(rho, mui, ki, ni));
+    rcpp_result_gen = Rcpp::wrap(truncNLL_rho(rho, yi, ki, ni));
     return rcpp_result_gen;
 END_RCPP
 }
 // fullNLL
-double fullNLL(arma::mat mu, arma::mat rho, arma::mat k, arma::mat n, arma::mat D, double lambda);
-RcppExport SEXP _FraseR_fullNLL(SEXP muSEXP, SEXP rhoSEXP, SEXP kSEXP, SEXP nSEXP, SEXP DSEXP, SEXP lambdaSEXP) {
+double fullNLL(arma::mat y, arma::mat rho, arma::mat k, arma::mat n, arma::mat D, double lambda);
+RcppExport SEXP _FraseR_fullNLL(SEXP ySEXP, SEXP rhoSEXP, SEXP kSEXP, SEXP nSEXP, SEXP DSEXP, SEXP lambdaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::mat >::type mu(muSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type y(ySEXP);
     Rcpp::traits::input_parameter< arma::mat >::type rho(rhoSEXP);
     Rcpp::traits::input_parameter< arma::mat >::type k(kSEXP);
     Rcpp::traits::input_parameter< arma::mat >::type n(nSEXP);
     Rcpp::traits::input_parameter< arma::mat >::type D(DSEXP);
     Rcpp::traits::input_parameter< double >::type lambda(lambdaSEXP);
-    rcpp_result_gen = Rcpp::wrap(fullNLL(mu, rho, k, n, D, lambda));
+    rcpp_result_gen = Rcpp::wrap(fullNLL(y, rho, k, n, D, lambda));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_FraseR_predictYCpp", (DL_FUNC) &_FraseR_predictYCpp, 3},
+    {"_FraseR_predictMuCpp", (DL_FUNC) &_FraseR_predictMuCpp, 1},
+    {"_FraseR_estLgammaAlpha", (DL_FUNC) &_FraseR_estLgammaAlpha, 3},
+    {"_FraseR_estLgammaBeta", (DL_FUNC) &_FraseR_estLgammaBeta, 3},
     {"_FraseR_truncNLL_db", (DL_FUNC) &_FraseR_truncNLL_db, 6},
     {"_FraseR_truncGrad_db", (DL_FUNC) &_FraseR_truncGrad_db, 6},
     {"_FraseR_truncNLL_e", (DL_FUNC) &_FraseR_truncNLL_e, 7},
     {"_FraseR_truncGrad_e", (DL_FUNC) &_FraseR_truncGrad_e, 7},
-    {"_FraseR_predictMuCpp", (DL_FUNC) &_FraseR_predictMuCpp, 3},
     {"_FraseR_truncNLL_rho", (DL_FUNC) &_FraseR_truncNLL_rho, 4},
     {"_FraseR_fullNLL", (DL_FUNC) &_FraseR_fullNLL, 6},
     {NULL, NULL, 0}
