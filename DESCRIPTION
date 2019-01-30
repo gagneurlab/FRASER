@@ -67,4 +67,9 @@ Collate:
     shiny.R
     plotDistributions.R
     RcppExports.R
+    'autoencoder.R'
+    'updateD.R'
+    'updateE.R'
+    'updateRho.R'
+    'getNSetterFuns.R'
 VignetteBuilder: knitr
