@@ -47,23 +47,24 @@ biocViews: RNASeq, AlternativeSplicing, Sequencing,
 URL: https://i12g-gagneurweb.in.tum.de/gitlab/mertes/FraseR/
 RoxygenNote: 6.1.1
 Collate:
-    'FraseR-package.R'
-    'FraseRDataSet-class.R'
-    'AllGenerics.R'
-    'Fraser-pipeline.R'
-    'accessor-methods.R'
-    'annotationOfRanges.R'
-    'beta-binomial-testing.R'
-    'calculatePSIValue.R'
-    'calculateStats.R'
-    'countRNAseqData.R'
-    'example_functions.R'
+    FraseR-package.R
+    FraseRDataSet-class.R
+    AllGenerics.R
+    Fraser-pipeline.R
+    accessor-methods.R
+    annotationOfRanges.R
+    beta-binomial-testing.R
+    calculatePSIValue.R
+    calculateStats.R
+    countRNAseqData.R
+    example_functions.R
     filterExpression.R
-    'getURLs.R'
-    'helper-functions.R'
-    'plotResults.R'
-    'saveHDF5Objects.R'
-    'shiny.R'
-    'plotDistributions.R',
+    getURLs.R
+    helper-functions.R
+    plotResults.R
+    gradient_loss_R.R
+    saveHDF5Objects.R
+    shiny.R
+    plotDistributions.R
     RcppExports.R
 VignetteBuilder: knitr

@@ -18,5 +18,5 @@ vignettes/*.txt
 
 # ignore cpp files
 *.o
+*.so
 *.dll
-
