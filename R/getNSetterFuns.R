@@ -67,8 +67,8 @@ x <- function(fds, all=FALSE){
   return(as.matrix(x))
 }
 
-H <- function(fds){
-  x(fds) %*% E(fds)
+H <- function(fds, all=FALSE){
+  x(fds, all) %*% E(fds)
 }
 
 `D<-` <- function(fds, value){
@@ -113,18 +113,42 @@ rho <- function(fds){
   return(mcols(fds)[['rho']])
 }
 
-predictMu <- function(fds){
-  y <- predictY(fds)
+predictMu <- function(fds, all=FALSE){
+  y <- predictY(fds, all)
   mu <- predictMuCpp(y)
   return(mu)
 }
 
-predictY <- function(fds){
+predictY <- function(fds, all=FALSE){
   D <- D(fds)
   b <- b(fds)
-  H <- H(fds)
+  H <- H(fds, all)
 
   y <- predictYCpp(H, D, b)
 
   return(t(y))
+}
+
+zScores <- function(fds){
+  return( metadata(fds)[['zScores']] )
+}
+
+`zScores<-` <- function(fds, value){
+  if(!is.matrix(value)){
+    value <- matrix(value, nrow=nrow(fds))
+  }
+  metadata(fds)[['zScores']] <- value
+  return(fds)
+}
+
+pVals <- function(fds){
+  return( metadata(fds)[['pvalues']] )
+}
+
+`pVals<-` <- function(fds, value){
+  if(!is.matrix(value)){
+    value <- matrix(value, nrow=nrow(fds))
+  }
+  metadata(fds)[['pvalues']] <- value
+  return(fds)
 }
