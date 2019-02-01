@@ -20,7 +20,7 @@ Imports:
     BBmisc,
     BiocGenerics,
     biomaRt,
-    DelayedArray (>= 0.5.14),
+    DelayedArray (>= 0.5.11),
     DT,
     GenomeInfoDb,
     GenomicAlignments, 
@@ -29,9 +29,22 @@ Imports:
     graphics,
     gplots,
     htmlwidgets,
-    HDF5Array, LSD, 
-    matrixStats, methods, parallel, plotly (>= 4.6.0), rhdf5, Rsubread, R.utils,
-    S4Vectors, shiny, stats, tidyr, tools, utils, VGAM
+    HDF5Array,
+    LSD, 
+    matrixStats,
+    methods,
+    parallel,
+    plotly (>= 4.6.0),
+    rhdf5,
+    Rsubread,
+    R.utils,
+    S4Vectors,
+    shiny,
+    stats,
+    tidyr,
+    tools,
+    utils,
+    VGAM
 Suggests: 
     BiocStyle,
     knitr,
@@ -42,8 +55,13 @@ Suggests:
 LinkingTo:
     Rcpp,
     RcppArmadillo
-biocViews: RNASeq, AlternativeSplicing, Sequencing,
-    Software, Genetics, Coverage
+biocViews: 
+    RNASeq,
+    AlternativeSplicing,
+    Sequencing,
+    Software,
+    Genetics,
+    Coverage
 URL: https://i12g-gagneurweb.in.tum.de/gitlab/mertes/FraseR/
 RoxygenNote: 6.1.1
 Collate:
@@ -69,7 +87,8 @@ Collate:
     RcppExports.R
     'autoencoder.R'
     'updateD.R'
-    'updateE.R'
-    'updateRho.R'
-    'getNSetterFuns.R'
+    updateE.R
+    updateRho.R
+    getNSetterFuns.R
+    gradient_loss_R.R
 VignetteBuilder: knitr

@@ -11,7 +11,7 @@
 #'
 #' @importFrom parallel mclapply
 #' @import BiocParallel
-#'
+#' @importFrom pcaMethods pca loadings
 #'
 ### GRange/Experiment/bamFile packages
 #'
