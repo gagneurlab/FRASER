@@ -28,7 +28,7 @@ calculatePvalues <- function(fds, BPPARAM=bpparam()){
   pval_list <- bplapply(seq_len(nrow(fds)), singlePvalue, k=k, n=n, mu=mu, rho=rho, BPPARAM=BPPARAM)
   pval <- matrix(unlist(pval_list), nrow=length(pval_list), byrow = TRUE)
   dval <- VGAM::dbetabinom(k, n, mu, rho)
-  pvals <- 2 * pmin(0.5, pval + dval, 1 - pval + dval)
+  pvals <- 2 * pmin(0.5, pval, 1 - pval + dval)
   
   pvalMat <- matrix(pvals, nrow=dim(fds)[1], ncol=dim(fds)[2])
   
