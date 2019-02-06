@@ -95,7 +95,7 @@ validateBamParam <- function(object) {
 
 validateStrandSpecific <- function(object) {
     if(!isScalarLogical(object@strandSpecific)) {
-        return(paste("The 'strandSpecific' option must be TRUE or FALSE."))
+        return(paste("The 'strandSpecific' option must be 0L, 1L or 2L."))
     }
     NULL
 }

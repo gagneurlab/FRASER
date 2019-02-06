@@ -53,14 +53,13 @@
 #'          setnames
 #' @import tidyr
 #' @importFrom HDF5Array writeHDF5Array path
-#' @importFrom DelayedArray rowMeans path<-
 #' @importFrom rhdf5 h5ls
 #'
 ### P-Value calculation
 #'
 #' @importFrom stats sd rbinom fisher.test na.omit p.adjust ppoints qbeta rnorm
 #' @importFrom VGAM rbetabinom vglm Coef pbetabinom pbetabinom.ab betabinomial
-#'          dbetabinom.ab
+#'          dbetabinom.ab dbetabinom
 #'
 ### Miscelenious functions
 #'
@@ -82,9 +81,9 @@
 #' @importFrom GenomeInfoDb seqlevels<- seqlevels seqlengths
 #'          keepStandardChromosomes
 #' @importFrom shiny renderUI reactive renderPrint renderPlot
-#' @importFrom DelayedArray rowMaxs
+#' @importFrom DelayedArray rowMaxs rowMeans path<-
 #' @importFrom data.table rbindlist
-#' @importFrom matrixStats rowQuantiles rowMedians
+#' @importFrom DelayedMatrixStats rowMedians rowSds
 #' @importFrom stats runif median quantile
 #'
 #' @useDynLib FraseR

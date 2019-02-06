@@ -7,9 +7,9 @@
 \alias{featureExclusionMask<-}
 \title{Feature exclusion}
 \usage{
-featureExclusionMask(fds)
+featureExclusionMask(fds, type = currentType(fds))
 
-featureExclusionMask(fds) <- value
+featureExclusionMask(fds, type = currentType(fds)) <- value
 }
 \arguments{
 \item{value}{A logical vector of the length of the features. If \code{TRUE},
