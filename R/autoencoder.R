@@ -86,6 +86,7 @@ fitAutoencoder <- function(fds, q, rhoRange=c(1e-5, 1-1e-5), lambda=0,
         E(copy_fds) <- E(fds)
 
         for(i in seq_len(iterations)){
+            t2 <- Sys.time()
 
             # update D step
             copy_fds <- updateD(copy_fds, lambda=lambda, control=control, BPPARAM=BPPARAM, verbose=verbose)
