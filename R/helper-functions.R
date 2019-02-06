@@ -43,11 +43,13 @@ cleanCache <- function(fds, all=FALSE, cache=TRUE, assays=FALSE, results=FALSE){
 #'
 #' @noRd
 checkReadType <- function(fds, type){
+
     # check if type is null or missing
     if(missing(type) | is.null(type)){
         warning("Read type was not specified! We will assume the default: 'j'")
         return("j")
     }
+    stopifnot(isScalarCharacter(type))
 
     stopifnot(isScalarCharacter(type))
     correctTypes <- c(psi3="j", psi5="j", psiSite="ss")
@@ -61,6 +63,12 @@ checkReadType <- function(fds, type){
     # check assay names
     atype <- whichReadType(fds, type)
     if(!is.na(atype)) return(atype)
+
+    # regex on the psi type
+    atype <- correctTypes[sapply(names(correctTypes), grepl, type)]
+    if(length(atype) == 1){
+        return(atype)
+    }
 
     stop("Given read type: '", type, "' not recognized. ",
             "It needs to be 'j' (junction) or 'ss' (splice sites)",
@@ -314,3 +322,5 @@ assayExists <- function(fds, assayName){
 getAssayAsVector <- function(fds, prefix, psiType, sampleID){
     as.vector(assay(fds, paste0(prefix, psiType))[,sampleID])
 }
+
+

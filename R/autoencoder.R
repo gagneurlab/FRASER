@@ -4,7 +4,7 @@
 #' @noRd
 #'
 #' @export
-fitAutoencoder <- function(fds, q, rhoRange=c(1e-5, 1-1e-5), lambda=0,
+fitAutoencoder <- function(fds, q, type="psi3", rhoRange=c(1e-5, 1-1e-5), lambda=0,
                            convergence=1e-5, iterations=15, initialize=TRUE,
                            control=list(), BPPARAM=bpparam(), verbose=FALSE){
 
@@ -12,14 +12,19 @@ fitAutoencoder <- function(fds, q, rhoRange=c(1e-5, 1-1e-5), lambda=0,
         bpstart(BPPARAM)
     }
 
+    # make sure its only in-memory data for k and n
+    currentType(fds) <- type
+    counts(fds, type=type, side="other", HDF5=FALSE) <- as.matrix(N(fds) - K(fds))
+    counts(fds, type=type, side="ofInterest", HDF5=FALSE) <- as.matrix(K(fds))
+
     # copy fds object to save original input object
     # and create second object with only the subset to fit the encoder
     copy_fds <- fds
-    fds <- fds[featureExclusionMask(fds),]
+    fds <- fds[featureExclusionMask(fds, type=type),by=checkReadType(fds, type=type)]
 
     # initialize E and D using PCA and bias as zeros.
     if(isTRUE(initialize) | is.null(E(fds)) | is.null(D(fds))){
-        fds <- initAutoencoder(fds, q, rhoRange)
+        fds <- initAutoencoder(fds, q, rhoRange, type=type)
     }
 
     # initial loss
@@ -32,11 +37,11 @@ fitAutoencoder <- function(fds, q, rhoRange=c(1e-5, 1-1e-5), lambda=0,
     }
 
     # initialize D
-    fds <- updateD(fds, lambda=lambda, control=control, BPPARAM=BPPARAM, verbose=verbose)
+    fds <- updateD(fds, type=type, lambda=lambda, control=control, BPPARAM=BPPARAM, verbose=verbose)
     lossList <- updateLossList(fds, lossList, 'init', 'D', lambda, verbose=verbose)
 
     # initialize rho step
-    fds <- updateRho(fds, rhoRange, BPPARAM=BPPARAM, verbose=verbose)
+    fds <- updateRho(fds, type=type, rhoRange, BPPARAM=BPPARAM, verbose=verbose)
     lossList <- updateLossList(fds, lossList, 'init', 'Rho', lambda, verbose=verbose)
 
     # optimize log likelihood
@@ -50,11 +55,11 @@ fitAutoencoder <- function(fds, q, rhoRange=c(1e-5, 1-1e-5), lambda=0,
         lossList <- updateLossList(fds, lossList, i, 'E', lambda, verbose=verbose)
 
         # update D step
-        fds <- updateD(fds, lambda=lambda, control=control, BPPARAM=BPPARAM, verbose=verbose)
+        fds <- updateD(fds, type=type, lambda=lambda, control=control, BPPARAM=BPPARAM, verbose=verbose)
         lossList <- updateLossList(fds, lossList, i, 'D', lambda, verbose=verbose)
 
         # update rho step
-        fds <- updateRho(fds, rhoRange, BPPARAM=BPPARAM, verbose=verbose)
+        fds <- updateRho(fds, type=type, rhoRange, BPPARAM=BPPARAM, verbose=verbose)
         lossList <- updateLossList(fds, lossList, i, 'Rho', lambda, verbose=verbose)
 
         if(isTRUE(verbose)){
@@ -82,18 +87,18 @@ fitAutoencoder <- function(fds, q, rhoRange=c(1e-5, 1-1e-5), lambda=0,
         # update the D matrix and theta
         print("Finished with fitting the E matrix. Starting now with the D fit. ...")
 
-        copy_fds <- initAutoencoder(copy_fds, q, rhoRange)
+        copy_fds <- initAutoencoder(copy_fds, q, rhoRange, type=type)
         E(copy_fds) <- E(fds)
 
         for(i in seq_len(iterations)){
             t2 <- Sys.time()
 
             # update D step
-            copy_fds <- updateD(copy_fds, lambda=lambda, control=control, BPPARAM=BPPARAM, verbose=verbose)
+            copy_fds <- updateD(copy_fds, type=type, lambda=lambda, control=control, BPPARAM=BPPARAM, verbose=verbose)
             lossList <- updateLossList(copy_fds, lossList, paste0("final_", i), 'D', lambda, verbose=verbose)
 
             # update rho step
-            copy_fds <- updateRho(copy_fds, rhoRange, BPPARAM=BPPARAM, verbose=verbose)
+            copy_fds <- updateRho(copy_fds, type=type, rhoRange, BPPARAM=BPPARAM, verbose=verbose)
             lossList <- updateLossList(copy_fds, lossList, paste0("final_", i), 'Rho', lambda, verbose=verbose)
 
             if(isTRUE(verbose)){
@@ -124,33 +129,31 @@ fitAutoencoder <- function(fds, q, rhoRange=c(1e-5, 1-1e-5), lambda=0,
 
 
     # add correction factors
-    correctionFactors <- t(predictC(copy_ods))
-    stopifnot(identical(dim(counts(copy_ods)), dim(correctionFactors)))
-    normalizationFactors(copy_ods) <- correctionFactors
+    predictedMeans <- t(predictMu(copy_fds))
+    stopifnot(identical(dim(K(copy_fds)), dim(predictedMeans)))
+    predictedMeans(copy_fds, type) <- predictedMeans
 
-    # add corrected means
-    assay(fds, type="j", "correctedMeans") <- predictMu(fds)
-
+    # validate object
     validObject(copy_fds)
     return(copy_fds)
 }
 
-initAutoencoder <- function(fds, q, rhoRange){
+initAutoencoder <- function(fds, q, rhoRange, type){
 
-    pca <- pca(x(fds, all=TRUE), nPcs=q)
-    pc  <- pcaMethods::loadings(pca)
+    #pca <- pca(as.matrix(x(fds, all=TRUE)), nPcs=q)
+    #pc  <- pcaMethods::loadings(pca)
+    pc = matrix(rnorm(q*nrow(mcols(fds, type=type)), sd=0.1), ncol=q)
 
     # Set initial values from PCA
     D(fds) <- pc
     E(fds) <- pc[featureExclusionMask(fds),]
-    b(fds) <- double(nrow(fds))
+    b(fds) <- double(nrow(mcols(fds, type=type)))
 
     # initialize rho
-    rho(fds) <- rowSds(plogis(t(x(fds, all=TRUE))))
-    rho(fds)[rho(fds) < rhoRange[1]] <- rhoRange[1]
+    rho(fds) <- methodOfMomemtsRho(K(fds))
 
     # reset counters
-    mcols(fds)['NumConvergedD'] <- 0
+    mcols(fds, type=type)[paste0('NumConvergedD_', type)] <- 0
 
     return(fds)
 }
@@ -167,12 +170,11 @@ updateLossList <- function(fds, lossList, i, stepText, lambda, verbose){
 }
 
 lossED <- function(fds, lambda){
-    K <- as.matrix(K(fds))
-    N <- as.matrix(N(fds))
-    #mu <- predictMu(fds)
-    rho <- matrix(rho(fds), ncol=ncol(fds), nrow = nrow(fds))
-    #rho <- matrix(rho(fds), nrow=ncol(fds), ncol = nrow(fds), byrow = TRUE)
+    K <- K(fds)
+    N <- N(fds)
+    rho <- matrix(rho(fds), ncol=ncol(K), nrow = nrow(K))
     D <- D(fds)
+
     y <- predictY(fds)
 
     return(fullNLL(y, rho, K, N, D, lambda))

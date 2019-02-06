@@ -204,7 +204,7 @@ res <- bplapply(mybprange, K=K, N=N, wd=wd, we=we, b=b, rho=rho, function(idx, K
 
     nlgv <- numericLossGrad(loosDb, 1e-8, par, ki=ki, ni=ni, H=H, rhoi=rhoi, BPPARAM=SerialParam())
     grv <- gradDb(par, ki, ni, H, rhoi)
-    cppnlgv <- numericLossGrad(truncNLL_db, 1e-5, par, k=ki, n=ni, H=H, rho=rhoi, lambda = 0, BPPARAM=SerialParam())
+    cppnlgv <- numericLossGrad(truncNLL_db, 1e-8, par, k=ki, n=ni, H=H, rho=rhoi, lambda = 0, BPPARAM=SerialParam())
     cppgrv  <- as.vector(truncGrad_db(par=par, H=H, k=ki, n=ni, rho=rhoi, lambda = 0))
 
     list(nlgv=nlgv, grv=grv, cppnlgv=cppnlgv, cppgrv=cppgrv)
@@ -225,7 +225,40 @@ plot(log10(sort(abs(cppnlgv - cppgrv)))) #, ylim=c(-11,1))
 plot(cppnlgv, cppgrv); grid(); abline(0,1, col="red")
 
 which(abs(nlgv - grv) > 0.01, arr.ind = TRUE)
+which(abs(nlgv - grv) > 10, arr.ind = TRUE)
+table(sign(nlgv) == sign(grv))
+which(!(sign(nlgv) == sign(grv)), arr.ind = TRUE)
+par(mfrow=c(1,1))
 
+plotInaccuracy <- function(idx, col, range=1e-7, xlegend=NULL, ylegend=NULL){
+  
+  ki   <- K[idx,]
+  ni   <- N[idx,]
+  x    <- getX(K, N)
+  H    <- x %*% we
+  rhoi <- rho[idx]
+  bi   <- b[idx]
+  wdi  <- wd[idx,]
+  par <- c(bi, wdi)
+  
+  if(is.null(ylegend)){ 
+    l <- rep(0, q+1)
+    l[col] <- range
+    ylegend <- loosDb(par + l, ki, ni, H, rhoi)
+  }
+  if(is.null(xlegend)){
+    xlegend <- -range
+  }
+  
+  plot(seq(-range, range, length.out = 1000), vapply(seq(-range, range, length.out = 1000), 
+                                                   function(x){eps <- rep(0, q+1); eps[col] <- x; loosDb(par + eps, ki, ni, H, rhoi)}, double(1)), 
+       type = "l", xlab = "epsilon", ylab = "loss(D[q] + epsilon)", main=paste("idx:", idx, "q:", col)); grid(); 
+  abline(v=c(-1e-8, 1e-8), col = c("grey", "grey"), lty=c(2,2));
+  abline(loosDb(par, ki, ni, H, rhoi), nlgv[col,idx], col = "green", lty=2); abline(loosDb(par, ki, ni, H, rhoi), grv[col,idx], col = "red", lty = 2); 
+  legend(xlegend, ylegend, legend=c("loss", "gradient", "finite difference"), col=c("black", "red", "green"), lty=c(1,2,2))
+}
+  
+  
 nll <- function(y, rho=0.9){
     -lgamma((exp(y)/(exp(y) + 1)) * ((1-rho)/rho))
 }

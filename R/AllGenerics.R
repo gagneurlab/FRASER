@@ -362,6 +362,7 @@ subsetFraseR <- function(x, i, j, by){
     if(length(nsrObj) == 0 & by=="ss"){
         stop("Cannot subset by splice sites, if you not counted them!")
     }
+    ssIdx <- NULL
     if(by == "ss"){
         ssIdx <- unlist(rowData(nonSplicedReads(x)[i])["spliceSiteID"])
         i <- as.vector(unlist(rowData(x, typ="psi3")["startID"]) %in% ssIdx |
@@ -370,13 +371,15 @@ subsetFraseR <- function(x, i, j, by){
 
     # first subset non spliced reads if needed
     if(length(nsrObj) > 0){
-        # get selected splice site IDs
-        selectedIDs <- unique(unlist(
-            rowData(x, type="j")[i, c("startID", "endID")]
-        ))
+        if(is.null(ssIdx)){
+            # get selected splice site IDs
+            ssIdx <- unique(unlist(
+                rowData(x, type="j")[i, c("startID", "endID")]
+            ))
+        }
 
         # get the selection vector
-        idxNSR <- rowData(x, type="ss")[['spliceSiteID']] %in% selectedIDs
+        idxNSR <- rowData(x, type="ss")[['spliceSiteID']] %in% ssIdx
 
         # subset it
         nsrObj <- nsrObj[idxNSR,j]
@@ -430,16 +433,20 @@ setMethod("assays", "FraseRDataSet", function(x, ..., type=NULL, withDimnames=TR
     ))
 })
 FraseRDataSet.assays.replace <-
-            function(x, ..., type=NULL, withDimnames=TRUE, value){
+            function(x, ..., HDF5=TRUE, type=NULL, withDimnames=TRUE, value){
     if(any(names(value) == "")) stop("Name of an assay can not be empty!")
     if(any(duplicated(names(value)))) stop("Assay names need to be unique!")
-
+    if(is.null(type)){
+        type <- names(value)
+    }
     # make sure all slots are HDF5
-    for(i in seq_along(value)){
-        if(!class(value[[i]]) %in% c("HDF5Matrix", "DelayedMatrix")){
-            aname <- names(value)[i]
-            h5obj <- saveAsHDF5(x, aname, object=value[[i]])
-            value[[i]] <- h5obj
+    if(isTRUE(HDF5)){
+        for(i in seq_along(value)){
+            if(!class(value[[i]]) %in% c("HDF5Matrix", "DelayedMatrix")){
+                aname <- names(value)[i]
+                h5obj <- saveAsHDF5(x, aname, object=value[[i]])
+                value[[i]] <- h5obj
+            }
         }
     }
 
@@ -452,8 +459,8 @@ FraseRDataSet.assays.replace <-
     # add new slots if there are some
     if(sum(!(nj | ns)) > 0){
         type <- sapply(type, checkReadType, fds=x)
-        jslots <- c(jslots, value[!(nj | ns)][type=="j"])
-        sslots <- c(sslots, value[!(nj | ns)][type=="ss"])
+        jslots <- c(jslots, value[!(nj | ns) & type=="j"])
+        sslots <- c(sslots, value[!(nj | ns) & type=="ss"])
     }
 
     # assign new assays
@@ -532,7 +539,7 @@ setMethod("counts", "FraseRDataSet", function(object, type=NULL,
 #' setter for count data
 #'
 setReplaceMethod("counts", "FraseRDataSet", function(object, type=NULL,
-                    side=c("ofInterest", "otherSide"), value){
+                    side=c("ofInterest", "otherSide"), ..., value){
     side <- match.arg(side)
 
     if(side=="ofInterest"){
@@ -543,7 +550,7 @@ setReplaceMethod("counts", "FraseRDataSet", function(object, type=NULL,
                 regmatches(type, gregexpr("psi(3|5|Site)", type, perl=TRUE)))
         aname <- paste0("rawOtherCounts_", type)
     }
-    assays(object)[[aname]] <- as.matrix(value)
+    assays(object, ...)[[aname]] <- as.matrix(value)
     validObject(value)
     return(object)
 })
