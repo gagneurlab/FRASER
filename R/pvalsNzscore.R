@@ -1,36 +1,48 @@
 
 
 # Function to calculate the z-scores
-calculateZscore <- function(fds){
+calculateZscore <- function(fds, type=currentType(fds)){
+    currentType(fds) <- type
 
-  mu <- predictedMeans(fds)
-  psi <- t(plogis(x(fds)))
-  log2fc <- log2(psi) - log2(mu)
+    mu <- predictedMeans(fds)
+    psi <- t(plogis(x(fds, all=TRUE)))
 
-  # z = ( x - mean ) / sd
-  zscores <- (log2fc - rowMeans(log2fc)) / rowSds(log2fc)
+    log2fc <- log2(psi) - log2(mu)
 
-  zScores(fds) <- zscores
+    # z = ( x - mean ) / sd
+    zscores <- (log2fc - rowMeans(log2fc)) / rowSds(log2fc)
 
-  return(fds)
+    zScores(fds) <- zscores
 
+    return(fds)
 }
 
 # Function to calculate the p-values
-calculatePvalues <- function(fds){
+calculatePvalues <- function(fds, type=currentType(fds), BPPARAM=bpparam()){
+    currentType(fds) <- type
 
-  mu <- as.matrix(predictedMeans(fds))
-  rho <- matrix(rho(fds), nrow=nrow(mu) , ncol=ncol(mu))
-  k <- as.matrix(K(fds))
-  n <- as.matrix(N(fds))
+    mu <- as.matrix(predictedMeans(fds))
+    rho <- matrix(rho(fds), nrow=nrow(mu) , ncol=ncol(mu))
+    k <- as.matrix(K(fds))
+    n <- as.matrix(N(fds))
 
-  pval <- pbetabinom(k, n, mu, rho)
-  dval <- dbetabinom(k, n, mu, rho)
-  pvals <- 2 * pmin(0.5, pval, 1 - pval + dval)
+    pval_list <- bplapply(seq_len(nrow(mu)), singlePvalue, k=k, n=n, mu=mu, rho=rho, BPPARAM=BPPARAM)
+    pval <- matrix(unlist(pval_list), nrow=length(pval_list), byrow=TRUE)
+    dval <- dbetabinom(k, n, mu, rho)
+    pvals <- 2 * pmin(pval, 1 - pval + dval, 0.5)
 
-  pvalMat <- matrix(pvals, nrow=dim(mu)[1], ncol=dim(mu)[2])
+    pVals(fds) <- pvals
 
-  pVals(fds) <- pvalMat
+    return(fds)
+}
 
-  return(fds)
+singlePvalue <- function(idx, k, n, mu, rho){
+
+    ki <- k[idx,]
+    ni <- n[idx,]
+    mui <- mu[idx,]
+    rhoi <- rho[idx]
+
+    pvals <- pbetabinom(ki, ni, mui, rhoi)
+    return (pvals)
 }

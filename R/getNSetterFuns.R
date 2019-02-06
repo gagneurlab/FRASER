@@ -130,14 +130,14 @@ predictY <- function(fds, type=currentType(fds)){
 }
 
 zScores <- function(fds, type=currentType(fds)){
-  return(assay(fds, paste0('zScores_', type=)))
+  return(assay(fds, paste0('zScores_', type=type)))
 }
 
 `zScores<-` <- function(fds, value, type=currentType(fds), ...){
   if(!is.matrix(value)){
-    value <- matrix(value, nrow=nrow(fds))
+    value <- matrix(value, ncol=ncol(fds))
   }
-  assay(fds, paste0('zScores_', type), ... = ) <- value
+  assay(fds, paste0('zScores_', type), ...) <- value
   return(fds)
 }
 
@@ -147,7 +147,7 @@ pVals <- function(fds, type=currentType(fds)){
 
 `pVals<-` <- function(fds, value, type=currentType(fds), ...){
   if(!is.matrix(value)){
-    value <- matrix(value, nrow=nrow(fds))
+    value <- matrix(value, ncol=ncol(fds))
   }
   assay(fds, paste0('pvalues_', type), ...) <- value
   return(fds)
@@ -159,7 +159,7 @@ predictedMeans <- function(fds, type=currentType(fds)){
 
 `predictedMeans<-` <- function(fds, value, type=currentType(fds), ...){
     if(!is.matrix(value)){
-        value <- matrix(value, nrow=nrow(fds))
+        value <- matrix(value, ncol=ncol(fds))
     }
     assay(fds, paste0('predictedMeans_', type), ...) <- value
     return(fds)

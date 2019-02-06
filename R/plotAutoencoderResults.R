@@ -1,6 +1,6 @@
 
 #plot junctions after autoencoder fit
-plotJunction <- function(idx, fds, pvals=pVals(fds), mu=predictMu(fds, all = TRUE), threshold=1e-2, setpar=TRUE){
+plotJunction <- function(idx, fds, pvals=pVals(fds), mu=predictMu(fds), threshold=1e-2, setpar=TRUE){
   if(isTRUE(setpar)){
     par(mfrow=c(2,3))
   }
@@ -20,7 +20,7 @@ plotJunction <- function(idx, fds, pvals=pVals(fds), mu=predictMu(fds, all = TRU
   
   if(!is.null(pvals)){
     plotPvalHist(idx, pvals)
-    plotQQ(idx, padj)
+    plotQQ(idx, pvals)
   }
   plotZscore(idx, fds)
   
@@ -32,7 +32,7 @@ plotData <- function(idx, K, N, pvals=NULL, threshold=1e-2){
   if(!is.null(pvals)){
     pval = pvals[idx,]
     pos <- which(pval < threshold)
-    points(N[idx,pos] + 1, K[idx, pos] + 1, pch=2, col="green")
+    points(N[idx,pos] + 1, K[idx, pos] + 0.5, pch=2, col="green")
   }
   grid()
   abline(0,1)
@@ -75,7 +75,7 @@ plotQQ <- function(idx, pvals){
 
 
 plotZscore <- function(idx, fds){
-  z <- zScore(fds)[idx,]
+  z <- zScores(fds)[idx,]
   hist(z)
 }
 
