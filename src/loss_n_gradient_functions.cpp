@@ -5,9 +5,7 @@
 
 using namespace Rcpp;
 
-//const double epsilonU      = 1e-20;
 const double MAX_EXP_VALUE = 700;
-//const double lambda = 100;
 
 arma::mat trimmVal(arma::mat y){
     arma::uvec idx;
@@ -95,7 +93,7 @@ arma::vec estLgammaBeta(arma::vec y, arma::uvec pos, double br){
 }
 
 // [[Rcpp::export()]]
-double truncNLL_db(arma::vec par, arma::mat H, arma::vec k, arma::vec n, double rho, double lambda){
+double truncNLL_db(arma::vec par, arma::mat H, arma::vec k, arma::vec n, double rho, double lambda, double pseudocount){
   double b, rhoa, rhob;
   arma::vec d, y, ey, p, u, v, alpha, alphaK, beta, betaNK, nll;
   
@@ -118,11 +116,9 @@ double truncNLL_db(arma::vec par, arma::mat H, arma::vec k, arma::vec n, double 
   u    = u * rhob;
   
   alpha  = arma::lgamma(p * rhoa );
-  //alpha  = arma::lgamma(p * rhoa + epsilonU);
-  alphaK = arma::lgamma(p * rhoa + k + 0.5);
+  alphaK = arma::lgamma(p * rhoa + k + pseudocount);
   beta   = arma::lgamma(u);
-  //beta   = arma::lgamma(u + epsilonU);
-  betaNK = arma::lgamma(u + n - k + 0.5);
+  betaNK = arma::lgamma(u + n - k + pseudocount);
   
   // arma::vec abs;
   arma::uvec infPosA, infPosB;
@@ -160,7 +156,7 @@ arma::vec estDigammaBeta(arma::vec y, arma::uvec pos){
 }
 
 // [[Rcpp::export()]]
-arma::vec truncGrad_db(arma::vec par, arma::mat H, arma::vec k, arma::vec n, double rho, double lambda){
+arma::vec truncGrad_db(arma::vec par, arma::mat H, arma::vec k, arma::vec n, double rho, double lambda, double pseudocount){
     double b, rhoa, rhob;
     arma::vec d, y, ey, p, u, v, alpha, alphaK, beta, betaNK, grb, grd;
 
@@ -184,9 +180,9 @@ arma::vec truncGrad_db(arma::vec par, arma::mat H, arma::vec k, arma::vec n, dou
     v    = ey/arma::square(1 + ey);
     
     alpha  = (rcppdigamma(p * rhoa) * rhoa) % v;
-    alphaK = (rcppdigamma(p * rhoa + k + 0.5) * rhoa) % v;
+    alphaK = (rcppdigamma(p * rhoa + k + pseudocount) * rhoa) % v;
     beta   = (rcppdigamma(u) * rhob) % v;
-    betaNK = (rcppdigamma(u + n - k + 0.5) * rhob) % v;
+    betaNK = (rcppdigamma(u + n - k + pseudocount) * rhob) % v;
   
     v.elem( arma::find_nonfinite(v) ).zeros();
     alpha.elem( arma::find(v == 0) ) = estDigammaAlpha(y, arma::find(v == 0)); 
@@ -218,11 +214,11 @@ arma::vec truncGrad_db(arma::vec par, arma::mat H, arma::vec k, arma::vec n, dou
 
 // [[Rcpp::export()]]
 double truncNLL_e(arma::vec par, arma::mat x, arma::mat D, arma::vec b,
-                    arma::mat k, arma::mat n, arma::vec rho){
+                    arma::mat k, arma::mat n, arma::vec rho, double pseudocount){
     arma::vec rhoa, rhob;
     arma::mat E, y, ey, p, u, v, alpha, alphaK, beta, betaNK, nll, aT, bT;
 
-    E = arma::reshape(par, D.n_rows, D.n_cols);
+    E = arma::reshape(par, x.n_cols, D.n_cols);
 
     y = x * E * D.t();
     y = y.each_row() + b.t();
@@ -243,9 +239,9 @@ double truncNLL_e(arma::vec par, arma::mat x, arma::mat D, arma::vec b,
     bT = u.each_row() % rhob.t();
 
     alpha  = arma::lgamma(aT);
-    alphaK = arma::lgamma(aT + k.t() + 0.5);
+    alphaK = arma::lgamma(aT + k.t() + pseudocount);
     beta   = arma::lgamma(bT);
-    betaNK = arma::lgamma(bT + n.t() - k.t() + 0.5);
+    betaNK = arma::lgamma(bT + n.t() - k.t() + pseudocount);
 
     arma::mat abs;
     arma::uvec infPosA, infPosB;
@@ -264,11 +260,11 @@ double truncNLL_e(arma::vec par, arma::mat x, arma::mat D, arma::vec b,
 
 // [[Rcpp::export()]]
 arma::mat truncGrad_e(arma::vec par, arma::mat x, arma::mat D, arma::vec b,
-                    arma::mat k, arma::mat n, arma::vec rho){
+                    arma::mat k, arma::mat n, arma::vec rho, double pseudocount){
     arma::vec rhoa, rhob;
     arma::mat E, y, ey, p, u, v, alpha, alphaK, beta, betaNK, nll, aT, akT, bT, bnkT, gr;
 
-    E = arma::reshape(par, D.n_rows, D.n_cols);
+    E = arma::reshape(par, x.n_cols, D.n_cols);
 
     y = x * E * D.t();
     y = y.each_row() + b.t();
@@ -288,10 +284,10 @@ arma::mat truncGrad_e(arma::vec par, arma::mat x, arma::mat D, arma::vec b,
     v    = ey/arma::square(1 + ey);
     aT  = p.each_row() % rhoa.t();
 
-    akT = rcppdigammamat(aT + k.t() + 0.5);
+    akT = rcppdigammamat(aT + k.t() + pseudocount);
     aT  = rcppdigammamat(aT);
     bT  = rcppdigammamat(u);
-    bnkT = rcppdigammamat(u + n.t() - k.t() + 0.5);
+    bnkT = rcppdigammamat(u + n.t() - k.t() + pseudocount);
 
     // alpha  = aT.each_row() % rhoa.t();
     // alphaK = akT.each_row() % rhoa.t();
@@ -327,7 +323,7 @@ arma::mat truncGrad_e(arma::vec par, arma::mat x, arma::mat D, arma::vec b,
 }
 
 // [[Rcpp::export()]]
-double truncNLL_rho(double rho, arma::vec yi, arma::vec ki, arma::vec ni){
+double truncNLL_rho(double rho, arma::vec yi, arma::vec ki, arma::vec ni, double pseudocount){
   arma::vec mui, u, alpha, alphaK, beta, betaNK, alphaBeta, nll;
   double rhoa, rhob;
   
@@ -337,10 +333,10 @@ double truncNLL_rho(double rho, arma::vec yi, arma::vec ki, arma::vec ni){
   u    = (mui-1) * rhob;
   
   alpha  = arma::lgamma(mui * rhoa);
-  alphaK = arma::lgamma(mui * rhoa + ki + 0.5);
+  alphaK = arma::lgamma(mui * rhoa + ki + pseudocount);
   beta   = arma::lgamma(u);
-  betaNK = arma::lgamma(u + ni - ki + 0.5);
-  alphaBeta = arma::lgamma(rhoa + ni + 1) - lgamma(rhoa);
+  betaNK = arma::lgamma(u + ni - ki + pseudocount);
+  alphaBeta = arma::lgamma(rhoa + ni + (2*pseudocount)) - lgamma(rhoa);
   
   // arma::vec abs;
   arma::uvec infPosA, infPosB;
@@ -358,7 +354,7 @@ double truncNLL_rho(double rho, arma::vec yi, arma::vec ki, arma::vec ni){
 }
 
 // [[Rcpp::export()]]
-double fullNLL(arma::mat y, arma::mat rho, arma::mat k, arma::mat n, arma::mat D, double lambda){
+double fullNLL(arma::mat y, arma::mat rho, arma::mat k, arma::mat n, arma::mat D, double lambda, double pseudocount){
   arma::mat rhoa, rhob;
   arma::mat mu, u, alpha, alphaK, beta, betaNK, nonTruncTerms, nll, aT;
   
@@ -371,10 +367,11 @@ double fullNLL(arma::mat y, arma::mat rho, arma::mat k, arma::mat n, arma::mat D
   u    = u % rhob;
   
   alpha  = arma::lgamma(aT);
-  alphaK = arma::lgamma(aT + k + 0.5);
+  alphaK = arma::lgamma(aT + k + pseudocount);
   beta   = arma::lgamma(u);
-  betaNK = arma::lgamma(u + n - k + 0.5);
-  nonTruncTerms = - arma::lgamma(n+1+1) + arma::lgamma(k+1+0.5) + arma::lgamma(n-k+1+0.5) + arma::lgamma(rhoa + n + 1) - arma::lgamma(rhoa);
+  betaNK = arma::lgamma(u + n - k + pseudocount);
+  nonTruncTerms = - arma::lgamma(n+1+(2*pseudocount)) + arma::lgamma(k+1+pseudocount) + arma::lgamma(n-k+1+pseudocount) 
+                  + arma::lgamma(rhoa + n + (2*pseudocount)) - arma::lgamma(rhoa);
   
   arma::mat abs;
   arma::uvec infPosA, infPosB;

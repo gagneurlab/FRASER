@@ -14,7 +14,7 @@ updateE <- function(fds, control, BPPARAM, verbose){
   control[['maxit']] <- 50
 
   fit <- optim(par, fn=truncNLL_e, gr=truncGrad_e,
-               x=as.matrix(x), D=D, k=as.matrix(k), n=as.matrix(n), rho=rho, b=b,
+               x=as.matrix(x), D=D, k=as.matrix(k), n=as.matrix(n), rho=rho, b=b, pseudocount=pseudocount,
                method="L-BFGS-B", control=control)
 
   # Check that fit converged
