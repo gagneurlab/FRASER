@@ -58,7 +58,7 @@ x <- function(fds, type=currentType(fds), all=FALSE){
   N <- N(fds, type=type)
 
   # compute logit ratio with pseudocounts
-  x <- t((K + 0.5)/(N + 1))
+  x <- t((K + pseudocount)/(N + (2*pseudocount)))
   x <- qlogis(x)
 
   if(isFALSE(all)){
@@ -150,6 +150,18 @@ pVals <- function(fds, type=currentType(fds)){
     value <- matrix(value, ncol=ncol(fds))
   }
   assay(fds, paste0('pvalues_', type), ...) <- value
+  return(fds)
+}
+
+pValsBinomial <- function(fds, type=currentType(fds)){
+  return(assay(fds, paste0('pvaluesBinomial_', type)))
+}
+
+`pValsBinomial<-` <- function(fds, value, type=currentType(fds), ...){
+  if(!is.matrix(value)){
+    value <- matrix(value, ncol=ncol(fds))
+  }
+  assay(fds, paste0('pvaluesBinomial_', type), ...) <- value
   return(fds)
 }
 
