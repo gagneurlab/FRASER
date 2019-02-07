@@ -58,7 +58,7 @@ x <- function(fds, type=currentType(fds), all=FALSE){
   N <- N(fds, type=type)
 
   # compute logit ratio with pseudocounts
-  x <- t((K + pseudocount)/(N + (2*pseudocount)))
+  x <- t((K + pseudocount())/(N + (2*pseudocount())))
   x <- qlogis(x)
 
   if(isFALSE(all)){
@@ -129,51 +129,60 @@ predictY <- function(fds, type=currentType(fds)){
   return(t(y))
 }
 
-zScores <- function(fds, type=currentType(fds)){
-  return(assay(fds, paste0('zScores_', type=type)))
-}
 
-`zScores<-` <- function(fds, value, type=currentType(fds), ...){
-  if(!is.matrix(value)){
-    value <- matrix(value, ncol=ncol(fds))
-  }
-  assay(fds, paste0('zScores_', type), ...) <- value
-  return(fds)
-}
 
-pVals <- function(fds, type=currentType(fds)){
-  return(assay(fds, paste0('pvalues_', type)))
-}
 
-`pVals<-` <- function(fds, value, type=currentType(fds), ...){
-  if(!is.matrix(value)){
-    value <- matrix(value, ncol=ncol(fds))
-  }
-  assay(fds, paste0('pvalues_', type), ...) <- value
-  return(fds)
-}
 
-pValsBinomial <- function(fds, type=currentType(fds)){
-  return(assay(fds, paste0('pvaluesBinomial_', type)))
-}
 
-`pValsBinomial<-` <- function(fds, value, type=currentType(fds), ...){
-  if(!is.matrix(value)){
-    value <- matrix(value, ncol=ncol(fds))
-  }
-  assay(fds, paste0('pvaluesBinomial_', type), ...) <- value
-  return(fds)
-}
-
-predictedMeans <- function(fds, type=currentType(fds)){
-    return(assay(fds, paste0('predictedMeans_', type)))
-}
-
-`predictedMeans<-` <- function(fds, value, type=currentType(fds), ...){
+`setAssayMatrix<-` <- function(fds, value, name, type, ...){
     if(!is.matrix(value)){
         value <- matrix(value, ncol=ncol(fds))
     }
-    assay(fds, paste0('predictedMeans_', type), ...) <- value
+    assay(fds, paste(name, type, sep="_"), ...) <- value
+    return(fds)
+}
+
+getAssayMatrix <- function(fds, name, type){
+    return(assay(fds, paste(name, type, sep="_")))
+}
+
+zScores <- function(fds, type=currentType(fds)){
+  return(getAssayMatrix(fds, name='zScores', type=type))
+}
+
+`zScores<-` <- function(fds, value, type=currentType(fds), ...){
+    setAssayMatrix(fds, name="zScores", type=type, ...) <- value
+    return(fds)
+}
+
+pVals <- function(fds, type=currentType(fds), dist=c("BetaBinom", "Binom")){
+    dist <- match.arg(dist)
+    return(getAssayMatrix(fds, paste0("pvalues", dist), type=type))
+}
+
+`pVals<-` <- function(fds, value, type=currentType(fds), dist=c("BetaBinom", "Binom"), ...){
+    dist <- match.arg(dist)
+    setAssayMatrix(fds, name=paste0("pvalues", dist), type=type, ...) <- value
+    return(fds)
+}
+
+padjVals <- function(fds, type=currentType(fds), dist=c("BetaBinom", "Binom")){
+    dist <- match.arg(dist)
+    return(getAssayMatrix(fds, paste0("pajd", dist), type=type))
+}
+
+`padjVals<-` <- function(fds, value, type=currentType(fds), dist=c("BetaBinom", "Binom"), ...){
+    dist <- match.arg(dist)
+    setAssayMatrix(fds, name=paste0("pajd", dist), type=type, ...) <- value
+    return(fds)
+}
+
+predictedMeans <- function(fds, type=currentType(fds)){
+    return(getAssayMatrix(fds, name="predictedMeans", type=type))
+}
+
+`predictedMeans<-` <- function(fds, value, type=currentType(fds), ...){
+    setAssayMatrix(fds, name="predictedMeans", type=type, ...) <- value
     return(fds)
 }
 
@@ -186,3 +195,14 @@ currentType <- function(fds){
     metadata(fds)[['currentType']] <- whichPSIType(value)
     return(fds)
 }
+
+pseudocount <- function(){
+    options()[['FraseR.pseudoCount']]
+}
+
+`pseudocount<-` <- function(value){
+    stopifnot(isScalarNumeric(value))
+    stopifnot(value >= 0)
+    options('FraseR.pseudoCount'=value)
+}
+

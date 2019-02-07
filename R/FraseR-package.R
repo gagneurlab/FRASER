@@ -101,3 +101,7 @@ globalVariables(c(".N", ".asDataFrame", "End", "FN", "HTML", "Start", "TP",
         "sampleID", "sampleGroup", "chr", "symbol", "type", "pseudocount"),
         package="FraseR")
 
+
+options("FraseR.pseudoCount"=1)
+
+
