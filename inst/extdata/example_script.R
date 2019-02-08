@@ -19,7 +19,11 @@ probE <- 0.1
 q <- 24
 
 # toy data
-fdse <- makeExampleFraseRDataSet()
+if(FALSE){
+    fdse <- makeExampleFraseRDataSet()
+    fdse <- saveFraseRDataSet(fdse)
+}
+fdse <-loadFraseRDataSet("~/FraseR", "Data_Analysis")
 fds <- fdse
 probE <- 0.5
 q <- 3
@@ -67,5 +71,5 @@ for(gr in grList){
     idx <- to(findOverlaps(gr, granges(rowRanges(fds, type=type))))
     hist(log10(as.vector(pVals(fds)[idx,c("MUC1344", "MUC1365")])))
 
-    plotJunction(52984, fds)
+    plotJunction(idx[1], fds)
 }

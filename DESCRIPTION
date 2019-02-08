@@ -66,6 +66,7 @@ biocViews:
 URL: https://i12g-gagneurweb.in.tum.de/gitlab/mertes/FraseR/
 RoxygenNote: 6.1.1
 Collate:
+    getNSetterFuns.R
     FraseR-package.R
     FraseRDataSet-class.R
     AllGenerics.R
@@ -86,10 +87,12 @@ Collate:
     shiny.R
     plotDistributions.R
     RcppExports.R
-    'autoencoder.R'
-    'updateD.R'
+    autoencoder.R
+    updateD.R
     updateE.R
     updateRho.R
-    getNSetterFuns.R
     gradient_loss_R.R
+    methods-makeExampleObj.R
+    plotAutoencoderResults.R
+    pvalsNzscore.R
 VignetteBuilder: knitr

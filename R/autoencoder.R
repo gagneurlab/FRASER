@@ -177,7 +177,7 @@ lossED <- function(fds, lambda){
 
     y <- predictY(fds)
 
-    return(fullNLL(y, rho, K, N, D, lambda, pseudocount()))
+    return(fullNLL(y, rho, K, N, D, lambda))
 }
 
 # lossED <- function(fds){

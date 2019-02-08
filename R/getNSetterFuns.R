@@ -155,23 +155,23 @@ zScores <- function(fds, type=currentType(fds)){
     return(fds)
 }
 
-pVals <- function(fds, type=currentType(fds), dist=c("BetaBinom", "Binom")){
+pVals <- function(fds, type=currentType(fds), dist=c("BetaBinomial", "Binomial")){
     dist <- match.arg(dist)
     return(getAssayMatrix(fds, paste0("pvalues", dist), type=type))
 }
 
-`pVals<-` <- function(fds, value, type=currentType(fds), dist=c("BetaBinom", "Binom"), ...){
+`pVals<-` <- function(fds, value, type=currentType(fds), dist=c("BetaBinomial", "Binomial"), ...){
     dist <- match.arg(dist)
     setAssayMatrix(fds, name=paste0("pvalues", dist), type=type, ...) <- value
     return(fds)
 }
 
-padjVals <- function(fds, type=currentType(fds), dist=c("BetaBinom", "Binom")){
+padjVals <- function(fds, type=currentType(fds), dist=c("BetaBinomial", "Binomial")){
     dist <- match.arg(dist)
     return(getAssayMatrix(fds, paste0("pajd", dist), type=type))
 }
 
-`padjVals<-` <- function(fds, value, type=currentType(fds), dist=c("BetaBinom", "Binom"), ...){
+`padjVals<-` <- function(fds, value, type=currentType(fds), dist=c("BetaBinomial", "Binomial"), ...){
     dist <- match.arg(dist)
     setAssayMatrix(fds, name=paste0("pajd", dist), type=type, ...) <- value
     return(fds)
@@ -204,5 +204,6 @@ pseudocount <- function(){
     stopifnot(isScalarNumeric(value))
     stopifnot(value >= 0)
     options('FraseR.pseudoCount'=value)
+    setPseudoCount(value)
 }
 

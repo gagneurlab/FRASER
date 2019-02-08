@@ -41,7 +41,7 @@ singleDFit <- function(i, D, b, k, n, H, rho, lambda, control, ...){
   rhoi <- rho[i]
 
   fit <- optim(pari, fn=truncNLL_db, gr=truncGrad_db,
-               H=H, k=ki, n=ni, rho=rhoi, lambda=lambda, pseudocount=pseudocount, control=control,
+               H=H, k=ki, n=ni, rho=rhoi, lambda=lambda, control=control,
                method="L-BFGS-B")
 
   return(fit)

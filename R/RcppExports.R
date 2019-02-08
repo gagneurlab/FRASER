@@ -17,27 +17,27 @@ estLgammaBeta <- function(y, pos, br) {
     .Call('_FraseR_estLgammaBeta', PACKAGE = 'FraseR', y, pos, br)
 }
 
-truncNLL_db <- function(par, H, k, n, rho, lambda, pseudocount) {
-    .Call('_FraseR_truncNLL_db', PACKAGE = 'FraseR', par, H, k, n, rho, lambda, pseudocount)
+truncNLL_db <- function(par, H, k, n, rho, lambda) {
+    .Call('_FraseR_truncNLL_db', PACKAGE = 'FraseR', par, H, k, n, rho, lambda)
 }
 
-truncGrad_db <- function(par, H, k, n, rho, lambda, pseudocount) {
-    .Call('_FraseR_truncGrad_db', PACKAGE = 'FraseR', par, H, k, n, rho, lambda, pseudocount)
+truncGrad_db <- function(par, H, k, n, rho, lambda) {
+    .Call('_FraseR_truncGrad_db', PACKAGE = 'FraseR', par, H, k, n, rho, lambda)
 }
 
-truncNLL_e <- function(par, x, D, b, k, n, rho, pseudocount) {
-    .Call('_FraseR_truncNLL_e', PACKAGE = 'FraseR', par, x, D, b, k, n, rho, pseudocount)
+truncNLL_e <- function(par, x, D, b, k, n, rho) {
+    .Call('_FraseR_truncNLL_e', PACKAGE = 'FraseR', par, x, D, b, k, n, rho)
 }
 
-truncGrad_e <- function(par, x, D, b, k, n, rho, pseudocount) {
-    .Call('_FraseR_truncGrad_e', PACKAGE = 'FraseR', par, x, D, b, k, n, rho, pseudocount)
+truncGrad_e <- function(par, x, D, b, k, n, rho) {
+    .Call('_FraseR_truncGrad_e', PACKAGE = 'FraseR', par, x, D, b, k, n, rho)
 }
 
-truncNLL_rho <- function(rho, yi, ki, ni, pseudocount) {
-    .Call('_FraseR_truncNLL_rho', PACKAGE = 'FraseR', rho, yi, ki, ni, pseudocount)
+truncNLL_rho <- function(rho, yi, ki, ni) {
+    .Call('_FraseR_truncNLL_rho', PACKAGE = 'FraseR', rho, yi, ki, ni)
 }
 
-fullNLL <- function(y, rho, k, n, D, lambda, pseudocount) {
-    .Call('_FraseR_fullNLL', PACKAGE = 'FraseR', y, rho, k, n, D, lambda, pseudocount)
+fullNLL <- function(y, rho, k, n, D, lambda) {
+    .Call('_FraseR_fullNLL', PACKAGE = 'FraseR', y, rho, k, n, D, lambda)
 }
 

@@ -1,6 +1,6 @@
 
 #plot junctions after autoencoder fit
-plotJunction <- function(idx, fds, threshold=5e-2, dist="BetaBinom"){
+plotJunction <- function(idx, fds, type=currentType(fds), threshold=5e-2, dist="BetaBinomial"){
     par.old <- par(no.readonly=TRUE)
     on.exit(par(par.old))
 
@@ -9,19 +9,19 @@ plotJunction <- function(idx, fds, threshold=5e-2, dist="BetaBinom"){
     K <- K(fds)
     N <- N(fds)
     mu <- predictedMeans(fds)
-    pvals <- pVals(fds, dist=dist)
     padj  <- padjVals(fds, dist=dist)
 
     plotData(idx, K, N, padj, threshold)
-    plotPsi(idx, fds, K, N, padj, threshold)
-    plotMu(idx, mu, fds, padj, threshold)
+    #plotPsi(idx, fds, K, N, padj, threshold)
+    #plotMu(idx, mu, fds, padj, threshold)
+    plotPsiVsMu(idx, K, N, mu, padj, threshold)
 
-    if(!is.null(pvals)){
-        plotPvalHist(idx, pvals)
-        plotQQ(idx, pvals, "BetaBinomial")
+    if(!is.null(pVals(fds, dist=dist))){
+        plotPvalHist(idx, fds, dist)
+        plotQQ(idx, fds, "BetaBinomial")
         plotQQ(idx, fds, "Binomial")
     }
-    #plotZscore(idx, fds)
+    plotZscore(idx, fds)
 }
 
 plotData <- function(idx, K, N, pvals, threshold=5e-2){
@@ -38,9 +38,21 @@ plotData <- function(idx, K, N, pvals, threshold=5e-2){
     abline(0,1)
 }
 
+plotPsiVsMu <- function(idx, K, N, mu, pvals, threshold=5e-2){
+    psi <- (K + pseudocount())/(N + (2*pseudocount()))
+    plot(y=psi[idx,], x=mu[idx,], xlab="predictedMu", ylab="raw PSI", pch=19)
+    grid()
+    abline(0, 1, col="firebrick")
+    if(!missing(pvals) & !is.null(pvals)){
+        pval = pvals[idx,]
+        pos <- which(pval < threshold)
+        points(y=psi[idx,pos], x=mu[idx,pos], pch=2, col="green")
+    }
+}
+
 plotPsi <- function(idx, fds, K, N, pvals, threshold=5e-2){
     psi <- (K[idx,] + pseudocount())/(N[idx,] + (2*pseudocount()))
-    plot(1:ncol(fds), psi, xlab="sample", ylab="raw PSI", pch=19)
+    plot(psi, xlab="sample", ylab="raw PSI", pch=19)
 
     if(!missing(pvals) & !is.null(pvals)){
         pval = pvals[idx,]
@@ -61,15 +73,15 @@ plotMu <- function(idx, mu, fds, pvals, threshold=5e-2){
     }
 }
 
-plotPvalHist <- function(idx, pvals){
-    hist(pvals[idx,], xlab="P-values", main=paste("Pvalues for", idx))
+plotPvalHist <- function(idx, fds, dist){
+    hist(pVals(fds, dist=dist)[idx,], xlab="P-values", main=paste("Pvalues (", dist, ") for", idx))
 }
 
-plotQQ <- function(idx, pvals, distribution){
-    pval <- pvals[idx,]
+plotQQ <- function(idx, fds, dist){
+    pval <- pVals(fds, dist=dist)[idx,]
     exp <- -log10(ppoints(length(pval)))
     obs <- -log10(sort(pval))
-    main <- paste("QQ-plot", "(",distribution,") for", idx)
+    main <- paste("QQ-plot", "(", dist, ") for", idx)
 
     xlim=range(exp)
     ylim=range(obs)
