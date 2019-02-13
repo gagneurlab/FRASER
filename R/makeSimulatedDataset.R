@@ -150,9 +150,11 @@ makeSimulatedFraserDataSet <- function(m=200, j=1000, q=10, freq=1E-3, zScore=4,
       if(art_out > out_range[1] && art_out < out_range[2]){
         # k/n = psi therefore k = psi * n (plus pseudocounts)
         if(type == "psi3"){
-          k[row,col] <- max(0, round( art_out * (n[row,col] + (2*pseudocount())) - pseudocount() )) # max(0,...) to ensure k is never negative
+          k_new <- round( art_out * (n[row,col] + (2*pseudocount())) - pseudocount() )
+          k[row,col] <- min(n[row,col], max(0, k_new) ) # max(0,...) to ensure k is never negative, min(n, ...) to ensure k <= n
         } else{
-          k[row,col] <- max(0, round( art_out * (nonSplit[row,col] + (2*pseudocount())) - pseudocount() )) # max(0,...) to ensure k is never negative
+          k_new <- round( art_out * (nonSplit[row,col] + (2*pseudocount())) - pseudocount() )
+          k[row,col] <- min(nonSplit[row,col], max(0, k_new) ) # max(0,...) to ensure k is never negative, min(n, ...) to ensure k <= n
         }
       }else{
         #remove outliers with psi < 0 or > 1
