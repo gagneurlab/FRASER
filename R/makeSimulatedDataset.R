@@ -9,7 +9,7 @@
 #' @param j Number of simulated junctions 
 #' @param m Number of simulated samples
 #' @param freq Frequency of in-silico outliers
-#' @param zScore Absolute z score of in-silico outliers (default 6).
+#' @param deltaPSI delta PSI change of in-silico outliers.
 #' @param inj Determines whether counts are injected with the strategy 
 #'            ('both', 'low', 'high'), default is 'both'.
 #' @param q number of simulated latent variables.
@@ -27,17 +27,20 @@
 #' fds2
 #' 
 #' @export
-makeSimulatedFraserDataSet <- function(m=200, j=1000, q=10, freq=1E-3, zScore=4,
+makeSimulatedFraserDataSet <- function(m=200, j=1000, q=10, freq=1E-3, deltaPSI=0.2,
                                        inj=c('both', 'low', 'high')){
   
   # nMean <- ceiling(rlnorm(j, 5)) + 10     
   # theta <- rlnorm(j, 4)                         
-  nMean <- rnorm(j, 348, 10)                     # nbinom means for n (mean(N) on kremer dataset = 347.62, median=37)   
+  # nMean <- rnbinom(j, 348, 0.27)               # nbinom means for n (mean(N) on kremer dataset = 347.62, median=37)
+  nMean <- rnorm(j, 348, 10)                     # nbinom means for n (mean(N) on kremer dataset = 347.62, median=37)
   theta <- rnorm(j, 0.27, 0.01)                  # nbinom dispersion (~0.27 on N from kremer dataset)
   
   # simulate counts at each junction
   n <- matrix(rnbinom(j*m, mu=nMean, size=theta), nrow=j, ncol=m)
   nonSplit <- matrix(rnbinom(j*m, mu=nMean, size=theta), nrow=j, ncol=m)
+  # n <- matrix(abs(round(rnorm(j*m, mean=nMean, sd=nMean/4))), nrow=j, ncol=m)
+  # nonSplit <- matrix(abs(round(rnorm(j*m, mean=nMean, sd=nMean/4))), nrow=j, ncol=m)
   
   
   #
@@ -99,28 +102,29 @@ makeSimulatedFraserDataSet <- function(m=200, j=1000, q=10, freq=1E-3, zScore=4,
     mode(k) <- 'integer'
   
     psi <- (k + pseudocount())/(n + 2*pseudocount())
-    l2fc <- log2fc(psi, mu)
-    datasd <- rowSds(l2fc)
-    datasd <- matrix(datasd, nrow=j, ncol=m)
-    lmu <- log2(mu)
+    # l2fc <- log2fc(psi, mu)
+    # datasd <- rowSds(l2fc)
+    # datasd <- matrix(datasd, nrow=j, ncol=m)
+    # lmu <- log2(mu)
     
     setAssayMatrix(fds=fds, name="truePSI", type=type) <- mu 
-    setAssayMatrix(fds=fds, name="trueSd", type=type)  <- datasd
+    # setAssayMatrix(fds=fds, name="trueSd", type=type)  <- datasd
+    mcols(fds, type=type)[,"trueRho"] <- rho
     
     # needed so that subsetting the fds works later
     mcols(fds, type=type)[["startID"]] <- 1:nrow(mcols(fds, type=type))
     mcols(fds, type=type)[["endID"]] <- 1:nrow(mcols(fds, type=type))
-    mcols(fds, type=type)[,"trueRho"] <- rho
     
     # for now: same values for psi3 and psi5
     if(type== "psi3"){
       setAssayMatrix(fds=fds, name="truePSI", type="psi5") <- mu 
-      setAssayMatrix(fds=fds, name="trueSd", type="psi5")  <- datasd
+      # setAssayMatrix(fds=fds, name="trueSd", type="psi5")  <- datasd
+      mcols(fds, type="psi5")[,"trueRho"] <- rho
       
       # needed so that subsetting the fds works later
       mcols(fds, type="psi5")[["startID"]] <- 1:nrow(mcols(fds, type=type))
       mcols(fds, type="psi5")[["endID"]] <- 1:nrow(mcols(fds, type=type))
-      mcols(fds, type="psi5")[,"trueRho"] <- rho
+      
     } else{
       # needed so that subsetting the fds works later
       mcols(fds, type=type)[["spliceSiteID"]] <- 1:nrow(mcols(fds, type=type))
@@ -143,21 +147,26 @@ makeSimulatedFraserDataSet <- function(m=200, j=1000, q=10, freq=1E-3, zScore=4,
     for(i in seq_len(nrow(list_index))){
       row <- list_index[i,'row']
       col <- list_index[i,'col']
-      fc <- zScore * datasd[row,col]
-      outlier_psi <- indexOut[row,col] * fc + lmu[row,col]
-      art_out <- 2^outlier_psi
+      # fc <- zScore * datasd[row,col]
+      # outlier_psi <- indexOut[row,col] * fc + lmu[row,col]
+      # art_out <- 2^outlier_psi
+      art_out <- mu[row,col] + indexOut[row,col] * deltaPSI  # mu is true simulated psi
       
-      if(art_out > out_range[1] && art_out < out_range[2]){
-        # k/n = psi therefore k = psi * n (plus pseudocounts)
-        if(type == "psi3"){
-          k_new <- round( art_out * (n[row,col] + (2*pseudocount())) - pseudocount() )
-          k[row,col] <- min(n[row,col], max(0, k_new) ) # max(0,...) to ensure k is never negative, min(n, ...) to ensure k <= n
-        } else{
-          k_new <- round( art_out * (nonSplit[row,col] + (2*pseudocount())) - pseudocount() )
-          k[row,col] <- min(nonSplit[row,col], max(0, k_new) ) # max(0,...) to ensure k is never negative, min(n, ...) to ensure k <= n
-        }
+      # k/n = psi therefore k = psi * n (plus pseudocounts)
+      if(type == "psi3"){
+        n_pos <- n[row,col]
+      } else{
+        n_pos <- nonSplit[row,col]
+      }
+      k_new <- round( art_out * (n_pos + (2*pseudocount())) - pseudocount() )
+      
+      if(art_out > out_range[1] && art_out < out_range[2] && 
+         k_new >= 0 && k_new <= n_pos){ # max(0,...) to ensure k is never negative, min(n, ...) to ensure k <= n
+          
+        k[row,col] <- k_new  
+        
       }else{
-        #remove outliers with psi < 0 or > 1
+        #remove outliers with psi < 0 or > 1 or k < 0 or k > n
         indexOut[row,col] <- 0 
         n_rejected <- n_rejected + 1
       }
