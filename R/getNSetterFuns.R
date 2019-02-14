@@ -53,13 +53,18 @@ N <- function(fds, type=currentType(fds)){
   return(N);
 }
 
-x <- function(fds, type=currentType(fds), all=FALSE){
+x <- function(fds, type=currentType(fds), all=FALSE, noiseAlpha=NULL){
   K <- K(fds, type=type)
   N <- N(fds, type=type)
 
   # compute logit ratio with pseudocounts
   x <- t((K + pseudocount())/(N + (2*pseudocount())))
   x <- qlogis(x)
+  
+  # corrupt x if required
+  if(!is.null(noiseAlpha)){
+    x <- x + noiseAlpha * rnorm(nrow(x)*ncol(x), mean=0, sd=1)
+  }
 
   if(isFALSE(all)){
       x = x[,featureExclusionMask(fds, type=type)]
@@ -67,8 +72,8 @@ x <- function(fds, type=currentType(fds), all=FALSE){
   return(x)
 }
 
-H <- function(fds, type=currentType(fds)){
-  x(fds, all=FALSE, type=type) %*% E(fds, type=type)
+H <- function(fds, type=currentType(fds), noiseAlpha=NULL){
+  x(fds, all=FALSE, type=type, noiseAlpha=noiseAlpha) %*% E(fds, type=type)
 }
 
 `D<-` <- function(fds, value, type=currentType(fds)){
@@ -113,16 +118,16 @@ rho <- function(fds, type=currentType(fds)){
   return(mcols(fds, type=type)[[paste0('rho_', type)]])
 }
 
-predictMu <- function(fds, type=currentType(fds)){
-  y <- predictY(fds, type=type)
-  mu <- predictMuCpp(y)
+predictMu <- function(fds, type=currentType(fds), noiseAlpha=NULL){
+  y <- predictY(fds, type=type, noiseAlpha=noiseAlpha)
+  mu <- predictMuCpp(y, type=type)
   return(t(mu))
 }
 
-predictY <- function(fds, type=currentType(fds)){
+predictY <- function(fds, type=currentType(fds), noiseAlpha=NULL){
   D <- D(fds, type=type)
   b <- b(fds, type=type)
-  H <- H(fds, type=type)
+  H <- H(fds, type=type, noiseAlpha=noiseAlpha)
 
   y <- predictYCpp(as.matrix(H), D, b)
 
@@ -205,5 +210,14 @@ pseudocount <- function(){
     stopifnot(value >= 0)
     options('FraseR.pseudoCount'=value)
     setPseudoCount(value)
+}
+
+currentNoiseAlpha <- function(fds){
+  return(metadata(fds)[['noiseAlpha']])
+}
+
+`currentNoiseAlpha<-` <- function(fds, value){
+  metadata(fds)[['noiseAlpha']] <- value
+  return(fds)
 }
 

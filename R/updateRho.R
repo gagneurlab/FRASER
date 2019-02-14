@@ -6,7 +6,7 @@ updateRho <- function(fds, type, rhoRange, BPPARAM, verbose){
 
   k <- K(fds)
   n <- N(fds)
-  y <- predictY(fds)
+  y <- predictY(fds, noiseAlpha=currentNoiseAlpha(fds))
 
   fitparameters <- bplapply(seq_len(nrow(k)), estRho,
                             k=k, n=n, y=y, rhoRange=rhoRange,
