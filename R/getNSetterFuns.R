@@ -120,7 +120,7 @@ rho <- function(fds, type=currentType(fds)){
 
 predictMu <- function(fds, type=currentType(fds), noiseAlpha=NULL){
   y <- predictY(fds, type=type, noiseAlpha=noiseAlpha)
-  mu <- predictMuCpp(y, type=type)
+  mu <- predictMuCpp(y)
   return(t(mu))
 }
 
