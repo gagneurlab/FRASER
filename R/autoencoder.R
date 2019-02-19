@@ -14,6 +14,8 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, rhoRange=c(1e-5, 1
 
     # set alpha for noise injection for denoising AE
     currentNoiseAlpha(fds) <- noiseAlpha
+    noise <- matrix(rnorm(nrow(fds)*ncol(fds), mean=0, sd=1), nrow=ncol(fds), ncol=nrow(fds))
+    noise(fds, type=type) <- noise
   
     # make sure its only in-memory data for k and n
     currentType(fds) <- type
@@ -24,6 +26,9 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, rhoRange=c(1e-5, 1
     # and create second object with only the subset to fit the encoder
     copy_fds <- fds
     fds <- fds[featureExclusionMask(fds, type=type),by=checkReadType(fds, type=type)]
+    
+    # subset noise so that it works with subsetted x
+    noise(fds, type=type) <- noise[, featureExclusionMask(copy_fds, type=type)]
 
     # initialize E and D using PCA and bias as zeros.
     if(isTRUE(initialize) | is.null(E(fds)) | is.null(D(fds))){

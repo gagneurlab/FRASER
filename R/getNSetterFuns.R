@@ -63,7 +63,12 @@ x <- function(fds, type=currentType(fds), all=FALSE, noiseAlpha=NULL){
   
   # corrupt x if required
   if(!is.null(noiseAlpha)){
-    x <- x + noiseAlpha * rnorm(nrow(x)*ncol(x), mean=0, sd=1)
+    noise <- noise(fds, type=type)
+    if(is.null(noise)){
+      noise <- matrix(rnorm(nrow(x)*ncol(x), mean=0, sd=1), nrow=nrow(x), ncol=ncol(x))
+      noise(fds, type=type) <- noise
+    }
+    x <- x + noiseAlpha * noise
   }
 
   if(isFALSE(all)){
@@ -221,3 +226,15 @@ currentNoiseAlpha <- function(fds){
   return(fds)
 }
 
+
+noise <- function(fds, type=currentType(fds)){
+  return(metadata(fds)[[paste0('noise_', type)]])
+}
+
+`noise<-` <- function(fds, value, type=currentType(fds)){
+  if(!is.matrix(value)){
+    value <- matrix(value, nrow=ncow(fds))
+  }
+  metadata(fds)[[paste0('noise_', type)]] <- value
+  return(fds)
+}
