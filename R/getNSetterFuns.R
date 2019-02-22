@@ -53,13 +53,23 @@ N <- function(fds, type=currentType(fds)){
   return(N);
 }
 
-x <- function(fds, type=currentType(fds), all=FALSE){
+x <- function(fds, type=currentType(fds), all=FALSE, noiseAlpha=NULL){
   K <- K(fds, type=type)
   N <- N(fds, type=type)
 
   # compute logit ratio with pseudocounts
   x <- t((K + pseudocount())/(N + (2*pseudocount())))
   x <- qlogis(x)
+  
+  # corrupt x if required
+  if(!is.null(noiseAlpha)){
+    noise <- noise(fds, type=type)
+    if(is.null(noise)){
+      noise <- matrix(rnorm(nrow(x)*ncol(x), mean=0, sd=1), nrow=nrow(x), ncol=ncol(x))
+      noise(fds, type=type) <- noise
+    }
+    x <- x + noiseAlpha * noise
+  }
 
   if(isFALSE(all)){
       x = x[,featureExclusionMask(fds, type=type)]
@@ -67,8 +77,8 @@ x <- function(fds, type=currentType(fds), all=FALSE){
   return(x)
 }
 
-H <- function(fds, type=currentType(fds)){
-  x(fds, all=FALSE, type=type) %*% E(fds, type=type)
+H <- function(fds, type=currentType(fds), noiseAlpha=NULL){
+  x(fds, all=FALSE, type=type, noiseAlpha=noiseAlpha) %*% E(fds, type=type)
 }
 
 `D<-` <- function(fds, value, type=currentType(fds)){
@@ -113,16 +123,16 @@ rho <- function(fds, type=currentType(fds)){
   return(mcols(fds, type=type)[[paste0('rho_', type)]])
 }
 
-predictMu <- function(fds, type=currentType(fds)){
-  y <- predictY(fds, type=type)
+predictMu <- function(fds, type=currentType(fds), noiseAlpha=NULL){
+  y <- predictY(fds, type=type, noiseAlpha=noiseAlpha)
   mu <- predictMuCpp(y)
   return(t(mu))
 }
 
-predictY <- function(fds, type=currentType(fds)){
+predictY <- function(fds, type=currentType(fds), noiseAlpha=NULL){
   D <- D(fds, type=type)
   b <- b(fds, type=type)
-  H <- H(fds, type=type)
+  H <- H(fds, type=type, noiseAlpha=noiseAlpha)
 
   y <- predictYCpp(as.matrix(H), D, b)
 
@@ -207,3 +217,24 @@ pseudocount <- function(){
     setPseudoCount(value)
 }
 
+currentNoiseAlpha <- function(fds){
+  return(metadata(fds)[['noiseAlpha']])
+}
+
+`currentNoiseAlpha<-` <- function(fds, value){
+  metadata(fds)[['noiseAlpha']] <- value
+  return(fds)
+}
+
+
+noise <- function(fds, type=currentType(fds)){
+  return(metadata(fds)[[paste0('noise_', type)]])
+}
+
+`noise<-` <- function(fds, value, type=currentType(fds)){
+  if(!is.matrix(value)){
+    value <- matrix(value, nrow=ncow(fds))
+  }
+  metadata(fds)[[paste0('noise_', type)]] <- value
+  return(fds)
+}

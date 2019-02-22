@@ -7,7 +7,7 @@ updateE <- function(fds, control, BPPARAM, verbose){
   D <- D(fds)
   k <- K(fds)
   n <- N(fds)
-  x <- x(fds)
+  x <- x(fds, noiseAlpha=currentNoiseAlpha(fds))
   b <- b(fds)
   rho <- rho(fds)
 

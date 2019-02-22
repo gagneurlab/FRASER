@@ -95,4 +95,5 @@ Collate:
     methods-makeExampleObj.R
     plotAutoencoderResults.R
     pvalsNzscore.R
+    makeSimulatedDataset.R
 VignetteBuilder: knitr

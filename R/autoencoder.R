@@ -4,7 +4,7 @@
 #' @noRd
 #'
 #' @export
-fitAutoencoder <- function(fds, q, type="psi3", rhoRange=c(1e-5, 1-1e-5), lambda=0,
+fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, rhoRange=c(1e-5, 1-1e-5), lambda=0,
                            convergence=1e-5, iterations=15, initialize=TRUE,
                            control=list(), BPPARAM=bpparam(), verbose=FALSE){
 
@@ -12,6 +12,11 @@ fitAutoencoder <- function(fds, q, type="psi3", rhoRange=c(1e-5, 1-1e-5), lambda
         bpstart(BPPARAM)
     }
 
+    # set alpha for noise injection for denoising AE
+    currentNoiseAlpha(fds) <- noiseAlpha
+    noise <- matrix(rnorm(nrow(fds)*ncol(fds), mean=0, sd=1), nrow=ncol(fds), ncol=nrow(fds))
+    noise(fds, type=type) <- noise
+  
     # make sure its only in-memory data for k and n
     currentType(fds) <- type
     counts(fds, type=type, side="other", HDF5=FALSE) <- as.matrix(N(fds) - K(fds))
@@ -21,6 +26,9 @@ fitAutoencoder <- function(fds, q, type="psi3", rhoRange=c(1e-5, 1-1e-5), lambda
     # and create second object with only the subset to fit the encoder
     copy_fds <- fds
     fds <- fds[featureExclusionMask(fds, type=type),by=checkReadType(fds, type=type)]
+    
+    # subset noise so that it works with subsetted x
+    noise(fds, type=type) <- noise[, featureExclusionMask(copy_fds, type=type)]
 
     # initialize E and D using PCA and bias as zeros.
     if(isTRUE(initialize) | is.null(E(fds)) | is.null(D(fds))){
@@ -175,7 +183,7 @@ lossED <- function(fds, lambda){
     rho <- matrix(rho(fds), ncol=ncol(K), nrow = nrow(K))
     D <- D(fds)
 
-    y <- predictY(fds)
+    y <- predictY(fds, noiseAlpha=currentNoiseAlpha(fds))
 
     return(fullNLL(y, rho, K, N, D, lambda))
 }
