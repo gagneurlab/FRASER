@@ -65,10 +65,10 @@ x <- function(fds, type=currentType(fds), all=FALSE, noiseAlpha=NULL){
   if(!is.null(noiseAlpha)){
     noise <- noise(fds, type=type)
     if(is.null(noise)){
-      noise <- matrix(rnorm(nrow(x)*ncol(x), mean=0, sd=1), nrow=nrow(x), ncol=ncol(x))
+      noise <- matrix(rnorm(nrow(x)*ncol(x), mean=0, sd=1), nrow=ncol(x), ncol=nrow(x))
       noise(fds, type=type) <- noise
     }
-    x <- x + noiseAlpha * noise
+    x <- x + noiseAlpha * t(noise)
   }
 
   if(isFALSE(all)){
@@ -229,12 +229,15 @@ currentNoiseAlpha <- function(fds){
 
 noise <- function(fds, type=currentType(fds)){
   return(metadata(fds)[[paste0('noise_', type)]])
+  # return(getAssayMatrix(fds, name="noise", type=type))
 }
 
-`noise<-` <- function(fds, value, type=currentType(fds)){
+`noise<-` <- function(fds, value, type=currentType(fds), ...){
   if(!is.matrix(value)){
-    value <- matrix(value, nrow=ncow(fds))
+    value <- matrix(value, nrow=nrow(fds), ncol=ncol(fds))
   }
   metadata(fds)[[paste0('noise_', type)]] <- value
   return(fds)
+  # setAssayMatrix(fds, name="noise", type=type, ...) <- value
+  # return(fds)
 }
