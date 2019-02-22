@@ -45,9 +45,11 @@ countRNAData <- function(fds, NcpuPerSample=1, junctionMap=NULL){
             NcpuPerSample=NcpuPerSample
     )
     names(countList) <- samples(fds)
+    BPPARAM_old <- setMaxThreads(parallel(fds), 10, 10)
     counts <- mergeCounts(countList, junctionMap=junctionMap,
-            assumeEqual=FALSE, BPPARAM=parallel(fds)
-    )
+            assumeEqual=FALSE, BPPARAM=BPPARAM_old$BPPARAM)
+    parallel(fds) <- setMaxThreads(BPPARAM_old$BPPARAM,
+            BPPARAM_old$numWorkers, BPPARAM_old$numTasks, set=TRUE)
 
     # create summarized objects
     h5 <- saveAsHDF5(fds, "rawCountsJ", mcols(counts)[samples(fds)])
@@ -402,7 +404,7 @@ countNonSplicedReads <- function(sampleID, spliceSiteCoords, settings,
     rsubreadCounts <- featureCounts(files=bamFile, annot.ext=anno,
             minOverlap=2, allowMultiOverlap=TRUE, checkFragLength=FALSE,
             minMQS=bamMapqFilter(scanBamParam(settings)),
-            strandSpecific=strandSpecific(settings),
+            strandSpecific=as.integer(strandSpecific(settings)),
 
             # multi-mapping reads
             countMultiMappingReads=TRUE,
@@ -578,3 +580,19 @@ annotateSpliceSite <- function(gr){
     return(gr)
 }
 
+setMaxThreads <- function(BPPARAM, maxWorkers=bpworkers(BPPARAM), maxTasks=bptasks(BPPARAM), set=FALSE){
+    numWorkers <- bpworkers(BPPARAM)
+    numTasks <- bptasks(BPPARAM)
+    try({
+        if(isFALSE(set)){
+            maxWorkers <- min(maxWorkers, numWorkers)
+            maxTasks <- min(maxTasks, numTasks)
+        }
+        bpworkers(BPPARAM) <- maxWorkers
+        bptasks(BPPARAM) <- maxTasks
+    }, silent=TRUE)
+    if(isTRUE(set)){
+        return(BPPARAM)
+    }
+    return(list(BPPARAM=BPPARAM, numWorkers=numWorkers, numTasks=numTasks))
+}

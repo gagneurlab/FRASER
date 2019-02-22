@@ -49,11 +49,9 @@ loadFraseRDataSet <- function(dir, name=NULL, upgrade=FALSE){
         if(grepl("DelayedMatrix .* representation .* Please update it ",
                 as.character(e))){
             if(isTRUE(upgrade)){
-                for(a in list(fds@assays, fds@nonSplicedReads@assays)){
-                    for(i in names(a)){
-                        obj <- updateObject(a[[i]], verbose=TRUE)
-                        a$data[[i]] <- obj
-                    }
+                for(i in assayNames(a)){
+                    obj <- updateObject(a[[i]], verbose=TRUE)
+                    a$data[[i]] <- obj
                 }
             } else {
                 stop(paste('Please upgrade the DelayedMatrix',
@@ -67,16 +65,15 @@ loadFraseRDataSet <- function(dir, name=NULL, upgrade=FALSE){
     name(fds) <- name
 
     # set the correct path of the assay seed file (if folder changed)
-    for(obj in list(fds, nonSplicedReads(fds))){
-        for(aname in assayNames(obj)){
-            afile <- getFraseRHDF5File(fds, aname)
-            if(!file.exists(afile)){
-                warning(paste("Can not find assay file: ", aname, ".",
-                        "The assay will be removed from the object."))
-                assay(fds, aname) <- NULL
-            } else {
-                path(assay(fds, aname)) <- afile
-            }
+    for(aname in assayNames(fds)){
+        message("Loading assay: ", aname)
+        afile <- getFraseRHDF5File(fds, aname)
+        if(!file.exists(afile)){
+            warning(paste("Can not find assay file: ", aname, ".",
+                    "The assay will be removed from the object."))
+            assay(fds, aname) <- NULL
+        } else {
+            path(assay(fds, aname)) <- afile
         }
     }
 
@@ -99,13 +96,11 @@ saveFraseRDataSet <- function(fds, dir=NULL, name=NULL, rewrite=FALSE) {
     if(!dir.exists(outDir)) dir.create(outDir, recursive=TRUE)
 
     # over each assay object
-    assays <- assays(fds)
-    for(aname in names(assays)){
+    for(aname in assayNames(fds)){
         assay <- assay(fds, aname)
-        name(fds) <- name
-        assays[[aname]] <- saveAsHDF5(fds, aname, assay, rewrite=rewrite)
+        assay(fds, aname) <- saveAsHDF5(fds, aname, assay, rewrite=rewrite)
     }
-    assays(fds) <- assays
+    name(fds) <- name
 
     rdsFile <- file.path(outDir, "fds-object.RDS")
     message(date(), ": Writing final FraseR object ('", rdsFile, "').")

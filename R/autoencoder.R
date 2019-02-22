@@ -140,9 +140,9 @@ fitAutoencoder <- function(fds, q, type="psi3", rhoRange=c(1e-5, 1-1e-5), lambda
 
 initAutoencoder <- function(fds, q, rhoRange, type){
 
-    #pca <- pca(as.matrix(x(fds, all=TRUE)), nPcs=q)
-    #pc  <- pcaMethods::loadings(pca)
-    pc = matrix(rnorm(q*nrow(mcols(fds, type=type)), sd=0.1), ncol=q)
+    pca <- pca(as.matrix(x(fds, all=TRUE)), nPcs=q)
+    pc  <- pcaMethods::loadings(pca)
+    #pc = matrix(rnorm(q*nrow(mcols(fds, type=type)), sd=0.1), ncol=q)
 
     # Set initial values from PCA
     D(fds) <- pc

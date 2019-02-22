@@ -18,7 +18,7 @@ calculateZscore <- function(fds, type=currentType(fds)){
 }
 
 # Function to calculate the p-values (both beta binomial and binomial)
-calculatePvalues <- function(fds, type=currentType(fds),  BPPARAM=bpparam()){
+calculatePvalues <- function(fds, type=currentType(fds),  BPPARAM=parallel(fds)){
     currentType(fds) <- type
 
     mu <- as.matrix(predictedMeans(fds))
@@ -50,7 +50,7 @@ singlePvalueBetaBinomial <- function(idx, k, n, mu, rho){
     mui <- mu[idx,]
     rhoi <- rho[idx]
 
-    pvals <- pbetabinom(ki, ni, mui, rhoi)
+    pvals <- pmin(1, pbetabinom(ki, ni, mui, rhoi))
     return (pvals)
 }
 

@@ -1,10 +1,14 @@
 
 #plot junctions after autoencoder fit
-plotJunction <- function(idx, fds, type=currentType(fds), threshold=5e-2, dist="BetaBinomial"){
+plotJunction <- function(idx, fds, type=currentType(fds), threshold=5e-2, dist="BetaBinomial", paper=FALSE){
     par.old <- par(no.readonly=TRUE)
     on.exit(par(par.old))
 
-    par(mfrow=c(2,3))
+    if(isTRUE(paper)){
+        par(mfrow=c(2,2))
+    } else {
+        par(mfrow=c(2,3))
+    }
 
     K <- K(fds)
     N <- N(fds)
@@ -17,22 +21,26 @@ plotJunction <- function(idx, fds, type=currentType(fds), threshold=5e-2, dist="
     plotPsiVsMu(idx, K, N, mu, padj, threshold)
 
     if(!is.null(pVals(fds, dist=dist))){
-        plotPvalHist(idx, fds, dist)
+        if(isFALSE(paper)){
+            plotPvalHist(idx, fds, dist)
+        }
         plotQQ(idx, fds, "BetaBinomial")
-        plotQQ(idx, fds, "Binomial")
+        if(isFALSE(paper)){
+            plotQQ(idx, fds, "Binomial")
+        }
     }
     plotZscore(idx, fds)
 }
 
 plotData <- function(idx, K, N, pvals, threshold=5e-2){
-    heatscatter(N[idx,] + (2*pseudocount()), K[idx,] + pseudocount(),
+    heatscatter(N[idx,] + 2*pseudocount(), K[idx,] + pseudocount(),
             xlab="N (Junction Coverage)", ylab="K (Reads of interest)", pch=16,
             main=paste("Idx:", idx), log="xy", cexplot = 1)
 
     if(!missing(pvals) & !is.null(pvals)){
         pval = pvals[idx,]
         pos <- which(pval < threshold)
-        points(N[idx,pos] + 1, K[idx, pos] + 0.5, pch=2, col="green")
+        points(N[idx,pos] + 2*pseudocount(), K[idx, pos] + pseudocount(), pch=2, col="green")
     }
     grid()
     abline(0,1)
