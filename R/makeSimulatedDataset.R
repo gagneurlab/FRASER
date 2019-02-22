@@ -96,7 +96,7 @@ makeSimulatedFraserDataSet <- function(m=200, j=10000, q=10, freq=1E-3, deltaPSI
     if(type== "psi3"){
       k <-matrix(rbetabinom(j*m, size=n, prob=mu, rho=rho), nrow=j, ncol=m)
     } else{
-      k <-matrix(rbetabinom(j*m, size=nonSplit, prob=mu, rho=rho), nrow=j, ncol=m)
+      k <-matrix(rbetabinom(j*m, size=n, prob=mu, rho=rho), nrow=j, ncol=m)
       # mu <- mu/2
       # y_true <- qlogis(mu)
       # k <-matrix(rbetabinom(j*m, size=n, prob=(mu/(1-mu)), rho=rho), nrow=j, ncol=m)
@@ -183,7 +183,7 @@ makeSimulatedFraserDataSet <- function(m=200, j=10000, q=10, freq=1E-3, deltaPSI
     if(type == "psi3"){
       counts(fds, type=type, side="other") <- (n - k)
     } else{
-      counts(fds, type=type, side="other") <- n #(nonSplit - k)
+      counts(fds, type=type, side="other") <- n - k # just n? (nonSplit=k)
     }
     
     # for now: same values for psi3 and psi5
@@ -255,7 +255,7 @@ makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=10000, q=10){
   # # calculate psi3 of simulated counts
   # psi <- (k + pseudocount())/(n + 2*pseudocount())
   
-  # simulate SE count (= nonSplit reads) (how to include nonSplit reads from the denominator?)
+  # simulate SE count (= nonSplit reads) (how to do this right?)
   mu_se <- mu
   rho_se <- abs(rnorm(j, mean=0.0001, sd=0.05))     # betaBin dispersion
   nonSplit <-matrix(rbetabinom(j*m, size=n, prob=mu_se, rho=rho_se), nrow=j, ncol=m)
@@ -292,10 +292,10 @@ makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=10000, q=10){
   metadata(fds)[['optimalEncDim']]  <- q
   
   
-  # store other counts (n-k) for psi3 (=psi5 for now) and SE (n)
+  # store other counts (n-k) for psi3 (=psi5 for now) and SE (n - nonSplit)
   counts(fds, type="psi3", side="other") <- (n - k)
   counts(fds, type="psi5", side="other") <- (n - k)
-  counts(fds, type="psiSite", side="other") <- n
+  counts(fds, type="psiSite", side="other") <- n - nonSplit # just n?
   
   # store information about the simulation in the fds
   setAssayMatrix(fds=fds, name="truePSI", type="psi3") <- new_mu 
