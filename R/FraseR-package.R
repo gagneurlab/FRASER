@@ -85,6 +85,7 @@
 #' @importFrom data.table rbindlist
 #' @importFrom DelayedMatrixStats rowMedians rowSds
 #' @importFrom stats runif median quantile
+#' @importFrom extraDistr rdirmnom
 #'
 #' @useDynLib FraseR
 #'
