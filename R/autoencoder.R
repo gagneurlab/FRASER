@@ -14,7 +14,7 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, rhoRange=c(1e-5, 1
 
     # set alpha for noise injection for denoising AE
     currentNoiseAlpha(fds) <- noiseAlpha
-    noise <- matrix(rnorm(nrow(fds)*ncol(fds), mean=0, sd=1), nrow=nrow(fds), ncol=ncol(fds))
+    noise <- matrix(rnorm(nrow(mcols(fds, type=type))*ncol(fds), mean=0, sd=1), nrow=nrow(mcols(fds, type=type)), ncol=ncol(fds))
     noise(fds, type=type) <- noise
   
     # make sure its only in-memory data for k and n
@@ -89,7 +89,7 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, rhoRange=c(1e-5, 1
 
     print(Sys.time() - t1)
 
-    if(nrow(fds) == nrow(copy_fds)){
+    if(nrow((fds) == nrow(copy_fds)){
         copy_fds <- fds
     } else {
         # update the D matrix and theta

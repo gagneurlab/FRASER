@@ -234,7 +234,7 @@ noise <- function(fds, type=currentType(fds)){
 
 `noise<-` <- function(fds, value, type=currentType(fds), ...){
   if(!is.matrix(value)){
-    value <- matrix(value, nrow=nrow(fds), ncol=ncol(fds))
+    value <- matrix(value, nrow=nrow(mcols(fds, type=type)), ncol=ncol(fds))
   }
   metadata(fds)[[paste0('noise_', type)]] <- value
   return(fds)
