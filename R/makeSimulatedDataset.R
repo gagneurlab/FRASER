@@ -8,10 +8,6 @@
 #' 
 #' @param j Number of simulated junctions 
 #' @param m Number of simulated samples
-#' @param freq Frequency of in-silico outliers
-#' @param deltaPSI delta PSI change of in-silico outliers.
-#' @param inj Determines whether counts are injected with the strategy 
-#'            ('both', 'low', 'high'), default is 'both'.
 #' @param q number of simulated latent variables.
 #' 
 #' @return An FraserDataSet containing an example dataset based on 
@@ -21,26 +17,53 @@
 #' # A generic dataset 
 #' fds1 <- makeSimulatedFraserDataSet()
 #' fds1
+#' fds1 <- injectOutliers(fds1, type="psi3", deltaPSI=0.4, freq=1E-3, inj="both")
 #' 
 #' # A generic dataset with specificed sample size and injection method
 #' fds2 <- makeSimulatedFraserDataSet(m=100, j=500, inj='low')
 #' fds2
 #' 
 #' @export
-makeSimulatedFraserDataSet <- function(m=200, j=10000, q=10, freq=1E-3, deltaPSI=0.2,
-                                       inj=c('both', 'low', 'high')){
+makeSimulatedFraserDataSet_BetaBinomial <- function(m=200, j=10000, q=10){
   
-  # nMean <- ceiling(rlnorm(j, 5)) + 10     
-  # theta <- rlnorm(j, 4)                         
-  # nMean <- rnbinom(j, 348, 0.27)               # nbinom means for n (mean(N) on kremer dataset = 347.62, median=37)
+  # Simulate counts at each junction using negative binomial
   nMean <- rnorm(j, 348, 10)                     # nbinom means for n (mean(N) on kremer dataset = 347.62, median=37)
   theta <- rnorm(j, 0.27, 0.01)                  # nbinom dispersion (~0.27 on N from kremer dataset)
   
-  # simulate counts at each junction
-  n <- matrix(rnbinom(j*m, mu=nMean, size=theta), nrow=j, ncol=m)
-  # nonSplit <- matrix(rnbinom(j*m, mu=nMean, size=theta), nrow=j, ncol=m)
-  # n <- matrix(abs(round(rnorm(j*m, mean=nMean, sd=nMean/4))), nrow=j, ncol=m)
-  # nonSplit <- matrix(abs(round(rnorm(j*m, mean=nMean, sd=nMean/4))), nrow=j, ncol=m)
+  # Simulate N = nonSplit + n
+  N <- matrix(rnbinom(j*m, mu=nMean, size=theta), nrow=j, ncol=m)
+  mode(N) <- 'integer'
+  
+  #
+  # Simulate covariates for SE
+  #
+  sdVec <- rep(0.5, m)                           # sd for H matrix
+  H_true <- matrix(rnorm(m*q, 0, 1), nrow=m, ncol=q)
+  D_true <- matrix(rnorm(j*q, sd=sdVec), nrow=j, ncol=q)
+  y_se <- D_true %*% t(cbind(H_true))
+  mu_se     <- predictMuCpp(y_se)
+  rho_se <- abs(rnorm(j, mean=0.0001, sd=0.05))     # betaBin dispersion
+  
+  # Draw nonSplit reads from BB
+  nonSplit <-matrix(rbetabinom(j*m, size=N, prob=mu_se, rho=rho_se), nrow=j, ncol=m)
+  mode(nonSplit) <- 'integer'
+  
+  # Set n = N - nonSplit
+  n <- N - nonSplit
+  
+  #
+  # Simulate covariates for PSI3=PSI5
+  #
+  sdVec <- rep(0.5, m)                           # sd for H matrix
+  H_true <- matrix(rnorm(m*q, 0, 1), nrow=m, ncol=q)
+  D_true <- matrix(rnorm(j*q, sd=sdVec), nrow=j, ncol=q)
+  y_psi <- D_true %*% t(cbind(H_true))
+  mu_psi     <- predictMuCpp(y_psi)
+  rho_psi <- abs(rnorm(j, mean=0.0001, sd=0.05))     # betaBin dispersion
+  
+  # Draw nonSplit reads from BB
+  k <-matrix(rbetabinom(j*m, size=n, prob=mu_psi, rho=rho_psi), nrow=j, ncol=m)
+  mode(k) <- 'integer'
   
   
   #
@@ -53,13 +76,13 @@ makeSimulatedFraserDataSet <- function(m=200, j=10000, q=10, freq=1E-3, deltaPSI
   # put in n as rawcountsJ first so it doesn't complain later when assinging k to it
   junctionData <- SummarizedExperiment(
     colData=colData(fds),
-    assays=list(rawCountsJ=n),
-    rowRanges=GRanges(seqnames=rep("chr1", j), ranges=IRanges(start=rep(0, j), end= rep(1, j)))
+    assays=list(rawCountsJ=k),
+    rowRanges=GRanges(seqnames=rep("chr1", j), ranges=IRanges(start=seq_len(j), width=1 ))
   )
   nonSplitData <- SummarizedExperiment(
     colData=colData(fds),
-    assays=list(rawCountsSS=n),
-    rowRanges=GRanges(seqnames=rep("chr1", j), ranges=IRanges(start=rep(0, j), end= rep(1, j)))
+    assays=list(rawCountsSS=nonSplit),
+    rowRanges=GRanges(seqnames=rep("chr1", j), ranges=IRanges(start=seq_len(j), width=1 ))
   )
   fds <- new("FraseRDataSet", 
              junctionData,
@@ -74,168 +97,102 @@ makeSimulatedFraserDataSet <- function(m=200, j=10000, q=10, freq=1E-3, deltaPSI
   metadata(fds)[['optimalEncDim']]  <- q
   metadata(fds)[['encDimTable']]    <- data.table(
     encodingDimension=q, evaluationLoss=1, evalMethod='simulation')
-
   
-  #
-  # Simulate count matrices for all psi types
-  #
-  for(type in c("psi3", "psiSite")){
-    
-    rho <- abs(rnorm(j, mean=0.0001, sd=0.05))     # betaBin dispersion
-    sdVec <- rep(0.5, m)                           # sd for H matrix
+  # Store "other" counts
+  counts(fds, type="psi3", side="other") <-    n - k
+  counts(fds, type="psi5", side="other") <-    n - k
+  counts(fds, type="psiSite", side="other") <- n
   
-    #
-    # Simulate covariates.
-    #
-    H_true <- matrix(rnorm(m*q, 0, 2), nrow=m, ncol=q)
-    D_true <- matrix(rnorm(j*q, sd=sdVec), nrow=j, ncol=q)
-    y_true <- D_true %*% t(cbind(H_true))
-    mu     <- predictMuCpp(y_true)
-  
-    # Simulate counts
-    if(type== "psi3"){
-      k <-matrix(rbetabinom(j*m, size=n, prob=mu, rho=rho), nrow=j, ncol=m)
-    } else{
-      k <-matrix(rbetabinom(j*m, size=n, prob=mu, rho=rho), nrow=j, ncol=m)
-      # mu <- mu/2
-      # y_true <- qlogis(mu)
-      # k <-matrix(rbetabinom(j*m, size=n, prob=(mu/(1-mu)), rho=rho), nrow=j, ncol=m)
-    }
-    mode(n) <- 'integer'
-    mode(k) <- 'integer'
-  
-    psi <- (k + pseudocount())/(n + 2*pseudocount())
-    # l2fc <- log2fc(psi, mu)
-    # datasd <- rowSds(l2fc)
-    # datasd <- matrix(datasd, nrow=j, ncol=m)
-    # lmu <- log2(mu)
-    
-    setAssayMatrix(fds=fds, name="truePSI", type=type) <- mu 
-    setAssayMatrix(fds=fds, name="trueLogitPSI", type=type) <- y_true 
-    # setAssayMatrix(fds=fds, name="trueSd", type=type)  <- datasd
-    mcols(fds, type=type)[,"trueRho"] <- rho
+  # store information about the simulation in the fds (same values for psi3 and psi5)
+  for(type in c("psi3", "psi5")){
+    setAssayMatrix(fds=fds, name="truePSI", type=type)      <- mu_psi 
+    setAssayMatrix(fds=fds, name="trueLogitPSI", type=type) <- y_psi
+    mcols(fds, type=type)[,"trueRho"]                       <- rho_psi
     
     # needed so that subsetting the fds works later
     mcols(fds, type=type)[["startID"]] <- 1:nrow(mcols(fds, type=type))
-    mcols(fds, type=type)[["endID"]] <- 1:nrow(mcols(fds, type=type))
-    
-    # for now: same values for psi3 and psi5
-    if(type== "psi3"){
-      setAssayMatrix(fds=fds, name="truePSI", type="psi5") <- mu 
-      setAssayMatrix(fds=fds, name="trueLogitPSI", type="psi5") <- y_true
-      # setAssayMatrix(fds=fds, name="trueSd", type="psi5")  <- datasd
-      mcols(fds, type="psi5")[,"trueRho"] <- rho
-      
-      # needed so that subsetting the fds works later
-      mcols(fds, type="psi5")[["startID"]] <- 1:nrow(mcols(fds, type=type))
-      mcols(fds, type="psi5")[["endID"]] <- 1:nrow(mcols(fds, type=type))
-      
-    } else{
-      # needed so that subsetting the fds works later
-      mcols(fds, type=type)[["spliceSiteID"]] <- 1:nrow(mcols(fds, type=type))
-    }
-    
-    #
-    # Inject outliers
-    #
-    counts(fds, type=type, side="ofInterest") <- k
-    counts(fds, type=type, side="other") <- (n - k)
-    fds <- injectOutliers(fds, type=type, deltaPSI=deltaPSI, freq=freq, inj=inj)
-    # indexOut <- matrix(nrow=j, ncol=m,
-    #                    sample(c(-1,1,0), m*j, replace=TRUE, prob=c(freq/2, freq/2, 1-freq)))
-    # indexOut <- switch(match.arg(inj),
-    #                    low  = -abs(indexOut),
-    #                    high =  abs(indexOut),
-    #                    indexOut
-    # )
-    # 
-    # out_range <- c(0,1)
-    # n_rejected <- 0
-    # list_index <- which(indexOut != 0, arr.ind = TRUE)
-    # for(i in seq_len(nrow(list_index))){
-    #   row <- list_index[i,'row']
-    #   col <- list_index[i,'col']
-    #   # fc <- zScore * datasd[row,col]
-    #   # outlier_psi <- indexOut[row,col] * fc + lmu[row,col]
-    #   # art_out <- 2^outlier_psi
-    #   art_out <- mu[row,col] + indexOut[row,col] * deltaPSI  # mu is true simulated psi
-    #   
-    #   # k/n = psi therefore k = psi * n (plus pseudocounts)
-    #   if(type == "psi3"){
-    #     n_pos <- n[row,col]
-    #   } else{
-    #     n_pos <- n[row,col] #nonSplit[row,col]
-    #   }
-    #   k_new <- round( art_out * (n_pos + (2*pseudocount())) - pseudocount() )
-    #   
-    #   if(art_out > out_range[1] && art_out < out_range[2] && 
-    #      k_new >= 0 && k_new <= n_pos){ # max(0,...) to ensure k is never negative, min(n, ...) to ensure k <= n
-    #       
-    #     k[row,col] <- k_new  
-    #     
-    #   }else{
-    #     #remove outliers with psi < 0 or > 1 or k < 0 or k > n
-    #     indexOut[row,col] <- 0 
-    #     n_rejected <- n_rejected + 1
-    #   }
-    # }
-    # mode(k) <- "integer"
-    # 
-    # setAssayMatrix(fds=fds, name="trueOutliers", type=type) <- indexOut
-    # counts(fds, type=type, side="ofInterest") <- k
-    # if(type == "psi3"){
-    #   counts(fds, type=type, side="other") <- (n - k)
-    # } else{
-    #   counts(fds, type=type, side="other") <- n - k # just n? (nonSplit=k)
-    # }
-    # 
-    # # for now: same values for psi3 and psi5
-    # if(type== "psi3"){
-    #   # counts(fds, type="psi5", side="ofInterest") <- k
-    #   counts(fds, type="psi5", side="other") <- (n - k)
-    #   setAssayMatrix(fds=fds, name="trueOutliers", type="psi5") <- indexOut
-    # }
-  
+    mcols(fds, type=type)[["endID"]]   <- 1:nrow(mcols(fds, type=type))
   }
   
+  # store info for SE 
+  setAssayMatrix(fds=fds, name="truePSI", type="psiSite")      <- mu_se
+  setAssayMatrix(fds=fds, name="trueLogitPSI", type="psiSite") <- y_se
+  mcols(fds, type="psiSite")[,"trueRho"]                       <- rho_se
+  
+  # needed so that subsetting the fds works later
+  mcols(fds, type="psiSite")[["startID"]]      <- 1:nrow(mcols(fds, type="psiSite"))
+  mcols(fds, type="psiSite")[["endID"]]        <- 1:nrow(mcols(fds, type="psiSite"))
+  mcols(fds, type="psiSite")[["spliceSiteID"]] <- 1:nrow(mcols(fds, type="psiSite"))
+  
   return(fds)
+  
 }
 
+#
 # Generate a simulated fds using a Dirichlet-Mulitnomial distribution
-makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=10000, q=10){
+#
+makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=1000, q=10){
   
-  # nr of donors/acceptor
-  d <- round(j/4)  
-  donorGroups <- seq_len(d)
-  # assign junction to donor/acceptor groups 
-  junctionGroups <- sort(sample(x = donorGroups, size=j, replace = TRUE))
-  # junctionGroups <- sort(c(donorGroups, sample(x = donorGroups, size=j-d, replace = TRUE)))
   
-  # betaBin dispersion for every donor/acceptor group
-  rho <- abs(rnorm(d, mean=0.0001, sd=0.05))
+  #
+  # Simulate groups of junctions having the same donor/acceptor site
+  #
+  d <- round(j/4)              # nr of donors/acceptors
+  donorGroups <- seq_len(d)    # ids of the groups (1,2,...,d)
+  junctionGroups <- sort(sample(x = donorGroups, size=j, replace = TRUE))   # assign junction to donor/acceptor groups 
   
-  # simulate n for each donor/acceptor group
-  nMean <- rnorm(d, 348, 10)                     # nbinom means for n (mean(N) on kremer dataset = 347.62, median=37)
-  theta <- rnorm(d, 0.27, 0.01)                  # nbinom dispersion (~0.27 on N from kremer dataset)
-  n <- matrix(rnbinom(j*m, mu=nMean, size=theta), nrow=j, ncol=m)
-  # group_n <- matrix(rnbinom(d*m, mu=nMean, size=theta), nrow=d, ncol=m)
-  group_n  <- t(sapply(donorGroups, function(groupID){
-                        pos <- which(junctionGroups == groupID)
-                        if(length(pos) == 1){
-                          return( n[pos,])
-                        }
-                        return(colSums(n[pos,]))
-                      }))
-  
-  # construct full n matrix (all junctions within a donor/acceptor group have the same n)
+  # Find groups with only one junction and assign them randomly to another group
   singleDonors <- as.integer(names(which(table(junctionGroups) == 1)))
-  junctionGroups[which(junctionGroups %in% singleDonors)] <- 1
+  usedGroups <- unique(junctionGroups)
+  junctionGroups[which(junctionGroups %in% singleDonors)] <- sample(usedGroups[!(usedGroups %in% singleDonors)], size=length(singleDonors), replace = TRUE)
   junctionGroups <- sort(junctionGroups)
   
+  # Set d to the actual number of groups (some might not have been assigned any junction at all)
   donorGroups <- donorGroups[donorGroups %in% unique(junctionGroups)]
-  n <- group_n[rep(donorGroups, table(junctionGroups)),]
   d <- length(donorGroups)
+  
+  # 
+  # SE simulated as additional junction for every group
+  #
+  nrJunctions <- j                      # store for later
+  psiJunctionGroups <- junctionGroups   # store for later
+  j <- j + d                            # add one junction for every group
+  junctionGroups <- sort(c(junctionGroups, donorGroups))
+  
+  
+  
+  #
+  # Simulate n for each junction using negative binomial
+  #
+  nMean <- rnorm(d, 348, 10)           # nbinom means for n (mean(N) on kremer dataset = 347.62, median=37)
+  theta <- rnorm(d, 0.27, 0.01)        # nbinom dispersion (~0.27 on N from kremer dataset)
+  n <- matrix(rnbinom(j*m, mu=nMean, size=theta), nrow=j, ncol=m)
+  
+  # Sum up the values of n within one donor/acceptor group to get the n value of the group
+  dt_n <- as.data.table(n)
+  sum_n <- cbind(dt_n, junctionGroups)
+  res <- sapply(colnames(dt_n),function(x){
+    sum_n[,c(paste0(x, "_sum")):=sum(get(x)),by=junctionGroups]
+  })
+  
+  # Extract final n matrix (all junctions within a group have the same n value)
+  sum_cols <- paste0(colnames(dt_n), "_sum")
+  n <- as.matrix(sum_n[,..sum_cols])
+  colnames(n) <- NULL
   mode(n) <- 'integer'
+  
+  
+  
+  #
+  # Simulate betaBin dispersion for every donor/acceptor group, same dispersion for all junctions within a group
+  #
+  group_rho <- abs(rnorm(d, mean=0.0001, sd=0.05))     # group dispersion
+  dt1 <- data.table(group=donorGroups, rho=group_rho)
+  dt2 <- data.table(group=junctionGroups)
+  rhoFull <- merge(dt1, dt2, by="group")
+  rho <- rhoFull[,rho]                           # set dispersion for every junction 
+  
+  
   
   #
   # Simulate covariates.
@@ -244,53 +201,91 @@ makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=10000, q=10){
   H_true <- matrix(rnorm(m*q, 0, 1), nrow=m, ncol=q)
   D_true <- matrix(rnorm(j*q, sd=sdVec), nrow=j, ncol=q)
   y_true <- D_true %*% t(cbind(H_true))
-  mu     <- predictMuCpp(y_true)
+  ae_mu     <- predictMuCpp(y_true)
   
-  # rho <- abs(rnorm(j, mean=0.0001, sd=0.05))        # betaBin dispersion
-  rho <- rho[rep(donorGroups, table(junctionGroups))] # same dispersion for all junctions within a group
+  # Use softmax on mu to get mu within one group to sum up to 1
+  softmax <- function(x){
+    sum <- sum(exp(x))
+    return( exp(x) / sum)
+  }
+  softmax_mu <- sapply(donorGroups, function(groupID){
+    group_mu <- ae_mu[which(junctionGroups == groupID),]
+    return( apply(group_mu, 2, softmax) )
+  })
+  mu <- do.call(rbind, softmax_mu)
+  
+  # Calcluate alpha values
   alpha <- mu * (1-rho)/rho
   
-
-  # simulate psi 3 (=psi5 for now)
+  
+  
+  # 
+  # Simulate psi3=psi5 and SE jointly with Dirchilet-Multinomial
+  # 
   res <- sapply(donorGroups, function(groupID){
+
+    # Get the indices of the junctions in this group
+    pos <- which(junctionGroups == groupID)
     
-    # draw k's from a dirichlet multinomial distribution 
-    group_alpha <- alpha[which(junctionGroups == groupID),]
-    k <- rdirmnom(m, group_n[groupID,], t(group_alpha))
+    # get alpha and n values for this group
+    group_alpha <- alpha[pos,]
+    group_n   <- n[pos,]
     
-    return(t(k))
+    # draw counts from a dirichlet multinomial distribution (jointly for PSi and SE)
+    counts <- t(rdirmnom(m, group_n[1,], t(group_alpha)))
+    
+    # First row of resulting counts represents non split reads for SE, the other rows are the counts for the "real" junctions
+    nonSplit <- counts[1,]
+    k <- counts[-1,]
+    
+    # Substract nonSplit reads from total N to get n for PSI (=other for SE)
+    group_n   <- group_n - matrix(nonSplit, nrow=nrow(group_n), ncol=ncol(group_n), byrow = TRUE)
+    
+    # Also get mu and rho for this group (to split it into PSI and SE part for storing later)
+    group_mu  <- mu[pos,]
+    group_rho <- rho[pos]
+    
+    # First row/value is the one for SE
+    se_n     <- group_n[1,]
+    se_mu    <- group_mu[1,]
+    se_alpha <- group_alpha[1,]
+    se_rho   <- group_rho[1]
+    
+    # The other rows/values are the ones relevant for PSI
+    psi_n     <- group_n[-1,]
+    psi_alpha <- group_alpha[-1,]
+    psi_rho   <- group_rho[-1] 
+    # scale mu's so that they sum up to 1 again (after mu for SE is removed)
+    psi_mu    <- group_mu[-1,] /  matrix(colSums(group_mu[-1,]), nrow=nrow(group_mu[-1,]), ncol=ncol(group_mu[-1,]), byrow = TRUE)  
+    
+    # return everyting relevant for storing counts, n, alpha, mu, rho split into the parts for PSI and SE
+    return(list(k=k, nonSplit=nonSplit, n=psi_n, group_n=se_n, psi_mu=psi_mu, se_mu=se_mu, 
+                psi_alpha=psi_alpha, se_alpha=se_alpha, psi_rho=psi_rho, se_rho=se_rho))
   })
-  # res <- sapply(donorGroups, function(groupID){
-  #   
-  #           group_alpha <- alpha[which(junctionGroups == groupID),]
-  #           if(!is.matrix(group_alpha)){
-  #             group_alpha <- matrix(group_alpha, nrow=1, ncol=length(group_alpha))
-  #           }
-  #           # draw vector of probablities for the multinomial distribution from a dirchlet distribution
-  #           p <- VGAM::rdiric(1, t(group_alpha), is.matrix=TRUE)
-  #           p[p == 0] <- 0.5 # p=0 causes problems in rmultinom, need to fix that somehow
-  #           
-  #           # draw k's from a multinomial distribution using each sample's n value
-  #           k <- vapply(seq_len(m), function(i){ rmultinom(1, group_n[groupID,i], p[i,]) }, integer(ncol(p)))
-  #           
-  #           p[p == 1] <- 1 - runif(sum(p == 1), 1e-20, 1e-2) # p=1 causes problems with logit transformation, so p is set to some random value close to 1 for now
-  #           
-  #           return(list(k=k,p=t(p)))
-  # })
- 
-  k <- do.call(rbind, res) 
-  # k <- do.call(rbind, res[1,])         # counts generated by drawing from the mulitnomial
-  # new_mu <- do.call(rbind, res[2,])    # probablities used when drawing from the multinomial
+  
+  # Extract k and nonSplit reads
+  k <- do.call(rbind, res[1,])
+  nonSplit <- do.call(rbind, res[2,])
   mode(k) <- 'integer'
-  
-  # # calculate psi3 of simulated counts
-  psi <- (k + pseudocount())/(n + 2*pseudocount())
-  
-  # simulate SE count (= nonSplit reads) (how to do this right?)
-  mu_se <- mu
-  rho_se <- abs(rnorm(j, mean=0.0001, sd=0.05))     # betaBin dispersion
-  nonSplit <-matrix(rbetabinom(j*m, size=n, prob=mu_se, rho=rho_se), nrow=j, ncol=m)
   mode(nonSplit) <- 'integer'
+  
+  # Extract n value for each junction and group n value for SE
+  psi_n <- do.call(rbind, res[3,])
+  se_n <- do.call(rbind, res[4,])
+  
+  # Extract mu values for PSI and SE
+  psi_mu <- do.call(rbind, res[5,])
+  se_mu <- do.call(rbind, res[6,])
+  
+  # Extract alpha values for PSI and SE
+  psi_alpha <- do.call(rbind, res[7,])
+  se_alpha <- do.call(rbind, res[8,])
+  
+  # Extract rho values for PSI and SE
+  psi_rho <- unlist(res[9,])
+  se_rho <- unlist(res[10,])
+  
+  
   
   #
   # Create FraseR data set
@@ -303,12 +298,12 @@ makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=10000, q=10){
   junctionData <- SummarizedExperiment(
     colData=colData(fds),
     assays=list(rawCountsJ=k),
-    rowRanges=GRanges(seqnames=rep("chr1", j), ranges=IRanges(start=rep(0, j), end= rep(1, j)))
+    rowRanges=GRanges(seqnames=rep("chr1", nrJunctions), ranges=IRanges(start=psiJunctionGroups, width=1))
   )
   nonSplitData <- SummarizedExperiment(
     colData=colData(fds),
     assays=list(rawCountsSS=nonSplit),
-    rowRanges=GRanges(seqnames=rep("chr1", j), ranges=IRanges(start=rep(0, j), end= rep(1, j)))
+    rowRanges=GRanges(seqnames=rep("chr1", d), ranges=IRanges(start=donorGroups, width=1))
   )
   fds <- new("FraseRDataSet", 
              junctionData,
@@ -323,39 +318,41 @@ makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=10000, q=10){
   metadata(fds)[['optimalEncDim']]  <- q
   
   
-  # store other counts (n-k) for psi3 (=psi5 for now) and SE (n - nonSplit)
-  counts(fds, type="psi3", side="other") <- (n - k)
-  counts(fds, type="psi5", side="other") <- (n - k)
-  counts(fds, type="psiSite", side="other") <- n - nonSplit # just n?
+  # store other counts (n-k) for psi3=psi5 and SE (other=n)
+  counts(fds, type="psi3", side="other")    <- psi_n - k
+  counts(fds, type="psi5", side="other")    <- psi_n - k
+  counts(fds, type="psiSite", side="other") <- se_n
   
   for(type in c("psi3", "psi5")){
-    # store information about the simulation in the fds
-    # for now: same values for psi3 and psi5
-    setAssayMatrix(fds=fds, name="truePSI", type=type) <- mu 
-    setAssayMatrix(fds=fds, name="trueLogitPSI", type=type) <- qlogis(mu) 
-    mcols(fds, type=type)[,"trueRho"] <- rho
-    setAssayMatrix(fds=fds, name="trueAlpha", type=type) <- alpha 
+    # store information about the simulation in the fds (same values for psi3 and psi5)
+    setAssayMatrix(fds=fds, name="truePSI", type=type)      <- psi_mu 
+    setAssayMatrix(fds=fds, name="trueLogitPSI", type=type) <- qlogis(psi_mu) 
+    setAssayMatrix(fds=fds, name="trueAlpha", type=type)    <- psi_alpha 
+    mcols(fds, type=type)[,"trueRho"]                       <- psi_rho
     
     # needed so that subsetting the fds works later
     mcols(fds, type=type)[["startID"]] <- 1:nrow(mcols(fds, type=type))
-    mcols(fds, type=type)[["endID"]] <- 1:nrow(mcols(fds, type=type))
+    mcols(fds, type=type)[["endID"]]   <- 1:nrow(mcols(fds, type=type))
   }
   
   # store info for SE 
-  setAssayMatrix(fds=fds, name="truePSI", type="psiSite") <- mu_se 
-  setAssayMatrix(fds=fds, name="trueLogitPSI", type="psiSite") <- qlogis(mu_se) 
-  mcols(fds, type="psiSite")[,"trueRho"] <- rho_se
+  setAssayMatrix(fds=fds, name="truePSI", type="psiSite")      <- se_mu
+  setAssayMatrix(fds=fds, name="trueLogitPSI", type="psiSite") <- qlogis(se_mu) 
+  setAssayMatrix(fds=fds, name="trueAlpha", type="psiSite")    <- se_alpha 
+  mcols(fds, type="psiSite")[,"trueRho"]                       <- se_rho
   
   # needed so that subsetting the fds works later
-  mcols(fds, type="psiSite")[["startID"]] <- 1:nrow(mcols(fds, type="psiSite"))
-  mcols(fds, type="psiSite")[["endID"]] <- 1:nrow(mcols(fds, type="psiSite"))
+  mcols(fds, type="psiSite")[["startID"]]      <- 1:nrow(mcols(fds, type="psiSite"))
+  mcols(fds, type="psiSite")[["endID"]]        <- 1:nrow(mcols(fds, type="psiSite"))
   mcols(fds, type="psiSite")[["spliceSiteID"]] <- 1:nrow(mcols(fds, type="psiSite"))
   
   return(fds)
   
 }
 
-# inject artificial outliers into a fds
+#
+# Inject artificial outliers into a fds
+#
 injectOutliers <- function(fds, type=type, deltaPSI=0.3, freq=1E-3, inj=c('both', 'low', 'high') ){
   
   # Extract needed data from fds
@@ -382,16 +379,13 @@ injectOutliers <- function(fds, type=type, deltaPSI=0.3, freq=1E-3, inj=c('both'
   for(i in seq_len(nrow(list_index))){
     row <- list_index[i,'row']
     col <- list_index[i,'col']
-    # fc <- zScore * datasd[row,col]
-    # outlier_psi <- indexOut[row,col] * fc + lmu[row,col]
-    # art_out <- 2^outlier_psi
-    art_out <- mu[row,col] + indexOut[row,col] * deltaPSI  # mu is true simulated psi
+    outlier_psi <- mu[row,col] + indexOut[row,col] * deltaPSI  # mu is true simulated psi
     
     # k/n = psi therefore k = psi * n (plus pseudocounts)
     n_pos <- n[row,col]
-    k_new <- round( art_out * (n_pos + (2*pseudocount())) - pseudocount() )
+    k_new <- round( outlier_psi * (n_pos + (2*pseudocount())) - pseudocount() )
     
-    if(art_out > out_range[1] && art_out < out_range[2] && 
+    if(outlier_psi > out_range[1] && outlier_psi < out_range[2] && 
        k_new >= 0 && k_new <= n_pos){ # to ensure k is never negative and k is always <= n
       
       k[row,col] <- k_new  
