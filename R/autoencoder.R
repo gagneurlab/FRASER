@@ -89,7 +89,7 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, rhoRange=c(1e-5, 1
 
     print(Sys.time() - t1)
 
-    if(nrow((fds) == nrow(copy_fds)){
+    if(nrow(fds) == nrow(copy_fds)){
         copy_fds <- fds
     } else {
         # update the D matrix and theta
