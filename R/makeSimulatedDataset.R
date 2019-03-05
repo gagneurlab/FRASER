@@ -27,11 +27,16 @@
 makeSimulatedFraserDataSet_BetaBinomial <- function(m=200, j=10000, q=10){
   
   # Simulate counts at each junction using negative binomial
-  nMean <- rnorm(j, 348, 10)                     # nbinom means for n (mean(N) on kremer dataset = 347.62, median=37)
-  theta <- rnorm(j, 0.27, 0.01)                  # nbinom dispersion (~0.27 on N from kremer dataset)
+  # nMean <- rnorm(j, 348, 10)                     # nbinom means for n (mean(N) on kremer dataset = 347.62, median=37)
+  # theta <- rnorm(j, 0.27, 0.01)                  # nbinom dispersion (~0.27 on N from kremer dataset)
   
   # Simulate N = nonSplit + n
-  N <- matrix(rnbinom(j*m, mu=nMean, size=theta), nrow=j, ncol=m)
+  junction_n <- rnbinom(j, mu=348, size=0.27)
+  N <- t(vapply(junction_n, function(x){
+                                n <- round(rnorm(n=m, sd=10, mean=x))
+                                n <- pmax(n, 0)}, 
+                double(m)))
+  # N <- matrix(rnbinom(j*m, mu=nMean, size=theta), nrow=j, ncol=m)
   mode(N) <- 'integer'
   
   #
@@ -164,9 +169,14 @@ makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=1000, q=10){
   #
   # Simulate n for each junction using negative binomial
   #
-  nMean <- rnorm(d, 348, 10)           # nbinom means for n (mean(N) on kremer dataset = 347.62, median=37)
-  theta <- rnorm(d, 0.27, 0.01)        # nbinom dispersion (~0.27 on N from kremer dataset)
-  n <- matrix(rnbinom(j*m, mu=nMean, size=theta), nrow=j, ncol=m)
+  # nMean <- rnorm(d, 348, 10)           # nbinom means for n (mean(N) on kremer dataset = 347.62, median=37)
+  # theta <- rnorm(d, 0.27, 0.01)        # nbinom dispersion (~0.27 on N from kremer dataset)
+  # n <- matrix(rnbinom(j*m, mu=nMean, size=theta), nrow=j, ncol=m)
+  junction_n <- rnbinom(j, mu=348, size=0.27)
+  n <- t(vapply(junction_n, function(x){
+                              n <- round(rnorm(n=m, sd=10, mean=x))
+                              n <- pmax(n, 0)}, 
+                double(m)))
   
   # Sum up the values of n within one donor/acceptor group to get the n value of the group
   dt_n <- as.data.table(n)
@@ -353,14 +363,30 @@ makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=1000, q=10){
 #
 # Inject artificial outliers into a fds
 #
-injectOutliers <- function(fds, type=type, deltaPSI=0.3, freq=1E-3, inj=c('both', 'low', 'high') ){
+injectOutliers <- function(fds, type=type, deltaPSI=0.3, freq=1E-3, inj=c('both', 'low', 'high'), method=c('samplePSI', 'meanPSI')){
   
   # Extract needed data from fds
   m <- ncol(fds)
-  j <- nrow(fds)
-  mu <- getAssayMatrix(fds=fds, name="truePSI", type=type)
+  j <- nrow(mcols(fds, type=type))
+  
   k <- K(fds, type=type)
   n <- N(fds, type=type)
+  o <- counts(fds, type=type, side="other")
+  
+  psi <- (k + pseudocount())/(n + 2*pseudocount())
+  
+  if(type == "psi5"){
+    o_psi5 <- o
+    o_psi3 <- counts(fds, type="psi3", side="other")
+  }
+  else if(type =="psi3"){
+    o_psi5 <- counts(fds, type="psi5", side="other")
+    o_psi3 <- o
+  }
+  
+  # Start and end positions of junctions
+  dt <- data.table(id=1:nrow(fds),chr=as.character(seqnames(fds)), start=start(fds), end=end(fds))
+  
   
   #
   # Inject outliers
@@ -373,43 +399,89 @@ injectOutliers <- function(fds, type=type, deltaPSI=0.3, freq=1E-3, inj=c('both'
                      indexOut
   )
   
-  out_range <- c(0,1)
   n_rejected <- 0
   list_index <- which(indexOut != 0, arr.ind = TRUE)
   for(i in seq_len(nrow(list_index))){
     row <- list_index[i,'row']
     col <- list_index[i,'col']
-    outlier_psi <- mu[row,col] + indexOut[row,col] * deltaPSI  # mu is true simulated psi
+    n_ji <- n[row,col]
+    o_ji <- o[row,col]
     
-    # k/n = psi therefore k = psi * n (plus pseudocounts)
-    n_pos <- n[row,col]
-    k_new <- round( outlier_psi * (n_pos + (2*pseudocount())) - pseudocount() )
+    #direction of outlier based on data psi value (low, high)
+    indexOut[row,col] <- ifelse(psi[row,col] < 0.5, 1, -1)
     
-    if(outlier_psi > out_range[1] && outlier_psi < out_range[2] && 
-       k_new >= 0 && k_new <= n_pos){ # to ensure k is never negative and k is always <= n
+    # new psi based on psi of sample i and junction j (=psi[j,i]) or based on junction mean = mean(psi[j,])
+    outlier_psi <- switch(match.arg(method), 
+                          samplePSI = psi[row,col] + indexOut[row,col] * deltaPSI,
+                          meanPSI   = mean(psi[row,]) + indexOut[row,col] * deltaPSI)
+    
+    # change both k and n=k+o (and take pseudocounts into account): (k+1)/(k+o+2)=psi -> k = psi/(1-psi) * (o+2) - 1/(1-psi)
+    k_new <- round( (outlier_psi*(o_ji + 2*pseudocount()) - pseudocount())/(1-outlier_psi) )
+    # old way: change only k, n stays the same: k/n = psi therefore k = psi * n (plus pseudocounts)
+    # k_new <- round( outlier_psi * (n_ji + (2*pseudocount())) - pseudocount() )
+    
+    if(outlier_psi > 1 || outlier_psi < 0 || # ensure that psi is between 0 and 1 
+       k_new < 0 || k_new > n_ji){ # and ensure k is never negative and always <= n
       
-      k[row,col] <- k_new  
-      
-    }else{
       #remove outliers with psi < 0 or > 1 or k < 0 or k > n
       indexOut[row,col] <- 0 
       n_rejected <- n_rejected + 1
+      
+    }else{ # 0 <= psi <= 1 and 0 <= k <= n
+      k[row,col] <- k_new  
+      n_ji <- k_new + o_ji
+      
+      if(type == "psi5"){
+        nPsi5 <- n_ji
+        nPsi3 <- k_new + o_psi3[row,col]
+      }
+      else if(type == "psi3"){
+        nPsi5 <- k_new + o_psi5[row,col]
+        nPsi3 <- n_ji
+      }
+    
+      # change other counts for all other junctions having the same start or end position
+      if(type == "psi5" || type=="psi3"){
+        sameDonor <- dt[start==dt[row,start] & chr==dt[row,chr], id]
+        sameDonor <- sameDonor[sameDonor != row]
+        
+        # if there is at least one other junction starting at the same position
+        if(length(sameDonor) > 0){
+          for(junction in sameDonor){
+            # adjust cother psi5 counts to correct value
+            o_psi5[junction,col] <- nPsi5 - k[junction,col]
+          }
+        }
+        
+        sameAcceptor <- dt[end==dt[row,end] & chr==dt[row,chr], id]
+        sameAcceptor <- sameAcceptor[sameAcceptor != row]
+        
+        # if there is at least one other junction ending at the same position
+        if(length(sameAcceptor) > 0){
+          for(junction in sameAcceptor){
+            # adjust other psi3 counts to correct value
+            o_psi3[junction,col] <- nPsi3 - k[junction,col]
+          }
+        }
+      }
+      
     }
+    
   }
   
+  # store positions of true outliers
   setAssayMatrix(fds=fds, name="trueOutliers", type=type) <- indexOut
-  counts(fds, type=type, side="ofInterest") <- k
-  if(type == "psi3"){
-    counts(fds, type=type, side="other") <- (n - k)
-  } else{
-    counts(fds, type=type, side="other") <- n - k # just n? (nonSplit=k)
-  }
   
-  # for now: same values for psi3 and psi5
-  if(type== "psi3"){
-    counts(fds, type="psi5", side="other") <- (n - k)
-    setAssayMatrix(fds=fds, name="trueOutliers", type="psi5") <- indexOut
+  # store new k and o counts including the outlier counts (for SE: o doesn't change)
+  counts(fds, type=type, side="ofInterest", HDF5=FALSE) <- k
+  if(type == "psi5"){
+    counts(fds, type=type, side="other", HDF5=FALSE) <- o_psi5
+    counts(fds, type="psi3", side="other", HDF5=FALSE) <- o_psi3
   }
+  else if(type == "psi3"){   
+    counts(fds, type=type, side="other", HDF5=FALSE) <- o_psi3
+    counts(fds, type="psi5", side="other", HDF5=FALSE) <- o_psi5
+  } 
   
   return(fds)
   
