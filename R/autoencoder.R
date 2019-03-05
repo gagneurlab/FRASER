@@ -89,7 +89,8 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, rhoRange=c(1e-5, 1
 
     print(Sys.time() - t1)
 
-    if(nrow(fds) == nrow(copy_fds)){
+    if(nrow(fds) == nrow(copy_fds)){    # TODO when using all features (!=nrow(fds)) in fitting for SE: also stop here and set copy_fds to fitted fds but with all junctions 
+                                        # (at the moment: fds contains only a subset of all junctions, so copy_fds <- fds doesn't work for SE)
         copy_fds <- fds
     } else {
         # update the D matrix and theta
