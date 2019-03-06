@@ -382,9 +382,9 @@ injectOutliers <- function(fds, type=type, nrOutliers=500, deltaPSI=pmin(0.7, pm
   m <- ncol(fds)
   j <- nrow(mcols(fds, type=type))
   
-  k <- K(fds, type=type)
-  n <- N(fds, type=type)
-  o <- counts(fds, type=type, side="other")
+  k <- as.matrix(K(fds, type=type))
+  n <- as.matrix(N(fds, type=type)) # as.matrix(..) needed so that n doesn't change after new k is stored (needed only for swap=FALSE)
+  o <- as.matrix(counts(fds, type=type, side="other"))
   
   psi <- (k + pseudocount())/(n + 2*pseudocount())
   
@@ -417,6 +417,8 @@ injectOutliers <- function(fds, type=type, nrOutliers=500, deltaPSI=pmin(0.7, pm
       sample <- sample(m, 1)
       
       n_ji <- n[junction,sample]
+      
+      if(n_ji < 10){ next }
       
       # new psi based on psi of sample i and junction j (=psi[j,i]) or based on junction mean = mean(psi[j,]) or based on the psi used during the simulation
       outlier_psi <- switch(match.arg(method), 
@@ -510,7 +512,7 @@ injectOutliers <- function(fds, type=type, nrOutliers=500, deltaPSI=pmin(0.7, pm
     available_junctions <- available_junctions[available_junctions != junction]
     
     if(verbose){
-      print(paste("Injected outlier", i))
+      print(paste("Injected outlier", i, "at index", junction, ",", sample, ": new k =", k_new, ", n =", n_ji))
     }
     
   }
