@@ -483,6 +483,11 @@ injectOutliers <- function(fds, type=type, nrOutliers=500, deltaPSI=pmin(0.7, pm
               
               foundSwap <- TRUE
               successful <- TRUE
+              
+              # also store position of other junction used in swap
+              indexOut[group_others[g], sample] <- ifelse(deltaPSI[i] >= 0, -2, 2)
+              indexDeltaPSI[junction, sample] <- deltaPSI[i]
+              
             }
             
             g <- g + 1
