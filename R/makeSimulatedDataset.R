@@ -410,10 +410,23 @@ injectOutliers <- function(fds, type=type, nrOutliers=500, deltaPSI=pmin(0.7, pm
     
     successful <- FALSE
     
+    possible_junctions <- if(deltaPSI[i] > 0){ which(rowMeans(psi) - 0.2 < (1 - deltaPSI[i])) }else{ which(rowMeans(psi) + 0.2 > -deltaPSI[i]) }
+    # possible_junctions <- ifelse(deltaPSI[i] > 0, which(rowMaxs(psi) < (1 - deltaPSI[i])), which(rowMaxs(psi) > -deltaPSI[i]) )
+    counter <- 0
+    
     # for each outlier, draw random junction-sample pair and check if outlier can be injected there
-    while(!successful){
+    while(!successful && counter <= 500){
       
-      junction <- sample(available_junctions, 1)
+      counter <- counter + 1
+      # if(verbose){
+      #   print(paste0(counter, ". try"))
+      # }
+      
+      if(length(intersect(available_junctions, possible_junctions)) == 0 ){
+        break
+      }
+      
+      junction <- sample(intersect(available_junctions, possible_junctions), 1)
       sample <- sample(m, 1)
       
       n_ji <- n[junction,sample]
@@ -486,7 +499,8 @@ injectOutliers <- function(fds, type=type, nrOutliers=500, deltaPSI=pmin(0.7, pm
               
               # also store position of other junction used in swap
               indexOut[group_others[g], sample] <- ifelse(deltaPSI[i] >= 0, -2, 2)
-              indexDeltaPSI[junction, sample] <- deltaPSI[i]
+              # indexDeltaPSI[junction, sample] <- deltaPSI[i]
+              indexDeltaPSI[junction, sample] <- ( (k[group_others[g],sample] + pseudocount())/(n[group_others[g],sample] + 2*pseudocount()) ) - psi[group_others[g], sample] # new dPsi - old dPsi
               
             }
             
@@ -513,18 +527,30 @@ injectOutliers <- function(fds, type=type, nrOutliers=500, deltaPSI=pmin(0.7, pm
       
     }
     
-    # remove junction where outlier was injected from available junctions (each junction at most one outlier)
-    available_junctions <- available_junctions[available_junctions != junction]
-    
-    if(verbose){
-      print(paste("Injected outlier", i, "at index", junction, ",", sample, ": new k =", k_new, ", n =", n_ji))
+    if(successful){
+      
+      # remove junction where outlier was injected from available junctions (each junction at most one outlier)
+      available_junctions <- available_junctions[available_junctions != junction]
+      
+      if(verbose){
+        print(paste("Injected outlier", i, "at index", junction, ",", sample, ": new k =", k_new, ", n =", n_ji))
+      }
+      
     }
+    else{
+      
+      if(verbose){
+        print(paste("Skipped outlier", i, "with delta psi =", deltaPSI[i]))
+      }
+      
+    }
+    
     
   }
   
   # store positions of true outliers and their true delta PSI value
   setAssayMatrix(fds=fds, name="trueOutliers", type=type) <- indexOut
-  metadata(fds)[[paste0("trueDeltaPSI_",type)]] <- indexDeltaPSI
+  setAssayMatrix(fds=fds, name="trueDeltaPSI", type=type) <- indexDeltaPSI
   
   # store new k counts which include the outlier counts 
   counts(fds, type=type, side="ofInterest") <- k
@@ -541,6 +567,76 @@ injectOutliers <- function(fds, type=type, nrOutliers=500, deltaPSI=pmin(0.7, pm
   else{
     # when no swapping was done, just put other counts as n-k
     counts(fds, type=type, side="other") <- n-k
+  }
+  
+  return(fds)
+  
+}
+
+removeInjectedOutliers <- function(fds, type){
+  
+  # copy injected k and o counts
+  if(type == "psiSite"){
+    setAssayMatrix(fds, type="psiSite", "outlierCounts") <- counts(fds, type="psiSite", side="ofInterest")
+    setAssayMatrix(fds, type="psiSite", "outlierOtherCounts") <- counts(fds, type="psiSite", side="other")
+  }
+  else{
+    setAssayMatrix(fds, type="psi5", "outlierCounts") <- counts(fds, type="psi5", side="ofInterest")
+    setAssayMatrix(fds, type="psi5", "outlierOtherCounts") <- counts(fds, type="psi5", side="other")
+    setAssayMatrix(fds, type="psi3", "outlierOtherCounts") <- counts(fds, type="psi3", side="other")
+  }
+  
+  # assign original k and o to rawCountsJ and rawOtherCounts 
+  if(type == "psiSite"){
+    counts(fds, type="psiSite", side="ofInterest") <- getAssayMatrix(fds, type="psiSite", "originalCounts")
+    counts(fds, type="psiSite", side="other") <- getAssayMatrix(fds, type="psiSite", "originalOtherCounts")
+    
+    assays(fds)[['originalCounts_psiSite']] <- NULL
+    assays(fds)[['originalOtherCounts_psiSite']] <- NULL
+  }
+  else{
+    counts(fds, type="psi5", side="ofInterest") <- getAssayMatrix(fds, type="psi5", "originalCounts")
+    counts(fds, type="psi5", side="other") <- getAssayMatrix(fds, type="psi5", "originalOtherCounts")
+    counts(fds, type="psi3", side="other") <-getAssayMatrix(fds, type="psi3", "originalOtherCounts")
+    
+    assays(fds)[['originalCounts_psi5']] <- NULL
+    assays(fds)[['originalOtherCounts_psi5']] <- NULL
+    assays(fds)[['originalOtherCounts_psi3']] <- NULL
+  }
+  
+  return(fds)
+  
+}
+
+restoreInjectedOutliers <- function(fds, type){
+  
+  # copy original k and o counts
+  if(type == "psiSite"){
+    setAssayMatrix(fds, type="psiSite", "originalCounts") <- counts(fds, type="psiSite", side="ofInterest")
+    setAssayMatrix(fds, type="psiSite", "originalOtherCounts") <- counts(fds, type="psiSite", side="other")
+  }
+  else{
+    setAssayMatrix(fds, type="psi5", "originalCounts") <- counts(fds, type="psi5", side="ofInterest")
+    setAssayMatrix(fds, type="psi5", "originalOtherCounts") <- counts(fds, type="psi5", side="other")
+    setAssayMatrix(fds, type="psi3", "originalOtherCounts") <- counts(fds, type="psi3", side="other")
+  }
+  
+  # assign injected k and o to rawCountsJ and rawOtherCounts 
+  if(type == "psiSite"){
+    counts(fds, type="psiSite", side="ofInterest") <- getAssayMatrix(fds, type="psiSite", "outlierCounts")
+    counts(fds, type="psiSite", side="other") <- getAssayMatrix(fds, type="psiSite", "outlierOtherCounts")
+    
+    assays(fds)[['outlierCounts_psiSite']] <- NULL
+    assays(fds)[['outlierOtherCounts_psiSite']] <- NULL
+  }
+  else{
+    counts(fds, type="psi5", side="ofInterest") <- getAssayMatrix(fds, type="psi5", "outlierCounts")
+    counts(fds, type="psi5", side="other") <- getAssayMatrix(fds, type="psi5", "outlierOtherCounts")
+    counts(fds, type="psi3", side="other") <-getAssayMatrix(fds, type="psi3", "outlierOtherCounts")
+    
+    assays(fds)[['outlierCounts_psi5']] <- NULL
+    assays(fds)[['outlierOtherCounts_psi5']] <- NULL
+    assays(fds)[['outlierOtherCounts_psi3']] <- NULL
   }
   
   return(fds)
