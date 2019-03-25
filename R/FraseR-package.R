@@ -37,6 +37,7 @@
 #' @importFrom gplots col2hex
 #' @importFrom htmlwidgets saveWidget
 #' @importFrom LSD heatscatter
+#' @importFrom pheatmap pheatmap
 #'
 ### Shiny App
 #'

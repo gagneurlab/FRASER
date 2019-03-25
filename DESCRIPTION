@@ -35,6 +35,7 @@ Imports:
     matrixStats,
     methods,
     parallel,
+    pheatmap,
     plotly (>= 4.6.0),
     rhdf5,
     Rsubread,
