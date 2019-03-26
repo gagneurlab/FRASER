@@ -519,3 +519,53 @@ testPlotting <- function(){
     plotCountsAtSite(gra[1], fds, gra[1]$type)
     plotValueVsCounts(gra[1], fds, gra[1]$type, plotLog=TRUE, rmZeroCts=FALSE)
 }
+
+#'
+#' Plot count correlation
+#'
+#' @export
+plotCountCorHeatmap <- function(fds, type=c("psi5", "psi3", "psiSite"),
+            logit=FALSE, topN=50000, minMedian=1, main=NULL,
+            show_rownames=FALSE, show_colnames=FALSE,
+            annotation_col=NA, annotation_row=NA, ...){
+
+    type <- match.arg(type)
+
+    kmat <- as.matrix(counts(fds, type=type, side="ofIn"))
+    nmat <- kmat + as.matrix(counts(fds, type=type, side="other"))
+
+    expRowsMedian <- rowMedians(kmat) >= minMedian
+    expRowsMax    <- rowMax(kmat)     >= 10
+    table(expRowsMax & expRowsMedian)
+
+    skmat <- kmat[expRowsMax & expRowsMedian,]
+    snmat <- nmat[expRowsMax & expRowsMedian,]
+
+    xmat <- (skmat + 1)/(snmat + 2)
+    if(isTRUE(logit)){
+        xmat <- qlogis(xmat)
+    }
+    xmat_rc    <- xmat - rowMeans(xmat)
+    xmat_rc_sd <- rowSds(xmat_rc)
+    cormat <- cor(xmat_rc[rank(xmat_rc_sd) >= length(xmat_rc_sd) - topN,])
+
+    if(is.character(annotation_col)){
+        annotation_col <- data.frame(colData(fds)[,annotation_col])
+    }
+    if(is.character(annotation_row)){
+        annotation_row <- data.frame(colData(fds)[,annotation_row])
+    }
+
+    if(is.null(main)){
+        if(isTRUE(logit)){
+            main <- paste0("Row-centered Logit(PSI) correlation (", type, ")")
+        } else {
+            main <- paste0("Row-centered PSI correlation (", type, ")")
+        }
+    }
+
+    pheatmap(cormat, show_rownames=show_rownames, show_colnames=show_colnames,
+             main=main, annotation_col=annotation_col,
+             annotation_row=annotation_row, ...
+    )
+}

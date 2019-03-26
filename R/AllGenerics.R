@@ -524,7 +524,7 @@ setReplaceMethod("mcols", "FraseRDataSet", FraseR.mcols.replace)
 #'
 FraseR.rowRanges.get <- function(x, type=NULL, ...){
     type <- checkReadType(x, type)
-    if(type=="j")  return(rowRanges(asSE(x, ...)))
+    if(type=="j")  return(rowRanges(asSE(x), ...))
     if(type=="ss") return(rowRanges(nonSplicedReads(x), type=type, ...))
 }
 FraseR.rowRanges.replace <- function(x, type=NULL, ..., value){
