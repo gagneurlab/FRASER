@@ -37,6 +37,7 @@ Imports:
     parallel,
     pheatmap,
     plotly (>= 4.6.0),
+    RColorBrewer,
     rhdf5,
     Rsubread,
     R.utils,

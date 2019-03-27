@@ -14,6 +14,7 @@ probE <- 0.1
 q <- 20
 
 # real data
+fds <- loadFraseRDataSet("/s/project/fraser/analysis/datasets", "prokisch_batch5")
 fds <- loadFraseRDataSet("~/projects/data", "kremer-bader-et-al", upgrade=TRUE)
 probE <- 0.1
 q <- 24
@@ -71,12 +72,12 @@ grList <- unlist(GRangesList(
     CLPP_5C    = GRanges("chr19", IRanges(6361463, 6368919), type="psi3", samples="MUC1350"),
     PTPRS	   = GRanges("chr19", IRanges(5286246, 5340674), type="psi5", samples="MUC1345"),
     SFXN4	   = GRanges("chr10", IRanges(120921851, 120921852), type="psiSite", samples="76624"),
-    LPIN1	= GRanges("chr2", IRanges(11955367, 11959609), type="psi5", samples="MUC1391"),
-    PANK2	= GRanges("chr20", IRanges(3888926, 3891223), type="psi3", samples="MUC1393"),
-    TALDO1	= GRanges("chr11", IRanges(760254, 763343), type="psi5", samples="MUC1410"),
-    COASY	= GRanges("chr17", IRanges(40714238, 40715978), type="psi3", samples="MUC1395"),
-    DPYD	= GRanges("chr1", IRanges(98198027, 98205947), type="psi3", samples="MUC1423"),
-    TAZ	    = GRanges("chrX", IRanges(153641880, 153641881), type="psiSite", samples="MUC1398")
+    LPIN1	   = GRanges("chr2", IRanges(11955367, 11959609), type="psi5", samples="MUC1391"),
+    PANK2	   = GRanges("chr20", IRanges(3888926, 3891223), type="psi3", samples="MUC1393"),
+    TALDO1	   = GRanges("chr11", IRanges(760254, 763343), type="psi5", samples="MUC1410"),
+    COASY	   = GRanges("chr17", IRanges(40714238, 40715978), type="psi3", samples="MUC1395"),
+    DPYD	   = GRanges("chr1", IRanges(98198027, 98205947), type="psi3", samples="MUC1423"),
+    TAZ	       = GRanges("chrX", IRanges(153641880, 153641881), type="psiSite", samples="MUC1398")
 ))
 grList
 

@@ -33,9 +33,10 @@ makeSimulatedFraserDataSet_BetaBinomial <- function(m=200, j=10000, q=10, ...){
   # Simulate N = nonSplit + n
   junction_n <- rnbinom(j, mu=348, size=0.27)
   N <- t(vapply(junction_n, function(x){
-                                n <- round(rnorm(n=m, sd=10, mean=x))
-                                n <- pmax(n, 0)},
-                double(m)))
+    # n <- round(rnorm(n=m, sd=10, mean=x))
+    # n <- pmax(n, 0)},
+    n <- rnbinom(m, mu=x, size=10)},
+    double(m)))
   # N <- matrix(rnbinom(j*m, mu=nMean, size=theta), nrow=j, ncol=m)
   mode(N) <- 'integer'
 
@@ -146,11 +147,11 @@ makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=1000, q=10, ...){
   donorGroups <- seq_len(d)    # ids of the groups (1,2,...,d)
   junctionGroups <- sort(sample(x = donorGroups, size=j, replace = TRUE))   # assign junction to donor/acceptor groups
 
-  # Find groups with only one junction and assign them randomly to another group
-  singleDonors <- as.integer(names(which(table(junctionGroups) == 1)))
-  usedGroups <- unique(junctionGroups)
-  junctionGroups[which(junctionGroups %in% singleDonors)] <- sample(usedGroups[!(usedGroups %in% singleDonors)], size=length(singleDonors), replace = TRUE)
-  junctionGroups <- sort(junctionGroups)
+  # # Find groups with only one junction and assign them randomly to another group
+  # singleDonors <- as.integer(names(which(table(junctionGroups) == 1)))
+  # usedGroups <- unique(junctionGroups)
+  # junctionGroups[which(junctionGroups %in% singleDonors)] <- sample(usedGroups[!(usedGroups %in% singleDonors)], size=length(singleDonors), replace = TRUE)
+  # junctionGroups <- sort(junctionGroups)
 
   # Set d to the actual number of groups (some might not have been assigned any junction at all)
   donorGroups <- donorGroups[donorGroups %in% unique(junctionGroups)]
@@ -174,9 +175,10 @@ makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=1000, q=10, ...){
   # n <- matrix(rnbinom(j*m, mu=nMean, size=theta), nrow=j, ncol=m)
   junction_n <- rnbinom(j, mu=348, size=0.27)
   n <- t(vapply(junction_n, function(x){
-                              n <- round(rnorm(n=m, sd=10, mean=x))
-                              n <- pmax(n, 0)},
-                double(m)))
+    # n <- round(rnorm(n=m, sd=10, mean=x))
+    # n <- pmax(n, 0)},
+    n <- rnbinom(m, mu=x, size=10)},
+    double(m)))
 
   # Sum up the values of n within one donor/acceptor group to get the n value of the group
   dt_n <- as.data.table(n)
@@ -415,7 +417,7 @@ injectOutliers <- function(fds, type=type, nrOutliers=500, deltaPSI=pmin(0.7, pm
     counter <- 0
 
     # for each outlier, draw random junction-sample pair and check if outlier can be injected there
-    while(!successful && counter <= 500){
+    while(!successful && counter <= 1000){
 
       counter <- counter + 1
       # if(verbose){
@@ -562,6 +564,15 @@ injectOutliers <- function(fds, type=type, nrOutliers=500, deltaPSI=pmin(0.7, pm
 
   # re-calculate other counts if swapping was done
   if(swap){
+    # if psi values were already calculated, delete them (or rather move the old values somewhere else?) so that they are recalculated
+    for(psiType in c("psi3", "psi5", "psiSite")){
+      if(assayExists(fds, psiType)){
+        assays(fds)[[psiType]] <- NULL
+      }
+      if(assayExists(fds, paste0('delta_', psiType))){
+        assays(fds)[[paste0('delta_', psiType)]] <- NULL
+      }
+    }
     fds <- calculatePSIValues(fds, overwriteCts = TRUE)
   }
   else{

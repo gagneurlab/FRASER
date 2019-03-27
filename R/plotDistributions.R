@@ -550,10 +550,10 @@ plotCountCorHeatmap <- function(fds, type=c("psi5", "psi3", "psiSite"),
     cormat <- cor(xmat_rc[rank(xmat_rc_sd) >= length(xmat_rc_sd) - topN,])
 
     if(is.character(annotation_col)){
-        annotation_col <- data.frame(colData(fds)[,annotation_col])
+        annotation_col <- getColDataAsDFFactors(fds, annotation_col)
     }
     if(is.character(annotation_row)){
-        annotation_row <- data.frame(colData(fds)[,annotation_row])
+        annotation_row <- getColDataAsDFFactors(fds, annotation_row)
     }
 
     if(is.null(main)){
@@ -566,6 +566,21 @@ plotCountCorHeatmap <- function(fds, type=c("psi5", "psi3", "psiSite"),
 
     pheatmap(cormat, show_rownames=show_rownames, show_colnames=show_colnames,
              main=main, annotation_col=annotation_col,
-             annotation_row=annotation_row, ...
+             annotation_row=annotation_row, ...,
+             breaks=seq(-1, 1, length.out=50),
+             color=colorRampPalette(colors=rev(brewer.pal(11, "RdBu")))(50)
     )
+}
+
+
+getColDataAsDFFactors <- function(fds, names){
+    tmpDF <- data.frame(colData(fds)[,names])
+    colnames(tmpDF) <- names
+    for(i in names){
+        if(any(is.na(tmpDF[, i]))){
+            tmpDF[,i] <- as.factor(paste0("", tmpDF[,i]))
+        }
+    }
+    rownames(tmpDF) <- rownames(colData(fds))
+    return(tmpDF)
 }
