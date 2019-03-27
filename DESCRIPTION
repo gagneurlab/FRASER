@@ -37,6 +37,7 @@ Imports:
     parallel,
     pheatmap,
     plotly (>= 4.6.0),
+    RColorBrewer,
     rhdf5,
     Rsubread,
     R.utils,
@@ -66,7 +67,9 @@ biocViews:
     Coverage
 URL: https://i12g-gagneurweb.in.tum.de/gitlab/mertes/FraseR/
 RoxygenNote: 6.1.1
+Encoding: UTF-8
 Collate:
+    variables.R
     getNSetterFuns.R
     FraseR-package.R
     FraseRDataSet-class.R

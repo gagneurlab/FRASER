@@ -38,6 +38,7 @@
 #' @importFrom htmlwidgets saveWidget
 #' @importFrom LSD heatscatter
 #' @importFrom pheatmap pheatmap
+#' @importFrom RColorBrewer brewer.pal
 #'
 ### Shiny App
 #'
