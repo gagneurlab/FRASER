@@ -24,31 +24,25 @@
 #' fds2
 #'
 #' @export
-makeSimulatedFraserDataSet_BetaBinomial <- function(m=200, j=10000, q=10, ...){
+makeSimulatedFraserDataSet_BetaBinomial <- function(m=200, j=10000, q=10, nbMean=350, nbSize=0.25, rhoMeanlog=-5, rhoSdlog=1, Hmean=0, Hsd=100, Dmean=0, Dsd=0.007, ...){
 
-  # Simulate counts at each junction using negative binomial
-  # nMean <- rnorm(j, 348, 10)                     # nbinom means for n (mean(N) on kremer dataset = 347.62, median=37)
-  # theta <- rnorm(j, 0.27, 0.01)                  # nbinom dispersion (~0.27 on N from kremer dataset)
-
-  # Simulate N = nonSplit + n
-  junction_n <- rnbinom(j, mu=348, size=0.27)
+  # Simulate total coverage N = nonSplit + n at each junction using lognormal 
+  junction_n <- rlnorm(j, meanLog=log10(nbMean), sdlog=nbSize)
   N <- t(vapply(junction_n, function(x){
-    # n <- round(rnorm(n=m, sd=10, mean=x))
-    # n <- pmax(n, 0)},
-    n <- rnbinom(m, mu=x, size=10)},
+    # draw counts for every sample from negative binomial
+    n <- rnbinom(m, mu=x, size=nbSize)},
     double(m)))
-  # N <- matrix(rnbinom(j*m, mu=nMean, size=theta), nrow=j, ncol=m)
+  # N <- matrix(rnbinom(j*m, mu=nbMean, size=nbSize), nrow=j, ncol=m)
   mode(N) <- 'integer'
 
   #
   # Simulate covariates for SE
   #
-  sdVec <- rep(0.5, m)                           # sd for H matrix
-  H_true <- matrix(rnorm(m*q, 0, 1), nrow=m, ncol=q)
-  D_true <- matrix(rnorm(j*q, sd=sdVec), nrow=j, ncol=q)
+  H_true <- matrix(rnorm(m*q, mean=Hmean, sd=Hsd), nrow=m, ncol=q)
+  D_true <- matrix(rnorm(j*q, mean=Dmean, sd=Dsd), nrow=j, ncol=q)
   y_se <- D_true %*% t(cbind(H_true))
   mu_se     <- predictMuCpp(y_se)
-  rho_se <- abs(rnorm(j, mean=0.0001, sd=0.05))     # betaBin dispersion
+  rho_se <- rlnorm(j, meanlog=rhoMeanlog, sdlog=rhoSdlog)  # betaBin dispersion
 
   # Draw nonSplit reads from BB
   nonSplit <-matrix(rbetabinom(j*m, size=N, prob=mu_se, rho=rho_se), nrow=j, ncol=m)
@@ -60,12 +54,11 @@ makeSimulatedFraserDataSet_BetaBinomial <- function(m=200, j=10000, q=10, ...){
   #
   # Simulate covariates for PSI3=PSI5
   #
-  sdVec <- rep(0.5, m)                           # sd for H matrix
-  H_true <- matrix(rnorm(m*q, 0, 1), nrow=m, ncol=q)
-  D_true <- matrix(rnorm(j*q, sd=sdVec), nrow=j, ncol=q)
+  H_true <- matrix(rnorm(m*q, mean=Hmean, sd=Hsd), nrow=m, ncol=q)
+  D_true <- matrix(rnorm(j*q, mean=Dmean, sd=Dsd), nrow=j, ncol=q)
   y_psi <- D_true %*% t(cbind(H_true))
   mu_psi     <- predictMuCpp(y_psi)
-  rho_psi <- abs(rnorm(j, mean=0.0001, sd=0.05))     # betaBin dispersion
+  rho_psi <- rlnorm(j, meanlog=rhoMeanlog, sdlog=rhoSdlog)  # betaBin dispersion
 
   # Draw nonSplit reads from BB
   k <-matrix(rbetabinom(j*m, size=n, prob=mu_psi, rho=rho_psi), nrow=j, ncol=m)
@@ -137,21 +130,15 @@ makeSimulatedFraserDataSet_BetaBinomial <- function(m=200, j=10000, q=10, ...){
 #
 # Generate a simulated fds using a Dirichlet-Mulitnomial distribution
 #
-makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=1000, q=10, ...){
+makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=1000, q=10, groups=round(j*0.65), nbMean=350, nbSize=0.25, rhoMeanlog=-5, rhoSdlog=1, Hmean=0, Hsd=100, Dmean=0, Dsd=0.007, ...){
 
 
   #
   # Simulate groups of junctions having the same donor/acceptor site
   #
-  d <- round(j/4)              # nr of donors/acceptors
+  d <- groups                  # nr of donors/acceptors
   donorGroups <- seq_len(d)    # ids of the groups (1,2,...,d)
   junctionGroups <- sort(sample(x = donorGroups, size=j, replace = TRUE))   # assign junction to donor/acceptor groups
-
-  # # Find groups with only one junction and assign them randomly to another group
-  # singleDonors <- as.integer(names(which(table(junctionGroups) == 1)))
-  # usedGroups <- unique(junctionGroups)
-  # junctionGroups[which(junctionGroups %in% singleDonors)] <- sample(usedGroups[!(usedGroups %in% singleDonors)], size=length(singleDonors), replace = TRUE)
-  # junctionGroups <- sort(junctionGroups)
 
   # Set d to the actual number of groups (some might not have been assigned any junction at all)
   donorGroups <- donorGroups[donorGroups %in% unique(junctionGroups)]
@@ -166,19 +153,15 @@ makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=1000, q=10, ...){
   junctionGroups <- sort(c(junctionGroups, donorGroups))
 
 
-
   #
-  # Simulate n for each junction using negative binomial
+  # Simulate n for each junction using lognormal and negative binomial
   #
-  # nMean <- rnorm(d, 348, 10)           # nbinom means for n (mean(N) on kremer dataset = 347.62, median=37)
-  # theta <- rnorm(d, 0.27, 0.01)        # nbinom dispersion (~0.27 on N from kremer dataset)
-  # n <- matrix(rnbinom(j*m, mu=nMean, size=theta), nrow=j, ncol=m)
-  junction_n <- rnbinom(j, mu=348, size=0.27)
+  junction_n <- rlnorm(j, meanLog=log10(nbMean), sdlog=nbSize)
   n <- t(vapply(junction_n, function(x){
-    # n <- round(rnorm(n=m, sd=10, mean=x))
-    # n <- pmax(n, 0)},
-    n <- rnbinom(m, mu=x, size=10)},
+    # draw counts for every sample from negative binomial
+    n <- rnbinom(m, mu=x, size=nbSize)},
     double(m)))
+  # n <- matrix(rnbinom(j*m, mu=nMean, size=theta), nrow=j, ncol=m)
 
   # Sum up the values of n within one donor/acceptor group to get the n value of the group
   dt_n <- as.data.table(n)
@@ -198,7 +181,8 @@ makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=1000, q=10, ...){
   #
   # Simulate betaBin dispersion for every donor/acceptor group, same dispersion for all junctions within a group
   #
-  group_rho <- abs(rnorm(d, mean=0.0001, sd=0.05))     # group dispersion
+  group_rho <- rlnorm(d, meanlog=rhoMeanlog, sdlog=rhoSdlog)  # group dispersion
+  # group_rho <- abs(rnorm(d, mean=0.0001, sd=0.05))     # group dispersion
   dt1 <- data.table(group=donorGroups, rho=group_rho)
   dt2 <- data.table(group=junctionGroups)
   rhoFull <- merge(dt1, dt2, by="group")
@@ -209,9 +193,8 @@ makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=1000, q=10, ...){
   #
   # Simulate covariates.
   #
-  sdVec <- rep(0.5, m)                           # sd for H matrix
-  H_true <- matrix(rnorm(m*q, 0, 1), nrow=m, ncol=q)
-  D_true <- matrix(rnorm(j*q, sd=sdVec), nrow=j, ncol=q)
+  H_true <- matrix(rnorm(m*q, mean=Hmean, sd=Hsd), nrow=m, ncol=q)
+  D_true <- matrix(rnorm(j*q, mean=Dmean, sd=Dsd), nrow=j, ncol=q)
   y_true <- D_true %*% t(cbind(H_true))
   ae_mu     <- predictMuCpp(y_true)
 
@@ -404,14 +387,20 @@ injectOutliers <- function(fds, type=type, nrOutliers=500, deltaPSI=pmin(0.7, pm
   indexOut <- matrix(0, nrow = j, ncol = m)
   indexDeltaPSI <- matrix(0, nrow = j, ncol = m)
   
-  dt <- data.table(junction = 1:j, start = mcols(fds, type=type)[["startID"]], end = mcols(fds, type=type)[["endID"]])
-  dt[, donorGroupSize:=length(junction), by=start]
-  dt[, acceptorGroupSize:=length(junction), by=end]
+  dt <- data.table(
+    junctionID = 1:j,
+    chr = as.factor(seqnames(fds)),
+    start = start(fds),
+    end = end(fds),
+    strand = as.factor(strand(fds))
+  )
+  dt[, donorGroupSize:=length(junctionID), by=c("chr", "start", "strand")]
+  dt[, acceptorGroupSize:=length(junctionID), by=c("chr", "end", "strand")]
   
   # Get junctions where outlier can be injected
   available_junctions <- switch(type,
-                                psi3 = dt[acceptorGroupSize > 1, junction],
-                                psi5 = dt[donorGroupSize > 1, junction],
+                                psi3 = dt[acceptorGroupSize > 1, junctionID],
+                                psi5 = dt[donorGroupSize > 1, junctionID],
                                 psiSite = seq_len(j) )
   
   # inject outliers
@@ -436,10 +425,10 @@ injectOutliers <- function(fds, type=type, nrOutliers=500, deltaPSI=pmin(0.7, pm
       
       # get all other junction with the same acceptor/donor
       if(type == "psi5" || type == "psiSite"){
-        group <- which(mcols(fds, type=type)[["startID"]] == mcols(fds, type=type)[["startID"]][junction])
+        group <- dt[start == dt[junctionID == junction, start] & chr == dt[junctionID == junction, chr] & strand == dt[junctionID == junction, strand], junctionID]
       }
       else if(type == "psi3"){
-        group <- which(mcols(fds, type=type)[["endID"]] == mcols(fds, type=type)[["endID"]][junction])
+        group <- dt[end == dt[junctionID == junction, end] & chr == dt[junctionID == junction, chr] & strand == dt[junctionID == junction, strand], junctionID]
       }
       
       # for all other junctions having the same acceptor/donor
@@ -594,11 +583,18 @@ injectOutliersBySwapping <- function(fds, type=type, nrOutliers=500, deltaPSI=pm
           #
           # check if junction can be swapped with other junction from same donor/acceptor
           #
+          dt <- data.table(
+            junctionID = 1:j,
+            chr = as.factor(seqnames(fds)),
+            start = start(fds),
+            end = end(fds),
+            strand = as.factor(strand(fds))
+          )
           if(type == "psi5"){
-            samePos <- which(mcols(fds, type=type)[["startID"]] == mcols(fds, type=type)[["startID"]][junction])
+            samePos <- dt[start == dt[junctionID == junction, start] & chr == dt[junctionID == junction, chr] & strand == dt[junctionID == junction, strand], junctionID]
           }
           else if(type == "psi3"){
-            samePos <- which(mcols(fds, type=type)[["endID"]] == mcols(fds, type=type)[["endID"]][junction])
+            samePos <- dt[end == dt[junctionID == junction, end] & chr == dt[junctionID == junction, chr] & strand == dt[junctionID == junction, strand], junctionID]
           }
           else{
             # for SE: swap with one junction at the same position
