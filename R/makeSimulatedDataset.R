@@ -352,8 +352,7 @@ makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=1000, q=10, groups=r
 #
 # Inject artificial outliers in an existing fds
 #
-injectOutliers <- function(fds, type=type, nrOutliers=500, deltaPSI=pmin(0.7, pmax(-0.7, rnorm(nrOutliers, 0, 0.5))), 
-                           method=c('meanPSI', 'samplePSI', 'simulatedPSI'), verbose=FALSE){
+injectOutliers <- function(fds, type=type, freq=1E-3, minDpsi=0.2, method=c('meanPSI', 'samplePSI', 'simulatedPSI'), verbose=FALSE, BPPARAM=parallel(fds)){
   
   # copy original k and o
   if(type == "psiSite"){
@@ -374,19 +373,16 @@ injectOutliers <- function(fds, type=type, nrOutliers=500, deltaPSI=pmin(0.7, pm
   n <- as.matrix(N(fds, type=type)) # as.matrix(..) needed so that n doesn't change after new k is stored (needed only for swap=FALSE)
   
   psi <- switch(match.arg(method), 
-         samplePSI    = (k + pseudocount())/(n + 2*pseudocount()),
-         meanPSI      = matrix(rowMeans( (k + pseudocount())/(n + 2*pseudocount()) ), nrow=j, ncol=m),
-         simulatedPSI = getAssayMatrix(fds, "truePSI", type=type) )
+                samplePSI    = (k + pseudocount())/(n + 2*pseudocount()),
+                meanPSI      = matrix(rowMeans( (k + pseudocount())/(n + 2*pseudocount()) ), nrow=j, ncol=m),
+                simulatedPSI = getAssayMatrix(fds, "truePSI", type=type) )
   
   # nedded to get the junction counts when type is SE
   if(type == "psiSite"){
-    k_other <- K(fds, type = "psi5")
+    freq <- freq/10
   }
   
-  # matrices to store indices of outliers and their delta psi
-  indexOut <- matrix(0, nrow = j, ncol = m)
-  indexDeltaPSI <- matrix(0, nrow = j, ncol = m)
-  
+  # data table with information about chr, start, end, ... for calculating groups
   dt <- data.table(
     junctionID = 1:j,
     chr = as.factor(seqnames(fds)),
@@ -396,76 +392,108 @@ injectOutliers <- function(fds, type=type, nrOutliers=500, deltaPSI=pmin(0.7, pm
   )
   dt[, donorGroupSize:=length(junctionID), by=c("chr", "start", "strand")]
   dt[, acceptorGroupSize:=length(junctionID), by=c("chr", "end", "strand")]
+  dt[, donorGroupID := .GRP, by=c("chr", "start", "strand")]
+  dt[, acceptorGroupID:=.GRP, by=c("chr", "end", "strand")]
   
-  # Get junctions where outlier can be injected
-  available_junctions <- switch(type,
-                                psi3 = dt[acceptorGroupSize > 1, junctionID],
-                                psi5 = dt[donorGroupSize > 1, junctionID],
-                                psiSite = seq_len(j) )
+  # Get groups where outlier can be injected
+  available_groups <- switch(type,
+                             psi3 = dt[acceptorGroupSize > 1, acceptorGroupID, by=acceptorGroupID]$acceptorGroupID,
+                             psi5 = dt[donorGroupSize > 1, donorGroupID, by=donorGroupID]$donorGroupID,
+                             psiSite = seq_len(j))
   
-  # inject outliers
-  for(i in seq_len(nrOutliers)){
+  indexOut_groups <- matrix(sample(c(0,1,-1), length(available_groups)*m, replace=TRUE, prob=c(1-freq, freq/2, freq/2)), ncol=m)
+  
+  # positions where outliers will be injected
+  list_index <- which(indexOut_groups != 0, arr.ind = TRUE)
+  
+  # apply injection function to each outlier  
+  message(date(), ": Injecting ", nrow(list_index), " outliers ...")
+  result <- bplapply(seq_len(nrow(list_index)), list_index=list_index, indexOut_groups=indexOut_groups, type=type, psi=psi, n=n, dt=dt, minDpsi=minDpsi, verbose=verbose, BPPARAM=BPPARAM, 
+                     FUN=function(j, list_index, indexOut_groups, type, psi, n, dt=dt, minDpsi, verbose){
     
-      # Get indices where adding/subtracing deltaPSI[i] is possible
-      possible_indices <- if(deltaPSI[i] > 0){ which(psi < (1 - deltaPSI[i]), arr.ind = TRUE) }else{ which(psi > -deltaPSI[i], arr.ind = TRUE) }
-      possible_indices <- possible_indices[possible_indices[,1] %in% available_junctions,]
+      # extract group, sample and injecetion direction (i.e +1/up or -1/down)
+      group     <- list_index[j,'row']
+      sample    <- list_index[j,'col']
+      injDirection    <- indexOut_groups[group, sample]
+
+      # sample one junction from all junction within this group
+      group_junctions <- if(type == "psiSite"){ c(group) }else{ dt[acceptorGroupID == group, junctionID] } 
+      junction        <- sample(group_junctions, 1)
       
-      if(length(possible_indices) == 0){ # not possible to inject outlier with current deltaPSI at any junction -> skip it
-        if(verbose){
-          print(paste("Skipped outlier", i, "with delta PSI", deltaPSI[i]))
-        }
-        next
+      # get current psi of this junction and calculate maximla possible value of delta psi for the injection
+      junction_psi    <- psi[junction, sample]
+      maxDpsi <- if(injDirection > 0){ 1 - junction_psi }else{junction_psi}
+      
+      # if not possible to inject here with at least minDpsi, change injection direction
+      if(maxDpsi < minDpsi){
+        injDirection <- -injDirection
+        indexOut_groups[group, sample] <- injDirection
+        maxDpsi <- if(injDirection > 0){ 1 - junction_psi }else{junction_psi}
       }
       
-      ind <- sample(nrow(possible_indices), 1)
-      junction <- possible_indices[ind,1]
-      sample <- possible_indices[ind,2]
+      # sample delta psi for injection from uniform distribution between min and max dpsi
+      injDpsi <- injDirection * runif(1, minDpsi, maxDpsi)
       
+      # get N of this junction
       n_ji <- n[junction,sample] 
       
-      # get all other junction with the same acceptor/donor
-      if(type == "psi5" || type == "psiSite"){
-        group <- dt[start == dt[junctionID == junction, start] & chr == dt[junctionID == junction, chr] & strand == dt[junctionID == junction, strand], junctionID]
-      }
-      else if(type == "psi3"){
-        group <- dt[end == dt[junctionID == junction, end] & chr == dt[junctionID == junction, chr] & strand == dt[junctionID == junction, strand], junctionID]
-      }
+      # new counts after injection
+      newKs     <- integer(length(group_junctions))
+      indexDpsi <- double(length(group_junctions))
+      indOut  <- integer(length(group_junctions))
       
-      # for all other junctions having the same acceptor/donor
-      for(junction_k in group){
+      # for all other junctions in this group
+      for(i in seq_len(length(group_junctions))){
+        junction_k <- group_junctions[i]
         # get new_psi and change k based on n and new_psi (and take pseudocounts into account): (k+1)/(n+2)=psi -> k = psi*(n+2) - 1
         if(junction_k == junction){
-          new_psi <- psi[junction,sample] + deltaPSI[i]
+          new_psi <- junction_psi + injDpsi
           new_k <- round( new_psi*(n_ji + 2*pseudocount()) - pseudocount() )
           
           # store position of outlier
-          indexOut[junction_k, sample] <- ifelse(deltaPSI[i] >= 0, 1, -1)
-          indexDeltaPSI[junction_k, sample] <- deltaPSI[i]
+          indOut[i]      <- injDirection
+          indexDpsi[i]   <- injDpsi
         }
         else{
-          deltaPSI_k <- - (psi[junction_k,sample] / (1-psi[junction,sample])) * deltaPSI[i]
+          deltaPSI_k <- - (psi[junction_k,sample] / (1-junction_psi)) * injDpsi
           new_psi <- psi[junction_k,sample] + deltaPSI_k
           new_k <- round( new_psi*(n_ji + 2*pseudocount()) - pseudocount() )
           
           # also store position of other junction used in swap
-          indexOut[junction_k, sample] <- ifelse(deltaPSI[i] >= 0, -2, 2)
-          indexDeltaPSI[junction_k, sample] <- deltaPSI_k
+          indOut[i]      <- -injDirection * 2
+          indexDpsi[i]   <- deltaPSI_k
         }
         # for SE: ensure new_k <= n_ij (so that o=n-k is always >= 0) (not needed for psi3/5 because o will recalculated from k's there)
         if(type == "psiSite"){
           new_k <- min(new_k, n_ji)
         }
         # ensure new_k >= 0 and assign k_ij <- new_k
-        k[junction_k, sample] <- max(0, new_k)
+        newKs[i] <- max(0, new_k)
       }
-      
-      # remove all junctions in the group where the outlier was injected from available junctions (each junction at most one outlier, multiple outliers in a group could compensate)
-      available_junctions <- available_junctions[!available_junctions %in% group]
       
       if(verbose){
-        print(paste("injected outlier", i, "with delta PSI of", deltaPSI[i], "at junction", possible_indices[ind,1], "and sample", possible_indices[ind,2]))
+        print(paste("injected outlier", j, "with delta PSI of", injDpsi, "at junction", junction, "and sample", sample))
       }
-  }
+      
+      return(list(newKs = newKs, junctions = group_junctions, injDeltaPSI = indexDpsi, injDirections = indOut, sample = rep(sample, length(group_junctions))))
+    
+  } )
+  
+  # get all junctions, samples, ... where outlier injection changed the counts
+  junctions     <- unlist(lapply(result, "[[", 'junctions'))
+  samples       <- unlist(lapply(result, "[[", 'sample'))
+  newKs         <- unlist(lapply(result, "[[", 'newKs'))
+  injDirection  <- unlist(lapply(result, "[[", 'injDirections'))
+  injDeltaPSI   <- unlist(lapply(result, "[[", 'injDeltaPSI'))
+  
+  # matrices to store indices of outliers and their delta psi
+  indexOut <- matrix(0, nrow = j, ncol = m)
+  indexDeltaPSI <- matrix(0, nrow = j, ncol = m)
+  
+  # set counts to changed counts after the injection
+  k[junctions, samples]             <- newKs
+  indexOut[junctions, samples]      <- injDirection
+  indexDeltaPSI[junctions, samples] <- injDeltaPSI
   
   # store positions of true outliers and their true delta PSI value
   setAssayMatrix(fds=fds, name="trueOutliers", type=type) <- indexOut
@@ -480,6 +508,7 @@ injectOutliers <- function(fds, type=type, nrOutliers=500, deltaPSI=pmin(0.7, pm
   }
   else{ # re-calculate other counts for psi5/3
     # if psi values were already calculated, delete them (or rather move the old values somewhere else?) so that they are recalculated
+    message(date(), ": Re-calculating the PSI values:")
     for(psiType in c("psi3", "psi5", "psiSite")){
       if(assayExists(fds, psiType)){
         assays(fds)[[psiType]] <- NULL
