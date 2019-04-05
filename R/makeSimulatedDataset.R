@@ -352,7 +352,8 @@ makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=1000, q=10, groups=r
 #
 # Inject artificial outliers in an existing fds
 #
-injectOutliers <- function(fds, type=type, freq=1E-3, minDpsi=0.2, method=c('meanPSI', 'samplePSI', 'simulatedPSI'), verbose=FALSE, BPPARAM=parallel(fds)){
+injectOutliers <- function(fds, type=type, freq=1E-3, minDpsi=0.2, deltaDistr="uniformDistr", 
+                           method=c('meanPSI', 'samplePSI', 'simulatedPSI'), verbose=FALSE, BPPARAM=parallel(fds)){
   
   # copy original k and o
   if(type == "psiSite"){
@@ -432,7 +433,9 @@ injectOutliers <- function(fds, type=type, freq=1E-3, minDpsi=0.2, method=c('mea
       }
       
       # sample delta psi for injection from uniform distribution between min and max dpsi
-      injDpsi <- injDirection * runif(1, minDpsi, maxDpsi)
+      injDpsi <- injDirection * switch(deltaDistr,
+                        uniformDistr = runif(1, minDpsi, maxDpsi),
+                        ifelse(as.double(deltaDistr) > maxDpsi, maxDpsi, as.double(deltaDistr)) )
       
       # get N of this junction
       n_ji <- n[junction,sample] 
@@ -491,9 +494,10 @@ injectOutliers <- function(fds, type=type, freq=1E-3, minDpsi=0.2, method=c('mea
   indexDeltaPSI <- matrix(0, nrow = j, ncol = m)
   
   # set counts to changed counts after the injection
-  k[junctions, samples]             <- newKs
-  indexOut[junctions, samples]      <- injDirection
-  indexDeltaPSI[junctions, samples] <- injDeltaPSI
+  replaceIndices                <- matrix(c(junctions,samples), ncol=2)
+  k[replaceIndices]             <- newKs
+  indexOut[replaceIndices]      <- injDirection
+  indexDeltaPSI[replaceIndices] <- injDeltaPSI
   
   # store positions of true outliers and their true delta PSI value
   setAssayMatrix(fds=fds, name="trueOutliers", type=type) <- indexOut
