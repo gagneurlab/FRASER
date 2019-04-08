@@ -391,8 +391,7 @@ injectOutliers <- function(fds, type=type, freq=1E-3, minDpsi=0.2, deltaDistr="u
       start = start(nonSplicedReads(fds)),
       end = end(nonSplicedReads(fds)),
       strand = as.factor(strand(nonSplicedReads(fds))) )
-    }
-  else{
+    }else{
     data.table(
     junctionID = 1:j,
     chr = as.factor(seqnames(fds)),
@@ -422,12 +421,13 @@ injectOutliers <- function(fds, type=type, freq=1E-3, minDpsi=0.2, deltaDistr="u
                      FUN=function(j, list_index, indexOut_groups, type, psi, n, dt=dt, minDpsi, verbose){
     
       # extract group, sample and injecetion direction (i.e +1/up or -1/down)
-      group     <- list_index[j,'row']
+      row       <- list_index[j,'row']
+      group     <- available_groups[row]
       sample    <- list_index[j,'col']
-      injDirection    <- indexOut_groups[group, sample]
+      injDirection    <- indexOut_groups[row, sample]
 
       # sample one junction from all junction within this group
-      group_junctions <- dt[acceptorGroupID == group, junctionID] 
+      group_junctions <- if(type == "psi3"){ dt[acceptorGroupID == group, junctionID] }else{ dt[donorGroupID == group, junctionID] }
       junction        <- if(type == "psiSite"){ group }else{sample(group_junctions, 1) }
       
       # get current psi of this junction and calculate maximla possible value of delta psi for the injection
@@ -437,7 +437,7 @@ injectOutliers <- function(fds, type=type, freq=1E-3, minDpsi=0.2, deltaDistr="u
       # if not possible to inject here with at least minDpsi, change injection direction
       if(maxDpsi < minDpsi){
         injDirection <- -injDirection
-        indexOut_groups[group, sample] <- injDirection
+        indexOut_groups[row, sample] <- injDirection
         maxDpsi <- if(injDirection > 0){ 1 - junction_psi }else{junction_psi}
       }
       
