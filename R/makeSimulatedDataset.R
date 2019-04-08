@@ -378,19 +378,28 @@ injectOutliers <- function(fds, type=type, freq=1E-3, minDpsi=0.2, deltaDistr="u
                 meanPSI      = matrix(rowMeans( (k + pseudocount())/(n + 2*pseudocount()) ), nrow=j, ncol=m),
                 simulatedPSI = getAssayMatrix(fds, "truePSI", type=type) )
   
-  # nedded to get the junction counts when type is SE
+  # nedded to have comparably many outliers when type is SE
   if(type == "psiSite"){
     freq <- freq/10
   }
   
   # data table with information about chr, start, end, ... for calculating groups
-  dt <- data.table(
+  dt <- if(type == "psiSite"){
+    data.table(
+      junctionID = 1:j,
+      chr = as.factor(seqnames(nonSplicedReads(fds))),
+      start = start(nonSplicedReads(fds)),
+      end = end(nonSplicedReads(fds)),
+      strand = as.factor(strand(nonSplicedReads(fds))) )
+    }
+  else{
+    data.table(
     junctionID = 1:j,
     chr = as.factor(seqnames(fds)),
     start = start(fds),
     end = end(fds),
-    strand = as.factor(strand(fds))
-  )
+    strand = as.factor(strand(fds)) )
+  }
   dt[, donorGroupSize:=length(junctionID), by=c("chr", "start", "strand")]
   dt[, acceptorGroupSize:=length(junctionID), by=c("chr", "end", "strand")]
   dt[, donorGroupID := .GRP, by=c("chr", "start", "strand")]
@@ -418,8 +427,8 @@ injectOutliers <- function(fds, type=type, freq=1E-3, minDpsi=0.2, deltaDistr="u
       injDirection    <- indexOut_groups[group, sample]
 
       # sample one junction from all junction within this group
-      group_junctions <- if(type == "psiSite"){ c(group) }else{ dt[acceptorGroupID == group, junctionID] } 
-      junction        <- sample(group_junctions, 1)
+      group_junctions <- dt[acceptorGroupID == group, junctionID] 
+      junction        <- if(type == "psiSite"){ group }else{sample(group_junctions, 1) }
       
       # get current psi of this junction and calculate maximla possible value of delta psi for the injection
       junction_psi    <- psi[junction, sample]
