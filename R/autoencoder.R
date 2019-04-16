@@ -11,12 +11,14 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, rhoRange=c(1e-5, 1
     if(!bpisup(BPPARAM)){
         bpstart(BPPARAM)
     }
+    dims <- c(row=nrow(mcols(fds, type=type)), col=ncol(fds))
 
     # set alpha for noise injection for denoising AE
     currentNoiseAlpha(fds) <- noiseAlpha
-    noise <- matrix(rnorm(nrow(mcols(fds, type=type))*ncol(fds), mean=0, sd=1), nrow=nrow(mcols(fds, type=type)), ncol=ncol(fds))
-    noise(fds, type=type) <- noise
-  
+    curNoise <- rnorm(prod(dims), mean=0, sd=1) * noiseAlpha
+    curNoise <- matrix(curNoise, nrow=dims[1], ncol=dims[2])
+    noise(fds, type=type) <- curNoise
+
     # make sure its only in-memory data for k and n
     currentType(fds) <- type
     counts(fds, type=type, side="other", HDF5=FALSE) <- as.matrix(N(fds) - K(fds))
@@ -26,9 +28,9 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, rhoRange=c(1e-5, 1
     # and create second object with only the subset to fit the encoder
     copy_fds <- fds
     fds <- fds[featureExclusionMask(fds, type=type),by=checkReadType(fds, type=type)]
-    
+
     # subset noise so that it works with subsetted x
-    noise(fds, type=type) <- noise[featureExclusionMask(copy_fds, type=type),]
+    noise(fds, type=type) <- curNoise[featureExclusionMask(copy_fds, type=type),]
 
     # initialize E and D using PCA and bias as zeros.
     if(isTRUE(initialize) | is.null(E(fds)) | is.null(D(fds))){
@@ -89,13 +91,13 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, rhoRange=c(1e-5, 1
 
     print(Sys.time() - t1)
 
-    if(nrow(fds) == nrow(copy_fds)){    # TODO when using all features (!=nrow(fds)) in fitting for SE: also stop here and set copy_fds to fitted fds but with all junctions 
+    if(nrow(fds) == nrow(copy_fds)){    # TODO when using all features (!=nrow(fds)) in fitting for SE: also stop here and set copy_fds to fitted fds but with all junctions
                                         # (at the moment: fds contains only a subset of all junctions, so copy_fds <- fds doesn't work for SE)
         copy_fds <- fds
     } else {
         # update the D matrix and theta
         print("Finished with fitting the E matrix. Starting now with the D fit. ...")
-      
+
         # set noiseAlpha to 0 or NULL to NOT use noise now (latent space already fitted)
         currentNoiseAlpha(fds) <- NULL
 
