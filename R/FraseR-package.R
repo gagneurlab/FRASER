@@ -87,6 +87,7 @@
 #' @importFrom DelayedMatrixStats rowMedians rowSds
 #' @importFrom stats runif median quantile
 #' @importFrom extraDistr rdirmnom
+#' @importFrom PRROC pr.curve
 #'
 #' @useDynLib FraseR
 #'
