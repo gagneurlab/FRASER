@@ -60,7 +60,7 @@ x <- function(fds, type=currentType(fds), all=FALSE, noiseAlpha=NULL){
   # compute logit ratio with pseudocounts
   x <- t((K + pseudocount())/(N + (2*pseudocount())))
   x <- qlogis(x)
-  
+
   # corrupt x if required
   if(!is.null(noiseAlpha)){
     noise <- noise(fds, type=type)
@@ -240,4 +240,21 @@ noise <- function(fds, type=currentType(fds)){
   return(fds)
   # setAssayMatrix(fds, name="noise", type=type, ...) <- value
   # return(fds)
+}
+
+
+bestQ <- function(fds, type=currentType(fds)){
+    ans <- metadata(fds)[[paste0('q_', type)]]
+    if(is.null(ans)){
+        warnings("Please set q by estimating it correctly.")
+        ans <- min(100, max(2, round(ncol(fds)/10)))
+    }
+    return(ans)
+}
+
+`bestQ<-` <- function(fds, value, type=currentType(fds)){
+    stopifnot(isScalarNumeric(value))
+    stopifnot(value > 1 & value < ncol(fds))
+    metadata(fds)[[paste0('q_', type)]] <- value
+    return(fds)
 }
