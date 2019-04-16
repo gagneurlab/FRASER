@@ -4,7 +4,9 @@
 \alias{makeSimulatedFraserDataSet_BetaBinomial}
 \title{Create an simulated example data set for FraseR}
 \usage{
-makeSimulatedFraserDataSet_BetaBinomial(m = 200, j = 10000, q = 10)
+makeSimulatedFraserDataSet_BetaBinomial(m = 200, j = 10000, q = 10,
+  nbMean = 350, nbSize = 0.25, rhoMeanlog = -5, rhoSdlog = 1,
+  Hmean = 0, Hsd = 100, Dmean = 0, Dsd = 0.007, ...)
 }
 \arguments{
 \item{m}{Number of simulated samples}
@@ -14,16 +16,16 @@ makeSimulatedFraserDataSet_BetaBinomial(m = 200, j = 10000, q = 10)
 \item{q}{number of simulated latent variables.}
 }
 \value{
-An FraserDataSet containing an example dataset based on 
+An FraserDataSet containing an example dataset based on
         simulated data
 }
 \description{
-Simulates a data set based on random counts following a 
-negative binomial distribution with injected outliers with 
+Simulates a data set based on random counts following a
+negative binomial distribution with injected outliers with
 a fixed z score away from the mean of the gene.
 }
 \examples{
-# A generic dataset 
+# A generic dataset
 fds1 <- makeSimulatedFraserDataSet()
 fds1
 fds1 <- injectOutliers(fds1, type="psi3", deltaPSI=0.4, freq=1E-3, inj="both")
