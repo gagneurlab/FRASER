@@ -75,7 +75,7 @@ x <- function(fds, type=currentType(fds), all=FALSE, noiseAlpha=NULL, center=TRU
       x = x[,featureExclusionMask(fds, type=type)]
   }
   
-  if(isTrue(center)){
+  if(isTRUE(center)){
     xJunctionMeans <- matrix(colMeans(x), nrow=nrow(x), ncol=ncol(x), byrow = TRUE)
     x <- x - xJunctionMeans
   }
