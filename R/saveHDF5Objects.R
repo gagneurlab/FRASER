@@ -116,6 +116,10 @@ saveFraseRDataSet <- function(fds, dir=NULL, name=NULL, rewrite=FALSE) {
 saveAsHDF5 <- function(fds, name, object=NULL, rewrite=FALSE){
     if(is.null(object)) object <- assay(fds, name)
 
+    if(isTRUE(dontWriteHDF5(fds))){
+        message(date(), ": Dont save HDF5 for assay: ", name)
+        return(object)
+    }
     h5File <- getFraseRHDF5File(fds, name)
     h5FileTmp <- paste0(h5File, ".", as.integer(abs(rnorm(1))*100), ".save.tmp")
     if(file.exists(h5FileTmp)) unlink(h5FileTmp)

@@ -258,3 +258,14 @@ bestQ <- function(fds, type=currentType(fds)){
     metadata(fds)[[paste0('q_', type)]] <- value
     return(fds)
 }
+
+#' @export
+dontWriteHDF5 <- function(fds){
+    return(metadata(fds)[['dontWriteHDF5']])
+}
+
+#' @export
+`dontWriteHDF5<-` <- function(fds, value){
+    metadata(fds)[['dontWriteHDF5']] <- isTRUE(value)
+    return(fds)
+}
