@@ -53,7 +53,7 @@ N <- function(fds, type=currentType(fds)){
   return(N);
 }
 
-x <- function(fds, type=currentType(fds), all=FALSE, noiseAlpha=NULL){
+x <- function(fds, type=currentType(fds), all=FALSE, noiseAlpha=NULL, center=TRUE){
   K <- K(fds, type=type)
   N <- N(fds, type=type)
 
@@ -74,6 +74,12 @@ x <- function(fds, type=currentType(fds), all=FALSE, noiseAlpha=NULL){
   if(isFALSE(all)){
       x = x[,featureExclusionMask(fds, type=type)]
   }
+  
+  if(isTRUE(center)){
+    xJunctionMeans <- matrix(colMeans(x), nrow=nrow(x), ncol=ncol(x), byrow = TRUE)
+    x <- x - xJunctionMeans
+  }
+  
   return(x)
 }
 
