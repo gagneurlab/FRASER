@@ -76,7 +76,7 @@ x <- function(fds, type=currentType(fds), all=FALSE, noiseAlpha=NULL, center=TRU
   }
   
   if(isTRUE(center)){
-    xJunctionMeans <- matrix(colMeans(x), nrow=nrow(x), ncol=ncol(x), byrow = TRUE)
+    xJunctionMeans <- DelayedArray(matrix(DelayedMatrixStats::colMeans2(x), nrow=nrow(x), ncol=ncol(x), byrow = TRUE))
     x <- x - xJunctionMeans
   }
   
