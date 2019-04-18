@@ -61,6 +61,11 @@ x <- function(fds, type=currentType(fds), all=FALSE, noiseAlpha=NULL, center=TRU
   x <- t((K + pseudocount())/(N + (2*pseudocount())))
   x <- qlogis(x)
 
+  if(any(is.infinite(x))){
+      x[is.infinite(x) & x > 0] <- NA
+      x[is.na(x)] <- max(x, na.rm=TRUE) + 1
+  }
+
   # corrupt x if required
   if(!is.null(noiseAlpha)){
     noise <- noise(fds, type=type)
@@ -74,12 +79,11 @@ x <- function(fds, type=currentType(fds), all=FALSE, noiseAlpha=NULL, center=TRU
   if(isFALSE(all)){
       x = x[,featureExclusionMask(fds, type=type)]
   }
-  
+
   if(isTRUE(center)){
-    xJunctionMeans <- matrix(colMeans(x), nrow=nrow(x), ncol=ncol(x), byrow = TRUE)
-    x <- x - xJunctionMeans
+    x <- t(t(x) - colMeans2(x))
   }
-  
+
   return(x)
 }
 
@@ -153,6 +157,12 @@ predictY <- function(fds, type=currentType(fds), noiseAlpha=NULL){
 `setAssayMatrix<-` <- function(fds, value, name, type, ...){
     if(!is.matrix(value)){
         value <- matrix(value, ncol=ncol(fds))
+    }
+    if(is.null(colnames(value))){
+        colnames(value) <- colnames(fds)
+    }
+    if(is.null(rownames(value))){
+        rownames(value) <- rownames(counts(fds, type=type))
     }
     assay(fds, paste(name, type, sep="_"), ...) <- value
     return(fds)

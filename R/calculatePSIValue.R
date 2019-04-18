@@ -110,13 +110,11 @@ calculatePSIValuePrimeSite <- function(fds, psiType, overwriteCts){
     names(psiValues) <- samples(fds)
 
     # merge it to a DataFrame and assign it to our object
-    assays(fds, type="j")[[psiType]] <- DataFrame(
-        lapply(psiValues, "[[", "psiValue")
-    )
+    assay(fds, type="j", psiType) <- do.call(cbind,
+            lapply(psiValues, "[[", "psiValue"))
     if(isTRUE(overwriteCts)){
-        assays(fds, type="j")[[psiROCName]] <- DataFrame(
-            lapply(psiValues, "[[", "rawOtherCounts")
-        )
+        assay(fds, type="j", psiROCName) <- do.call(cbind,
+                lapply(psiValues, "[[", "rawOtherCounts"))
     }
 
     return(fds)

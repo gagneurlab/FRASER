@@ -530,7 +530,7 @@ injectOutliers <- function(fds, type=type, freq=1E-3, minDpsi=0.2, deltaDistr="u
         assays(fds)[[paste0('delta_', psiType)]] <- NULL
       }
     }
-    fds <- calculatePSIValues(fds, types=type, overwriteCts = TRUE)
+    fds <- calculatePSIValues(fds, types=type, overwriteCts=TRUE)
   }
 
   return(fds)
