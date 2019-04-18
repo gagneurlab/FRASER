@@ -372,6 +372,7 @@ injectOutliers <- function(fds, type=type, freq=1E-3, minDpsi=0.2, deltaDistr="u
 
   k <- as.matrix(K(fds, type=type))
   n <- as.matrix(N(fds, type=type)) # as.matrix(..) needed so that n doesn't change after new k is stored (needed only for swap=FALSE)
+  o <- as.matrix(counts(fds, type=type, side="other"))
 
   psi <- switch(match.arg(method),
                 samplePSI    = (k + pseudocount())/(n + 2*pseudocount()),
@@ -487,7 +488,8 @@ injectOutliers <- function(fds, type=type, freq=1E-3, minDpsi=0.2, deltaDistr="u
         print(paste("injected outlier", j, "with delta PSI of", injDpsi, "at junction", junction, "and sample", sample))
       }
 
-      return(list(newKs = newKs, junctions = group_junctions, injDeltaPSI = indexDpsi, injDirections = indOut, sample = rep(sample, length(group_junctions))))
+      return(list(newKs = newKs, newOs=sum(newKs)-newKs, junctions = group_junctions, 
+                  injDeltaPSI = indexDpsi, injDirections = indOut, sample = rep(sample, length(group_junctions))))
 
   } )
 
@@ -495,6 +497,7 @@ injectOutliers <- function(fds, type=type, freq=1E-3, minDpsi=0.2, deltaDistr="u
   junctions     <- unlist(lapply(result, "[[", 'junctions'))
   samples       <- unlist(lapply(result, "[[", 'sample'))
   newKs         <- unlist(lapply(result, "[[", 'newKs'))
+  newOs         <- unlist(lapply(result, "[[", 'newOs'))
   injDirection  <- unlist(lapply(result, "[[", 'injDirections'))
   injDeltaPSI   <- unlist(lapply(result, "[[", 'injDeltaPSI'))
 
@@ -505,6 +508,7 @@ injectOutliers <- function(fds, type=type, freq=1E-3, minDpsi=0.2, deltaDistr="u
   # set counts to changed counts after the injection
   replaceIndices                <- matrix(c(junctions,samples), ncol=2)
   k[replaceIndices]             <- newKs
+  o[replaceIndices]             <- newOs
   indexOut[replaceIndices]      <- injDirection
   indexDeltaPSI[replaceIndices] <- injDeltaPSI
 
@@ -515,22 +519,12 @@ injectOutliers <- function(fds, type=type, freq=1E-3, minDpsi=0.2, deltaDistr="u
   # store new k counts which include the outlier counts
   counts(fds, type=type, side="ofInterest") <- k
 
-  # for SE: also store modified other counts
+  # store modified other counts
   if(type == "psiSite"){
-    counts(fds, type="psiSite", side="other") <- n-k
+    counts(fds, type="psiSite", side="other") <- n-k  
   }
-  else{ # re-calculate other counts for psi5/3
-    # if psi values were already calculated, delete them (or rather move the old values somewhere else?) so that they are recalculated
-    message(date(), ": Re-calculating the PSI values:")
-    for(psiType in type){
-      if(assayExists(fds, psiType)){
-        assays(fds)[[psiType]] <- NULL
-      }
-      if(assayExists(fds, paste0('delta_', psiType))){
-        assays(fds)[[paste0('delta_', psiType)]] <- NULL
-      }
-    }
-    fds <- calculatePSIValues(fds, types=type, overwriteCts=TRUE)
+  else{ # psi3/5
+    counts(fds, type=type, side="other") <- o
   }
 
   return(fds)
