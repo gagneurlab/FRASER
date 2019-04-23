@@ -102,4 +102,5 @@ Collate:
     plotAutoencoderResults.R
     pvalsNzscore.R
     makeSimulatedDataset.R
+    fitCorrectionMethods.R
 VignetteBuilder: knitr

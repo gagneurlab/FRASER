@@ -85,7 +85,7 @@
 #' @importFrom shiny renderUI reactive renderPrint renderPlot
 #' @importFrom DelayedArray rowMaxs rowMeans path<-
 #' @importFrom data.table rbindlist
-#' @importFrom DelayedMatrixStats rowMedians rowSds
+#' @importFrom DelayedMatrixStats rowMedians rowSds colMeans2
 #' @importFrom stats runif median quantile
 #' @importFrom extraDistr rdirmnom
 #' @importFrom PRROC pr.curve

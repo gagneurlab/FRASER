@@ -85,6 +85,11 @@ loadFraseRDataSet <- function(dir, name=NULL, upgrade=FALSE){
 #' @export
 saveFraseRDataSet <- function(fds, dir=NULL, name=NULL, rewrite=FALSE) {
 
+    if(isTRUE(dontWriteHDF5(fds))){
+        message(date(), ": Dont save fds object")
+        return(fds)
+    }
+
     # check input
     stopifnot(class(fds) == "FraseRDataSet")
     if(is.null(dir)) dir <- workingDir(fds)

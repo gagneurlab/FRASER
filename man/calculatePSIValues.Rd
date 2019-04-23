@@ -5,7 +5,7 @@
 \title{This function calculates the PSI values for each junction and splice site
 based on the FraseRDataSet object}
 \usage{
-calculatePSIValues(fds, overwriteCts = FALSE)
+calculatePSIValues(fds, types = psiTypes, overwriteCts = FALSE)
 }
 \description{
 This function calculates the PSI values for each junction and splice site

@@ -53,13 +53,18 @@ N <- function(fds, type=currentType(fds)){
   return(N);
 }
 
-x <- function(fds, type=currentType(fds), all=FALSE, noiseAlpha=NULL, rowCenter=TRUE){
+x <- function(fds, type=currentType(fds), all=FALSE, noiseAlpha=NULL, center=TRUE){
   K <- K(fds, type=type)
   N <- N(fds, type=type)
 
   # compute logit ratio with pseudocounts
   x <- t((K + pseudocount())/(N + (2*pseudocount())))
   x <- qlogis(x)
+
+  if(any(is.infinite(x))){
+      x[is.infinite(x) & x > 0] <- NA
+      x[is.na(x)] <- max(x, na.rm=TRUE) + 1
+  }
 
   # corrupt x if required
   if(!is.null(noiseAlpha)){
@@ -74,9 +79,10 @@ x <- function(fds, type=currentType(fds), all=FALSE, noiseAlpha=NULL, rowCenter=
   if(isFALSE(all)){
       x <- x[,featureExclusionMask(fds, type=type)]
   }
-  if(isTRUE(rowCenter)){
-      x <- t(t(x) - colMeans(x))
+  if(isTRUE(center)){
+    x <- t(t(x) - colMeans2(x))
   }
+
   return(x)
 }
 
@@ -150,6 +156,12 @@ predictY <- function(fds, type=currentType(fds), noiseAlpha=NULL){
 `setAssayMatrix<-` <- function(fds, value, name, type, ...){
     if(!is.matrix(value)){
         value <- matrix(value, ncol=ncol(fds))
+    }
+    if(is.null(colnames(value))){
+        colnames(value) <- colnames(fds)
+    }
+    if(is.null(rownames(value))){
+        rownames(value) <- rownames(counts(fds, type=type))
     }
     assay(fds, paste(name, type, sep="_"), ...) <- value
     return(fds)
@@ -245,6 +257,21 @@ noise <- function(fds, type=currentType(fds)){
   # return(fds)
 }
 
+bestQ <- function(fds, type=currentType(fds)){
+    ans <- metadata(fds)[[paste0('q_', type)]]
+    if(is.null(ans)){
+        warnings("Please set q by estimating it correctly.")
+        ans <- min(100, max(2, round(ncol(fds)/10)))
+    }
+    return(ans)
+}
+
+`bestQ<-` <- function(fds, value, type=currentType(fds)){
+    stopifnot(isScalarNumeric(value))
+    stopifnot(value > 1 & value < ncol(fds))
+    metadata(fds)[[paste0('q_', type)]] <- value
+    return(fds)
+}
 
 #' @export
 dontWriteHDF5 <- function(fds){

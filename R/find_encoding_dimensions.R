@@ -48,16 +48,16 @@ eval_prot <- function(fds, type){
     return(pr$auc.integral)
 }
 
-findBestEncoding <- function(i, fds, type, params, iterations){
 
-    BPPARAM <- SerialParam()
+findBestEncoding <- function(i, fds, type, params, internalBPPARAM=SerialParam(), iterations){
+
     q_guess    <- params[i, "q"]
     noiseRatio <- params[i, "noise"]
     message(paste(i, ";\t", q_guess, ";\t", noiseRatio))
 
     res_fit <- fit_autoenc(fds=fds, type=type, q_guess=q_guess,
-            noiseRatio=noiseRatio, BPPARAM=BPPARAM, iterations=iterations)
-    res_pvals <- predict_outliers(res_fit$fds, type=type, BPPARAM=BPPARAM)
+            noiseRatio=noiseRatio, BPPARAM=internalBPPARAM, iterations=iterations)
+    res_pvals <- predict_outliers(res_fit$fds, type=type, BPPARAM=internalBPPARAM)
     evals <- eval_prot(res_pvals, type=type)
 
     return(list(q=q_guess, noiseRatio=noiseRatio, loss=res_fit$evaluation, aroc=evals))
