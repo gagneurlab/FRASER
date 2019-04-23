@@ -180,8 +180,13 @@ zScores <- function(fds, type=currentType(fds)){
     return(fds)
 }
 
-pVals <- function(fds, type=currentType(fds), dist=c("BetaBinomial", "Binomial")){
+pVals <- function(fds, type=currentType(fds), dist=c("BetaBinomial", "Binomial"), byGroup=FALSE){
     dist <- match.arg(dist)
+    if(isTRUE(byGroup)){
+      index <- getSiteIndex(fds, type=type)
+      idx   <- !duplicated(index)
+      return(getAssayMatrix(fds, paste0("pvalues", dist), type=type)[idx,])
+    }
     return(getAssayMatrix(fds, paste0("pvalues", dist), type=type))
 }
 
@@ -191,8 +196,13 @@ pVals <- function(fds, type=currentType(fds), dist=c("BetaBinomial", "Binomial")
     return(fds)
 }
 
-padjVals <- function(fds, type=currentType(fds), dist=c("BetaBinomial", "Binomial")){
+padjVals <- function(fds, type=currentType(fds), dist=c("BetaBinomial", "Binomial"), byGroup=FALSE){
     dist <- match.arg(dist)
+    if(isTRUE(byGroup)){
+      index <- getSiteIndex(fds, type=type)
+      idx   <- !duplicated(index)
+      return(getAssayMatrix(fds, paste0("pajd", dist), type=type)[idx,])
+    }
     return(getAssayMatrix(fds, paste0("pajd", dist), type=type))
 }
 
@@ -282,4 +292,39 @@ dontWriteHDF5 <- function(fds){
 `dontWriteHDF5<-` <- function(fds, value){
     metadata(fds)[['dontWriteHDF5']] <- isTRUE(value)
     return(fds)
+}
+
+getTrueOutlierByGroup <- function(fds, type){
+  index <- getSiteIndex(fds, type)
+  idx   <- !duplicated(index)
+  
+  dt <- cbind(data.table(id=index), as.data.table(getAssayMatrix(fds, "trueOutliers", type)))
+  setkey(dt, id)
+  labels <- as.matrix(sapply(samples(fds), function(i){
+    dttmp <- dt[,any(get(i) != 0),by=id]
+    setkey(dttmp, id)
+    dttmp[J(unique(index)), V1]
+  })) + 0
+  return(labels)
+}
+
+getAbsMaxByGroup <- function(fds, type, mat){
+  index <- getSiteIndex(fds, type)
+  idx   <- !duplicated(index)
+  
+  dt <- cbind(data.table(id=index), as.data.table(mat))
+  setkey(dt, id)
+  deltaPsi <- as.matrix(sapply(samples(fds), function(i){
+    dttmp <- dt[,.(dpsi=get(i), max=max(abs(get(i)))),by=id]
+    dttmp <- unique(dttmp[abs(dpsi) == max, .(id, dpsi)])
+    setkey(dttmp, id)
+    dttmp[J(unique(index)), dpsi]
+  }))
+  return(deltaPsi)
+}
+
+getByGroup <- function(fds, type, value){
+  index <- getSiteIndex(fds, type)
+  idx   <- !duplicated(index)
+  return(value[idx,])
 }

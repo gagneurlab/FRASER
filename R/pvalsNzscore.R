@@ -51,7 +51,8 @@ calculatePvalues <- function(fds, type=currentType(fds),  BPPARAM=parallel(fds))
 
 adjust_FWER_PValues <- function(i, pvals=pvals, index=index){
     dt <- data.table(p=pvals[,i], idx=index)
-    dt[,.(p=p, pa=p.adjust(p, method="holm")),by=idx][,pa]
+    dt2 <- dt[,.(pa=min(p.adjust(p, method="holm"))),by=idx]
+    setkey(dt2, "idx")[J(index)][,pa]
 }
 
 singlePvalueBetaBinomial <- function(idx, k, n, mu, rho){
