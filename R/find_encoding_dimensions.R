@@ -25,18 +25,18 @@ predict_outliers <- function(fds, type, BPPARAM){
 }
 
 eval_prot <- function(fds, type){
+    index <- getSiteIndex(fds, type)
+    idx   <- !duplicated(index)
 
-    dt <- as.data.table(pVals(fds, type=type))
-    dt[,id:=mcols(fds, type=type)$startID]
-    scores <- -as.vector(sapply(samples(fds), function(i){
-        dt[,min(p.adjust(get(i), method="holm")),by=id][,V1]
-    }))
-    dt <- cbind(dt[,.(id=id)], as.data.table(assay(fds, paste0("trueOutliers_", type))))
+    scores <- -as.vector(pVals(fds, type=type)[idx,])
+
+    dt <- cbind(data.table(id=index), as.data.table(assay(fds, paste0("trueOutliers_", type))))
+    setkey(dt, id)
     labels <- as.vector(sapply(samples(fds), function(i){
-        dt[,any(get(i) != 0),by=id][,V1]
+        dttmp <- dt[,any(get(i) != 0),by=id]
+        setkey(dttmp, id)
+        dttmp[J(unique(index)), V1]
     })) + 0
-    #scores <- -as.vector(pVals(fds, type=type))
-    #labels <-  as.vector(assay(fds, paste0("trueOutliers_", type)) != 0) + 0
 
     if(any(is.na(scores))){
         warning(sum(is.na(scores)), " P-values where NAs.")
@@ -48,8 +48,9 @@ eval_prot <- function(fds, type){
     return(pr$auc.integral)
 }
 
-findBestEncoding <- function(i, fds, type, params, BPPARAM, iterations){
+findBestEncoding <- function(i, fds, type, params, iterations){
 
+    BPPARAM <- SerialParam()
     q_guess    <- params[i, "q"]
     noiseRatio <- params[i, "noise"]
     message(paste(i, ";\t", q_guess, ";\t", noiseRatio))

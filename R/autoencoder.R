@@ -153,7 +153,7 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, rhoRange=c(1e-5, 1
 }
 
 initAutoencoder <- function(fds, q, rhoRange, type){
-
+    x <- as.matrix(x(fds, all=TRUE, rowCenter=FALSE))
     pca <- pca(as.matrix(x(fds, all=TRUE)), nPcs=q)
     pc  <- pcaMethods::loadings(pca)
     #pc = matrix(rnorm(q*nrow(mcols(fds, type=type)), sd=0.1), ncol=q)
@@ -161,7 +161,7 @@ initAutoencoder <- function(fds, q, rhoRange, type){
     # Set initial values from PCA
     D(fds) <- pc
     E(fds) <- pc[featureExclusionMask(fds),]
-    b(fds) <- double(nrow(mcols(fds, type=type)))
+    b(fds) <- colMeans(x)
 
     # initialize rho
     rho(fds) <- methodOfMomemtsRho(K(fds))

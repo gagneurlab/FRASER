@@ -53,14 +53,14 @@ N <- function(fds, type=currentType(fds)){
   return(N);
 }
 
-x <- function(fds, type=currentType(fds), all=FALSE, noiseAlpha=NULL){
+x <- function(fds, type=currentType(fds), all=FALSE, noiseAlpha=NULL, rowCenter=TRUE){
   K <- K(fds, type=type)
   N <- N(fds, type=type)
 
   # compute logit ratio with pseudocounts
   x <- t((K + pseudocount())/(N + (2*pseudocount())))
   x <- qlogis(x)
-  
+
   # corrupt x if required
   if(!is.null(noiseAlpha)){
     noise <- noise(fds, type=type)
@@ -72,7 +72,10 @@ x <- function(fds, type=currentType(fds), all=FALSE, noiseAlpha=NULL){
   }
 
   if(isFALSE(all)){
-      x = x[,featureExclusionMask(fds, type=type)]
+      x <- x[,featureExclusionMask(fds, type=type)]
+  }
+  if(isTRUE(rowCenter)){
+      x <- t(t(x) - colMeans(x))
   }
   return(x)
 }
@@ -240,4 +243,16 @@ noise <- function(fds, type=currentType(fds)){
   return(fds)
   # setAssayMatrix(fds, name="noise", type=type, ...) <- value
   # return(fds)
+}
+
+
+#' @export
+dontWriteHDF5 <- function(fds){
+    return(metadata(fds)[['dontWriteHDF5']])
+}
+
+#' @export
+`dontWriteHDF5<-` <- function(fds, value){
+    metadata(fds)[['dontWriteHDF5']] <- isTRUE(value)
+    return(fds)
 }

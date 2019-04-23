@@ -20,27 +20,38 @@ calculateZscore <- function(fds, type=currentType(fds)){
 # Function to calculate the p-values (both beta binomial and binomial)
 calculatePvalues <- function(fds, type=currentType(fds),  BPPARAM=parallel(fds)){
     currentType(fds) <- type
+    index <- getSiteIndex(fds, type=type)
 
     mu <- as.matrix(predictedMeans(fds))
     rho <- rho(fds)
-    k <- as.matrix(K(fds) +   pseudocount())
-    n <- as.matrix(N(fds) + 2*pseudocount())
+    k <- as.matrix(K(fds))
+    n <- as.matrix(N(fds))
 
     # beta binomial p-values
-    pval_list <- bplapply(seq_len(nrow(mu)), singlePvalueBetaBinomial, k=k, n=n, mu=mu, rho=rho, BPPARAM=BPPARAM)
-    pval <- matrix(unlist(pval_list), nrow=length(pval_list), byrow=TRUE)
+    pval_list <- bplapply(seq_len(nrow(mu)), singlePvalueBetaBinomial,
+            k=k, n=n, mu=mu, rho=rho, BPPARAM=BPPARAM)
+    pval <- do.call(rbind, pval_list)
     dval <- dbetabinom(k, n, mu, rho)
     pvals <- 2 * pmin(pval, 1 - pval + dval, 0.5)
-    pVals(fds, dist="BetaBinom") <- pvals
+    fwer_pval <- bplapply(seq_len(ncol(pvals)), adjust_FWER_PValues, pvals=pvals, index, BPPARAM=BPPARAM)
+    fwer_pvals <- do.call(cbind, fwer_pval)
+    pVals(fds, dist="BetaBinom") <- fwer_pvals
 
     # binomial p-values
     pval_list <- bplapply(seq_len(nrow(mu)), singlePvalueBinomial, k=k, n=n, mu=mu, BPPARAM=BPPARAM)
-    pval <- matrix(unlist(pval_list), nrow=length(pval_list), byrow=TRUE)
+    pval <- do.call(rbind, pval_list)
     dval <- dbinom(k, n , mu)
     pvals <- 2 * pmin(pval, 1 - pval + dval, 0.5)
-    pVals(fds, dist="Binom") <- pvals
+    fwer_pval <- bplapply(seq_len(ncol(pvals)), adjust_FWER_PValues, pvals=pvals, index, BPPARAM=BPPARAM)
+    fwer_pvals <- do.call(cbind, fwer_pval)
+    pVals(fds, dist="Binom") <- fwer_pvals
 
     return(fds)
+}
+
+adjust_FWER_PValues <- function(i, pvals=pvals, index=index){
+    dt <- data.table(p=pvals[,i], idx=index)
+    dt[,.(p=p, pa=p.adjust(p, method="holm")),by=idx][,pa]
 }
 
 singlePvalueBetaBinomial <- function(idx, k, n, mu, rho){
@@ -64,16 +75,31 @@ singlePvalueBinomial <- function(idx, k, n, mu){
   return (pvals)
 }
 
-calculatePadjValues <- function(fds, type=currentType(fds), method="BH"){
+calculatePadjValues <- function(fds, type=currentType(fds), method="BY"){
     currentType(fds) <- type
+    index <- getSiteIndex(fds, type=type)
+    idx   <- !duplicated(index)
 
     pvals <- pVals(fds, dist="BetaBinom")
-    padj <- apply(pvals, 2, p.adjust, method=method)
-    padjVals(fds, dist="BetaBinom") <- padj
+    padj <- apply(pvals[idx,], 2, p.adjust, method=method)
+    padjDT <- data.table(cbind(i=unique(index), padj), key="i")[J(index)]
+    padjDT[,i:=NULL]
+    padjVals(fds, dist="BetaBinom") <- as.matrix(padjDT)
 
     pvals <- pVals(fds, dist="Binom")
-    padj <- apply(pvals, 2, p.adjust, method=method)
-    padjVals(fds, dist="Binom") <- padj
+    padj <- apply(pvals[idx,], 2, p.adjust, method=method)
+    padjDT <- data.table(cbind(i=unique(index), padj), key="i")[J(index)]
+    padjDT[,i:=NULL]
+    padjVals(fds, dist="Binom") <- as.matrix(padjDT)
 
     return(fds)
+}
+
+getSiteIndex <- function(fds, type){
+    ans <- switch(type,
+        psi5 = mcols(fds, type=type)[['startID']],
+        psi3 = mcols(fds, type=type)[['endID']],
+        psiSite = mcols(fds, type=type)[['spliceSiteID']]
+    )
+    return(ans)
 }
