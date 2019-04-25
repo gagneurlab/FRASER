@@ -31,7 +31,7 @@ fitPCA <- function(fds, q, psiType, rhoRange=c(1e-5, 1-1e-5), BPPARAM=parallel(f
   # PCA on subset -> E matrix
   currentNoiseAlpha(fds) <- NULL
   message(date(), " Computing PCA ...")
-  pca <- pca(as.matrix(x(fds)), nPcs=q, center=FALSE)
+  pca <- pca(as.matrix(x(fds)), nPcs=q)
   pc <- pcaMethods::loadings(pca)
   E(fds) <- pc
   # linear regression to fit D matrix
