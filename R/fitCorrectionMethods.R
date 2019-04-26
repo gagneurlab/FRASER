@@ -39,7 +39,7 @@ fitPCA <- function(fds, q, psiType, rhoRange=c(1e-5, 1-1e-5), BPPARAM=parallel(f
   pc <- pcaMethods::loadings(pca)
   E(fds) <- pc
   # linear regression to fit D matrix
-  lmFit <- lm(as.matrix(x(fds, all=TRUE)) ~ as.matrix(H(fds)))
+  lmFit <- lm(as.matrix(x(fds, all=TRUE, center=FALSE)) ~ as.matrix(H(fds)))
   D(fds) <- t(lmFit$coefficients[-1,])
   b(fds) <- lmFit$coefficients[1,]
   
