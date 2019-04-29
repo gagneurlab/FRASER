@@ -330,7 +330,7 @@ getAbsMaxByGroup <- function(fds, type, mat){
   setkey(dt, id)
   deltaPsi <- as.matrix(sapply(samples(fds), function(i){
     dttmp <- dt[,.(dpsi=get(i), max=max(abs(get(i)))),by=id]
-    dttmp <- unique(dttmp[abs(dpsi) == max, .(id, dpsi)])
+    dttmp <- dttmp[abs(dpsi) == max, .SD[1], by=id]
     setkey(dttmp, id)
     dttmp[J(unique(index)), dpsi]
   }))
