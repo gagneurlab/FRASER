@@ -1,5 +1,5 @@
 
-fit <- function(fds, correction=c("FraseR", "fullFraseR", "PCA", "PEER", "PEERdecoder", "BB"), q, type="psi3", rhoRange=c(1e-5, 1-1e-5), 
+fit <- function(fds, correction=c("FraseR", "fullFraseR", "PCA", "fullPCA", "PEER", "PEERdecoder", "BB"), q, type="psi3", rhoRange=c(1e-5, 1-1e-5), 
                   noiseAlpha=1, lambda=0, convergence=1e-5, iterations=15, initialize=TRUE,
                   control=list(), BPPARAM=bpparam(), verbose=FALSE, 
                   recommendedPEERq=TRUE){
@@ -7,41 +7,51 @@ fit <- function(fds, correction=c("FraseR", "fullFraseR", "PCA", "PEER", "PEERde
   method <- match.arg(correction)
   
   fds <- switch(method,
-         FraseR = fitFraserAE(fds=fds, q=q, type=type, noiseAlpha=noiseAlpha, rhoRange=rhoRange, lambda=lambda,
+         FraseR      = fitFraserAE(fds=fds, q=q, type=type, noiseAlpha=noiseAlpha, rhoRange=rhoRange, lambda=lambda,
                                convergence=convergence, iterations=iterations, initialize=initialize,
                                control=control, BPPARAM=BPPARAM, verbose=verbose, subset=TRUE),
-         fullFraseR = fitFraserAE(fds=fds, q=q, type=type, noiseAlpha=noiseAlpha, rhoRange=rhoRange, lambda=lambda,
+         fullFraseR  = fitFraserAE(fds=fds, q=q, type=type, noiseAlpha=noiseAlpha, rhoRange=rhoRange, lambda=lambda,
                                 convergence=convergence, iterations=iterations, initialize=initialize,
                                 control=control, BPPARAM=BPPARAM, verbose=verbose, subset=FALSE),
-         PCA    = fitPCA(fds=fds, q=q, psiType=type, rhoRange=rhoRange, BPPARAM=BPPARAM),
-         PEER   = fitPEER(fds=fds, q=q, psiType=type, recomendedQ=recommendedPEERq, rhoRange=rhoRange, BPPARAM=BPPARAM),
+         PCA         = fitPCA(fds=fds, q=q, psiType=type, rhoRange=rhoRange, BPPARAM=BPPARAM, subset=TRUE),
+         fullPCA     = fitPCA(fds=fds, q=q, psiType=type, rhoRange=rhoRange, BPPARAM=BPPARAM, subset=FALSE),
+         PEER        = fitPEER(fds=fds, q=q, psiType=type, recomendedQ=recommendedPEERq, rhoRange=rhoRange, BPPARAM=BPPARAM),
          PEERdecoder = fitPEERDecoder(fds=fds, q=q, psiType=type, recomendedQ=recommendedPEERq, rhoRange=rhoRange, BPPARAM=BPPARAM),
-         BB     = fitBB(fds=fds, psiType=type) )
+         BB          = fitBB(fds=fds, psiType=type) )
   
   return(fds)
   
 }
 
-fitPCA <- function(fds, q, psiType, rhoRange=c(1e-5, 1-1e-5), BPPARAM=parallel(fds)){
+fitPCA <- function(fds, q, psiType, rhoRange=c(1e-5, 1-1e-5), BPPARAM=parallel(fds), subset=FALSE){
   
   #+ subset fitting
   currentType(fds) <- psiType
   curDims <- dim(K(fds, psiType))
-  probE <- max(0.001, min(1,30000/curDims[1]))
-  featureExclusionMask(fds) <- sample(c(TRUE, FALSE), curDims[1],
-                                          replace=TRUE, prob=c(probE, 1-probE))
+  if(isTRUE(subset)){
+    probE <- max(0.001, min(1,30000/curDims[1]))
+    featureExclusionMask(fds) <- sample(c(TRUE, FALSE), curDims[1],
+                                        replace=TRUE, prob=c(probE, 1-probE))
+  } else{
+    featureExclusionMask(fds) <- rep(TRUE,curDims[1])
+  }
   print(table(featureExclusionMask(fds)))
   
   # PCA on subset -> E matrix
   currentNoiseAlpha(fds) <- NULL
   message(date(), " Computing PCA ...")
-  pca <- pca(as.matrix(x(fds)), nPcs=q)
+  pca <- pca(as.matrix(x(fds, noiseAlpha=NULL, center=FALSE)), nPcs=q)
   pc <- pcaMethods::loadings(pca)
   E(fds) <- pc
-  # linear regression to fit D matrix
-  lmFit <- lm(as.matrix(x(fds, all=TRUE, center=FALSE)) ~ as.matrix(H(fds)))
-  D(fds) <- t(lmFit$coefficients[-1,])
-  b(fds) <- lmFit$coefficients[1,]
+  if(isTRUE(subset)){
+    # linear regression to fit D matrix
+    lmFit <- lm(as.matrix(x(fds, all=TRUE, noiseAlpha=NULL, center=FALSE)) ~ as.matrix(H(fds)))
+    D(fds) <- t(lmFit$coefficients[-1,])
+    b(fds) <- lmFit$coefficients[1,]
+  } else{
+    D(fds) <- pc
+    b(fds) <- double(nrow(mcols(fds, psiType)))
+  }
   
   # fit rho
   message(date(), " Fitting rho ...")
@@ -69,7 +79,7 @@ fitPEER <-function(fds, q, psiType, recomendedQ=TRUE, rhoRange=c(1e-5, 1-1e-5), 
   }
   maxFactors <- q                        # number of known hidden factors
   model <- PEER()
-  PEER_setPhenoMean(model, as.matrix(x(fds, all=TRUE, center=FALSE)))
+  PEER_setPhenoMean(model, as.matrix(x(fds, all=TRUE, noiseAlpha=NULL, center=FALSE)))
   PEER_setNk(model, maxFactors)          # nr of hidden confounders
   PEER_setNmax_iterations(model, 1000)   # 1000 iterations is default
   # PEER_setAdd_mean(model, TRUE)        # should mean expression be added as additional factor? currently FALSE
@@ -80,7 +90,7 @@ fitPEER <-function(fds, q, psiType, recomendedQ=TRUE, rhoRange=c(1e-5, 1-1e-5), 
   
   #+ extract PEER data
   peerResiduals <- PEER_getResiduals(model)
-  peerLogitMu <- t(as.matrix(x(fds, all=TRUE, center=FALSE)) - peerResiduals)
+  peerLogitMu <- t(as.matrix(x(fds, all=TRUE, noiseAlpha=NULL, center=FALSE)) - peerResiduals)
   
   #+ save peer model in fds object
   setAssayMatrix(fds, "peerLogitMu", type=psiType) <- peerLogitMu
@@ -121,7 +131,7 @@ fitPEERDecoder <-function(fds, q, psiType, recomendedQ=TRUE, rhoRange=c(1e-5, 1-
     maxFactors <- min(as.integer(0.25* ncol(fds)), 100) 
   }
   model <- PEER()
-  x <- x(fds, all=TRUE, center=FALSE)
+  x <- x(fds, all=TRUE, noiseAlpha=NULL, center=FALSE)
   PEER_setPhenoMean(model, as.matrix(x))
   PEER_setNk(model, maxFactors)          # nr of hidden confounders
   PEER_setNmax_iterations(model, 1000)   # 1000 iterations is default
@@ -133,7 +143,7 @@ fitPEERDecoder <-function(fds, q, psiType, recomendedQ=TRUE, rhoRange=c(1e-5, 1-
   
   #+ extract PEER data
   peerResiduals <- PEER_getResiduals(model)
-  peerLogitMu <- t(as.matrix(x(fds, all=TRUE, center=FALSE)) - peerResiduals)
+  peerLogitMu <- t(as.matrix(x(fds, all=TRUE, noiseAlpha=NULL, center=FALSE)) - peerResiduals)
   
   #+ save peer model in fds object
   setAssayMatrix(fds, "peerLogitMu", type=psiType) <- peerLogitMu
@@ -174,7 +184,7 @@ fitPEERDecoder <-function(fds, q, psiType, recomendedQ=TRUE, rhoRange=c(1e-5, 1-
   
   # predict and save (logit) psi
   y <- predictYCpp(as.matrix(H), D(fds), b(fds))
-  predictedMeans(fds, psiType) <- predictMuCpp(y)
+  predictedMeans(fds, psiType) <- t(predictMuCpp(y))
   
   return(fds)
   
