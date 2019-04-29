@@ -32,10 +32,13 @@ plotJunction <- function(idx, fds, type=currentType(fds), threshold=5e-2, dist="
     plotZscore(idx, fds)
 }
 
-plotData <- function(idx, K, N, pvals, threshold=5e-2){
+plotData <- function(idx, K, N, pvals, threshold=5e-2, main=NULL){
+    if(is.null(main)){
+        main <- paste("Idx:", idx)
+    }
     heatscatter(N[idx,] + 2*pseudocount(), K[idx,] + pseudocount(),
             xlab="N (Junction Coverage)", ylab="K (Reads of interest)", pch=16,
-            main=paste("Idx:", idx), log="xy", cexplot = 1)
+            main=main, log="xy", cexplot = 1)
 
     if(!missing(pvals) & !is.null(pvals)){
         pval = pvals[idx,]
@@ -85,17 +88,23 @@ plotPvalHist <- function(idx, fds, dist){
     hist(pVals(fds, dist=dist)[idx,], xlab="P-values", main=paste("Pvalues (", dist, ") for", idx))
 }
 
-plotQQ <- function(idx, fds, dist){
+plotQQ <- function(idx, fds, dist, main=NULL, threshold=5e-2){
     pval <- pVals(fds, dist=dist)[idx,]
     exp <- -log10(ppoints(length(pval)))
     obs <- -log10(sort(pval))
-    main <- paste("QQ-plot", "(", dist, ") for", idx)
+    if(is.null(main)){
+        main <- paste("QQ-plot", "(", dist, ") for", idx)
+    }
 
     xlim=range(exp)
     ylim=range(obs)
 
     plot(NA, xlim=xlim, ylim=ylim,
-       main=main, xlab="expected p-val", ylab="observered")
+       main=main,
+       xlab=expression(
+           paste(-log[10], " (expected ", italic(P), "-value)")),
+       ylab=expression(
+           paste(-log[10], " (observed ", italic(P), "-value)")))
 
     # confidence band
     # http://genome.sph.umich.edu/wiki/Code_Sample:_Generating_QQ_Plots_in_R

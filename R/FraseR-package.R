@@ -85,10 +85,12 @@
 #' @importFrom shiny renderUI reactive renderPrint renderPlot
 #' @importFrom DelayedArray rowMaxs rowMeans path<-
 #' @importFrom data.table rbindlist
-#' @importFrom DelayedMatrixStats rowMedians rowSds colMeans2
+#' @importFrom DelayedMatrixStats rowMedians rowSds colMeans2 rowMeans2 rowQuantiles
 #' @importFrom stats runif median quantile
 #' @importFrom extraDistr rdirmnom
 #' @importFrom PRROC pr.curve
+#' @importFrom ggplot2 ggtitle xlab ylab ggplot geom_point geom_line geom_smooth aes
+#' @importFrom patchwork plot_layout
 #'
 #' @useDynLib FraseR
 #'

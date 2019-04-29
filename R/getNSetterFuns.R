@@ -25,7 +25,7 @@
 #' @export featureExclusionMask
 #' @export "featureExclusionMask<-"
 featureExclusionMask <- function(fds, type=currentType(fds)){
-    ans <- rep(FALSE, nrow(mcols(fds, type=type)))
+    ans <- rep(TRUE, nrow(mcols(fds, type=type)))
     if(paste0('featureExclude_', type) %in% colnames(mcols(fds, type=type))){
         ans <- mcols(fds, type=type)[[paste0('featureExclude_', type)]]
     }
@@ -53,7 +53,7 @@ N <- function(fds, type=currentType(fds)){
   return(N);
 }
 
-x <- function(fds, type=currentType(fds), all=FALSE, noiseAlpha=NULL, center=TRUE){
+x <- function(fds, type=currentType(fds), all=FALSE, noiseAlpha=currentNoiseAlpha(fds), center=TRUE){
   K <- K(fds, type=type)
   N <- N(fds, type=type)
 
@@ -70,10 +70,10 @@ x <- function(fds, type=currentType(fds), all=FALSE, noiseAlpha=NULL, center=TRU
   if(!is.null(noiseAlpha)){
     noise <- noise(fds, type=type)
     if(is.null(noise)){
-      noise <- matrix(rnorm(nrow(x)*ncol(x), mean=0, sd=1), nrow=ncol(x), ncol=nrow(x))
+      noise <- matrix(rnorm(prod(dim(x))), ncol=ncol(x), nrow=nrow(x))
       noise(fds, type=type) <- noise
     }
-    x <- x + noiseAlpha * t(noise)
+    x <- x + t(colSds(x) * noiseAlpha * t(noise))
   }
 
   if(isFALSE(all)){
@@ -266,9 +266,21 @@ noise <- function(fds, type=currentType(fds)){
   # setAssayMatrix(fds, name="noise", type=type, ...) <- value
   # return(fds)
 }
+hyperParams <- function(fds, type=currentType(fds), all=FALSE){
+    ans <- metadata(fds)[[paste0("hyperParams_", type)]]
+    if(isFALSE(all)){
+        ans <- ans[aroc == max(aroc)]
+    }
+    ans
+}
+
+`hyperParams<-` <- function(fds, type=currentType(fds), value){
+    metadata(fds)[[paste0("hyperParams_", type)]] <- value
+    return(fds)
+}
 
 bestQ <- function(fds, type=currentType(fds)){
-    ans <- metadata(fds)[[paste0('q_', type)]]
+    ans <- hyperParams(fds, type=type)[,q]
     if(is.null(ans)){
         warnings("Please set q by estimating it correctly.")
         ans <- min(100, max(2, round(ncol(fds)/10)))
@@ -276,11 +288,13 @@ bestQ <- function(fds, type=currentType(fds)){
     return(ans)
 }
 
-`bestQ<-` <- function(fds, value, type=currentType(fds)){
-    stopifnot(isScalarNumeric(value))
-    stopifnot(value > 1 & value < ncol(fds))
-    metadata(fds)[[paste0('q_', type)]] <- value
-    return(fds)
+bestNoise <- function(fds, type=currentType(fds)){
+    ans <- hyperParams(fds, type=type)[,noise]
+    if(is.null(ans)){
+        warnings("Please set noise by estimating it correctly.")
+        ans <- 1
+    }
+    ans
 }
 
 #' @export
@@ -297,7 +311,7 @@ dontWriteHDF5 <- function(fds){
 getTrueOutlierByGroup <- function(fds, type){
   index <- getSiteIndex(fds, type)
   idx   <- !duplicated(index)
-  
+
   dt <- cbind(data.table(id=index), as.data.table(getAssayMatrix(fds, "trueOutliers", type)))
   setkey(dt, id)
   labels <- as.matrix(sapply(samples(fds), function(i){
@@ -311,7 +325,7 @@ getTrueOutlierByGroup <- function(fds, type){
 getAbsMaxByGroup <- function(fds, type, mat){
   index <- getSiteIndex(fds, type)
   idx   <- !duplicated(index)
-  
+
   dt <- cbind(data.table(id=index), as.data.table(mat))
   setkey(dt, id)
   deltaPsi <- as.matrix(sapply(samples(fds), function(i){

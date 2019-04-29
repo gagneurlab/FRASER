@@ -417,6 +417,9 @@ subsetFraseR <- function(x, i, j, by){
 }
 setMethod("[", c("FraseRDataSet", "ANY", "ANY"),
     function(x, i, j, by=c("j", "ss")) {
+        if(length(by) == 1){
+            by <- whichReadType(x, by)
+        }
         by <- match.arg(by)
         subsetFraseR(x, i, j, by)}
 )
