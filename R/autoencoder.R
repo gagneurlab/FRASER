@@ -29,8 +29,8 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, rhoRange=c(1e-5, 1
     fds <- fds[featureExclusionMask(fds, type=type),,by=type]
 
     # subset noise so that it works with subsetted x
-    noise(fds, type=type) <- noise(fds, type=type)[
-            featureExclusionMask(copy_fds, type=type),]
+    noise(fds, type=type) <- noise(fds, type=type)[,
+            featureExclusionMask(copy_fds, type=type)]
 
     # initialize E and D using PCA and bias as zeros.
     if(isTRUE(initialize) | is.null(E(fds)) | is.null(D(fds))){
