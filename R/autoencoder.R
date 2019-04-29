@@ -14,8 +14,9 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, rhoRange=c(1e-5, 1
     dims <- c(row=nrow(mcols(fds, type=type)), col=ncol(fds))
 
     # set alpha for noise injection for denoising AE
+    # init it corresponding to the size of 'x' not 'fds'
     currentNoiseAlpha(fds) <- noiseAlpha
-    noise(fds, type=type) <- matrix(rnorm(prod(dims)), nrow=dims[1])
+    noise(fds, type=type) <- matrix(rnorm(prod(dims)), nrow=dims['col'])
 
     # make sure its only in-memory data for k and n
     currentType(fds) <- type
