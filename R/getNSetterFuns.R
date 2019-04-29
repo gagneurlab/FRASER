@@ -268,6 +268,9 @@ noise <- function(fds, type=currentType(fds)){
 }
 hyperParams <- function(fds, type=currentType(fds), all=FALSE){
     ans <- metadata(fds)[[paste0("hyperParams_", type)]]
+    if(is.null(ans)){
+        return(ans)
+    }
     if(isFALSE(all)){
         ans <- ans[aroc == max(aroc)]
     }
