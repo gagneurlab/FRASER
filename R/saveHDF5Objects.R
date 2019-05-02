@@ -72,7 +72,7 @@ loadFraseRDataSet <- function(dir, name=NULL, upgrade=FALSE){
             warning(paste("Can not find assay file: ", aname, ".",
                     "The assay will be removed from the object."))
             assay(fds, aname) <- NULL
-        } else {
+        } else if(afile != path(assay(fds, aname))) {
             path(assay(fds, aname)) <- afile
         }
     }
