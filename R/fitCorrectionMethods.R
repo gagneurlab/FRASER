@@ -1,24 +1,26 @@
 
-fit <- function(fds, correction=c("FraseR", "fullFraseR", "PCA", "fullPCA", "PEER", "PEERdecoder", "BB", "kerasDAE"), q, type="psi3", rhoRange=c(1e-5, 1-1e-5),
-                  noiseAlpha=1, lambda=0, convergence=1e-5, iterations=15, initialize=TRUE,
-                  control=list(), BPPARAM=bpparam(), verbose=FALSE,
-                  recommendedPEERq=TRUE){
+fit <- function(fds, correction=c("FraseR", "fullFraseR", "PCA", "fullPCA", "PEER", "PEERdecoder", "BB", "kerasDAE", "kerasBBdAE"),
+                    q, type="psi3", rhoRange=c(1e-5, 1-1e-5),
+                    noiseAlpha=1, lambda=0, convergence=1e-5, iterations=15,
+                    initialize=TRUE, control=list(), BPPARAM=bpparam(),
+                    verbose=FALSE, recommendedPEERq=TRUE, lr=0.00005, epochs=20){
+    method <- match.arg(correction)
 
-  method <- match.arg(correction)
-
-  fds <- switch(method,
-         FraseR      = fitFraserAE(fds=fds, q=q, type=type, noiseAlpha=noiseAlpha, rhoRange=rhoRange, lambda=lambda,
+    fds <- switch(method,
+            FraseR      = fitFraserAE(fds=fds, q=q, type=type, noiseAlpha=noiseAlpha, rhoRange=rhoRange, lambda=lambda,
                                convergence=convergence, iterations=iterations, initialize=initialize,
                                control=control, BPPARAM=BPPARAM, verbose=verbose, subset=TRUE),
-         fullFraseR  = fitFraserAE(fds=fds, q=q, type=type, noiseAlpha=noiseAlpha, rhoRange=rhoRange, lambda=lambda,
+            fullFraseR  = fitFraserAE(fds=fds, q=q, type=type, noiseAlpha=noiseAlpha, rhoRange=rhoRange, lambda=lambda,
                                 convergence=convergence, iterations=iterations, initialize=initialize,
                                 control=control, BPPARAM=BPPARAM, verbose=verbose, subset=FALSE),
-         PCA         = fitPCA(fds=fds, q=q, psiType=type, rhoRange=rhoRange, BPPARAM=BPPARAM, subset=TRUE),
-         fullPCA     = fitPCA(fds=fds, q=q, psiType=type, rhoRange=rhoRange, BPPARAM=BPPARAM, subset=FALSE),
-         PEER        = fitPEER(fds=fds, q=q, psiType=type, recomendedQ=recommendedPEERq, rhoRange=rhoRange, BPPARAM=BPPARAM),
-         PEERdecoder = fitPEERDecoder(fds=fds, q=q, psiType=type, recomendedQ=recommendedPEERq, rhoRange=rhoRange, BPPARAM=BPPARAM),
-         BB          = fitBB(fds=fds, psiType=type),
-         kerasDAE    = fitKerasDAE(fds=fds, psiType=type, q=q, noiseAlpha=noiseAlpha, rhoRange=rhoRange, BPPARAM=BPPARAM))
+            PCA         = fitPCA(fds=fds, q=q, psiType=type, rhoRange=rhoRange, BPPARAM=BPPARAM, subset=TRUE),
+            fullPCA     = fitPCA(fds=fds, q=q, psiType=type, rhoRange=rhoRange, BPPARAM=BPPARAM, subset=FALSE),
+            PEER        = fitPEER(fds=fds, q=q, psiType=type, recomendedQ=recommendedPEERq, rhoRange=rhoRange, BPPARAM=BPPARAM),
+            PEERdecoder = fitPEERDecoder(fds=fds, q=q, psiType=type, recomendedQ=recommendedPEERq, rhoRange=rhoRange, BPPARAM=BPPARAM),
+            BB          = fitBB(fds=fds, psiType=type),
+            kerasDAE    = fitKerasDAE(fds=fds, psiType=type, q=q, noiseAlpha=noiseAlpha, rhoRange=rhoRange, BPPARAM=BPPARAM),
+            kerasBBdAE  = fit_keras_bb_dea(fds=fds, type=type, q=q, noiseAlpha=noiseAlpha,
+                    rhoRange=rhoRange, BPPARAM=BPPARAM, lr=lr, patience=3, epochs=epochs, reUseWeights=FALSE, iterations=iterations))
 
   return(fds)
 

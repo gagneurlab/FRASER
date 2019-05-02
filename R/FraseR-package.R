@@ -59,7 +59,7 @@
 #'
 ### P-Value calculation
 #'
-#' @importFrom stats sd rbinom fisher.test na.omit p.adjust ppoints qbeta rnorm
+#' @importFrom stats sd rbinom fisher.test na.omit p.adjust ppoints qbeta rnorm predict
 #' @importFrom VGAM rbetabinom vglm Coef pbetabinom pbetabinom.ab betabinomial
 #'          dbetabinom.ab dbetabinom
 #'
@@ -91,6 +91,12 @@
 #' @importFrom PRROC pr.curve
 #' @importFrom ggplot2 ggtitle xlab ylab ggplot geom_point geom_line geom_smooth aes
 #' @importFrom patchwork plot_layout
+#'
+#' @importFrom keras custom_metric layer_input k_variable layer_lambda k_log
+#'          layer_dense constraint_minmaxnorm regularizer_l2 get_weights
+#'          set_weights keras_model k_exp k_mean optimizer_adam use_python
+#'          callback_terminate_on_naan callback_early_stopping
+#' @importFrom tensorflow install_tensorflow
 #'
 #' @useDynLib FraseR
 #'

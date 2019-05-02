@@ -1,3 +1,7 @@
+#
+# hack to make sure its not run during package loading
+#
+if(FALSE){
 
 #' @export
 getX <- function(K, N){
@@ -13,12 +17,6 @@ numericLossGrad <- function(fn, epsilon, w, ..., BPPARAM=bpparam()){
     }))
     return(grad)
 }
-
-
-#
-# hack to make sure its not run during package loading
-#
-if(FALSE){
 
 library(BiocParallel)
 library(stats)
@@ -70,25 +68,25 @@ res <- bplapply(mybprange, K=K, N=N, wd=wd, we=we, b=b, rho=rho, function(idx, K
     bi   <- b[idx]
     wdi  <- wd[idx,]
     par <- c(bi, wdi)
-    
+
     estimateLgamma_alpha <- function(x, r){
-      
+
       fixed <- lgamma(plogis(-30) * r)
       # step <- lgamma(plogis(-30) * -r) - lgamma(plogis(-29) * -r)
       est <- fixed - 1*(x+30)
-      
+
       return(est)
     }
-    
+
     estimateLgamma_beta <- function(x, r){
-      
+
       fixed <- lgamma((plogis(30)-1) * -r)
       # step <- lgamma((plogis(30)-1) * -r) - lgamma((plogis(29)-1) * -r)
       est <- fixed + 1*(x-30)
-      
+
       return(est)
     }
-    
+
     loosDb <- function(par, ki, ni, H, rhoi){
         wdi <- par[2:length(par)]
         bi <- par[1]
@@ -101,21 +99,21 @@ res <- bplapply(mybprange, K=K, N=N, wd=wd, we=we, b=b, rho=rho, function(idx, K
         br <- (rhoi - 1)/rhoi
         ph <- ey/(1+ey)
         u  <- -1/(ey + 1)
-        
-        ph[!is.finite(ph)] <- vapply(yi[!is.finite(ph)], 
-                                     function(y){ 
-                                       if(y < 0){0}else{1} }, 
+
+        ph[!is.finite(ph)] <- vapply(yi[!is.finite(ph)],
+                                     function(y){
+                                       if(y < 0){0}else{1} },
                                      double(1))
-        u[!is.finite(u)] <- vapply(yi[!is.finite(u)], 
-                                   function(y){ 
-                                     if(y < 0){-1}else{0} }, 
+        u[!is.finite(u)] <- vapply(yi[!is.finite(u)],
+                                   function(y){
+                                     if(y < 0){-1}else{0} },
                                    double(1))
 
         alpha  <- lgamma(ph * ar)
         alphaK <- lgamma(ph * ar + ki + 0.5)
         beta   <- lgamma(u * br)
         betaNK <- lgamma(u * br + ni - ki + 0.5)
-        
+
         # est <- abs(yi)
         # alpha[is.infinite(alpha)] <- est[is.infinite(alpha)]
         # beta[is.infinite(beta)] <- est[is.infinite(beta)]
@@ -138,23 +136,23 @@ res <- bplapply(mybprange, K=K, N=N, wd=wd, we=we, b=b, rho=rho, function(idx, K
         ph <- ey/(1+ey)
         u  <- -1/(ey + 1)
         v  <- ey/(1+ey)^2
-        
-        ph[!is.finite(ph)] <- vapply(yi[!is.finite(ph)], 
-                                   function(y){ 
-                                     if(y < 0){0} else{1} }, 
+
+        ph[!is.finite(ph)] <- vapply(yi[!is.finite(ph)],
+                                   function(y){
+                                     if(y < 0){0} else{1} },
                                    double(1))
-        u[!is.finite(u)] <- vapply(yi[!is.finite(u)], 
-                                   function(y){ 
-                                     if(y < 0){-1}else{0} }, 
+        u[!is.finite(u)] <- vapply(yi[!is.finite(u)],
+                                   function(y){
+                                     if(y < 0){-1}else{0} },
                                    double(1))
-        
+
 
 
         alpha  <- digamma(ph * ar) * ar * v
         alphaK <- digamma(ph * ar + ki + 0.5) * ar * v
         beta   <- digamma(u * br) * br * v
         betaNK <- digamma(u * br + ni - ki + 0.5) * br * v
-        
+
         v[is.nan(v)] <- 0
         alpha[v == 0] <- vapply(yi[v == 0],
                                            function(y){
@@ -177,16 +175,16 @@ res <- bplapply(mybprange, K=K, N=N, wd=wd, we=we, b=b, rho=rho, function(idx, K
 
         idx2replace = ph == 0 | ph == 1
         # H[idx2replace,] <- 0
-        
+
         grad_b <- mean(alpha + beta - alphaK - betaNK)
         grad_d_mat <- matrix((alpha + beta - alphaK - betaNK), nrow(H), ncol(H)) * H
         #grad_d_mat[ph == 0 | ph == 1] <- vapply(yi[ph == 0 | ph == 1],
         #                                function(y){
         #                                  if(y < 0) {1} else { -1 } },
         #                                double(1))
-        
+
         grad_d <- colMeans(grad_d_mat)
-        
+
         grad_d_replace <- sapply(1:length(grad_d), function(j){
           badIdx = which(ph[j] == 0 | ph[j] == 1)
           if(sum(yi[badIdx] < 0) < length(badIdx)){
@@ -195,10 +193,10 @@ res <- bplapply(mybprange, K=K, N=N, wd=wd, we=we, b=b, rho=rho, function(idx, K
             +1
           }
         })
-        
-        
+
+
         #grad_d[idx2replace] <- grad_d_replace[idx2replace]
-        
+
         c(grad_b, grad_d)
     }
 
@@ -231,7 +229,7 @@ which(!(sign(nlgv) == sign(grv)), arr.ind = TRUE)
 par(mfrow=c(1,1))
 
 plotInaccuracy <- function(idx, col, range=1e-7, xlegend=NULL, ylegend=NULL){
-  
+
   ki   <- K[idx,]
   ni   <- N[idx,]
   x    <- getX(K, N)
@@ -240,8 +238,8 @@ plotInaccuracy <- function(idx, col, range=1e-7, xlegend=NULL, ylegend=NULL){
   bi   <- b[idx]
   wdi  <- wd[idx,]
   par <- c(bi, wdi)
-  
-  if(is.null(ylegend)){ 
+
+  if(is.null(ylegend)){
     l <- rep(0, q+1)
     l[col] <- range
     ylegend <- loosDb(par + l, ki, ni, H, rhoi)
@@ -249,16 +247,16 @@ plotInaccuracy <- function(idx, col, range=1e-7, xlegend=NULL, ylegend=NULL){
   if(is.null(xlegend)){
     xlegend <- -range
   }
-  
-  plot(seq(-range, range, length.out = 1000), vapply(seq(-range, range, length.out = 1000), 
-                                                   function(x){eps <- rep(0, q+1); eps[col] <- x; loosDb(par + eps, ki, ni, H, rhoi)}, double(1)), 
-       type = "l", xlab = "epsilon", ylab = "loss(D[q] + epsilon)", main=paste("idx:", idx, "q:", col)); grid(); 
+
+  plot(seq(-range, range, length.out = 1000), vapply(seq(-range, range, length.out = 1000),
+                                                   function(x){eps <- rep(0, q+1); eps[col] <- x; loosDb(par + eps, ki, ni, H, rhoi)}, double(1)),
+       type = "l", xlab = "epsilon", ylab = "loss(D[q] + epsilon)", main=paste("idx:", idx, "q:", col)); grid();
   abline(v=c(-1e-8, 1e-8), col = c("grey", "grey"), lty=c(2,2));
-  abline(loosDb(par, ki, ni, H, rhoi), nlgv[col,idx], col = "green", lty=2); abline(loosDb(par, ki, ni, H, rhoi), grv[col,idx], col = "red", lty = 2); 
+  abline(loosDb(par, ki, ni, H, rhoi), nlgv[col,idx], col = "green", lty=2); abline(loosDb(par, ki, ni, H, rhoi), grv[col,idx], col = "red", lty = 2);
   legend(xlegend, ylegend, legend=c("loss", "gradient", "finite difference"), col=c("black", "red", "green"), lty=c(1,2,2))
 }
-  
-  
+
+
 nll <- function(y, rho=0.9){
     -lgamma((exp(y)/(exp(y) + 1)) * ((1-rho)/rho))
 }
@@ -380,7 +378,7 @@ plot(log10(sort(abs(cppnlgv - cppgrv))), main=date())
 
 
 
-# keep the brace here to close the falls from the top
+# keep the brace here to close the false statement from the top
 }
 
 

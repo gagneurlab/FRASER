@@ -43,7 +43,7 @@ plotData <- function(idx, K, N, pvals, threshold=5e-2, main=NULL){
     if(!missing(pvals) & !is.null(pvals)){
         pval = pvals[idx,]
         pos <- which(pval < threshold)
-        points(N[idx,pos] + 2*pseudocount(), K[idx, pos] + pseudocount(), pch=2, col="green")
+        points(N[idx,pos] + 2*pseudocount(), K[idx, pos] + pseudocount(), pch=19, col="firebrick")
     }
     grid()
     abline(0,1)
@@ -129,7 +129,12 @@ plotQQ <- function(idx, fds, dist, main=NULL, threshold=5e-2){
     }
 
     # Add points
-    points(exp, obs)
+    points(exp, obs, pch=16)
+
+    if(any(obs > -log10(threshold))){
+        pos <- which(obs > -log10(threshold))
+        points(exp[pos], obs[pos], pch=19, col="firebrick")
+    }
 
     # diagonal and grid
     abline(0,1,col="firebrick")

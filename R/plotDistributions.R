@@ -525,9 +525,9 @@ testPlotting <- function(){
 #'
 #' @export
 plotCountCorHeatmap <- function(fds, type=c("psi5", "psi3", "psiSite"),
-            logit=FALSE, topN=50000, minMedian=1, main=NULL,
+            logit=FALSE, topN=50000, minMedian=1, main=NULL, normalized=TRUE,
             show_rownames=FALSE, show_colnames=FALSE,
-            annotation_col=NA, annotation_row=NA, ...){
+            annotation_col=NA, annotation_row=NA, boder_color=NA, ...){
 
     type <- match.arg(type)
 
@@ -547,7 +547,15 @@ plotCountCorHeatmap <- function(fds, type=c("psi5", "psi3", "psiSite"),
     }
     xmat_rc    <- xmat - rowMeans(xmat)
     xmat_rc_sd <- rowSds(xmat_rc)
-    cormat <- cor(xmat_rc[rank(xmat_rc_sd) >= length(xmat_rc_sd) - topN,])
+    plotIdx <- rank(xmat_rc_sd) >= length(xmat_rc_sd) - topN
+    xmat_rc_2_plot <- xmat_rc[plotIdx,]
+    if(isTRUE(normalized)){
+        pred_mu <- predictedMeans(fds)[expRowsMax & expRowsMedian,]
+        pred_mu <- qlogis(pred_mu)
+        lpred_mu_rc <- pred_mu - rowMeans(pred_mu)
+        xmat_rc_2_plot <- xmat_rc_2_plot - lpred_mu_rc[plotIdx,]
+    }
+    cormat <- cor(xmat_rc_2_plot)
 
     if(is.character(annotation_col)){
         annotation_col <- getColDataAsDFFactors(fds, annotation_col)
@@ -566,7 +574,7 @@ plotCountCorHeatmap <- function(fds, type=c("psi5", "psi3", "psiSite"),
 
     pheatmap(cormat, show_rownames=show_rownames, show_colnames=show_colnames,
              main=main, annotation_col=annotation_col,
-             annotation_row=annotation_row, ...,
+             annotation_row=annotation_row, ..., boder_color=boder_color,
              breaks=seq(-1, 1, length.out=50),
              color=colorRampPalette(colors=rev(brewer.pal(11, "RdBu")))(50)
     )

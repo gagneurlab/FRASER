@@ -591,7 +591,7 @@ setReplaceMethod("counts", "FraseRDataSet", function(object, type=NULL,
                 regmatches(type, gregexpr("psi(3|5|Site)", type, perl=TRUE)))
         aname <- paste0("rawOtherCounts_", type)
     }
-    assays(object, ...)[[aname]] <- as.matrix(value)
+    assays(object, ...)[[aname]] <- value
     validObject(value)
     return(object)
 })
