@@ -2,7 +2,7 @@
 #' Update D function
 #'
 #' @noRd
-updateD <- function(fds, type, lambda, control, BPPARAM, verbose){
+updateD <- function(fds, type, lambda, control, BPPARAM, verbose, nrDecoderBatches=5){
   D <- D(fds)
   b <- b(fds)
   H <- H(fds, noiseAlpha=currentNoiseAlpha(fds))
@@ -12,7 +12,8 @@ updateD <- function(fds, type, lambda, control, BPPARAM, verbose){
 
   # run fits
   fitls <- bplapply(seq_len(nrow(k)), singleDFit, D=D, b=b, k=k, n=n, H=H,
-                    rho=rho, lambda=lambda, control=control, nSamples=ncol(fds), BPPARAM=BPPARAM)
+                    rho=rho, lambda=lambda, control=control, 
+                    nSamples=ncol(fds), nrBatches=nrDecoderBatches, BPPARAM=BPPARAM)
 
   # extract infos
   parMat <- vapply(fitls, '[[', double(ncol(D) + 1), 'par')
@@ -34,14 +35,13 @@ updateD <- function(fds, type, lambda, control, BPPARAM, verbose){
 }
 
 
-singleDFit <- function(i, D, b, k, n, H, rho, lambda, control, nSamples, ...){
+singleDFit <- function(i, D, b, k, n, H, rho, lambda, control, nSamples, nrBatches, ...){
   pari <- c(b[i], D[i,])
   ki <- k[i,]
   ni <- n[i,]
   rhoi <- rho[i]
   
-  folds <- 5
-  subsets <- split(sample(1:nSamples), rep(1:folds, length = nSamples))
+  subsets <- split(sample(1:nSamples), rep(1:nrBatches, length = nSamples))
   fitls <- sapply(subsets, function(subset){
     ksub <- ki[subset]
     nsub <- ni[subset]
