@@ -5,7 +5,7 @@ calculateZscore <- function(fds, type=currentType(fds)){
     currentType(fds) <- type
 
     mu <- predictedMeans(fds)
-    psi <- t(plogis(x(fds, all=TRUE)))
+    psi <- t(plogis(x(fds, all=TRUE, center=FALSE)))
 
     log2fc <- log2(psi) - log2(mu)
 
