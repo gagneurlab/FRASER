@@ -8,7 +8,7 @@ calculateZscore <- function(fds, type=currentType(fds)){
     counts(fds, type=type, side="ofInterest", HDF5=FALSE) <- as.matrix(counts(fds, type=type, side="ofInterest"))
 
     mu <- as.matrix(predictedMeans(fds))
-    psi <- t(plogis(x(fds, all=TRUE, center=FALSE)))
+    psi <- t(plogis(x(fds, all=TRUE, noiseAlpha=NULL, center=FALSE)))
 
     log2fc <- log2(psi) - log2(mu)
 

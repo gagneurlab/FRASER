@@ -280,6 +280,7 @@ fitKerasDAE <-function(fds, q, psiType, rhoRange=c(1e-5, 1-1e-5), noiseAlpha=1, 
     history <- model %>% keras::fit(x=X_corr, y=X,
         epochs=300, batch_size=16,
         callbacks=cb_es, validation_split=0.2)
+    require(ggplot2)
     print(plot(history, main = "History of fitting the model, batch-aware PCA", method="ggplot2") +
         scale_y_log10() +
         xlim(0, cb_es[[1]]$stopped_epoch))
@@ -300,8 +301,11 @@ fitKerasDAE <-function(fds, q, psiType, rhoRange=c(1e-5, 1-1e-5), noiseAlpha=1, 
 
     # fit rho
     message(date(), "fitting rho ...")
-    fitparameters <- bplapply(seq_len(nrow(K(fds))),
-            estRho, k=K(fds), n=N(fds), y=t(pred_mu),
+    k <- K(fds)
+    n <- N(fds)
+    y <- t(pred_mu)
+    fitparameters <- bplapply(seq_len(nrow(k)),
+            estRho, k=k, n=n, y=y,
             rhoRange=rhoRange, BPPARAM=BPPARAM,
             nll=truncNLL_rho)
     rho(fds) <- vapply(fitparameters, "[[", double(1), "minimum")
