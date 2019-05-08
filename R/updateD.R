@@ -62,12 +62,12 @@ singleDFit <- function(i, D, b, k, n, H, rho, lambda, control, nSamples, nrBatch
       return(fit)
     })
     
-    pars <- colMeans(do.call(rbind, fitls['par',]))
+    pars <- colMedians(do.call(rbind, fitls['par',]))
     
     fit <- fitls[,1]
     fit$par         <- pars
     fit$value       <- mean(unlist(fitls['value',]))
-    fit$counts      <- round(colMeans(do.call(rbind, fitls['counts',])))
+    fit$counts      <- round(colMedians(do.call(rbind, fitls['counts',])))
     fit$convergence <- sum(unlist(fitls['convergence',]))
   
   }
