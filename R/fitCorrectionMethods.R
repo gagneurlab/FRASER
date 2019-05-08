@@ -1,6 +1,6 @@
 
-fit <- function(fds, correction=c("FraseR", "fullFraseR", "PCA", "fullPCA", "PEER", "PEERdecoder", "BB", "kerasDAE", "kerasBBdAE"),
-                    q, type="psi3", rhoRange=c(1e-5, 1-1e-5),
+fit <- function(fds, correction=c("FraseR", "fullFraseR", "PCA", "PCA+regression", "PEER", "PEERdecoder", "BB", "kerasDAE", "kerasBBdAE"),
+                    q, type="psi3", rhoRange=c(1e-5, 1-1e-5), nrDecoderBatches=5,
                     noiseAlpha=1, lambda=0, convergence=1e-5, iterations=15,
                     initialize=TRUE, control=list(), BPPARAM=bpparam(),
                     verbose=FALSE, recommendedPEERq=TRUE, lr=0.00005, epochs=20){
@@ -9,14 +9,14 @@ fit <- function(fds, correction=c("FraseR", "fullFraseR", "PCA", "fullPCA", "PEE
     fds <- switch(method,
             FraseR      = fitFraserAE(fds=fds, q=q, type=type, noiseAlpha=noiseAlpha, rhoRange=rhoRange, lambda=lambda,
                                convergence=convergence, iterations=iterations, initialize=initialize,
-                               control=control, BPPARAM=BPPARAM, verbose=verbose, subset=TRUE),
+                               control=control, BPPARAM=BPPARAM, verbose=verbose, subset=TRUE, nrDecoderBatches=nrDecoderBatches),
             fullFraseR  = fitFraserAE(fds=fds, q=q, type=type, noiseAlpha=noiseAlpha, rhoRange=rhoRange, lambda=lambda,
                                 convergence=convergence, iterations=iterations, initialize=initialize,
-                                control=control, BPPARAM=BPPARAM, verbose=verbose, subset=FALSE),
-            PCA         = fitPCA(fds=fds, q=q, psiType=type, rhoRange=rhoRange, BPPARAM=BPPARAM, subset=TRUE),
-            fullPCA     = fitPCA(fds=fds, q=q, psiType=type, rhoRange=rhoRange, BPPARAM=BPPARAM, subset=FALSE),
+                                control=control, BPPARAM=BPPARAM, verbose=verbose, subset=FALSE, nrDecoderBatches=nrDecoderBatches),
+            PCA         = fitPCA(fds=fds, q=q, psiType=type, rhoRange=rhoRange, BPPARAM=BPPARAM, subset=FALSE),
+            'PCA+regression' = fitPCA(fds=fds, q=q, psiType=type, rhoRange=rhoRange, BPPARAM=BPPARAM, subset=TRUE),
             PEER        = fitPEER(fds=fds, q=q, psiType=type, recomendedQ=recommendedPEERq, rhoRange=rhoRange, BPPARAM=BPPARAM),
-            PEERdecoder = fitPEERDecoder(fds=fds, q=q, psiType=type, recomendedQ=recommendedPEERq, rhoRange=rhoRange, BPPARAM=BPPARAM),
+            PEERdecoder = fitPEERDecoder(fds=fds, q=q, psiType=type, recomendedQ=recommendedPEERq, rhoRange=rhoRange, BPPARAM=BPPARAM, nrDecoderBatches=nrDecoderBatches),
             BB          = fitBB(fds=fds, psiType=type),
             kerasDAE    = fitKerasDAE(fds=fds, type=type, q=q, noiseAlpha=noiseAlpha, rhoRange=rhoRange, BPPARAM=BPPARAM),
             kerasBBdAE  = fit_keras_bb_dea(fds=fds, type=type, q=q, noiseAlpha=noiseAlpha,
@@ -43,17 +43,19 @@ fitPCA <- function(fds, q, psiType, rhoRange=c(1e-5, 1-1e-5), BPPARAM=parallel(f
   # PCA on subset -> E matrix
   currentNoiseAlpha(fds) <- NULL
   message(date(), " Computing PCA ...")
-  pca <- pca(as.matrix(x(fds, noiseAlpha=NULL, center=FALSE)), nPcs=q)
+  pca <- pca(as.matrix(x(fds, noiseAlpha=NULL, center=TRUE)), nPcs=q)
   pc <- pcaMethods::loadings(pca)
   E(fds) <- pc
+  
+  x <- x(fds, all=TRUE, noiseAlpha=NULL, center=FALSE)
   if(isTRUE(subset)){
     # linear regression to fit D matrix
-    lmFit <- lm(as.matrix(x(fds, all=TRUE, noiseAlpha=NULL, center=FALSE)) ~ as.matrix(H(fds)))
+    lmFit <- lm(as.matrix(x) ~ as.matrix(H(fds)))
     D(fds) <- t(lmFit$coefficients[-1,])
     b(fds) <- lmFit$coefficients[1,]
   } else{
     D(fds) <- pc
-    b(fds) <- double(nrow(mcols(fds, psiType)))
+    b(fds) <- colMeans2(x)
   }
 
   # fit rho
@@ -119,7 +121,7 @@ fitPEER <-function(fds, q, psiType, recomendedQ=TRUE, rhoRange=c(1e-5, 1-1e-5), 
 
 }
 
-fitPEERDecoder <-function(fds, q, psiType, recomendedQ=TRUE, rhoRange=c(1e-5, 1-1e-5), BPPARAM=parallel(fds)){
+fitPEERDecoder <-function(fds, q, psiType, recomendedQ=TRUE, rhoRange=c(1e-5, 1-1e-5), nrDecoderBatches=1, BPPARAM=parallel(fds)){
 
   # set featureExclusionMask of all junctions to TRUE for peer
   currentType(fds) <- psiType
@@ -176,7 +178,8 @@ fitPEERDecoder <-function(fds, q, psiType, recomendedQ=TRUE, rhoRange=c(1e-5, 1-
 
   # run fits
   fitls <- bplapply(seq_len(nrow(k)), singleDFit, D=D, b=b, k=k, n=n, H=H,
-                    rho=rho, lambda=0, control=list(), BPPARAM=parallel(fds))
+                    rho=rho, lambda=0, control=list(), BPPARAM=parallel(fds), 
+                    nSamples=ncol(fds), nrBatches=nrDecoderBatches)
 
   # extract infos
   parMat <- vapply(fitls, '[[', double(ncol(D) + 1), 'par')
@@ -201,7 +204,7 @@ fitBB <- function(fds, psiType){
 }
 
 fitFraserAE <- function(fds, q, type, noiseAlpha, rhoRange, lambda, convergence, iterations, initialize,
-                                  control, BPPARAM, verbose, subset=TRUE){
+                                  control, BPPARAM, verbose, subset=TRUE, nrDecoderBatches){
   #+ subset fitting
   curDims <- dim(K(fds, type))
   if(isTRUE(subset)){
@@ -215,7 +218,7 @@ fitFraserAE <- function(fds, q, type, noiseAlpha, rhoRange, lambda, convergence,
 
   fds <- fitAutoencoder(fds=fds, q=q, type=type, noiseAlpha=noiseAlpha, rhoRange=rhoRange, lambda=lambda,
                  convergence=convergence, iterations=iterations, initialize=initialize,
-                 control=control, BPPARAM=BPPARAM, verbose=verbose)
+                 control=control, BPPARAM=BPPARAM, verbose=verbose, nrDecoderBatches=nrDecoderBatches)
   return(fds)
 
 }
@@ -232,10 +235,11 @@ fitKerasDAE <-function(fds, q, psiType, rhoRange=c(1e-5, 1-1e-5), noiseAlpha=1, 
     noise(fds) <- matrix(rnorm(prod(dim(t(K(fds))))), ncol=ncol(t(K(fds))))
 
     # get data into memory
-    counts(fds, type=type, side="other", HDF5=FALSE)      <- as.matrix(N(fds) - K(fds))
-    counts(fds, type=type, side="ofInterest", HDF5=FALSE) <- as.matrix(K(fds))
+    counts(fds, type=psiType, side="other", HDF5=FALSE)      <- as.matrix(N(fds) - K(fds))
+    counts(fds, type=psiType, side="ofInterest", HDF5=FALSE) <- as.matrix(K(fds))
 
     #+ setup keras and python
+    message(date(), "setup keras and python path ...")
     require(keras)
     use_python(pypath)
 
@@ -250,7 +254,7 @@ fitKerasDAE <-function(fds, q, psiType, rhoRange=c(1e-5, 1-1e-5), noiseAlpha=1, 
     X_corr <- X_corr[sidx,]
 
     # layers
-    message(date(), "setup keras model ...")
+    message(date(), " setup keras model ...")
     input   <- layer_input(ncol(X))
     encoder <- layer_dense(units=q)
     decoder <- layer_dense(units=ncol(X))
@@ -276,6 +280,7 @@ fitKerasDAE <-function(fds, q, psiType, rhoRange=c(1e-5, 1-1e-5), noiseAlpha=1, 
     history <- model %>% keras::fit(x=X_corr, y=X,
         epochs=300, batch_size=16,
         callbacks=cb_es, validation_split=0.2)
+    require(ggplot2)
     print(plot(history, main = "History of fitting the model, batch-aware PCA", method="ggplot2") +
         scale_y_log10() +
         xlim(0, cb_es[[1]]$stopped_epoch))
@@ -296,8 +301,11 @@ fitKerasDAE <-function(fds, q, psiType, rhoRange=c(1e-5, 1-1e-5), noiseAlpha=1, 
 
     # fit rho
     message(date(), "fitting rho ...")
-    fitparameters <- bplapply(seq_len(nrow(K(fds))),
-            estRho, k=K(fds), n=N(fds), y=t(pred_mu),
+    k <- K(fds)
+    n <- N(fds)
+    y <- t(pred_mu)
+    fitparameters <- bplapply(seq_len(nrow(k)),
+            estRho, k=k, n=n, y=y,
             rhoRange=rhoRange, BPPARAM=BPPARAM,
             nll=truncNLL_rho)
     rho(fds) <- vapply(fitparameters, "[[", double(1), "minimum")

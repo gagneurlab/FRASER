@@ -3,9 +3,12 @@
 # Function to calculate the z-scores
 calculateZscore <- function(fds, type=currentType(fds)){
     currentType(fds) <- type
+    
+    counts(fds, type=type, side="other", HDF5=FALSE)      <- as.matrix(counts(fds, type=type, side="other"))
+    counts(fds, type=type, side="ofInterest", HDF5=FALSE) <- as.matrix(counts(fds, type=type, side="ofInterest"))
 
-    mu <- predictedMeans(fds)
-    psi <- t(plogis(x(fds, all=TRUE)))
+    mu <- as.matrix(predictedMeans(fds))
+    psi <- t(plogis(x(fds, all=TRUE, noiseAlpha=NULL, center=FALSE)))
 
     log2fc <- log2(psi) - log2(mu)
 

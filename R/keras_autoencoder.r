@@ -164,6 +164,9 @@ fit_keras_bb_dea <- function(fds, q, type, noiseAlpha, rhoRange, BPPARAM, lr=0.0
 
     # save weights
     metadata(fds)[[paste("dAE_keras_bb_weights_", type)]] <- curWeights
+    
+    # save noise
+    noise(fds, type) <- noise
 
     return(fds)
 }

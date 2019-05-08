@@ -2,7 +2,7 @@
 #' Update D function
 #'
 #' @noRd
-updateD <- function(fds, type, lambda, control, BPPARAM, verbose){
+updateD <- function(fds, type, lambda, control, BPPARAM, verbose, nrDecoderBatches=5){
   D <- D(fds)
   b <- b(fds)
   H <- H(fds, noiseAlpha=currentNoiseAlpha(fds))
@@ -12,7 +12,8 @@ updateD <- function(fds, type, lambda, control, BPPARAM, verbose){
 
   # run fits
   fitls <- bplapply(seq_len(nrow(k)), singleDFit, D=D, b=b, k=k, n=n, H=H,
-                    rho=rho, lambda=lambda, control=control, nSamples=ncol(fds), BPPARAM=BPPARAM)
+                    rho=rho, lambda=lambda, control=control, 
+                    nSamples=ncol(fds), nrBatches=nrDecoderBatches, BPPARAM=BPPARAM)
 
   # extract infos
   parMat <- vapply(fitls, '[[', double(ncol(D) + 1), 'par')
@@ -34,32 +35,42 @@ updateD <- function(fds, type, lambda, control, BPPARAM, verbose){
 }
 
 
-singleDFit <- function(i, D, b, k, n, H, rho, lambda, control, nSamples, ...){
+singleDFit <- function(i, D, b, k, n, H, rho, lambda, control, nSamples, nrBatches, ...){
   pari <- c(b[i], D[i,])
   ki <- k[i,]
   ni <- n[i,]
   rhoi <- rho[i]
   
-  folds <- 5
-  subsets <- split(sample(1:nSamples), rep(1:folds, length = nSamples))
-  fitls <- sapply(subsets, function(subset){
-    ksub <- ki[subset]
-    nsub <- ni[subset]
-    Hsub <- H[subset,]
+  if(nrBatches == 1){
     
     fit <- optim(pari, fn=truncNLL_db, gr=truncGrad_db,
-                 H=Hsub, k=ksub, n=nsub, rho=rhoi, lambda=lambda, control=control,
+                 H=H, k=ki, n=ni, rho=rhoi, lambda=lambda, control=control,
                  method="L-BFGS-B")
-    return(fit)
-  })
+    
+  } 
+  else { # cross-validation
   
-  pars <- colMeans(do.call(rbind, fitls['par',]))
+    subsets <- split(sample(1:nSamples), rep(1:nrBatches, length = nSamples))
+    fitls <- sapply(subsets, function(subset){
+      ksub <- ki[-subset]
+      nsub <- ni[-subset]
+      Hsub <- H[-subset,]
+      
+      fit <- optim(pari, fn=truncNLL_db, gr=truncGrad_db,
+                   H=Hsub, k=ksub, n=nsub, rho=rhoi, lambda=lambda, control=control,
+                   method="L-BFGS-B")
+      return(fit)
+    })
+    
+    pars <- colMedians(do.call(rbind, fitls['par',]))
+    
+    fit <- fitls[,1]
+    fit$par         <- pars
+    fit$value       <- mean(unlist(fitls['value',]))
+    fit$counts      <- round(colMedians(do.call(rbind, fitls['counts',])))
+    fit$convergence <- sum(unlist(fitls['convergence',]))
   
-  fit <- fitls[,1]
-  fit$par         <- pars
-  fit$value       <- mean(unlist(fitls['value',]))
-  fit$counts      <- round(colMeans(do.call(rbind, fitls['counts',])))
-  fit$convergence <- sum(unlist(fitls['convergence',]))
+  }
 
   return(fit)
 }
