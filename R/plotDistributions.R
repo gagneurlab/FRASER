@@ -23,7 +23,7 @@
 #'
 #' @export
 plotJunctionDistribution <- function(fds, gr, type=gr$type, sampleIDs=NULL,
-            rmZeroCts=FALSE, plotRank=paste0(c("", "delta_", "zscore_"), type),
+            rmZeroCts=FALSE, plotRank=paste0(c("", "delta_", "zScores_"), type),
             plotCounts=TRUE, plotValVsCounts=type, qqplot=TRUE,
             plotLegend=TRUE, cex=1, mfrow=3, ...){
     stopifnot(is(fds, "FraseRDataSet"))
@@ -77,18 +77,18 @@ plotJunctionDistribution <- function(fds, gr, type=gr$type, sampleIDs=NULL,
 #' @noRd
 getPlotDistributionData <- function(gr, fds, type, rmZeroCts=FALSE){
     se <- as(fds, "RangedSummarizedExperiment")
-    if(type %in% "psiSite") {
+    if(grepl("psiSite", type)) {
         se <- nonSplicedReads(fds)
     }
 
     rctsname     <- paste0("rawCounts", toupper(checkReadType(fds, type)))
     roctsname    <- paste0("rawOtherCounts_", whichPSIType(type))
-    pvaluename   <- paste0("pvalue_", type)
-    psiname      <- type
-    deltapsiname <- paste0("delta_", type)
-    zscorename   <- paste0("zscore_", type)
+    pvaluename   <- paste0("pvaluesBetaBinomial_", whichPSIType(type))
+    psiname      <- whichPSIType(type)
+    deltapsiname <- paste0("delta_", whichPSIType(type))
+    zscorename   <- paste0("zScores_", whichPSIType(type))
 
-    mapping      <- c("pvalues", "psi", "deltaPsi", "zscore", "rcts", "rocts")
+    mapping      <- c("pvalues", "psi", "deltaPsi", "zScores", "rcts", "rocts")
     names(mapping) <- c(pvaluename, psiname, deltapsiname, zscorename, rctsname,
                         roctsname)
 
@@ -108,9 +108,9 @@ getPlotDistributionData <- function(gr, fds, type, rmZeroCts=FALSE){
     }
 
     alpha <- beta <- NA
-    if(paste0(type, "_alpha") %in% colnames(mcols(seOfInterest))){
-        alpha <- mcols(seOfInterest)[,paste0(type, "_alpha")]
-        beta  <- mcols(seOfInterest)[,paste0(type, "_beta")]
+    if(paste0(whichPSIType(type), "_alpha") %in% colnames(mcols(seOfInterest))){
+        alpha <- mcols(seOfInterest)[,paste0(whichPSIType(type), "_alpha")]
+        beta  <- mcols(seOfInterest)[,paste0(whichPSIType(type), "_beta")]
     }
 
     return(list(
@@ -121,7 +121,7 @@ getPlotDistributionData <- function(gr, fds, type, rmZeroCts=FALSE){
         pvalues  = as.matrix(null2na(assays(seOfInterest)[[pvaluename]]))[1,],
         psi      = as.matrix(null2na(assays(seOfInterest)[[psiname]]))[1,],
         deltaPsi = as.matrix(null2na(assays(seOfInterest)[[deltapsiname]]))[1,],
-        zscore   = as.matrix(null2na(assays(seOfInterest)[[zscorename]]))[1,],
+        zScores  = as.matrix(null2na(assays(seOfInterest)[[zscorename]]))[1,],
         alpha    = alpha,
         beta     = beta
     ))
@@ -357,7 +357,7 @@ getTitle <- function(plotMainTxt, gr, psiType){
 #'
 #' @noRd
 plotQQplot <- function(gr=NULL, fds=NULL, type=NULL, data=NULL, maxOutlier=2,
-                    conf.alpha=0.05, sample=FALSE, breakTies=TRUE,
+                    conf.alpha=0.05, sample=FALSE, breakTies=TRUE, mainName="qqPlot",
                     legendPos="bottomright"){
     if(isScalarLogical(conf.alpha)){
         conf.alpha <- ifelse(isTRUE(conf.alpha), 0.05, NA)
