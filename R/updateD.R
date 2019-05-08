@@ -41,25 +41,36 @@ singleDFit <- function(i, D, b, k, n, H, rho, lambda, control, nSamples, nrBatch
   ni <- n[i,]
   rhoi <- rho[i]
   
-  subsets <- split(sample(1:nSamples), rep(1:nrBatches, length = nSamples))
-  fitls <- sapply(subsets, function(subset){
-    ksub <- ki[subset]
-    nsub <- ni[subset]
-    Hsub <- H[subset,]
+  if(nrBatches == 1){
     
     fit <- optim(pari, fn=truncNLL_db, gr=truncGrad_db,
-                 H=Hsub, k=ksub, n=nsub, rho=rhoi, lambda=lambda, control=control,
+                 H=H, k=ki, n=ni, rho=rhoi, lambda=lambda, control=control,
                  method="L-BFGS-B")
-    return(fit)
-  })
+    
+  } 
+  else { # cross-validation
   
-  pars <- colMeans(do.call(rbind, fitls['par',]))
+    subsets <- split(sample(1:nSamples), rep(1:nrBatches, length = nSamples))
+    fitls <- sapply(subsets, function(subset){
+      ksub <- ki[-subset]
+      nsub <- ni[-subset]
+      Hsub <- H[-subset,]
+      
+      fit <- optim(pari, fn=truncNLL_db, gr=truncGrad_db,
+                   H=Hsub, k=ksub, n=nsub, rho=rhoi, lambda=lambda, control=control,
+                   method="L-BFGS-B")
+      return(fit)
+    })
+    
+    pars <- colMeans(do.call(rbind, fitls['par',]))
+    
+    fit <- fitls[,1]
+    fit$par         <- pars
+    fit$value       <- mean(unlist(fitls['value',]))
+    fit$counts      <- round(colMeans(do.call(rbind, fitls['counts',])))
+    fit$convergence <- sum(unlist(fitls['convergence',]))
   
-  fit <- fitls[,1]
-  fit$par         <- pars
-  fit$value       <- mean(unlist(fitls['value',]))
-  fit$counts      <- round(colMeans(do.call(rbind, fitls['counts',])))
-  fit$convergence <- sum(unlist(fitls['convergence',]))
+  }
 
   return(fit)
 }

@@ -47,7 +47,8 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, rhoRange=c(1e-5, 1
     }
 
     # initialize D
-    fds <- updateD(fds, type=type, lambda=lambda, control=control, BPPARAM=BPPARAM, verbose=verbose, nrDecoderBatches=nrDecoderBatches)
+    fds <- updateD(fds, type=type, lambda=lambda, control=control, BPPARAM=BPPARAM, verbose=verbose, 
+                   nrDecoderBatches=ifelse( nrow(mcols(fds, type=type)) == nrow(mcols(copy_fds, type=type)), nrDecoderBatches, 1))
     lossList <- updateLossList(fds, lossList, 'init', 'D', lambda, verbose=verbose)
 
     # initialize rho step
@@ -65,7 +66,8 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, rhoRange=c(1e-5, 1
         lossList <- updateLossList(fds, lossList, i, 'E', lambda, verbose=verbose)
 
         # update D step
-        fds <- updateD(fds, type=type, lambda=lambda, control=control, BPPARAM=BPPARAM, verbose=verbose, nrDecoderBatches=nrDecoderBatches)
+        fds <- updateD(fds, type=type, lambda=lambda, control=control, BPPARAM=BPPARAM, verbose=verbose, 
+                       nrDecoderBatches=ifelse( nrow(mcols(fds, type=type)) == nrow(mcols(copy_fds, type=type)), nrDecoderBatches, 1))
         lossList <- updateLossList(fds, lossList, i, 'D', lambda, verbose=verbose)
 
         # update rho step
