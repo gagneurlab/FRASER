@@ -5,7 +5,7 @@
 \title{Keras denoising autoencoder with betabinomial loss}
 \usage{
 fit_keras_bb_dea(fds, q, type, noiseAlpha, rhoRange, BPPARAM, lr = 1e-04,
-  epochs = 50)
+  epochs = 50, patience = 5, reUseWeights = TRUE, iterations = 10)
 }
 \description{
 Install environment: (bash commands)

@@ -18,7 +18,7 @@ fit <- function(fds, correction=c("FraseR", "fullFraseR", "PCA", "fullPCA", "PEE
             PEER        = fitPEER(fds=fds, q=q, psiType=type, recomendedQ=recommendedPEERq, rhoRange=rhoRange, BPPARAM=BPPARAM),
             PEERdecoder = fitPEERDecoder(fds=fds, q=q, psiType=type, recomendedQ=recommendedPEERq, rhoRange=rhoRange, BPPARAM=BPPARAM),
             BB          = fitBB(fds=fds, psiType=type),
-            kerasDAE    = fitKerasDAE(fds=fds, psiType=type, q=q, noiseAlpha=noiseAlpha, rhoRange=rhoRange, BPPARAM=BPPARAM),
+            kerasDAE    = fitKerasDAE(fds=fds, type=type, q=q, noiseAlpha=noiseAlpha, rhoRange=rhoRange, BPPARAM=BPPARAM),
             kerasBBdAE  = fit_keras_bb_dea(fds=fds, type=type, q=q, noiseAlpha=noiseAlpha,
                     rhoRange=rhoRange, BPPARAM=BPPARAM, lr=lr, patience=3, epochs=epochs, reUseWeights=FALSE, iterations=iterations))
 
