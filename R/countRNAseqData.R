@@ -18,13 +18,15 @@
 #'             of the internal loop per sample
 #' @param junctionMap A object or file containing a map of
 #'             all junctions of interest across all samples
+#' @param minAnchor Minimum overlap around the Donor/Acceptor for
+#'             non spliced reads. Default to 5
 #'
 #' @return FraseRDataSet
 #' @export
 #' @examples
 #'   countRNAData(createTestFraseRSettings())
 #'   countRNAData(createTestFraseRSettings(), 5)
-countRNAData <- function(fds, NcpuPerSample=1, junctionMap=NULL){
+countRNAData <- function(fds, NcpuPerSample=1, junctionMap=NULL, minAnchor=5){
 
     # Check input TODO
     stopifnot(class(fds) == "FraseRDataSet")
@@ -83,8 +85,9 @@ countRNAData <- function(fds, NcpuPerSample=1, junctionMap=NULL){
             settings=fds,
             spliceSiteCoords=spliceSiteCoords,
             BPPARAM=parallel(fds),
-            NcpuPerSample=NcpuPerSample
-    )
+            NcpuPerSample=NcpuPerSample,
+            minAnchor=minAnchor)
+
     names(countList) <- samples(fds)
     siteCounts <- mergeCounts(countList, assumeEqual=TRUE)
     mcols(siteCounts)$type <- factor(countList[[1]]$type,
@@ -182,8 +185,7 @@ countSplitReads <- function(sampleID, settings, NcpuPerSample){
             FUN=countSplitReadsPerChromosome,
             bamFile=bamFile,
             settings=settings,
-            BPPARAM=MulticoreParam(NcpuPerSample)
-    )
+            BPPARAM=MulticoreParam(NcpuPerSample))
 
     # sort and merge the results befor returning/saving
     countsGR <- sort(unlist(GRangesList(countsList)))
@@ -348,12 +350,12 @@ getNonSplicedCountCacheFile <- function(sampleID, settings){
 #'
 #' creates a SAF data.table based on the given grange like object
 #' @noRd
-GRanges2SAF <- function(gr){
+GRanges2SAF <- function(gr, minAnchor=0){
     data.table(
         GeneID  = seq_along(gr),
         Chr     = as.character(seqnames(gr)),
-        Start   = start(gr),
-        End     = end(gr),
+        Start   = start(gr) - minAnchor,
+        End     = end(gr) + minAnchor,
         Strand  = as.character(strand(gr))
     )
 }
@@ -364,14 +366,14 @@ GRanges2SAF <- function(gr){
 #' TODO: 10k chunks hardcoded currently (needs some testing and a code to)
 #' @noRd
 countNonSplicedReads <- function(sampleID, spliceSiteCoords, settings,
-                    NcpuPerSample=1){
+                    NcpuPerSample=1, minAnchor, recount=FALSE){
     message(date(), ": Count non spliced reads for sample: ", sampleID)
     suppressPackageStartupMessages(library(FraseR))
     bamFile <- bamFile(settings[,samples(settings) == sampleID])[[1]]
 
     # check cache if available
     cacheFile <- getNonSplicedCountCacheFile(sampleID, settings)
-    if(!is.null(cacheFile) && file.exists(cacheFile)){
+    if(isFALSE(recount) & !is.null(cacheFile) && file.exists(cacheFile)){
         # check if needs to be recalculated
         cache <- try(readRDS(cacheFile), silent=TRUE)
         if(class(cache) == "try-error"){
@@ -400,9 +402,10 @@ countNonSplicedReads <- function(sampleID, spliceSiteCoords, settings,
     }
 
     # extract the counts with Rsubread
-    anno <- GRanges2SAF(spliceSiteCoords)
+    anno <- GRanges2SAF(spliceSiteCoords, minAnchor=minAnchor)
     rsubreadCounts <- featureCounts(files=bamFile, annot.ext=anno,
-            minOverlap=2, allowMultiOverlap=TRUE, checkFragLength=FALSE,
+            minOverlap=2 + minAnchor*2, allowMultiOverlap=TRUE,
+            checkFragLength=FALSE,
             minMQS=bamMapqFilter(scanBamParam(settings)),
             strandSpecific=as.integer(strandSpecific(settings)),
 
