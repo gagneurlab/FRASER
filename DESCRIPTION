@@ -101,6 +101,7 @@ Collate:
     updateRho.R
     gradient_loss_R.R
     keras_autoencoder.r
+    keras_combined_autoencoder.r
     methods-makeExampleObj.R
     plotAutoencoderResults.R
     pvalsNzscore.R
