@@ -7,7 +7,8 @@ calculateZscore <- function(fds, type=currentType(fds)){
     counts(fds, type=type, side="other", HDF5=FALSE)      <- as.matrix(counts(fds, type=type, side="other"))
     counts(fds, type=type, side="ofInterest", HDF5=FALSE) <- as.matrix(counts(fds, type=type, side="ofInterest"))
 
-    logit_mu <- predictY(fds)
+    
+    logit_mu <- qlogis(as.matrix(predictedMeans(fds)))
     logit_psi <- t(x(fds, all=TRUE, noiseAlpha=NULL, center=FALSE))
 
     logitfc <- logit_psi - logit_mu
