@@ -7,6 +7,7 @@ annotate_strand_by_seq <- function(fds, genome = "hg19", ...){
 
     # get ranges of interest
     gr <- granges(fds)
+    seqlevelsStyle(gr) <- "UCSC"
 
     # get the dinucleotide seq
     gr_start <- resize(gr, 2, fix = "start")
