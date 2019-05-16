@@ -311,32 +311,32 @@ dontWriteHDF5 <- function(fds){
     return(fds)
 }
 
-getTrueOutlierByGroup <- function(fds, type){
+getTrueOutlierByGroup <- function(fds, type, BPPARAM=parallel(fds)){
   index <- getSiteIndex(fds, type)
   idx   <- !duplicated(index)
 
   dt <- cbind(data.table(id=index), as.data.table(getAssayMatrix(fds, "trueOutliers", type)))
   setkey(dt, id)
-  labels <- as.matrix(sapply(samples(fds), function(i){
+  labels <- matrix(unlist(bplapply(samples(fds), BPPARAM=BPPARAM, function(i){
     dttmp <- dt[,any(get(i) != 0),by=id]
     setkey(dttmp, id)
     dttmp[J(unique(index)), V1]
-  })) + 0
+  })), ncol=length(samples(fds))) + 0
   return(labels)
 }
 
-getAbsMaxByGroup <- function(fds, type, mat){
+getAbsMaxByGroup <- function(fds, type, mat, BPPARAM=parallel(fds)){
   index <- getSiteIndex(fds, type)
   idx   <- !duplicated(index)
 
   dt <- cbind(data.table(id=index), as.data.table(mat))
   setkey(dt, id)
-  deltaPsi <- as.matrix(sapply(samples(fds), function(i){
+  deltaPsi <- matrix(unlist(bplapply(samples(fds), BPPARAM=BPPARAM, function(i){
     dttmp <- dt[,.(dpsi=get(i), max=max(abs(get(i)))),by=id]
     dttmp <- dttmp[abs(dpsi) == max, .SD[1], by=id]
     setkey(dttmp, id)
     dttmp[J(unique(index)), dpsi]
-  }))
+  })), ncol=length(samples(fds)))
   return(deltaPsi)
 }
 

@@ -20,17 +20,21 @@
 #'             all junctions of interest across all samples
 #' @param minAnchor Minimum overlap around the Donor/Acceptor for
 #'             non spliced reads. Default to 5
+#' @param recount if TRUE the cache is ignored and the bam file is recounted.
 #'
 #' @return FraseRDataSet
 #' @export
 #' @examples
 #'   countRNAData(createTestFraseRSettings())
 #'   countRNAData(createTestFraseRSettings(), 5)
-countRNAData <- function(fds, NcpuPerSample=1, junctionMap=NULL, minAnchor=5){
+countRNAData <- function(fds, NcpuPerSample=1, junctionMap=NULL, minAnchor=5, recount=FALSE){
 
     # Check input TODO
     stopifnot(class(fds) == "FraseRDataSet")
     stopifnot(is.numeric(NcpuPerSample) && NcpuPerSample > 0)
+    stopifnot(is.numeric(minAnchor) & minAnchor >= 1)
+    minAnchor <- as.integer(minAnchor)
+
     if(!is.integer(NcpuPerSample)){
         NcpuPerSample <- as.integer(NcpuPerSample)
     }
@@ -86,7 +90,8 @@ countRNAData <- function(fds, NcpuPerSample=1, junctionMap=NULL, minAnchor=5){
             spliceSiteCoords=spliceSiteCoords,
             BPPARAM=parallel(fds),
             NcpuPerSample=NcpuPerSample,
-            minAnchor=minAnchor)
+            minAnchor=minAnchor,
+            recount=recount)
 
     names(countList) <- samples(fds)
     siteCounts <- mergeCounts(countList, assumeEqual=TRUE)
@@ -350,12 +355,12 @@ getNonSplicedCountCacheFile <- function(sampleID, settings){
 #'
 #' creates a SAF data.table based on the given grange like object
 #' @noRd
-GRanges2SAF <- function(gr, minAnchor=0){
+GRanges2SAF <- function(gr, minAnchor=1){
     data.table(
         GeneID  = seq_along(gr),
         Chr     = as.character(seqnames(gr)),
-        Start   = start(gr) - minAnchor,
-        End     = end(gr) + minAnchor,
+        Start   = start(gr) - (minAnchor - 1),
+        End     = end(gr) + (minAnchor - 1),
         Strand  = as.character(strand(gr))
     )
 }
@@ -404,7 +409,7 @@ countNonSplicedReads <- function(sampleID, spliceSiteCoords, settings,
     # extract the counts with Rsubread
     anno <- GRanges2SAF(spliceSiteCoords, minAnchor=minAnchor)
     rsubreadCounts <- featureCounts(files=bamFile, annot.ext=anno,
-            minOverlap=2 + minAnchor*2, allowMultiOverlap=TRUE,
+            minOverlap=minAnchor*2, allowMultiOverlap=TRUE,
             checkFragLength=FALSE,
             minMQS=bamMapqFilter(scanBamParam(settings)),
             strandSpecific=as.integer(strandSpecific(settings)),
