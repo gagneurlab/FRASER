@@ -1,13 +1,21 @@
-annotate_strand_by_seq <- function(fds, genome = "hg19", ...){
+annotate_strand_by_seq <- function(fds, genome, ...){
     #load genome
     if (genome=="hg19") {
         library(BSgenome.Hsapiens.UCSC.hg19)
         genome <- BSgenome.Hsapiens.UCSC.hg19
     }
+    else if (genome=="GRCh37"){
+        library(AnnotationHub)
+        genome <- ah[["AH134"]]
+    }
+    else if (genome=="GRCh38"){
+        library(BSgenome.Hsapiens.NCBI.GRCh38)
+        genome <- BSgenome.Hsapiens.NCBI.GRCh38
+    }
+
 
     # get ranges of interest
     gr <- granges(fds)
-    seqlevelsStyle(gr) <- "UCSC"
 
     # get the dinucleotide seq
     gr_start <- resize(gr, 2, fix = "start")
