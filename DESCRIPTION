@@ -29,12 +29,15 @@ Imports:
     IRanges,
     graphics,
     gplots,
+    ggplot2,
     htmlwidgets,
     HDF5Array,
+    keras,
     LSD, 
     matrixStats,
     methods,
     parallel,
+    patchwork,
     pheatmap,
     plotly (>= 4.6.0),
     PRROC,
@@ -88,7 +91,6 @@ Collate:
     getURLs.R
     helper-functions.R
     plotResults.R
-    gradient_loss_R.R
     saveHDF5Objects.R
     shiny.R
     plotDistributions.R
@@ -98,6 +100,8 @@ Collate:
     updateE.R
     updateRho.R
     gradient_loss_R.R
+    keras_autoencoder.r
+    keras_combined_autoencoder.r
     methods-makeExampleObj.R
     plotAutoencoderResults.R
     pvalsNzscore.R

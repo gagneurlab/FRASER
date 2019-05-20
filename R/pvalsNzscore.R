@@ -3,14 +3,18 @@
 # Function to calculate the z-scores
 calculateZscore <- function(fds, type=currentType(fds)){
     currentType(fds) <- type
+    
+    counts(fds, type=type, side="other", HDF5=FALSE)      <- as.matrix(counts(fds, type=type, side="other"))
+    counts(fds, type=type, side="ofInterest", HDF5=FALSE) <- as.matrix(counts(fds, type=type, side="ofInterest"))
 
-    mu <- predictedMeans(fds)
-    psi <- t(plogis(x(fds, all=TRUE)))
+    
+    logit_mu <- qlogis(as.matrix(predictedMeans(fds)))
+    logit_psi <- t(x(fds, all=TRUE, noiseAlpha=NULL, center=FALSE))
 
-    log2fc <- log2(psi) - log2(mu)
+    logitfc <- logit_psi - logit_mu
 
     # z = ( x - mean ) / sd
-    zscores <- (log2fc - rowMeans(log2fc)) / rowSds(log2fc)
+    zscores <- (logitfc - rowMeans(logitfc)) / rowSds(logitfc)
 
     zScores(fds) <- zscores
 
@@ -51,7 +55,8 @@ calculatePvalues <- function(fds, type=currentType(fds),  BPPARAM=parallel(fds))
 
 adjust_FWER_PValues <- function(i, pvals=pvals, index=index){
     dt <- data.table(p=pvals[,i], idx=index)
-    dt[,.(p=p, pa=p.adjust(p, method="holm")),by=idx][,pa]
+    dt2 <- dt[,.(pa=min(p.adjust(p, method="holm"))),by=idx]
+    setkey(dt2, "idx")[J(index)][,pa]
 }
 
 singlePvalueBetaBinomial <- function(idx, k, n, mu, rho){

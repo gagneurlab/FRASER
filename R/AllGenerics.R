@@ -417,6 +417,9 @@ subsetFraseR <- function(x, i, j, by){
 }
 setMethod("[", c("FraseRDataSet", "ANY", "ANY"),
     function(x, i, j, by=c("j", "ss")) {
+        if(length(by) == 1){
+            by <- whichReadType(x, by)
+        }
         by <- match.arg(by)
         subsetFraseR(x, i, j, by)}
 )
@@ -588,7 +591,7 @@ setReplaceMethod("counts", "FraseRDataSet", function(object, type=NULL,
                 regmatches(type, gregexpr("psi(3|5|Site)", type, perl=TRUE)))
         aname <- paste0("rawOtherCounts_", type)
     }
-    assays(object, ...)[[aname]] <- as.matrix(value)
+    assays(object, ...)[[aname]] <- value
     validObject(value)
     return(object)
 })
