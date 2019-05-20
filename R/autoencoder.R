@@ -38,8 +38,9 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, rhoRange=c(1e-5, 1
     }
 
     # initial loss
-    lossList <- c(init_pca=lossED(fds, lambda))
-    print(paste0('Initial PCA loss: ', lossList[1]))
+    lossList <- lossED(fds, lambda, byRows=TRUE)
+    colnames(lossList) <- "init_pca"
+    print(paste0('Initial PCA loss: ', mean(lossList[,1])))
 
     #inital rho values
     if(isTRUE(verbose)){
@@ -56,7 +57,7 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, rhoRange=c(1e-5, 1
 
     # optimize log likelihood
     t1 <- Sys.time()
-    currentLoss <- lossED(fds, lambda)
+    currentLoss <- lossED(fds, lambda, byRows=TRUE)
     for(i in seq_len(iterations)){
         t2 <- Sys.time()
 
@@ -76,17 +77,23 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, rhoRange=c(1e-5, 1
           print(paste('Time for one autoencoder loop:', Sys.time() - t2))
         } else {
           print(paste0(date(), ': Iteration: ', i, ' loss: ',
-                       lossList[length(lossList)]))
+                       mean(lossList[nrow(lossList)])))
         }
 
         # check
-        curLossDiff <- abs(currentLoss - lossList[length(lossList) - 2:0])
-        if(all(curLossDiff < convergence)){
-          message(date(), ': the AE correction converged with:',
-                  lossList[length(lossList)])
+        curLossDiff <- rowMax(abs(
+                matrix(currentLoss, ncol=3, nrow=length(currentLoss))
+                - lossList[,ncol(lossList) - 2:0]))
+        if(all(max(curLossDiff) < convergence)){
+          message(date(), ': the AE correction converged with: ',
+                  mean(lossList[,ncol(lossList)]))
           break
+        } else {
+            if(isTRUE(verbose)){
+                message(date(), ": Current max diff is: ", max(curLossDiff))
+            }
         }
-        currentLoss <- lossList[length(lossList)]
+        currentLoss <- lossList[,ncol(lossList)]
     }
 
     print(Sys.time() - t1)
@@ -103,6 +110,13 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, rhoRange=c(1e-5, 1
 
         copy_fds <- initAutoencoder(copy_fds, q, rhoRange, type=type)
         E(copy_fds) <- E(fds)
+        currentLoss <- lossED(copy_fds, lambda, byRows=TRUE)
+
+        # adapt loss list to full matrix
+        newLossList <- matrix(NA_real_, ncol=ncol(lossList), nrow=dims["row"])
+        newLossList[featureExclusionMask(copy_fds),] <- lossList
+        colnames(newLossList) <- colnames(lossList)
+        lossList <- newLossList
 
         for(i in seq_len(iterations)){
             t2 <- Sys.time()
@@ -119,27 +133,34 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, rhoRange=c(1e-5, 1
                 print(paste('Time for one D & Rho loop:', Sys.time() - t2))
             } else {
                 print(paste0(date(), ': Iteration: final_', i, ' loss: ',
-                             lossList[length(lossList)]))
+                             mean(lossList[,ncol(lossList)]), " (mean); ",
+                             max(lossList[,ncol(lossList)]), " (max)"))
             }
 
             # check
-            curLossDiff <- abs(currentLoss - lossList[length(lossList) - 1:0])
+            curLossDiff <- rowMax(abs(
+                    matrix(currentLoss, ncol=2, nrow=length(currentLoss))
+                    - lossList[,ncol(lossList) - 1:0]))
             if(all(curLossDiff < convergence)){
                 message(date(), ': the final AE correction converged with:',
                         lossList[length(lossList)])
                 break
+            } else {
+                if(isTRUE(verbose)){
+                    message(date(), ": Current max diff is: ", max(curLossDiff))
+                }
             }
-            currentLoss <- lossList[length(lossList)]
+            currentLoss <- lossList[, ncol(lossList)]
         }
     }
 
-    print(paste0(i, ' Final betabin-AE loss: ', lossList[length(lossList)]))
+    print(paste0(i, ' Final betabin-AE loss: ', mean(lossList[, ncol(lossList)])))
     bpstop(BPPARAM)
 
     # add additional values for the user to the object
-    metadata(copy_fds)[['dim']] <- dim(copy_fds)
-    metadata(copy_fds)[['loss']] <- lossList
-    metadata(copy_fds)[['convList']] <- lossList
+    metadata(copy_fds)[[paste0('dim_', type)]] <- dim(copy_fds)
+    metadata(copy_fds)[[paste0('loss_', type)]] <- lossList
+    metadata(copy_fds)[[paste0('convList_', type)]] <- lossList
 
 
     # add correction factors
@@ -173,17 +194,19 @@ initAutoencoder <- function(fds, q, rhoRange, type){
 }
 
 updateLossList <- function(fds, lossList, i, stepText, lambda, verbose){
-    currLoss <- lossED(fds, lambda)
-    lossList <- c(lossList, currLoss)
-    names(lossList)[length(lossList)] <- paste0(i, '_', stepText)
+    currLoss <- lossED(fds, lambda, byRows=TRUE)
+    lossList <- cbind(lossList, currLoss)
+    colnames(lossList)[ncol(lossList)] <- paste0(i, '_', stepText)
     if(isTRUE(verbose)){
         print(paste0(date(), ': Iteration: ', i, ' ',
-                stepText, ' loss: ', currLoss))
+                stepText, ' loss: ',
+                round(mean(currLoss), 7), " (mean); ",
+                round(max(currLoss), 7),  " (max)"))
     }
     return(lossList)
 }
 
-lossED <- function(fds, lambda){
+lossED <- function(fds, lambda, byRows=FALSE){
     K <- K(fds)
     N <- N(fds)
     rho <- matrix(rho(fds), ncol=ncol(K), nrow = nrow(K))
@@ -191,7 +214,7 @@ lossED <- function(fds, lambda){
 
     y <- predictY(fds, noiseAlpha=currentNoiseAlpha(fds))
 
-    return(fullNLL(y, rho, K, N, D, lambda))
+    return(fullNLL(y, rho, K, N, D, lambda, byRows=byRows))
 }
 
 # lossED <- function(fds){
