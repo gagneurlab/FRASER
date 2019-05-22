@@ -271,3 +271,14 @@ testing <- function(){
     abline(0,1)
     grid()
 }
+
+
+#' @export
+cpp_truncNll_db <- function(par, H, k, n, rho){
+    truncNLL_db(par=par, H=H, k=k, n=n, rho=rho)
+}
+
+#' @export
+cpp_truncGrad_db <- function(par, H, k, n, rho){
+    truncGrad_db(par=par, H=H, k=k, n=n, rho=rho)
+}

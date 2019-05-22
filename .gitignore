@@ -1,16 +1,21 @@
 # ignore RStudio project files
 .Rproj.user
-
 # ignore R files
 .Rhistory
 .RData
-
 # ignore tmp files
 inst/tmp
-
 # ignore vignette artefacts
 FraseR.pdf
 cache
 vignettes/*.pdf
 vignettes/*.tex
 vignettes/*.txt
+# ignore cpp files
+*.o
+*.so
+*.dll
+*.db
+.nfs000*
+.Rsubread*
+kremer_ae_*.pdf

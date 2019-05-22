@@ -20,7 +20,8 @@ Imports:
     BBmisc,
     BiocGenerics,
     biomaRt,
-    DelayedArray (>= 0.5.14),
+    DelayedArray (>= 0.5.11),
+    DelayedMatrixStats,
     DT,
     GenomeInfoDb,
     GenomicAlignments, 
@@ -28,10 +29,29 @@ Imports:
     IRanges,
     graphics,
     gplots,
+    ggplot2,
     htmlwidgets,
-    HDF5Array, LSD, 
-    matrixStats, methods, parallel, plotly (>= 4.6.0), rhdf5, Rsubread, R.utils,
-    S4Vectors, shiny, stats, tidyr, tools, utils, VGAM
+    HDF5Array,
+    keras,
+    LSD, 
+    matrixStats,
+    methods,
+    parallel,
+    patchwork,
+    pheatmap,
+    plotly (>= 4.6.0),
+    PRROC,
+    RColorBrewer,
+    rhdf5,
+    Rsubread,
+    R.utils,
+    S4Vectors,
+    shiny,
+    stats,
+    tidyr,
+    tools,
+    utils,
+    VGAM
 Suggests: 
     BiocStyle,
     knitr,
@@ -39,27 +59,52 @@ Suggests:
     testthat,
     covr,
     RSelenium
-biocViews: RNASeq, AlternativeSplicing, Sequencing,
-    Software, Genetics, Coverage
+LinkingTo:
+    Rcpp,
+    RcppArmadillo
+biocViews: 
+    RNASeq,
+    AlternativeSplicing,
+    Sequencing,
+    Software,
+    Genetics,
+    Coverage
 URL: https://i12g-gagneurweb.in.tum.de/gitlab/mertes/FraseR/
 RoxygenNote: 6.1.1
+Encoding: UTF-8
 Collate:
-    'FraseR-package.R'
-    'FraseRDataSet-class.R'
-    'AllGenerics.R'
-    'Fraser-pipeline.R'
-    'accessor-methods.R'
-    'annotationOfRanges.R'
-    'beta-binomial-testing.R'
-    'calculatePSIValue.R'
-    'calculateStats.R'
-    'countRNAseqData.R'
-    'example_functions.R'
+    variables.R
+    getNSetterFuns.R
+    FraseR-package.R
+    FraseRDataSet-class.R
+    AllGenerics.R
+    Fraser-pipeline.R
+    accessor-methods.R
+    annotationOfRanges.R
+    beta-binomial-testing.R
+    calculatePSIValue.R
+    calculateStats.R
+    countRNAseqData.R
+    example_functions.R
     filterExpression.R
-    'getURLs.R'
-    'helper-functions.R'
-    'plotResults.R'
-    'saveHDF5Objects.R'
-    'shiny.R'
-    'plotDistributions.R'
+    find_encoding_dimensions.R
+    getURLs.R
+    helper-functions.R
+    plotResults.R
+    saveHDF5Objects.R
+    shiny.R
+    plotDistributions.R
+    RcppExports.R
+    autoencoder.R
+    updateD.R
+    updateE.R
+    updateRho.R
+    gradient_loss_R.R
+    keras_autoencoder.r
+    keras_combined_autoencoder.r
+    methods-makeExampleObj.R
+    plotAutoencoderResults.R
+    pvalsNzscore.R
+    makeSimulatedDataset.R
+    fitCorrectionMethods.R
 VignetteBuilder: knitr

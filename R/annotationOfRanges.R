@@ -48,15 +48,11 @@ annotateRanges <- function(fds, feature="hgnc_symbol", featureName=feature,
             biotype, useUSCS)
 
     # annotate split reads
-    mcols(fds, type="psi3")[[featureName]] <- getAnnotationFeature(
-            data=rowRanges(fds), featureName, annotation
-    )
-
-    # annotate splice sites
-    mcols(fds, type="psiSite")[[featureName]] <- getAnnotationFeature(
-            data=rowRanges(nonSplicedReads(fds)),
-            featureName, annotation
-    )
+    for(i in c("psi3", "psiSite")){
+        gr <- rowRanges(fds, type=i)
+        annos <- getAnnotationFeature(data=gr, featureName, annotation)
+        mcols(fds, type=i)[[featureName]] <- annos
+    }
 
     return(fds)
 }

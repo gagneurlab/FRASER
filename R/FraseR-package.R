@@ -11,7 +11,7 @@
 #'
 #' @importFrom parallel mclapply
 #' @import BiocParallel
-#'
+#' @importFrom pcaMethods pca loadings
 #'
 ### GRange/Experiment/bamFile packages
 #'
@@ -37,6 +37,8 @@
 #' @importFrom gplots col2hex
 #' @importFrom htmlwidgets saveWidget
 #' @importFrom LSD heatscatter
+#' @importFrom pheatmap pheatmap
+#' @importFrom RColorBrewer brewer.pal
 #'
 ### Shiny App
 #'
@@ -53,14 +55,13 @@
 #'          setnames
 #' @import tidyr
 #' @importFrom HDF5Array writeHDF5Array path
-#' @importFrom DelayedArray rowMeans path<-
 #' @importFrom rhdf5 h5ls
 #'
 ### P-Value calculation
 #'
-#' @importFrom stats sd rbinom fisher.test na.omit p.adjust ppoints qbeta rnorm
+#' @importFrom stats sd rbinom fisher.test na.omit p.adjust ppoints qbeta rnorm predict
 #' @importFrom VGAM rbetabinom vglm Coef pbetabinom pbetabinom.ab betabinomial
-#'          dbetabinom.ab
+#'          dbetabinom.ab dbetabinom
 #'
 ### Miscelenious functions
 #'
@@ -82,10 +83,23 @@
 #' @importFrom GenomeInfoDb seqlevels<- seqlevels seqlengths
 #'          keepStandardChromosomes
 #' @importFrom shiny renderUI reactive renderPrint renderPlot
-#' @importFrom DelayedArray rowMaxs
+#' @importFrom DelayedArray rowMaxs rowMeans path<-
 #' @importFrom data.table rbindlist
-#' @importFrom matrixStats rowQuantiles rowMedians
+#' @importFrom DelayedMatrixStats rowMedians rowSds colMeans2 rowMeans2 rowQuantiles
 #' @importFrom stats runif median quantile
+#' @importFrom extraDistr rdirmnom
+#' @importFrom PRROC pr.curve
+#' @importFrom ggplot2 ggtitle xlab ylab ggplot geom_point geom_line geom_smooth aes
+#' @importFrom patchwork plot_layout
+#'
+#' @importFrom keras custom_metric layer_input k_variable layer_lambda k_log
+#'          layer_dense constraint_minmaxnorm regularizer_l2 get_weights
+#'          set_weights keras_model k_exp k_mean optimizer_adam use_python
+#'          callback_terminate_on_naan callback_early_stopping
+#' @importFrom tensorflow install_tensorflow
+#'
+#' @useDynLib FraseR
+#'
 
 
 
@@ -96,6 +110,10 @@ NULL
 globalVariables(c(".N", ".asDataFrame", "End", "FN", "HTML", "Start", "TP",
         "deltaPsi", "curgr", "gene", "lty", "hgnc_symbol", "id",
         "ldat", "p.adj", "pval", "pvalue", "shinyFds", "shinyFdsRes",
-        "sampleID", "sampleGroup", "chr", "symbol", "type"),
+        "sampleID", "sampleGroup", "chr", "symbol", "type", "pseudocount"),
         package="FraseR")
+
+
+options("FraseR.pseudoCount"=1)
+
 

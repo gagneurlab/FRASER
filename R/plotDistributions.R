@@ -23,7 +23,7 @@
 #'
 #' @export
 plotJunctionDistribution <- function(fds, gr, type=gr$type, sampleIDs=NULL,
-            rmZeroCts=FALSE, plotRank=paste0(c("", "delta_", "zscore_"), type),
+            rmZeroCts=FALSE, plotRank=paste0(c("", "delta_", "zScores_"), type),
             plotCounts=TRUE, plotValVsCounts=type, qqplot=TRUE,
             plotLegend=TRUE, cex=1, mfrow=3, ...){
     stopifnot(is(fds, "FraseRDataSet"))
@@ -77,18 +77,18 @@ plotJunctionDistribution <- function(fds, gr, type=gr$type, sampleIDs=NULL,
 #' @noRd
 getPlotDistributionData <- function(gr, fds, type, rmZeroCts=FALSE){
     se <- as(fds, "RangedSummarizedExperiment")
-    if(type %in% "psiSite") {
+    if(grepl("psiSite", type)) {
         se <- nonSplicedReads(fds)
     }
 
     rctsname     <- paste0("rawCounts", toupper(checkReadType(fds, type)))
     roctsname    <- paste0("rawOtherCounts_", whichPSIType(type))
-    pvaluename   <- paste0("pvalue_", type)
-    psiname      <- type
-    deltapsiname <- paste0("delta_", type)
-    zscorename   <- paste0("zscore_", type)
+    pvaluename   <- paste0("pvaluesBetaBinomial_", whichPSIType(type))
+    psiname      <- whichPSIType(type)
+    deltapsiname <- paste0("delta_", whichPSIType(type))
+    zscorename   <- paste0("zScores_", whichPSIType(type))
 
-    mapping      <- c("pvalues", "psi", "deltaPsi", "zscore", "rcts", "rocts")
+    mapping      <- c("pvalues", "psi", "deltaPsi", "zScores", "rcts", "rocts")
     names(mapping) <- c(pvaluename, psiname, deltapsiname, zscorename, rctsname,
                         roctsname)
 
@@ -108,9 +108,9 @@ getPlotDistributionData <- function(gr, fds, type, rmZeroCts=FALSE){
     }
 
     alpha <- beta <- NA
-    if(paste0(type, "_alpha") %in% colnames(mcols(seOfInterest))){
-        alpha <- mcols(seOfInterest)[,paste0(type, "_alpha")]
-        beta  <- mcols(seOfInterest)[,paste0(type, "_beta")]
+    if(paste0(whichPSIType(type), "_alpha") %in% colnames(mcols(seOfInterest))){
+        alpha <- mcols(seOfInterest)[,paste0(whichPSIType(type), "_alpha")]
+        beta  <- mcols(seOfInterest)[,paste0(whichPSIType(type), "_beta")]
     }
 
     return(list(
@@ -121,7 +121,7 @@ getPlotDistributionData <- function(gr, fds, type, rmZeroCts=FALSE){
         pvalues  = as.matrix(null2na(assays(seOfInterest)[[pvaluename]]))[1,],
         psi      = as.matrix(null2na(assays(seOfInterest)[[psiname]]))[1,],
         deltaPsi = as.matrix(null2na(assays(seOfInterest)[[deltapsiname]]))[1,],
-        zscore   = as.matrix(null2na(assays(seOfInterest)[[zscorename]]))[1,],
+        zScores  = as.matrix(null2na(assays(seOfInterest)[[zscorename]]))[1,],
         alpha    = alpha,
         beta     = beta
     ))
@@ -357,7 +357,7 @@ getTitle <- function(plotMainTxt, gr, psiType){
 #'
 #' @noRd
 plotQQplot <- function(gr=NULL, fds=NULL, type=NULL, data=NULL, maxOutlier=2,
-                    conf.alpha=0.05, sample=FALSE, breakTies=TRUE,
+                    conf.alpha=0.05, sample=FALSE, breakTies=TRUE, mainName="qqPlot",
                     legendPos="bottomright"){
     if(isScalarLogical(conf.alpha)){
         conf.alpha <- ifelse(isTRUE(conf.alpha), 0.05, NA)
@@ -518,4 +518,77 @@ testPlotting <- function(){
     plotJunctionDistribution(fds, gra[1], rmZeroCts = FALSE)
     plotCountsAtSite(gra[1], fds, gra[1]$type)
     plotValueVsCounts(gra[1], fds, gra[1]$type, plotLog=TRUE, rmZeroCts=FALSE)
+}
+
+#'
+#' Plot count correlation
+#'
+#' @export
+plotCountCorHeatmap <- function(fds, type=c("psi5", "psi3", "psiSite"),
+            logit=FALSE, topN=50000, minMedian=1, main=NULL, normalized=FALSE,
+            show_rownames=FALSE, show_colnames=FALSE,
+            annotation_col=NA, annotation_row=NA, boder_color=NA, ...){
+
+    type <- match.arg(type)
+
+    kmat <- as.matrix(counts(fds, type=type, side="ofIn"))
+    nmat <- kmat + as.matrix(counts(fds, type=type, side="other"))
+
+    expRowsMedian <- rowMedians(kmat) >= minMedian
+    expRowsMax    <- rowMax(kmat)     >= 10
+    table(expRowsMax & expRowsMedian)
+
+    skmat <- kmat[expRowsMax & expRowsMedian,]
+    snmat <- nmat[expRowsMax & expRowsMedian,]
+
+    xmat <- (skmat + 1)/(snmat + 2)
+    if(isTRUE(logit)){
+        xmat <- qlogis(xmat)
+    }
+    xmat_rc    <- xmat - rowMeans(xmat)
+    xmat_rc_sd <- rowSds(xmat_rc)
+    plotIdx <- rank(xmat_rc_sd) >= length(xmat_rc_sd) - topN
+    xmat_rc_2_plot <- xmat_rc[plotIdx,]
+    if(isTRUE(normalized)){
+        pred_mu <- predictedMeans(fds)[expRowsMax & expRowsMedian,]
+        pred_mu <- qlogis(pred_mu)
+        lpred_mu_rc <- pred_mu - rowMeans(pred_mu)
+        xmat_rc_2_plot <- xmat_rc_2_plot - lpred_mu_rc[plotIdx,]
+    }
+    cormat <- cor(xmat_rc_2_plot)
+
+    if(is.character(annotation_col)){
+        annotation_col <- getColDataAsDFFactors(fds, annotation_col)
+    }
+    if(is.character(annotation_row)){
+        annotation_row <- getColDataAsDFFactors(fds, annotation_row)
+    }
+
+    if(is.null(main)){
+        if(isTRUE(logit)){
+            main <- paste0("Row-centered Logit(PSI) correlation (", type, ")")
+        } else {
+            main <- paste0("Row-centered PSI correlation (", type, ")")
+        }
+    }
+
+    pheatmap(cormat, show_rownames=show_rownames, show_colnames=show_colnames,
+             main=main, annotation_col=annotation_col,
+             annotation_row=annotation_row, ..., boder_color=boder_color,
+             breaks=seq(-1, 1, length.out=50),
+             color=colorRampPalette(colors=rev(brewer.pal(11, "RdBu")))(50)
+    )
+}
+
+
+getColDataAsDFFactors <- function(fds, names){
+    tmpDF <- data.frame(colData(fds)[,names])
+    colnames(tmpDF) <- names
+    for(i in names){
+        if(any(is.na(tmpDF[, i]))){
+            tmpDF[,i] <- as.factor(paste0("", tmpDF[,i]))
+        }
+    }
+    rownames(tmpDF) <- rownames(colData(fds))
+    return(tmpDF)
 }

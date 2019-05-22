@@ -14,12 +14,12 @@
 #' @examples
 #'   fds <- countRNAData(createTestFraseRSettings())
 #'   fds <- calculatePSIValues(fds)
-calculatePSIValues <- function(fds, overwriteCts=FALSE){
+calculatePSIValues <- function(fds, types=psiTypes, overwriteCts=FALSE){
     # check input
     stopifnot(class(fds) == "FraseRDataSet")
 
     # calculate PSI value for each sample
-    for(psiType in c("psi5", "psi3", "psiSite")){
+    for(psiType in types){
         if(!assayExists(fds, psiType)){
             fds <- calculatePSIValuePrimeSite(fds, psiType=psiType,
                     overwriteCts=overwriteCts)
@@ -29,7 +29,7 @@ calculatePSIValues <- function(fds, overwriteCts=FALSE){
     }
 
     # calculate the delta psi value
-    for(psiType in c("psi3", "psi5", "psiSite")){
+    for(psiType in types){
         assayName <- paste0("delta_", psiType)
         if(!assayExists(fds, assayName)){
             fds <- calculateDeltaPsiValue(fds, psiType, assayName)
@@ -50,7 +50,7 @@ calculatePSIValues <- function(fds, overwriteCts=FALSE){
 calculatePSIValuePrimeSite <- function(fds, psiType, overwriteCts){
     stopifnot(class(fds) == "FraseRDataSet")
     stopifnot(isScalarCharacter(psiType))
-    stopifnot(psiType %in% c("psi5", "psi3", "psiSite"))
+    stopifnot(psiType %in% psiTypes)
 
     if(psiType=="psiSite"){
         return(calculateSitePSIValue(fds, overwriteCts))
@@ -110,13 +110,11 @@ calculatePSIValuePrimeSite <- function(fds, psiType, overwriteCts){
     names(psiValues) <- samples(fds)
 
     # merge it to a DataFrame and assign it to our object
-    assays(fds, type="j")[[psiType]] <- DataFrame(
-        lapply(psiValues, "[[", "psiValue")
-    )
+    assay(fds, type="j", psiType) <- do.call(cbind,
+            lapply(psiValues, "[[", "psiValue"))
     if(isTRUE(overwriteCts)){
-        assays(fds, type="j")[[psiROCName]] <- DataFrame(
-            lapply(psiValues, "[[", "rawOtherCounts")
-        )
+        assay(fds, type="j", psiROCName) <- do.call(cbind,
+                lapply(psiValues, "[[", "rawOtherCounts"))
     }
 
     return(fds)
