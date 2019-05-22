@@ -37,7 +37,7 @@ truncNLL_rho <- function(rho, yi, ki, ni) {
     .Call('_FraseR_truncNLL_rho', PACKAGE = 'FraseR', rho, yi, ki, ni)
 }
 
-fullNLL <- function(y, rho, k, n, D, lambda) {
-    .Call('_FraseR_fullNLL', PACKAGE = 'FraseR', y, rho, k, n, D, lambda)
+fullNLL <- function(y, rho, k, n, D, lambda, byRows = FALSE) {
+    .Call('_FraseR_fullNLL', PACKAGE = 'FraseR', y, rho, k, n, D, lambda, byRows)
 }
 

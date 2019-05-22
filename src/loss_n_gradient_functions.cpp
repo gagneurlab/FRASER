@@ -30,6 +30,10 @@ arma::vec colMeans(arma::mat X){
     return arma::vectorise(arma::sum(X,0))/X.n_rows;
 }
 
+arma::vec rowMeans(arma::mat X){
+    return arma::vectorise(arma::sum(X,1))/X.n_cols;
+}
+
 arma::vec rcppdigamma(arma::vec x){
     NumericVector out = as<NumericVector>(wrap(x));
     out = digamma(out);
@@ -361,7 +365,7 @@ double truncNLL_rho(double rho, arma::vec yi, arma::vec ki, arma::vec ni){
 }
 
 // [[Rcpp::export()]]
-double fullNLL(arma::mat y, arma::mat rho, arma::mat k, arma::mat n, arma::mat D, double lambda){
+arma::vec fullNLL(arma::mat y, arma::mat rho, arma::mat k, arma::mat n, arma::mat D, double lambda, bool byRows=false){
   arma::mat rhoa, rhob;
   arma::mat mu, u, alpha, alphaK, beta, betaNK, nonTruncTerms, nll, aT;
 
@@ -390,9 +394,13 @@ double fullNLL(arma::mat y, arma::mat rho, arma::mat k, arma::mat n, arma::mat D
   beta.elem( infPosB ) = abs.elem( infPosB );
   // beta.elem( infPosB ) = estLgammaBeta(y, infPosB, rhob);
 
-  nll = arma::accu(alpha + beta - alphaK - betaNK + nonTruncTerms)/k.n_elem;
-
-  nll = nll + (lambda/k.n_elem) * arma::accu(D % D);
-
-  return arma::as_scalar(nll);
+  if(byRows){
+    nll = rowMeans(alpha + beta - alphaK - betaNK + nonTruncTerms);
+    nll = nll + (lambda/k.n_elem) * rowMeans(D % D);
+    return arma::vectorise(nll);
+  } else {
+    nll = arma::accu(alpha + beta - alphaK - betaNK + nonTruncTerms)/k.n_elem;
+    nll = nll + (lambda/k.n_elem) * arma::accu(D % D);
+    return arma::vectorise(nll);
+  }
 }

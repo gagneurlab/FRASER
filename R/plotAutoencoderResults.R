@@ -159,3 +159,36 @@ plotZscore <- function(idx, fds){
 }
 
 
+
+plotLoss <- function(fds, type){
+    type
+    fds <- fds_new
+    lossList <- metadata(fds)[[paste0('loss_', type)]]
+    dt2plot <- as.data.table(melt(do.call(rbind, list(
+        max=colMaxs(lossList, na.rm=TRUE),
+        mean=colMeans(lossList, na.rm=TRUE),
+        min=colMins(lossList, na.rm=TRUE),
+        sd=colSds(lossList, na.rm=TRUE))), value.name="Loss"))
+    colnames(dt2plot)[1:2] <- c("Aggregation", "IterSteps")
+
+    # set iterations
+    dt2plot[grepl("init",IterSteps),iteration:=0]
+    dt2plot[is.na(iteration),iteration:=as.numeric(as.character(
+        gsub("_.*", "" ,gsub("final_", "" , IterSteps))))]
+
+    # set step
+    dt2plot[grepl("final", IterSteps),Step:="D fit"]
+    dt2plot[is.na(Step) & !grepl("init", IterSteps),Step:="E fit"]
+    dt2plot[is.na(Step),Step:="Init"]
+    dt2plot[,Iteration:=1:.N/1,by="Aggregation,Step"]
+    dt2plot[Step=="E fit", Iteration:=Iteration/3]
+    dt2plot[Step=="D fit", Iteration:=Iteration/2]
+
+    # summaries
+    ggplot(dt2plot[Aggregation != "sd"], aes(x=Iteration, y=Loss, col=Step, lty=Aggregation)) +
+        geom_ribbon(data=dt2plot[Aggregation == "mean",], aes(
+            ymin = dt2plot[Aggregation == "mean", Loss] - dt2plot[Aggregation == "sd", Loss],
+            ymax = dt2plot[Aggregation == "mean", Loss] + dt2plot[Aggregation == "sd", Loss]), fill="gray80", col=NA) +
+        geom_line() +
+        scale_y_log10()
+}

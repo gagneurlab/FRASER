@@ -137,8 +137,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // fullNLL
-double fullNLL(arma::mat y, arma::mat rho, arma::mat k, arma::mat n, arma::mat D, double lambda);
-RcppExport SEXP _FraseR_fullNLL(SEXP ySEXP, SEXP rhoSEXP, SEXP kSEXP, SEXP nSEXP, SEXP DSEXP, SEXP lambdaSEXP) {
+arma::vec fullNLL(arma::mat y, arma::mat rho, arma::mat k, arma::mat n, arma::mat D, double lambda, bool byRows);
+RcppExport SEXP _FraseR_fullNLL(SEXP ySEXP, SEXP rhoSEXP, SEXP kSEXP, SEXP nSEXP, SEXP DSEXP, SEXP lambdaSEXP, SEXP byRowsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -148,7 +148,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< arma::mat >::type n(nSEXP);
     Rcpp::traits::input_parameter< arma::mat >::type D(DSEXP);
     Rcpp::traits::input_parameter< double >::type lambda(lambdaSEXP);
-    rcpp_result_gen = Rcpp::wrap(fullNLL(y, rho, k, n, D, lambda));
+    Rcpp::traits::input_parameter< bool >::type byRows(byRowsSEXP);
+    rcpp_result_gen = Rcpp::wrap(fullNLL(y, rho, k, n, D, lambda, byRows));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -163,7 +164,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_FraseR_truncNLL_e", (DL_FUNC) &_FraseR_truncNLL_e, 7},
     {"_FraseR_truncGrad_e", (DL_FUNC) &_FraseR_truncGrad_e, 7},
     {"_FraseR_truncNLL_rho", (DL_FUNC) &_FraseR_truncNLL_rho, 4},
-    {"_FraseR_fullNLL", (DL_FUNC) &_FraseR_fullNLL, 6},
+    {"_FraseR_fullNLL", (DL_FUNC) &_FraseR_fullNLL, 7},
     {NULL, NULL, 0}
 };
 
