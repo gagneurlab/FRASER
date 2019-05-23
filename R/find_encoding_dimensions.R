@@ -2,7 +2,7 @@
 #' ### MODEL
 #'
 fit_autoenc <- function(fds, type=currentType(fds), q_guess=round(ncol(fds)/4),
-                    noiseRatio=0.5, BPPARAM=bpparam(), iterations=3){
+                    noiseRatio=0.5, BPPARAM=bpparam(), iterations=3, nrDecoderBatches=1){
 
     message(paste(date(), "; q:", q_guess, "; noise: ", noiseRatio))
 
@@ -11,8 +11,9 @@ fit_autoenc <- function(fds, type=currentType(fds), q_guess=round(ncol(fds)/4),
 
     # train AE
     fds <- fitAutoencoder(fds, type=type, q=q_guess, iterations=iterations,
-            verbose=TRUE, BPPARAM=BPPARAM)
-    curLoss <- metadata(fds)[['loss']][length(metadata(fds)[['loss']])]
+            nrDecoderBatches=nrDecoderBatches, verbose=TRUE, BPPARAM=BPPARAM)
+    curLoss <- metadata(fds)[[paste0('loss_', type)]]
+    curLoss <- mean(curLoss[,ncol(curLoss)])
 
     return(list(fds=fds, evaluation=curLoss))
 }
@@ -49,13 +50,14 @@ eval_prot <- function(fds, type){
 }
 
 
-findEncodingDim <- function(i, fds, type, params, internalBPPARAM=SerialParam(), iterations){
+findEncodingDim <- function(i, fds, type, params, internalBPPARAM=SerialParam(), iterations, nrDecoderBatches){
 
     q_guess    <- params[i, "q"]
     noiseRatio <- params[i, "noise"]
     message(paste(i, ";\t", q_guess, ";\t", noiseRatio))
 
     res_fit <- fit_autoenc(fds=fds, type=type, q_guess=q_guess,
+            nrDecoderBatches=nrDecoderBatches,
             noiseRatio=noiseRatio, BPPARAM=internalBPPARAM, iterations=iterations)
     res_pvals <- predict_outliers(res_fit$fds, type=type, BPPARAM=internalBPPARAM)
     evals <- eval_prot(res_pvals, type=type)
@@ -63,9 +65,9 @@ findEncodingDim <- function(i, fds, type, params, internalBPPARAM=SerialParam(),
     return(list(q=q_guess, noiseRatio=noiseRatio, loss=res_fit$evaluation, aroc=evals))
 }
 
-optimHyperParams <- function(fds, type, q_param=seq(3, min(30, ncol(fds)), by=3),
-                    noise_param=c(0, 0.5, 1, 2), minDeltaPsi=0.1, BPPARAM=bpparam(),
-                    iterations=5, setSubset=0.1, injectFreq=1e-2){
+optimHyperParams <- function(fds, type, q_param=seq(2, min(40, ncol(fds)), by=3),
+                    noise_param=c(0, 0.5, 1, 2, 5), minDeltaPsi=0.1, BPPARAM=bpparam(),
+                    iterations=5, setSubset=15000, injectFreq=1e-2, nrDecoderBatches=1){
     # make copy to return it later
     fds_copy <- fds
     currentType(fds) <- type
@@ -88,12 +90,15 @@ optimHyperParams <- function(fds, type, q_param=seq(3, min(30, ncol(fds)), by=3)
     #
     # subset for finding encoding dimensions
     #
-    if(isScalarNumeric(setSubset) & nrow(fds) >= 500){
-        exVec <- sample(c(T, F), nrow(mcols(fds, type=type)), replace=TRUE, prob=c(setSubset, 1-setSubset))
-        featureExclusionMask(fds, type=type) <- exVec
-        message("Exclusion matrix: ", paste(names(table(exVec)), table(exVec), collapse="\t", sep=": "))
-    }
+    curX <- x(fds, type=type, all=TRUE, center=FALSE, noiseAlpha=NULL)
+    xsd <- colSds(as.matrix(curX))
+    nMostVarJuncs <- which(xsd >= sort(xsd, TRUE)[min(length(xsd), setSubset*2)])
+    exMask <- logical(length(xsd))
+    exMask[sample(nMostVarJuncs, min(length(xsd), setSubset))] <- TRUE
+
+    featureExclusionMask(fds) <- exMask
     fds <- fds[featureExclusionMask(fds, type=type),,by=type]
+    message("Exclusion matrix: ", paste(names(table(exMask)), table(exMask), collapse="\t", sep=": "))
 
     # inject outliers
     fds <- injectOutliers(fds, type=type, freq=injectFreq, minDpsi=0.1, method="samplePSI")
@@ -101,7 +106,8 @@ optimHyperParams <- function(fds, type, q_param=seq(3, min(30, ncol(fds)), by=3)
     # run hyper parameter optimization
     params <- expand.grid(q=q_param, noise=noise_param)
     res <- bplapply(seq_len(nrow(params)), findEncodingDim, fds=fds, type=type,
-                    iterations=iterations, params=params, BPPARAM=BPPARAM)
+                    iterations=iterations, params=params, BPPARAM=BPPARAM,
+                    nrDecoderBatches=nrDecoderBatches)
 
     # res2 <- res
     data <- data.table(

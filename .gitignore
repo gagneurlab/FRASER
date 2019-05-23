@@ -17,3 +17,5 @@ vignettes/*.txt
 *.dll
 *.db
 .nfs000*
+.Rsubread*
+kremer_ae_*.pdf

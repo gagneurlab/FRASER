@@ -101,11 +101,11 @@ saveFraseRDataSet <- function(fds, dir=NULL, name=NULL, rewrite=FALSE) {
     if(!dir.exists(outDir)) dir.create(outDir, recursive=TRUE)
 
     # over each assay object
+    name(fds) <- name
     for(aname in assayNames(fds)){
         assay <- assay(fds, aname)
         assay(fds, aname) <- saveAsHDF5(fds, aname, assay, rewrite=rewrite)
     }
-    name(fds) <- name
 
     rdsFile <- file.path(outDir, "fds-object.RDS")
     message(date(), ": Writing final FraseR object ('", rdsFile, "').")
