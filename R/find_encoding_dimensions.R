@@ -66,8 +66,9 @@ findEncodingDim <- function(i, fds, type, params, internalBPPARAM=SerialParam(),
 }
 
 optimHyperParams <- function(fds, type, q_param=seq(2, min(40, ncol(fds)), by=3),
-                    noise_param=c(0, 0.5, 1, 2, 5), minDeltaPsi=0.1, BPPARAM=bpparam(),
-                    iterations=5, setSubset=15000, injectFreq=1e-2, nrDecoderBatches=1){
+                    noise_param=c(0, 0.5, 1, 2, 5), minDeltaPsi=0.1,
+                    iterations=5, setSubset=15000, injectFreq=1e-2,
+                    nrDecoderBatches=1, BPPARAM=bpparam()){
     # make copy to return it later
     fds_copy <- fds
     currentType(fds) <- type
@@ -82,26 +83,20 @@ optimHyperParams <- function(fds, type, q_param=seq(2, min(40, ncol(fds)), by=3)
     #'
     #' remove non variable junctions
     #'
-    psi <- K(fds)/N(fds)
-    j2keep <- rowMaxs(abs(psi - rowMeans(psi, na.rm=TRUE)), na.rm=TRUE) >= minDeltaPsi
-    message("dPsi filter:", paste(names(table(j2keep)), table(j2keep), collapse="\t", sep=": "))
+    j2keep <- nonVariableJunctions(fds, type, minDeltaPsi)
+    message("dPsi filter:", pasteTable(j2keep))
     fds <- fds[j2keep,,by=type]
 
     #
     # subset for finding encoding dimensions
     #
-    curX <- x(fds, type=type, all=TRUE, center=FALSE, noiseAlpha=NULL)
-    xsd <- colSds(as.matrix(curX))
-    nMostVarJuncs <- which(xsd >= sort(xsd, TRUE)[min(length(xsd), setSubset*2)])
-    exMask <- logical(length(xsd))
-    exMask[sample(nMostVarJuncs, min(length(xsd), setSubset))] <- TRUE
-
+    exMask <- subsetKMostVariableJunctions(fds, type, setSubset)
     featureExclusionMask(fds) <- exMask
-    fds <- fds[featureExclusionMask(fds, type=type),,by=type]
-    message("Exclusion matrix: ", paste(names(table(exMask)), table(exMask), collapse="\t", sep=": "))
+    fds <- fds[exMask,,by=type]
+    message("Exclusion matrix: ", pasteTable(exMask))
 
     # inject outliers
-    fds <- injectOutliers(fds, type=type, freq=injectFreq, minDpsi=0.1, method="samplePSI")
+    fds <- injectOutliers(fds, type=type, freq=injectFreq, minDpsi=minDeltaPsi, method="samplePSI")
 
     # run hyper parameter optimization
     params <- expand.grid(q=q_param, noise=noise_param)

@@ -324,3 +324,23 @@ getAssayAsVector <- function(fds, prefix, psiType, sampleID){
 }
 
 
+nonVariableJunctions <- function(fds, type, minDeltaPsi=0.1){
+    psi <- K(fds, type=type)/N(fds, type=type)
+    j2keep <- rowMaxs(abs(psi - rowMeans(psi, na.rm=TRUE)), na.rm=TRUE)
+    j2keep >= minDeltaPsi
+}
+
+subsetKMostVariableJunctions <- function(fds, type, n){
+    curX <- as.matrix(x(fds, type=type, all=TRUE, center=FALSE, noiseAlpha=NULL))
+    xsd <- colSds(curX)
+    nMostVarJuncs <- which(xsd >= sort(xsd, TRUE)[min(length(xsd), n*2)])
+    ans <- logical(length(xsd))
+    ans[sample(nMostVarJuncs, min(length(xsd), n))] <- TRUE
+
+    ans
+}
+
+pasteTable <- function(x, ...){
+    tab <- table(x, ...)
+    paste(names(tab), tab, collapse="\t", sep=": ")
+}
