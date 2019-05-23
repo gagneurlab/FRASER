@@ -18,7 +18,7 @@ fit <- function(fds, correction=c("FraseR", "fullFraseR", "PCA", "PCA+regression
             PEER        = fitPEER(fds=fds, q=q, psiType=type, recomendedQ=recommendedPEERq, rhoRange=rhoRange, BPPARAM=BPPARAM),
             PEERdecoder = fitPEERDecoder(fds=fds, q=q, psiType=type, recomendedQ=recommendedPEERq, rhoRange=rhoRange, BPPARAM=BPPARAM, nrDecoderBatches=nrDecoderBatches),
             BB          = fitBB(fds=fds, psiType=type),
-            kerasDAE    = fitKerasDAE(fds=fds, type=type, q=q, noiseAlpha=noiseAlpha, rhoRange=rhoRange, BPPARAM=BPPARAM),
+            kerasDAE    = fitKerasDAE(fds=fds, psiType=type, q=q, noiseAlpha=noiseAlpha, rhoRange=rhoRange, BPPARAM=BPPARAM),
             kerasBBdAE  = fit_keras_bb_dea(fds=fds, type=type, q=q, noiseAlpha=noiseAlpha,
                     rhoRange=rhoRange, BPPARAM=BPPARAM, lr=lr, patience=3, epochs=epochs, reUseWeights=FALSE, iterations=iterations))
 
@@ -86,7 +86,7 @@ fitPEER <-function(fds, q, psiType, recomendedQ=TRUE, rhoRange=c(1e-5, 1-1e-5), 
   model <- PEER()
   PEER_setPhenoMean(model, as.matrix(x(fds, all=TRUE, noiseAlpha=NULL, center=FALSE)))
   PEER_setNk(model, maxFactors)          # nr of hidden confounders
-  PEER_setNmax_iterations(model, 1000)   # 1000 iterations is default
+  PEER_setNmax_iterations(model, 300)   # 1000 iterations is default
   # PEER_setAdd_mean(model, TRUE)        # should mean expression be added as additional factor? currently FALSE
 
   #+ run full Peer pipeline
