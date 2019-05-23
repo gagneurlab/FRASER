@@ -12,7 +12,8 @@ fit_autoenc <- function(fds, type=currentType(fds), q_guess=round(ncol(fds)/4),
     # train AE
     fds <- fitAutoencoder(fds, type=type, q=q_guess, iterations=iterations,
             nrDecoderBatches=nrDecoderBatches, verbose=TRUE, BPPARAM=BPPARAM)
-    curLoss <- metadata(fds)[['loss']][length(metadata(fds)[['loss']])]
+    curLoss <- metadata(fds)[[paste0('loss_', type)]]
+    curLoss <- mean(curLoss[,ncol(curLoss)])
 
     return(list(fds=fds, evaluation=curLoss))
 }
@@ -91,7 +92,7 @@ optimHyperParams <- function(fds, type, q_param=seq(2, min(40, ncol(fds)), by=3)
     #
     curX <- x(fds, type=type, all=TRUE, center=FALSE, noiseAlpha=NULL)
     xsd <- colSds(as.matrix(curX))
-    nMostVarJuncs <- which(xsd > sort(xsd, TRUE)[min(length(xsd), setSubset*2)])
+    nMostVarJuncs <- which(xsd >= sort(xsd, TRUE)[min(length(xsd), setSubset*2)])
     exMask <- logical(length(xsd))
     exMask[sample(nMostVarJuncs, min(length(xsd), setSubset))] <- TRUE
 
