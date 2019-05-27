@@ -251,21 +251,18 @@ currentNoiseAlpha <- function(fds){
   return(fds)
 }
 
-
 noise <- function(fds, type=currentType(fds)){
-  return(metadata(fds)[[paste0('noise_', type)]])
-  # return(getAssayMatrix(fds, name="noise", type=type))
+  return(t(getAssayMatrix(fds, name="noise", type=type)))
 }
 
-`noise<-` <- function(fds, value, type=currentType(fds), ...){
+`noise<-` <- function(fds, value, type=currentType(fds), HDF5=FALSE, ...){
   if(!is.matrix(value)){
     value <- matrix(value, nrow=nrow(mcols(fds, type=type)), ncol=ncol(fds))
   }
-  metadata(fds)[[paste0('noise_', type)]] <- value
+  setAssayMatrix(fds, name='noise', type=type, HDF5=HDF5) <- t(value)
   return(fds)
-  # setAssayMatrix(fds, name="noise", type=type, ...) <- value
-  # return(fds)
 }
+
 hyperParams <- function(fds, type=currentType(fds), all=FALSE){
     ans <- metadata(fds)[[paste0("hyperParams_", type)]]
     if(is.null(ans)){
