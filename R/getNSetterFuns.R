@@ -342,3 +342,13 @@ getByGroup <- function(fds, type, value){
   idx   <- !duplicated(index)
   return(value[idx,])
 }
+
+getDeltaPsi <- function(fds, type, byGroup=FALSE){
+  mu <- predictedMeans(fds, type)
+  dataPsi <- (K(fds, type)+pseudocount()) /(N(fds, type)+2*pseudocount())
+  deltaPSI <- dataPsi-mu
+  if(isTRUE(byGroup)){
+    deltaPSI <- getAbsMaxByGroup(fds, psiType, deltaPSI)
+  }
+  return(deltaPSI)
+}
