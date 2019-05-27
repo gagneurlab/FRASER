@@ -324,7 +324,7 @@ getAssayAsVector <- function(fds, prefix, psiType, sampleID){
 }
 
 
-nonVariableJunctions <- function(fds, type, minDeltaPsi=0.1){
+variableJunctions <- function(fds, type, minDeltaPsi=0.1){
     psi <- K(fds, type=type)/N(fds, type=type)
     j2keep <- rowMaxs(abs(psi - rowMeans(psi, na.rm=TRUE)), na.rm=TRUE)
     j2keep >= minDeltaPsi
@@ -336,7 +336,6 @@ subsetKMostVariableJunctions <- function(fds, type, n){
     nMostVarJuncs <- which(xsd >= sort(xsd, TRUE)[min(length(xsd), n*2)])
     ans <- logical(length(xsd))
     ans[sample(nMostVarJuncs, min(length(xsd), n))] <- TRUE
-
     ans
 }
 
