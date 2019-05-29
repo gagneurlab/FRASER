@@ -8,26 +8,27 @@ filterExpression <- function(fds, minExpressionInOneSample=10, quantile=0.5,
 
     # extract counts
     cts  <- K(fds, type="j")
-    cts5 <- N(fds, type="psi5")
-    cts3 <- N(fds, type="psi3")
+    ctsN5 <- N(fds, type="psi5")
+    ctsN3 <- N(fds, type="psi3")
 
     if(isFALSE(delayed)){
         cts <- as.matrix(cts)
-        cts5 <- as.matrix(cts5)
-        cts3 <- as.matrix(cts3)
+        ctsN5 <- as.matrix(ctsN5)
+        ctsN3 <- as.matrix(ctsN3)
     }
 
     # cutoff functions
-    f1 <- function(cts, ...)                 rowMaxs(cts)
-    f2 <- function(cts, cts5, quantile, ...){
-            rowQuantiles(cts + cts5, probs=quantile) }
-    f3 <- function(cts, cts3, quantile, ...) {
-            rowQuantiles(cts + cts3, probs=quantile) }
-    f4 <- function(cts, cts3, ...) {
-            psi <- cts/(cts + cts3)
+    f1 <- function(cts, ...)
+            rowMaxs(cts)
+    f2 <- function(cts, ctsN5, quantile, ...){
+            rowQuantiles(ctsN5, probs=quantile) }
+    f3 <- function(cts, ctsN3, quantile, ...) {
+            rowQuantiles(ctsN3, probs=quantile) }
+    f4 <- function(cts, ctsN3, ...) {
+            psi <- cts/ctsN3
             rowMaxs(abs(t(t(psi) - rowMeans2(psi, na.rm=TRUE))), na.rm=TRUE) }
-    f5 <- function(cts, cts5, ...) {
-            psi <- cts/(cts + cts5)
+    f5 <- function(cts, ctsN5, ...) {
+            psi <- cts/ctsN5
             rowMaxs(abs(t(t(psi) - rowMeans2(psi, na.rm=TRUE))), na.rm=TRUE) }
 
     funs <- c(maxCount=f1, quantileValue5=f2, quantileValue3=f3,
@@ -35,7 +36,8 @@ filterExpression <- function(fds, minExpressionInOneSample=10, quantile=0.5,
 
     # run it in parallel
     cutoffs <- bplapply(funs, function(x, ...) x(...),
-            cts=cts, cts3=cts3, cts5=cts5, quantile=quantile, BPPARAM=BPPARAM)
+            cts=cts, ctsN3=ctsN3, ctsN5=ctsN5, quantile=quantile,
+            BPPARAM=BPPARAM)
 
     # add annotation to object
     for(n in names(cutoffs)){
