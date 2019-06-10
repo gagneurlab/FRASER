@@ -19,7 +19,7 @@ pvalueByBetaBinomialPerType <- function(fds, aname, psiType, pvalFun,
 
     # go over each group but no NA's
     group         <- condition(fds)
-    addNoise      <- TRUE
+    addNoise      <- FALSE
 
     # raw reads to test for abberent splicing
     rawCounts      <- counts(fds, type=psiType, side="ofInterest")
@@ -46,9 +46,8 @@ pvalueByBetaBinomialPerType <- function(fds, aname, psiType, pvalFun,
     toTest <- sample(toTest)
 
     # TODO how to group groups?
-    testFUN <- function(idx, rawCounts, rawOtherCounts, addNoise, pvalFun){
-        # idx <- toTest[[2]]
-        suppressPackageStartupMessages(require(FraseR))
+    testFUN <- function(idx, rawCounts, rawOtherCounts, addNoise, pvalFun,
+                returnFit=FALSE){
 
         ## get read coverage (y == reads of interests, N == all reads)
         y <- as.integer(as.matrix(rawCounts[idx,]))
@@ -56,8 +55,8 @@ pvalueByBetaBinomialPerType <- function(fds, aname, psiType, pvalFun,
 
         # TODO betabinom fails if only zeros in one row
         # add noise to avoid zero variants in alternative reads
-        if(sd(N) == 0 & addNoise){
-            N <- N + sample(c(0,1),dim(rawCounts)[2], replace = TRUE)
+        if(sd(N) == 0 | sd(N-y) == 0 | addNoise == TRUE){
+            N <- N + sample(c(0,1), ncol(rawCounts), replace=TRUE)
         }
 
         # count matrix per site
@@ -74,7 +73,7 @@ pvalueByBetaBinomialPerType <- function(fds, aname, psiType, pvalFun,
         # put pvalues into correct boundaries
         if(is.null(pv_res[[1]])){
             pv_res[[1]] <- list(
-                pval = rep(as.numeric(NA), dim(rawCounts)[2]),
+                pval = rep(as.numeric(NA), ncol(rawCounts)),
                 alpha = NA,
                 beta = NA
             )
@@ -87,6 +86,9 @@ pvalueByBetaBinomialPerType <- function(fds, aname, psiType, pvalFun,
         # add index for later sorting
         pv_res[[1]]$idx <- idx
 
+        if(isFALSE(returnFit)){
+            pv_res[[1]]$fit <- NULL
+        }
         return(pv_res)
     }
 
@@ -98,7 +100,7 @@ pvalueByBetaBinomialPerType <- function(fds, aname, psiType, pvalFun,
         FUN <- function(...){ testFUN(...) }
     }
     gc()
-    gc()
+
     pvalues_ls <- bplapply(toTest, rawCounts=rawCounts,
                     rawOtherCounts=rawOtherCounts, pvalFun,
                     BPPARAM=parallel(fds), addNoise=addNoise, FUN=FUN)
