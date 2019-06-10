@@ -1,7 +1,7 @@
 Package: FraseR
 Type: Package
 Title: Find RAre Splicing Events in RNA-Seq Data
-Version: 0.99.3
+Version: 0.99.4
 Date: 2017-05-27
 Author: Christian Mertes <mertes@in.tum.de>, Prof. Julien Gagneur
     <gagneur@in.tum.de>
@@ -77,6 +77,7 @@ Collate:
     getNSetterFuns.R
     FraseR-package.R
     FraseRDataSet-class.R
+    annotate_junctions.R
     AllGenerics.R
     Fraser-pipeline.R
     accessor-methods.R

@@ -1,4 +1,4 @@
-annotate_strand_by_seq <- function(fds, genome, ...){
+annotate_strand_by_seq <- function(fds, genome="hg19", ...){
     #load genome
     if (genome=="hg19") {
         library(BSgenome.Hsapiens.UCSC.hg19)
@@ -12,17 +12,18 @@ annotate_strand_by_seq <- function(fds, genome, ...){
         library(BSgenome.Hsapiens.NCBI.GRCh38)
         genome <- BSgenome.Hsapiens.NCBI.GRCh38
     }
+    stopifnot(is(genome, "BSgenome"))
 
 
     # get ranges of interest
-    gr <- granges(fds)
+    gr <- granges(granges(fds))
 
     # get the dinucleotide seq
     gr_start <- resize(gr, 2, fix = "start")
-    gr_end <- resize(gr, 2, fix = "end")
+    gr_end   <- resize(gr, 2, fix = "end")
 
-    mcols(fds, type="j")[["psi5_dinuc"]] <- getSeq(genome, gr_start, as.character = TRUE)
-    mcols(fds, type="j")[["psi3_dinuc"]] <- getSeq(genome, gr_end, as.character = TRUE)
+    mcols(fds, type="j")[["psi5_dinuc"]] <- getSeq(genome, gr_start, as.character=TRUE)
+    mcols(fds, type="j")[["psi3_dinuc"]] <- getSeq(genome, gr_end,   as.character=TRUE)
 
     # set the new seq based annotation
     pos <- mcols(fds, type="j")[["psi5_dinuc"]] %in% c("GT", "GC") & mcols(fds, type="j")[["psi3_dinuc"]] == "AG"
