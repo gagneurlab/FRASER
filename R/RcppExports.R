@@ -41,3 +41,11 @@ fullNLL <- function(y, rho, k, n, D, lambda, byRows = FALSE) {
     .Call('_FraseR_fullNLL', PACKAGE = 'FraseR', y, rho, k, n, D, lambda, byRows)
 }
 
+truncWeightedNLL_db <- function(par, H, k, n, rho, lambda, weighted) {
+    .Call('_FraseR_truncWeightedNLL_db', PACKAGE = 'FraseR', par, H, k, n, rho, lambda, weighted)
+}
+
+truncWeightedGrad_db <- function(par, H, k, n, rho, lambda, weighted) {
+    .Call('_FraseR_truncWeightedGrad_db', PACKAGE = 'FraseR', par, H, k, n, rho, lambda, weighted)
+}
+

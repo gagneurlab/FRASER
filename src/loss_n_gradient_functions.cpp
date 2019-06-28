@@ -404,3 +404,132 @@ arma::vec fullNLL(arma::mat y, arma::mat rho, arma::mat k, arma::mat n, arma::ma
     return arma::vectorise(nll);
   }
 }
+
+// get weights
+arma::vec getWeights(arma::vec k, arma::vec n, arma::vec mu, double rho){
+  double c;
+  arma::vec r, w;
+  
+  // pearson residuals for BB
+  r = (k - n % mu) / sqrt(n % mu % (1-mu) % (1+(n-1)*rho));
+  
+  // weights according to Huber function
+  c = 1.345; // constant, as in edgeR
+  w.ones(r.n_elem);
+  arma::uvec pos = arma::find(abs(r) > c);
+  w.elem(pos) = c/abs(r.elem(pos));
+
+  return w;
+  
+}
+
+
+// weighted NLL
+// [[Rcpp::export()]]
+double truncWeightedNLL_db(arma::vec par, arma::mat H, arma::vec k, arma::vec n, double rho, double lambda, bool weighted){
+  double b, rhoa, rhob;
+  arma::vec d, y, ey, p, u, v, alpha, alphaK, beta, betaNK, nll, w;
+  
+  b = par.at(0);
+  d = par.subvec(1, par.n_elem-1);
+  
+  y = H * d + b;
+  //y = trimmVal(y);
+  ey = arma::exp(y);
+  
+  w.ones(ey.n_elem);
+  if(weighted){
+    w = getWeights(k, n, ey, rho);
+  }
+  
+  rhoa = (1 - rho)/rho;
+  rhob = (rho - 1)/rho;
+  p    = ey/(1 + ey);
+  u    = -1/(1 + ey);
+  
+  p.elem( arma::find_nonfinite(p) ) = estMu(y, arma::find_nonfinite(p));
+  arma::uvec uPos = arma::find_nonfinite(u);
+  u.elem( uPos ) = arma::repelem(p-1, 1, uPos.n_elem );
+  
+  u    = u * rhob;
+  
+  alpha  = arma::lgamma(p * rhoa );
+  alphaK = arma::lgamma(p * rhoa + k + PSEUDO_COUNT);
+  beta   = arma::lgamma(u);
+  betaNK = arma::lgamma(u + n - k + PSEUDO_COUNT);
+  
+  // arma::vec abs;
+  arma::uvec infPosA, infPosB;
+  // abs = arma::abs(y);
+  infPosA = arma::find_nonfinite(alpha);
+  // alpha.elem( infPosA ) = abs.elem( infPosA );
+  alpha.elem( infPosA ) = estLgammaAlpha(y, infPosA, rhoa);
+  infPosB = arma::find_nonfinite(beta);
+  // beta.elem( infPosB ) = abs.elem( infPosB );
+  beta.elem( infPosB ) = estLgammaBeta(y, infPosB, rhob);
+  
+  nll = arma::accu((alpha + beta - alphaK - betaNK)%w)/k.n_elem;
+  
+  nll = nll + (lambda/k.n_elem) * arma::accu(d % d);
+  
+  return arma::as_scalar(nll);
+}
+
+// weighted gradient of NLL
+// [[Rcpp::export()]]
+arma::vec truncWeightedGrad_db(arma::vec par, arma::mat H, arma::vec k, arma::vec n, double rho, double lambda, bool weighted){
+  double b, rhoa, rhob;
+  arma::vec d, y, ey, p, u, v, alpha, alphaK, beta, betaNK, grb, grd, w;
+  
+  b = par.at(0);
+  d = par.subvec(1, par.n_elem-1);
+  
+  y = H * d + b;
+  //y = trimmVal(y);
+  ey = arma::exp(y);
+  
+  w.ones(ey.n_elem);
+  if(weighted){
+    w = getWeights(k, n, ey, rho);
+  }
+  
+  rhoa = (1 - rho)/rho;
+  rhob = (rho - 1)/rho;
+  p    = ey/(1 + ey);
+  u    = -1/(1 + ey);
+  
+  p.elem( arma::find_nonfinite(p) ) = estMu(y, arma::find_nonfinite(p));
+  arma::uvec uPos = arma::find_nonfinite(u);
+  u.elem( uPos ) = arma::repelem(p-1, 1, uPos.n_elem );
+  
+  u    = u * rhob;
+  v    = ey/arma::square(1 + ey);
+  
+  alpha  = (rcppdigamma(p * rhoa) * rhoa) % v;
+  alphaK = (rcppdigamma(p * rhoa + k + PSEUDO_COUNT) * rhoa) % v;
+  beta   = (rcppdigamma(u) * rhob) % v;
+  betaNK = (rcppdigamma(u + n - k + PSEUDO_COUNT) * rhob) % v;
+  
+  v.elem( arma::find_nonfinite(v) ).zeros();
+  alpha.elem( arma::find(v == 0) ) = estDigammaAlpha(y, arma::find(v == 0));
+  beta.elem( arma::find(v == 0) ) = estDigammaBeta(y, arma::find(v == 0));
+  
+  arma::uvec infPosA, infPosB, infPosAk, infPosBnk, ypos;
+  infPosA = arma::find_nonfinite(alpha);
+  alpha.elem( infPosA ) = estDigammaAlpha(y, infPosA);
+  infPosB = arma::find_nonfinite(beta);
+  beta.elem( infPosB ) = estDigammaBeta(y, infPosB);
+  infPosAk = arma::find_nonfinite(alphaK);
+  alphaK.elem( infPosAk ).zeros();
+  infPosBnk = arma::find_nonfinite(betaNK);
+  betaNK.elem( infPosBnk ).zeros();
+  
+  grb = arma::accu((alpha + beta - alphaK - betaNK) % w)/k.n_elem;
+  grd = (alpha + beta - alphaK - betaNK) % w;
+  grd = colMeans(grd % H.each_col());
+  
+  grd = grd + (2*lambda/k.n_elem) * d;
+  
+  arma::mat ans = arma::join_cols(grb, grd);
+  return ans.col(0);
+}

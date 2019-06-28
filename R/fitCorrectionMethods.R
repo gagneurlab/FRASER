@@ -1,6 +1,6 @@
 
 fit <- function(fds, correction=c("FraseR", "fullFraseR", "PCA", "PCA+regression", "PEER", "PEERdecoder", "BB", "kerasDAE", "kerasBBdAE"),
-                    q, type="psi3", rhoRange=c(1e-5, 1-1e-5), nrDecoderBatches=5,
+                    q, type="psi3", rhoRange=c(1e-5, 1-1e-5), nrDecoderBatches=5, weighted=FALSE,
                     noiseAlpha=1, lambda=0, convergence=1e-5, iterations=15,
                     initialize=TRUE, control=list(), BPPARAM=bpparam(),
                     verbose=FALSE, recommendedPEERq=TRUE, lr=0.00005, epochs=20){
@@ -8,10 +8,10 @@ fit <- function(fds, correction=c("FraseR", "fullFraseR", "PCA", "PCA+regression
 
     fds <- switch(method,
             FraseR      = fitFraserAE(fds=fds, q=q, type=type, noiseAlpha=noiseAlpha, rhoRange=rhoRange, lambda=lambda,
-                               convergence=convergence, iterations=iterations, initialize=initialize,
+                               convergence=convergence, iterations=iterations, initialize=initialize, weighted=weighted,
                                control=control, BPPARAM=BPPARAM, verbose=verbose, subset=TRUE, nrDecoderBatches=nrDecoderBatches),
             fullFraseR  = fitFraserAE(fds=fds, q=q, type=type, noiseAlpha=noiseAlpha, rhoRange=rhoRange, lambda=lambda,
-                                convergence=convergence, iterations=iterations, initialize=initialize,
+                                convergence=convergence, iterations=iterations, initialize=initialize, weighted=weighted,
                                 control=control, BPPARAM=BPPARAM, verbose=verbose, subset=FALSE, nrDecoderBatches=nrDecoderBatches),
             PCA         = fitPCA(fds=fds, q=q, psiType=type, rhoRange=rhoRange, BPPARAM=BPPARAM, subset=FALSE),
             'PCA+regression' = fitPCA(fds=fds, q=q, psiType=type, rhoRange=rhoRange, BPPARAM=BPPARAM, subset=TRUE),
@@ -204,7 +204,7 @@ fitBB <- function(fds, psiType){
 }
 
 fitFraserAE <- function(fds, q, type, noiseAlpha, rhoRange, lambda, convergence, iterations, initialize,
-                                  control, BPPARAM, verbose, subset=TRUE, nrDecoderBatches){
+                                  control, BPPARAM, verbose, subset=TRUE, nrDecoderBatches, weighted){
   #+ subset fitting
   curDims <- dim(K(fds, type))
   if(isTRUE(subset)){
@@ -217,7 +217,7 @@ fitFraserAE <- function(fds, q, type, noiseAlpha, rhoRange, lambda, convergence,
   print(table(featureExclusionMask(fds)))
 
   fds <- fitAutoencoder(fds=fds, q=q, type=type, noiseAlpha=noiseAlpha, rhoRange=rhoRange, lambda=lambda,
-                 convergence=convergence, iterations=iterations, initialize=initialize,
+                 convergence=convergence, iterations=iterations, initialize=initialize, weighted=weighted,
                  control=control, BPPARAM=BPPARAM, verbose=verbose, nrDecoderBatches=nrDecoderBatches)
   return(fds)
 
