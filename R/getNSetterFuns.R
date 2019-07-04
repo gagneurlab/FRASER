@@ -352,3 +352,32 @@ getDeltaPsi <- function(fds, type, byGroup=FALSE){
   }
   return(deltaPSI)
 }
+
+
+# calculate FraseR weights
+calcFraseRWeights <- function(fds, psiType){
+  k <- as.matrix(K(fds, psiType))
+  n <- as.matrix(N(fds, psiType))
+  mu <- t(predictMu(fds, psiType))
+  rho <- rho(fds, psiType)
+  
+  # pearson residuals for BB
+  r <- ((k+pseudocount()) - (n+2*pseudocount()) * mu) / sqrt((n+2*pseudocount()) * mu * (1-mu) * (1+((n+2*pseudocount())-1)*rho)) # on counts of success k
+  #r <- (dataPsi - mu) / sqrt((1/(n+2*pseudocount())) * mu * (1-mu) * (1+((n+2*pseudocount())-1)*rho))   # on probability of success mu
+  
+  # weights according to Huber function (as in edgeR)
+  c <- 1.345; # constant, as suggested in edgeR paper
+  w <- ifelse(abs(r) > c, c/abs(r) , 1)
+  
+  return(w)
+}
+
+# get FraseR weights
+weights <- function(fds, type){
+    return(getAssayMatrix(fds, "weights", type))
+}
+# set FraseR weights
+`weights<-` <- function(fds, value, type=currentType(fds), ...){
+  setAssayMatrix(fds, name="weights", type=type, ...) <- value
+  return(fds)
+}

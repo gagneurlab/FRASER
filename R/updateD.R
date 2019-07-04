@@ -9,10 +9,17 @@ updateD <- function(fds, type, lambda, control, BPPARAM, verbose, nrDecoderBatch
   k <- K(fds)
   n <- N(fds)
   rho <- rho(fds)
-
+  
+  weights <- matrix(rep(1, prod(dim(k))), nrow=nrow(k), ncol=ncol(k))
+  if(isTRUE(weighted)){
+    weights <- calcFraseRWeights(fds, type)
+    weights(fds, type, HDF5=FALSE) <- weights
+    message(sum(c(weights) != 1))
+  }
+  
   # run fits
   fitls <- bplapply(seq_len(nrow(k)), singleDFit, D=D, b=b, k=k, n=n, H=H,
-                    rho=rho, lambda=lambda, control=control, weighted=weighted,
+                    rho=rho, lambda=lambda, control=control, weights=weights,
                     nSamples=ncol(fds), nrBatches=nrDecoderBatches, BPPARAM=BPPARAM)
 
   # extract infos
@@ -34,20 +41,21 @@ updateD <- function(fds, type, lambda, control, BPPARAM, verbose, nrDecoderBatch
   return(fds)
 }
 
-singleDFit <- function(i, D, b, k, n, H, rho, lambda, control, nSamples, nrBatches, weighted, ...){
+singleDFit <- function(i, D, b, k, n, H, rho, lambda, control, nSamples, nrBatches, weights, ...){
   pari <- c(b[i], D[i,])
   ki <- k[i,]
   ni <- n[i,]
   rhoi <- rho[i]
+  wi <- weights[i,]
 
   if(nrBatches == 1){
 
     fit <- optim(pari, fn=truncWeightedNLL_db, gr=truncWeightedGrad_db,
                  H=H, k=ki, n=ni, rho=rhoi, lambda=lambda, control=control,
-                 weighted=weighted, method="L-BFGS-B")
+                 w=wi, method="L-BFGS-B")
 
   }
-  else { # cross-validation
+  else { # bootstrapping
 
     subsets <- split(sample(1:nSamples), rep(1:nrBatches, length = nSamples))
     fitls <- sapply(subsets, function(subset){
@@ -57,7 +65,7 @@ singleDFit <- function(i, D, b, k, n, H, rho, lambda, control, nSamples, nrBatch
 
       fit <- optim(pari, fn=truncWeightedNLL_db, gr=truncWeightedGrad_db,
                    H=Hsub, k=ksub, n=nsub, rho=rhoi, lambda=lambda, control=control,
-                   weighted=weighted, method="L-BFGS-B")
+                   w=wi, method="L-BFGS-B")
       return(fit)
     })
 

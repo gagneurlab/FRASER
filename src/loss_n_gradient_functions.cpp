@@ -411,7 +411,7 @@ arma::vec getWeights(arma::vec k, arma::vec n, arma::vec mu, double rho){
   arma::vec r, w;
   
   // pearson residuals for BB
-  r = (k - n % mu) / sqrt(n % mu % (1-mu) % (1+(n-1)*rho));
+  r = ((k+PSEUDO_COUNT) - (n+2*PSEUDO_COUNT) % mu) / sqrt((n+2*PSEUDO_COUNT) % mu % (1-mu) % (1+((n+2*PSEUDO_COUNT)-1)*rho));
   
   // weights according to Huber function
   c = 1.345; // constant, as in edgeR
@@ -426,9 +426,9 @@ arma::vec getWeights(arma::vec k, arma::vec n, arma::vec mu, double rho){
 
 // weighted NLL
 // [[Rcpp::export()]]
-double truncWeightedNLL_db(arma::vec par, arma::mat H, arma::vec k, arma::vec n, double rho, double lambda, bool weighted){
+double truncWeightedNLL_db(arma::vec par, arma::mat H, arma::vec k, arma::vec n, double rho, double lambda, arma::vec w){
   double b, rhoa, rhob;
-  arma::vec d, y, ey, p, u, v, alpha, alphaK, beta, betaNK, nll, w;
+  arma::vec d, y, ey, p, u, v, alpha, alphaK, beta, betaNK, nll;
   
   b = par.at(0);
   d = par.subvec(1, par.n_elem-1);
@@ -437,10 +437,11 @@ double truncWeightedNLL_db(arma::vec par, arma::mat H, arma::vec k, arma::vec n,
   //y = trimmVal(y);
   ey = arma::exp(y);
   
-  w.ones(ey.n_elem);
-  if(weighted){
-    w = getWeights(k, n, ey, rho);
-  }
+  // arma::vec w;
+  // w.ones(ey.n_elem);
+  // if(weighted){
+  //   w = getWeights(k, n, ey, rho);
+  // }
   
   rhoa = (1 - rho)/rho;
   rhob = (rho - 1)/rho;
@@ -477,9 +478,9 @@ double truncWeightedNLL_db(arma::vec par, arma::mat H, arma::vec k, arma::vec n,
 
 // weighted gradient of NLL
 // [[Rcpp::export()]]
-arma::vec truncWeightedGrad_db(arma::vec par, arma::mat H, arma::vec k, arma::vec n, double rho, double lambda, bool weighted){
+arma::vec truncWeightedGrad_db(arma::vec par, arma::mat H, arma::vec k, arma::vec n, double rho, double lambda, arma::vec w){
   double b, rhoa, rhob;
-  arma::vec d, y, ey, p, u, v, alpha, alphaK, beta, betaNK, grb, grd, w;
+  arma::vec d, y, ey, p, u, v, alpha, alphaK, beta, betaNK, grb, grd;
   
   b = par.at(0);
   d = par.subvec(1, par.n_elem-1);
@@ -488,10 +489,11 @@ arma::vec truncWeightedGrad_db(arma::vec par, arma::mat H, arma::vec k, arma::ve
   //y = trimmVal(y);
   ey = arma::exp(y);
   
-  w.ones(ey.n_elem);
-  if(weighted){
-    w = getWeights(k, n, ey, rho);
-  }
+  // arma::vec w;
+  // w.ones(ey.n_elem);
+  // if(weighted){
+  //   w = getWeights(k, n, ey, rho);
+  // }
   
   rhoa = (1 - rho)/rho;
   rhob = (rho - 1)/rho;

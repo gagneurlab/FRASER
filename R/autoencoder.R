@@ -48,7 +48,7 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, rhoRange=c(1e-5, 1
     }
 
     # initialize D
-    fds <- updateD(fds, type=type, lambda=lambda, control=control, BPPARAM=BPPARAM, verbose=verbose, weighted=weighted,
+    fds <- updateD(fds, type=type, lambda=lambda, control=control, BPPARAM=BPPARAM, verbose=verbose, weighted=FALSE,
                    nrDecoderBatches=ifelse( nrow(mcols(fds, type=type)) == nrow(mcols(copy_fds, type=type)), nrDecoderBatches, 1))
     lossList <- updateLossList(fds, lossList, 'init', 'D', lambda, verbose=verbose)
 
@@ -67,7 +67,7 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, rhoRange=c(1e-5, 1
         lossList <- updateLossList(fds, lossList, i, 'E', lambda, verbose=verbose)
 
         # update D step
-        fds <- updateD(fds, type=type, lambda=lambda, control=control, BPPARAM=BPPARAM, verbose=verbose, weighted=weighted,
+        fds <- updateD(fds, type=type, lambda=lambda, control=control, BPPARAM=BPPARAM, verbose=verbose, weighted=FALSE,
                        nrDecoderBatches=ifelse( nrow(mcols(fds, type=type)) == nrow(mcols(copy_fds, type=type)), nrDecoderBatches, 1))
         lossList <- updateLossList(fds, lossList, i, 'D', lambda, verbose=verbose)
 
@@ -169,7 +169,13 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, rhoRange=c(1e-5, 1
     predictedMeans <- t(predictMu(copy_fds))
     stopifnot(identical(dim(K(copy_fds)), dim(predictedMeans)))
     predictedMeans(copy_fds, type) <- predictedMeans
-
+    
+    # store weights if weighted version
+    if(isTRUE(weighted)){
+        weights <- weights(copy_fds, type)
+        weights(copy_fds, type) <- weights    
+    }
+    
     # validate object
     validObject(copy_fds)
     return(copy_fds)
@@ -187,7 +193,7 @@ initAutoencoder <- function(fds, q, rhoRange, type){
     b(fds) <- colMeans2(x)
 
     # initialize rho
-    rho(fds) <- methodOfMomemtsRho(K(fds))
+    rho(fds) <- methodOfMomentsRho(K(fds), N(fds))
 
     # reset counters
     mcols(fds, type=type)[paste0('NumConvergedD_', type)] <- 0
