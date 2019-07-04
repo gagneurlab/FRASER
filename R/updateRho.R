@@ -59,25 +59,31 @@ trunc_negLogLikelihoodRho <- function(rho, ki, ni, mui){
 }
 
 
-methodOfMomemtsRho <- function(k, rhoRange=c(1e-5, 1 - 1e-5)){
-    # taken from wiki: https://en.wikipedia.org/wiki/Beta-binomial_distribution#Method_of_moments
-    k <- as.matrix(k)
-    mode(k) <- "double"
-
-    n  <- ncol(k)
-    m1 <- rowSums(k)/n
-    m2 <- rowSums(k*k)/n
-
-    denom <- (n*(m2/m1 - m1 - 1) + m1)
-    a <- (n*m1 - m2) / denom
-    b <- ((n - m1)*(n - m2/m1))/ denom
-    rho <- 1 / (1 + a + b)
-
-    # set correct boundaries
-    rho[a < 0 | b < 0] <- rhoRange[1]
-    rho[is.na(rho)] <- rhoRange[1]
-    rho <- pmax(rho, rhoRange[1])
-    rho <- pmin(rho, rhoRange[2])
-
-    return(rho)
+methodOfMomentsRho <- function(k, n, rhoRange=c(1e-5, 1 - 1e-5)){
+  # taken from wiki: https://en.wikipedia.org/wiki/Beta-binomial_distribution#Method_of_moments
+  k <- as.matrix(k) + pseudocount()
+  mode(k) <- "double"
+  n <- as.matrix(n) + 2*pseudocount()
+  mode(n) <- "double"
+  
+  # normalizing counts with respect to mean(n) because for each junction an equal n for all samples is needed
+  nM <- round(rowMeans(n))
+  kNorm <- round(nM/n * k)
+  
+  N  <- ncol(kNorm)
+  m1 <- rowSums(kNorm)/N
+  m2 <- rowSums(kNorm*kNorm)/N
+  
+  denom <- (nM*(m2/m1 - m1 - 1) + m1)
+  a <- (nM*m1 - m2) / denom
+  b <- ((nM - m1)*(nM - m2/m1))/ denom
+  rho <- 1 / (1 + a + b)
+  
+  # set correct boundaries
+  rho[a < 0 | b < 0] <- rhoRange[1]
+  rho[is.na(rho)] <- rhoRange[1]
+  rho <- pmax(rho, rhoRange[1])
+  rho <- pmin(rho, rhoRange[2])
+  
+  return(rho)
 }
