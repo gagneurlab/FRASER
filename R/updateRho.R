@@ -27,7 +27,8 @@ estRho <- function(idx, k, n, y, rhoRange, nll, control=list()){
   ni <- n[idx,]
   yi <- y[idx,]
 
-  est <- optimize(f=nll, interval=rhoRange, yi=yi, ki=ki, ni=ni, maximum = FALSE, tol=0.0000001)
+  est <- optimize(f=nll, interval=rhoRange, yi=yi, ki=ki, ni=ni, maximum=FALSE, tol=0.0000001)
+  est
 }
 
 negLogLikelihoodRho <- function(rho, ki, ni, mui){

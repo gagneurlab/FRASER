@@ -2,7 +2,7 @@
 #' Update D function
 #'
 #' @noRd
-updateD <- function(fds, type, lambda, control, BPPARAM, verbose, nrDecoderBatches=5){
+updateD <- function(fds, type, lambda, control, BPPARAM, verbose, nrDecoderBatches=5, fraction=0.75, multiRho=FALSE){
   D <- D(fds)
   b <- b(fds)
   H <- H(fds, noiseAlpha=currentNoiseAlpha(fds))
@@ -12,8 +12,8 @@ updateD <- function(fds, type, lambda, control, BPPARAM, verbose, nrDecoderBatch
 
   # run fits
   fitls <- bplapply(seq_len(nrow(k)), singleDFit, D=D, b=b, k=k, n=n, H=H,
-                    rho=rho, lambda=lambda, control=control, 
-                    nSamples=ncol(fds), nrBatches=nrDecoderBatches, BPPARAM=BPPARAM)
+                    rho=rho, lambda=lambda, multiRho=multiRho, control=control,
+                    fraction=fraction, nrBatches=nrDecoderBatches, BPPARAM=BPPARAM)
 
   # extract infos
   parMat <- vapply(fitls, '[[', double(ncol(D) + 1), 'par')
@@ -35,42 +35,41 @@ updateD <- function(fds, type, lambda, control, BPPARAM, verbose, nrDecoderBatch
 }
 
 
-singleDFit <- function(i, D, b, k, n, H, rho, lambda, control, nSamples, nrBatches, ...){
+singleDFit <- function(i, D, b, k, n, H, rho, lambda, control, fraction, nrBatches, multiRho, ...){
   pari <- c(b[i], D[i,])
   ki <- k[i,]
   ni <- n[i,]
   rhoi <- rho[i]
-  
-  if(nrBatches == 1){
-    
-    fit <- optim(pari, fn=truncNLL_db, gr=truncGrad_db,
-                 H=H, k=ki, n=ni, rho=rhoi, lambda=lambda, control=control,
-                 method="L-BFGS-B")
-    
-  } 
-  else { # cross-validation
-  
-    subsets <- split(sample(1:nSamples), rep(1:nrBatches, length = nSamples))
-    fitls <- sapply(subsets, function(subset){
-      ksub <- ki[-subset]
-      nsub <- ni[-subset]
-      Hsub <- H[-subset,]
-      
-      fit <- optim(pari, fn=truncNLL_db, gr=truncGrad_db,
-                   H=Hsub, k=ksub, n=nsub, rho=rhoi, lambda=lambda, control=control,
-                   method="L-BFGS-B")
-      return(fit)
-    })
-    
-    pars <- colMedians(do.call(rbind, fitls['par',]))
-    
-    fit <- fitls[,1]
-    fit$par         <- pars
-    fit$value       <- mean(unlist(fitls['value',]))
-    fit$counts      <- round(colMedians(do.call(rbind, fitls['counts',])))
-    fit$convergence <- sum(unlist(fitls['convergence',]))
-  
+
+  if(multiRho){
+    rhoi <- c(rhoi/2, rhoi, (1+rhoi)/2)
   }
+
+  # use full set if only one batch is used
+  if(nrBatches == 1){
+    fraction <- 1
+  }
+
+  fitls <- sapply(seq_len(nrBatches), function(subset){
+      subset <- sample(seq_len(nrow(H)), ceiling(nrow(H)*fraction))
+      ksub <- ki[subset]
+      nsub <- ni[subset]
+      Hsub <- H[subset,]
+      fit <- lapply(rhoi, function(r){
+          optim(pari, fn=truncNLL_db, gr=truncGrad_db,
+                   H=Hsub, k=ksub, n=nsub, rho=r, lambda=lambda,
+                   method="L-BFGS-B", control=control)
+      })
+      fit[[which.min(sapply(fit, "[[", "value"))]]
+  })
+
+  pars <- colMedians(do.call(rbind, fitls['par',]))
+
+  fit <- fitls[,1]
+  fit$par         <- pars
+  fit$value       <- mean(unlist(fitls['value',]))
+  fit$counts      <- round(colMedians(do.call(rbind, fitls['counts',])))
+  fit$convergence <- sum(unlist(fitls['convergence',]))
 
   return(fit)
 }
