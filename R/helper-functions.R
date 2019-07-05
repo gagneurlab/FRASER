@@ -343,3 +343,38 @@ pasteTable <- function(x, ...){
     tab <- table(x, ...)
     paste(names(tab), tab, collapse="\t", sep=": ")
 }
+
+#'
+#' Map between individual seq level style and dataset common one
+#' for counting and aggregating the reads
+#'
+checkSeqLevelStyle <- function(gr, fds, sampleID, sampleSpecific=FALSE){
+    if(!"SeqLevelStyle" %in% colnames(colData(fds))){
+        return(gr)
+    }
+    style <- colData(fds)[sampleID,"SeqLevelStyle"]
+    if(isFALSE(sampleSpecific)){
+        style <- names(sort(table(colData(fds)[,"SeqLevelStyle"]), TRUE)[1])
+        if(length(unique(colData(fds)[,"SeqLevelStyle"])) > 1){
+            gr <- keepStandardChromosomes(gr, pruning.mode="coarse")
+        }
+    }
+
+    seqlevelsStyle(gr) <- style
+    gr
+}
+
+uniformSeqInfo <- function(grls){
+    seqn <- unique(unlist(sapply(grls, seqlevels)))
+
+    seql <- unlist(sapply(grls, seqlengths))
+    names(seql) <- gsub(".*\\.", "", names(seql))
+    seql <- na.omit(seql)[seqn]
+
+    ans <- lapply(grls, function(x){
+        seqlevels(x) <- seqn
+        seqlengths(x) <- seql
+        x
+    })
+    ans
+}

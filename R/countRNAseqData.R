@@ -178,7 +178,7 @@ countSplitReads <- function(sampleID, settings, NcpuPerSample){
             cache <- cache[from]
         }
         if(length(cache) > 0){
-            return(cache)
+            return(checkSeqLevelStyle(cache, settings, sampleID, sampleSpecific=FALSE))
         }
     }
 
@@ -196,7 +196,7 @@ countSplitReads <- function(sampleID, settings, NcpuPerSample){
     countsGR <- sort(unlist(GRangesList(countsList)))
     saveRDS(countsGR, cacheFile)
 
-    return(countsGR)
+    return(checkSeqLevelStyle(countsGR, settings, sampleID, sampleSpecific=FALSE))
 }
 
 
@@ -288,6 +288,7 @@ mergeCounts <- function(countList, junctionMap=NULL, assumeEqual=FALSE,
         message(paste(date(), ": Fast merging of counts ..."))
         sample_counts <- lapply(countList, function(gr) mcols(gr)[["count"]] )
     } else {
+        countList <- uniformSeqInfo(countList)
         countgr <- GRangesList(countList)
         if(!is.null(junctionMap)){
             stopifnot(class(junctionMap) == "GRanges")
@@ -372,8 +373,8 @@ GRanges2SAF <- function(gr, minAnchor=1){
 #' @noRd
 countNonSplicedReads <- function(sampleID, spliceSiteCoords, settings,
                     NcpuPerSample=1, minAnchor, recount=FALSE){
+
     message(date(), ": Count non spliced reads for sample: ", sampleID)
-    suppressPackageStartupMessages(library(FraseR))
     bamFile <- bamFile(settings[,samples(settings) == sampleID])[[1]]
 
     # check cache if available
@@ -387,6 +388,7 @@ countNonSplicedReads <- function(sampleID, spliceSiteCoords, settings,
             )
             cache <- GRanges()
         }
+        cache <- checkSeqLevelStyle(cache, settings, sampleID, FALSE)
         ov    <- findOverlaps(cache, spliceSiteCoords, type="equal")
 
         # we have all sites of interest cached
@@ -400,14 +402,12 @@ countNonSplicedReads <- function(sampleID, spliceSiteCoords, settings,
                     "genomic positions. Adding the remaining sites to",
                     "the cache ..."
             ))
-            # get remaining splice sites
-            spliceSiteCoords <-
-                spliceSiteCoords[!(1:length(spliceSiteCoords) %in% to(ov))]
         }
     }
 
     # extract the counts with Rsubread
-    anno <- GRanges2SAF(spliceSiteCoords, minAnchor=minAnchor)
+    tmp_ssc <- checkSeqLevelStyle(spliceSiteCoords, settings, sampleID, TRUE)
+    anno <- GRanges2SAF(tmp_ssc, minAnchor=minAnchor)
     rsubreadCounts <- featureCounts(files=bamFile, annot.ext=anno,
             minOverlap=minAnchor*2, allowMultiOverlap=TRUE,
             checkFragLength=FALSE,
@@ -435,23 +435,15 @@ countNonSplicedReads <- function(sampleID, spliceSiteCoords, settings,
     if(!is.null(cacheFile)){
         if(exists("cache") && class(cache) == "GRanges"){
             message("Adding splice sites to cache ...")
-            saveRDS(unique(unlist(GRangesList(cache, spliceSiteCoords))),
-                    cacheFile
-            )
+            cache <- unique(unlist(GRangesList(spliceSiteCoords, cache)))
         } else {
-            message("Saving splice site cache Adding splice sites to cache ...")
-            saveRDS(spliceSiteCoords, cacheFile)
+            message("Saving splice site cache ...")
+            cache <- spliceSiteCoords
         }
+        cache <- checkSeqLevelStyle(cache, settings, sampleID, TRUE)
+        saveRDS(cache, cacheFile)
     }
 
-    # merge with existing cache if needed
-    if(exists("cache") && class(cache) == "GRanges"){
-        # take only sites of interest
-        cache <- cache[unique(from(ov))]
-
-        # merge it with new sites
-        spliceSiteCoords <- unlist(GRangesList(cache, spliceSiteCoords))
-    }
 
     # return it
     return(spliceSiteCoords)
