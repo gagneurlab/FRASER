@@ -5,8 +5,9 @@
 #'
 #' @export
 fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, rhoRange=c(1e-5, 1-1e-5), lambda=0,
-                           convergence=1e-5, iterations=15, initialize=TRUE, control=list(), 
-                           BPPARAM=bpparam(), verbose=FALSE, nrDecoderBatches=5){
+                           convergence=1e-5, iterations=15, initialize=TRUE, control=list(),
+                           BPPARAM=bpparam(), verbose=FALSE, nrDecoderBatches=5,
+                           nSubset=15000, minDeltaPsi=0.1, multiRho=FALSE){
 
     if(!bpisup(BPPARAM)){
         bpstart(BPPARAM)
@@ -26,11 +27,8 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, rhoRange=c(1e-5, 1
     # copy fds object to save original input object
     # and create second object with only the subset to fit the encoder
     copy_fds <- fds
-    fds <- fds[featureExclusionMask(fds, type=type),,by=type]
-
-    # subset noise so that it works with subsetted x
-    noise(fds, type=type) <- noise(fds, type=type)[,
-            featureExclusionMask(copy_fds, type=type)]
+    fds <- fds[variableJunctions(fds, type, minDeltaPsi=minDeltaPsi),,by=type]
+    fds <- fds[subsetKMostVariableJunctions(fds, type, nSubset),,by=type]
 
     # initialize E and D using PCA and bias as zeros.
     if(isTRUE(initialize) | is.null(E(fds)) | is.null(D(fds))){
@@ -47,9 +45,15 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, rhoRange=c(1e-5, 1
         print(summary(rho(fds)))
     }
 
+    # Dont use batche runs in E fitting state
+    batches4EFit <- nrDecoderBatches
+    if(nrow(mcols(fds, type=type)) < nrow(mcols(copy_fds, type=type))){
+        batches4EFit <- 1
+    }
+
     # initialize D
-    fds <- updateD(fds, type=type, lambda=lambda, control=control, BPPARAM=BPPARAM, verbose=verbose, 
-                   nrDecoderBatches=ifelse( nrow(mcols(fds, type=type)) == nrow(mcols(copy_fds, type=type)), nrDecoderBatches, 1))
+    fds <- updateD(fds, type=type, lambda=lambda, control=control, BPPARAM=BPPARAM, verbose=verbose,
+                   nrDecoderBatches=batches4EFit, multiRho=multiRho)
     lossList <- updateLossList(fds, lossList, 'init', 'D', lambda, verbose=verbose)
 
     # initialize rho step
@@ -67,8 +71,8 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, rhoRange=c(1e-5, 1
         lossList <- updateLossList(fds, lossList, i, 'E', lambda, verbose=verbose)
 
         # update D step
-        fds <- updateD(fds, type=type, lambda=lambda, control=control, BPPARAM=BPPARAM, verbose=verbose, 
-                       nrDecoderBatches=ifelse( nrow(mcols(fds, type=type)) == nrow(mcols(copy_fds, type=type)), nrDecoderBatches, 1))
+        fds <- updateD(fds, type=type, lambda=lambda, control=control, BPPARAM=BPPARAM, verbose=verbose,
+                       nrDecoderBatches=batches4EFit, multiRho=multiRho)
         lossList <- updateLossList(fds, lossList, i, 'D', lambda, verbose=verbose)
 
         # update rho step
@@ -124,7 +128,8 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, rhoRange=c(1e-5, 1
             t2 <- Sys.time()
 
             # update D step
-            copy_fds <- updateD(copy_fds, type=type, lambda=lambda, control=control, BPPARAM=BPPARAM, verbose=verbose, nrDecoderBatches=nrDecoderBatches)
+            copy_fds <- updateD(copy_fds, type=type, lambda=lambda, control=control,
+                    BPPARAM=BPPARAM, verbose=verbose, nrDecoderBatches=nrDecoderBatches, multiRho=multiRho)
             lossList <- updateLossList(copy_fds, lossList, paste0("final_", i), 'D', lambda, verbose=verbose)
 
             # update rho step
