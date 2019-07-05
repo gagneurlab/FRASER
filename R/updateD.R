@@ -2,7 +2,9 @@
 #' Update D function
 #'
 #' @noRd
-updateD <- function(fds, type, lambda, control, BPPARAM, verbose, nrDecoderBatches=5, fraction=0.75, multiRho=FALSE){
+updateD <- function(fds, type, lambda, control, BPPARAM, verbose,
+                  nrDecoderBatches=5, weighted=FALSE, fraction=0.75,
+                  multiRho=FALSE){
   D <- D(fds)
   b <- b(fds)
   H <- H(fds, noiseAlpha=currentNoiseAlpha(fds))
@@ -10,17 +12,27 @@ updateD <- function(fds, type, lambda, control, BPPARAM, verbose, nrDecoderBatch
   n <- N(fds)
   rho <- rho(fds)
 
+  weights <- matrix(rep(1, prod(dim(k))), nrow=nrow(k), ncol=ncol(k))
+  if(isTRUE(weighted)){
+    weights <- calcFraseRWeights(fds, type)
+    weights(fds, type, HDF5=FALSE) <- weights
+    message(sum(c(weights) != 1))
+  }
+
   # run fits
   fitls <- bplapply(seq_len(nrow(k)), singleDFit, D=D, b=b, k=k, n=n, H=H,
                     rho=rho, lambda=lambda, multiRho=multiRho, control=control,
-                    fraction=fraction, nrBatches=nrDecoderBatches, BPPARAM=BPPARAM)
+                    weights=weights, nSamples=ncol(fds), fraction=fraction,
+                    nrBatches=nrDecoderBatches, BPPARAM=BPPARAM)
 
   # extract infos
   parMat <- vapply(fitls, '[[', double(ncol(D) + 1), 'par')
-  mcols(fds, type=type)[paste0('FitDMessage_', type)] <- vapply(fitls, '[[', 'text', 'message')
-  mcols(fds, type=type)[,paste0('NumConvergedD_', type)] <- mcols(fds, type=type)[,paste0('NumConvergedD_', type)] + grepl(
-    "CONVERGENCE: REL_REDUCTION_OF_F .. FACTR.EPSMCH",
-    mcols(fds, type=type)[,paste0('FitDMessage_', type)])
+  mcols(fds, type=type)[paste0('FitDMessage_', type)] <-
+      vapply(fitls, '[[', 'text', 'message')
+  mcols(fds, type=type)[,paste0('NumConvergedD_', type)] <-
+    mcols(fds, type=type)[,paste0('NumConvergedD_', type)] + grepl(
+      "CONVERGENCE: REL_REDUCTION_OF_F .. FACTR.EPSMCH",
+      mcols(fds, type=type)[,paste0('FitDMessage_', type)])
 
   if(isTRUE(verbose)){
     print(table(mcols(fds, type=type)[,paste0('FitDMessage_', type)]))
@@ -34,12 +46,13 @@ updateD <- function(fds, type, lambda, control, BPPARAM, verbose, nrDecoderBatch
   return(fds)
 }
 
-
-singleDFit <- function(i, D, b, k, n, H, rho, lambda, control, fraction, nrBatches, multiRho, ...){
+singleDFit <- function(i, D, b, k, n, H, rho, lambda, control, fraction,
+                  nrBatches, weights, nSamples, multiRho, ...){
   pari <- c(b[i], D[i,])
   ki <- k[i,]
   ni <- n[i,]
   rhoi <- rho[i]
+  wi <- weights[i,]
 
   if(multiRho){
     rhoi <- c(rhoi/2, rhoi, (1+rhoi)/2)
@@ -55,9 +68,11 @@ singleDFit <- function(i, D, b, k, n, H, rho, lambda, control, fraction, nrBatch
       ksub <- ki[subset]
       nsub <- ni[subset]
       Hsub <- H[subset,]
+      wsub <- wi[subset]
+
       fit <- lapply(rhoi, function(r){
-          optim(pari, fn=truncNLL_db, gr=truncGrad_db,
-                   H=Hsub, k=ksub, n=nsub, rho=r, lambda=lambda,
+          optim(pari, fn=truncWeightedNLL_db, gr=truncWeightedGrad_db,
+                   H=Hsub, k=ksub, n=nsub, rho=r, lambda=lambda, w=wsub,
                    method="L-BFGS-B", control=control)
       })
       fit[[which.min(sapply(fit, "[[", "value"))]]
@@ -73,3 +88,4 @@ singleDFit <- function(i, D, b, k, n, H, rho, lambda, control, fraction, nrBatch
 
   return(fit)
 }
+

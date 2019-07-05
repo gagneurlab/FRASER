@@ -6,7 +6,7 @@
 #' @export
 fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, rhoRange=c(1e-5, 1-1e-5), lambda=0,
                            convergence=1e-5, iterations=15, initialize=TRUE, control=list(),
-                           BPPARAM=bpparam(), verbose=FALSE, nrDecoderBatches=5,
+                           BPPARAM=bpparam(), verbose=FALSE, nrDecoderBatches=5, weighted=FALSE,
                            nSubset=15000, minDeltaPsi=0.1, multiRho=FALSE){
 
     if(!bpisup(BPPARAM)){
@@ -53,7 +53,7 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, rhoRange=c(1e-5, 1
 
     # initialize D
     fds <- updateD(fds, type=type, lambda=lambda, control=control, BPPARAM=BPPARAM, verbose=verbose,
-                   nrDecoderBatches=batches4EFit, multiRho=multiRho)
+                   nrDecoderBatches=batches4EFit, multiRho=multiRho, weighted=FALSE)
     lossList <- updateLossList(fds, lossList, 'init', 'D', lambda, verbose=verbose)
 
     # initialize rho step
@@ -72,7 +72,7 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, rhoRange=c(1e-5, 1
 
         # update D step
         fds <- updateD(fds, type=type, lambda=lambda, control=control, BPPARAM=BPPARAM, verbose=verbose,
-                       nrDecoderBatches=batches4EFit, multiRho=multiRho)
+                       nrDecoderBatches=batches4EFit, multiRho=multiRho, weighted=FALSE)
         lossList <- updateLossList(fds, lossList, i, 'D', lambda, verbose=verbose)
 
         # update rho step
@@ -129,7 +129,8 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, rhoRange=c(1e-5, 1
 
             # update D step
             copy_fds <- updateD(copy_fds, type=type, lambda=lambda, control=control,
-                    BPPARAM=BPPARAM, verbose=verbose, nrDecoderBatches=nrDecoderBatches, multiRho=multiRho)
+                    BPPARAM=BPPARAM, verbose=verbose, nrDecoderBatches=nrDecoderBatches,
+                    multiRho=multiRho, weighted=weighted)
             lossList <- updateLossList(copy_fds, lossList, paste0("final_", i), 'D', lambda, verbose=verbose)
 
             # update rho step
@@ -175,6 +176,12 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, rhoRange=c(1e-5, 1
     stopifnot(identical(dim(K(copy_fds)), dim(predictedMeans)))
     predictedMeans(copy_fds, type) <- predictedMeans
 
+    # store weights if weighted version
+    if(isTRUE(weighted)){
+        weights <- weights(copy_fds, type)
+        weights(copy_fds, type) <- weights
+    }
+
     # validate object
     validObject(copy_fds)
     return(copy_fds)
@@ -192,7 +199,7 @@ initAutoencoder <- function(fds, q, rhoRange, type){
     b(fds) <- colMeans2(x)
 
     # initialize rho
-    rho(fds) <- methodOfMomemtsRho(K(fds))
+    rho(fds) <- methodOfMomentsRho(K(fds), N(fds))
 
     # reset counters
     mcols(fds, type=type)[paste0('NumConvergedD_', type)] <- 0

@@ -179,7 +179,7 @@ fit_keras_bb_dea_combined <- function(fds, q, type, noiseAlpha, rhoRange, BPPARA
     xOut     <- x(fds, all=TRUE, noiseAlpha=NULL, center=FALSE)
     bIn      <- colMeans(xMat)
     noise    <- t(colSds(xMat) * noiseAlpha * t(matrix(rnorm(prod(dim(kt))), ncol=ncol(kt))))
-    rho(fds) <- methodOfMomemtsRho(t(kt))
+    rho(fds) <- methodOfMomentsRho(t(kt), t(nt))
 
     # get model
     message(date(), ": Init model ...")
