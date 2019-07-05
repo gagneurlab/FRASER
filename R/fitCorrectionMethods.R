@@ -1,5 +1,5 @@
 
-fit <- function(fds, correction=c("FraseR", "fullFraseR", "PCA", "PCA+regression", "PEER", "PEERdecoder", "BB", "kerasDAE", "kerasBBdAE"),
+fit <- function(fds, correction=c("FraseR", "FraseR-weighted", "fullFraseR", "PCA", "PCA+regression", "PEER", "PEERdecoder", "BB", "kerasDAE", "kerasBBdAE"),
                     q, type="psi3", rhoRange=c(1e-5, 1-1e-5), nrDecoderBatches=5, weighted=FALSE,
                     noiseAlpha=1, lambda=0, convergence=1e-5, iterations=15,
                     initialize=TRUE, control=list(), BPPARAM=bpparam(),
@@ -10,6 +10,10 @@ fit <- function(fds, correction=c("FraseR", "fullFraseR", "PCA", "PCA+regression
             FraseR      = fitFraserAE(fds=fds, q=q, type=type, noiseAlpha=noiseAlpha, rhoRange=rhoRange, lambda=lambda,
                                convergence=convergence, iterations=iterations, initialize=initialize, weighted=weighted,
                                control=control, BPPARAM=BPPARAM, verbose=verbose, subset=TRUE, nrDecoderBatches=nrDecoderBatches),
+            FraseR-weighted = fitFraserAE(fds=fds, q=q, type=type, noiseAlpha=noiseAlpha,
+                                         rhoRange=rhoRange, lambda=lambda, convergence=convergence, iterations=iterations,
+                                         initialize=initialize, weighted=TRUE, control=control, BPPARAM=BPPARAM, 
+                                         verbose=verbose, subset=TRUE, nrDecoderBatches=1), 
             fullFraseR  = fitFraserAE(fds=fds, q=q, type=type, noiseAlpha=noiseAlpha, rhoRange=rhoRange, lambda=lambda,
                                 convergence=convergence, iterations=iterations, initialize=initialize, weighted=weighted,
                                 control=control, BPPARAM=BPPARAM, verbose=verbose, subset=FALSE, nrDecoderBatches=nrDecoderBatches),
