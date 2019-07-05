@@ -551,10 +551,10 @@ plotCountCorHeatmap <- function(fds, type=c("psi5", "psi3", "psiSite"),
     xmat_rc_2_plot <- xmat_rc[plotIdx,]
     if(isTRUE(normalized)){
         pred_mu <- as.matrix(predictedMeans(fds, type=type)[
-                expRowsMax & expRowsMedian & plotIdx,])
+                expRowsMax & expRowsMedian,][plotIdx,])
         pred_mu <- qlogis(pred_mu)
         lpred_mu_rc <- pred_mu - rowMeans(pred_mu)
-        xmat_rc_2_plot <- xmat_rc_2_plot - lpred_mu_rc[plotIdx,]
+        xmat_rc_2_plot <- xmat_rc_2_plot - lpred_mu_rc
     }
     cormat <- cor(xmat_rc_2_plot)
 
