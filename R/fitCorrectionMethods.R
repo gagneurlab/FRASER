@@ -235,8 +235,12 @@ fitBB <- function(fds, psiType){
     fds <- pvalueByBetaBinomialPerType(fds=fds,
             aname=paste0("pvalues_BB_", psiType),
             psiType=psiType, pvalFun=betabinVglmTest)
-    predictedMeans(fds, type=psiType) <- rowMeans(
-            getAssayMatrix(fds, type=psiType))
+    # predictedMeans(fds, type=psiType) <- rowMeans(
+    #         getAssayMatrix(fds, type=psiType))
+    predictedMeans(fds, type=psiType) <-
+      mcols(fds, type=psiType)[,paste0(psiType, "_alpha")] / 
+            ( mcols(fds, type=psiType)[,paste0(psiType, "_alpha")] + 
+                mcols(fds, type=psiType)[,paste0(psiType, "_beta")] )
     fds
 }
 

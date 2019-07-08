@@ -9,11 +9,6 @@ calculateZscore <- function(fds, type=currentType(fds), correction="FraseR"){
     counts(fds, type=type, side="ofInterest", HDF5=FALSE) <-
             as.matrix(counts(fds, type=type, side="ofInterest"))
 
-    if(correction=="BB"){
-        fds <- calculateZScores(fds, type=type)
-        return(fds)
-    }
-
     logit_mu <- qlogis(as.matrix(predictedMeans(fds)))
     logit_psi <- t(x(fds, all=TRUE, noiseAlpha=NULL, center=FALSE))
 
@@ -43,7 +38,7 @@ calculatePvalues <- function(fds, type=currentType(fds),
         fwer_pval  <- bplapply(seq_len(ncol(pvals)), adjust_FWER_PValues,
                 pvals=pvals, index, BPPARAM=BPPARAM)
         fwer_pvals <- do.call(cbind, fwer_pval)
-        pVals(fds, type=type, dist="BetaBinom") <- fwer_pvals
+        pVals(fds, type=type, dist="BetaBinomial") <- fwer_pvals
         return(fds)
     }
 
@@ -63,7 +58,7 @@ calculatePvalues <- function(fds, type=currentType(fds),
     pvals <- 2 * pmin(pval, 1 - pval + dval, 0.5)
     fwer_pval <- bplapply(seq_len(ncol(pvals)), adjust_FWER_PValues, pvals=pvals, index, BPPARAM=BPPARAM)
     fwer_pvals <- do.call(cbind, fwer_pval)
-    pVals(fds, dist="BetaBinom") <- fwer_pvals
+    pVals(fds, dist="BetaBinomial") <- fwer_pvals
 
     # binomial p-values
     pval_list <- bplapply(seq_len(nrow(mu)), singlePvalueBinomial, k=k, n=n, mu=mu, BPPARAM=BPPARAM)
@@ -72,7 +67,7 @@ calculatePvalues <- function(fds, type=currentType(fds),
     pvals <- 2 * pmin(pval, 1 - pval + dval, 0.5)
     fwer_pval <- bplapply(seq_len(ncol(pvals)), adjust_FWER_PValues, pvals=pvals, index, BPPARAM=BPPARAM)
     fwer_pvals <- do.call(cbind, fwer_pval)
-    pVals(fds, dist="Binom") <- fwer_pvals
+    pVals(fds, dist="Binomial") <- fwer_pvals
 
     return(fds)
 }
@@ -109,19 +104,19 @@ calculatePadjValues <- function(fds, type=currentType(fds), method="BY"){
     index <- getSiteIndex(fds, type=type)
     idx   <- !duplicated(index)
 
-    pvals <- pVals(fds, dist="BetaBinom")
+    pvals <- pVals(fds, dist="BetaBinomial")
     padj <- apply(pvals[idx,], 2, p.adjust, method=method)
     padjDT <- data.table(cbind(i=unique(index), padj), key="i")[J(index)]
     padjDT[,i:=NULL]
-    padjVals(fds, dist="BetaBinom") <- as.matrix(padjDT)
+    padjVals(fds, dist="BetaBinomial") <- as.matrix(padjDT)
 
     # only do it if it exists
-    if(paste0("pvaluesBinom_", type) %in% assayNames(fds)){
-        pvals <- pVals(fds, dist="Binom")
+    if(paste0("pvaluesBinomial_", type) %in% assayNames(fds)){
+        pvals <- pVals(fds, dist="Binomial")
         padj <- apply(pvals[idx,], 2, p.adjust, method=method)
         padjDT <- data.table(cbind(i=unique(index), padj), key="i")[J(index)]
         padjDT[,i:=NULL]
-        padjVals(fds, dist="Binom") <- as.matrix(padjDT)
+        padjVals(fds, dist="Binomial") <- as.matrix(padjDT)
     }
 
     return(fds)
