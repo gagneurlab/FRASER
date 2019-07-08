@@ -48,6 +48,7 @@ needsHyperOpt <- function(method){
         FraseR                   = TRUE,
         "FraseR-5DecoderBatches" = TRUE,
         "FraseR-1DecoderBatches" = TRUE,
+        "FraseR-weighted"        = TRUE,
         fullFraseR               = TRUE,
         PCA                      = TRUE,
         'PCA+regression'         = TRUE,
@@ -230,11 +231,13 @@ fitPEERDecoder <-function(fds, q, psiType, recomendedQ=TRUE, rhoRange=c(1e-5, 1-
 }
 
 fitBB <- function(fds, psiType){
-  currentType(fds) <- psiType
-  fds <- pvalueByBetaBinomialPerType(fds=fds, aname=paste0("pvalue_", psiType),
-          psiType=psiType, pvalFun=betabinVglmTest)
-
-  return(fds)
+    currentType(fds) <- psiType
+    fds <- pvalueByBetaBinomialPerType(fds=fds,
+            aname=paste0("pvalues_BB_", psiType),
+            psiType=psiType, pvalFun=betabinVglmTest)
+    predictedMeans(fds, type=psiType) <- rowMeans(
+            getAssayMatrix(fds, type=psiType))
+    fds
 }
 
 fitFraserAE <- function(fds, q, type, noiseAlpha, rhoRange, lambda, convergence,

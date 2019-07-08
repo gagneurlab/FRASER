@@ -39,7 +39,7 @@ calculatePvalues <- function(fds, type=currentType(fds),
     # if method BB is used take the old FraseR code
     if(correction %in% c("BB")){
         index <- getSiteIndex(fds, type)
-        pvals <- pVals(fds, type)
+        pvals <- getAssayMatrix(fds, "pvalues_BB", type)
         fwer_pval  <- bplapply(seq_len(ncol(pvals)), adjust_FWER_PValues,
                 pvals=pvals, index, BPPARAM=BPPARAM)
         fwer_pvals <- do.call(cbind, fwer_pval)
@@ -79,7 +79,7 @@ calculatePvalues <- function(fds, type=currentType(fds),
 
 adjust_FWER_PValues <- function(i, pvals=pvals, index=index){
     dt <- data.table(p=pvals[,i], idx=index)
-    dt2 <- dt[,.(pa=min(p.adjust(p, method="holm"))),by=idx]
+    dt2 <- dt[,.(pa=min(p.adjust(p, method="holm"), na.rm=TRUE)),by=idx]
     setkey(dt2, "idx")[J(index)][,pa]
 }
 
