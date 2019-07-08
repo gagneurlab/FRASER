@@ -155,7 +155,7 @@ predictY <- function(fds, type=currentType(fds), noiseAlpha=NULL){
 
 `setAssayMatrix<-` <- function(fds, value, name, type, ...){
     if(!is.matrix(value)){
-        value <- matrix(value, ncol=ncol(fds))
+        value <- matrix(value, ncol=ncol(fds), nrow=nrow(mcols(fds, type=type)))
     }
     if(is.null(colnames(value))){
         colnames(value) <- colnames(fds)
