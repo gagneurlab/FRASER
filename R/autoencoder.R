@@ -27,8 +27,14 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, rhoRange=c(1e-5, 1
     # copy fds object to save original input object
     # and create second object with only the subset to fit the encoder
     copy_fds <- fds
-    fds <- fds[variableJunctions(fds, type, minDeltaPsi=minDeltaPsi),,by=type]
-    fds <- fds[subsetKMostVariableJunctions(fds, type, nSubset),,by=type]
+    exMask <- variableJunctions(fds, type, minDeltaPsi=minDeltaPsi)
+    fds <- fds[exMask,,by=type]
+    exMask2 <- subsetKMostVariableJunctions(fds, type, nSubset)
+    fds <- fds[exMask2,,by=type]
+
+    # set correct exclusion mask for x computation
+    exMask[exMask == TRUE] <- exMask2
+    featureExclusionMask(copy_fds) <- exMask
 
     # initialize E and D using PCA and bias as zeros.
     if(isTRUE(initialize) | is.null(E(fds)) | is.null(D(fds))){
@@ -82,8 +88,8 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, rhoRange=c(1e-5, 1
         if(isTRUE(verbose)){
           print(paste('Time for one autoencoder loop:', Sys.time() - t2))
         } else {
-          print(paste0(date(), ': Iteration: ', i, ' loss: ',
-                       mean(lossList[nrow(lossList)])))
+            print(paste0(date(), ': Iteration: ', i, ' loss: ',
+                    mean(lossList[,ncol(lossList)])))
         }
 
         # check
@@ -97,6 +103,9 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, rhoRange=c(1e-5, 1
         } else {
             if(isTRUE(verbose)){
                 message(date(), ": Current max diff is: ", max(curLossDiff))
+                message(date(), ": Summary: ", paste(collapse=", ", sep=": ",
+                        names(summary(curLossDiff)),
+                        signif(summary(curLossDiff), 2)))
             }
         }
         currentLoss <- lossList[,ncol(lossList)]
@@ -104,7 +113,7 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, rhoRange=c(1e-5, 1
 
     print(Sys.time() - t1)
 
-    if(nrow(fds) == nrow(copy_fds)){    # TODO when using all features (!=nrow(fds)) in fitting for SE: also stop here and set copy_fds to fitted fds but with all junctions
+    if(nrow(fds) == nrow(copy_fds) & !isTRUE(weighted)){    # TODO when using all features (!=nrow(fds)) in fitting for SE: also stop here and set copy_fds to fitted fds but with all junctions
                                         # (at the moment: fds contains only a subset of all junctions, so copy_fds <- fds doesn't work for SE)
         copy_fds <- fds
     } else {
@@ -151,7 +160,7 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, rhoRange=c(1e-5, 1
                     - lossList[,ncol(lossList) - 1:0]))
             if(all(curLossDiff < convergence)){
                 message(date(), ': the final AE correction converged with:',
-                        lossList[length(lossList)])
+                        mean(lossList[,length(lossList)]))
                 break
             } else {
                 if(isTRUE(verbose)){
