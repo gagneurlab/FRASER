@@ -370,10 +370,11 @@ calcFraseRWeights <- function(fds, psiType){
   n <- as.matrix(N(fds, psiType))
   mu <- t(predictMu(fds, psiType))
   rho <- rho(fds, psiType)
+  dataPsi <- t(x(fds, type=psiType, all=TRUE, center=FALSE, noiseAlpha = NULL))
 
   # pearson residuals for BB
-  r <- ((k+pseudocount()) - (n+2*pseudocount()) * mu) / sqrt((n+2*pseudocount()) * mu * (1-mu) * (1+((n+2*pseudocount())-1)*rho)) # on counts of success k
-  #r <- (dataPsi - mu) / sqrt((1/(n+2*pseudocount())) * mu * (1-mu) * (1+((n+2*pseudocount())-1)*rho))   # on probability of success mu
+  # r <- ((k+pseudocount()) - (n+2*pseudocount()) * mu) / sqrt((n+2*pseudocount()) * mu * (1-mu) * (1+((n+2*pseudocount())-1)*rho)) # on counts of success k
+  r <- (dataPsi - mu) / sqrt((1/(n+2*pseudocount())) * mu * (1-mu) * (1+((n+2*pseudocount())-1)*rho))   # on probability of success mu
 
   # weights according to Huber function (as in edgeR)
   c <- 1.345; # constant, as suggested in edgeR paper
