@@ -17,8 +17,10 @@ get_keras_model <- function(inputDim, q, b, rho, optimizer, weights=NULL){
     # denoising autoencoder
     rl2     <- regularizer_l2()
     cmm     <- constraint_minmaxnorm(-10, 10)
-    encoder <- layer_dense(units=q,        kernel_regularizer=rl2, kernel_constraint=cmm, name="encoder")
-    decoder <- layer_dense(units=inputDim, kernel_regularizer=rl2, kernel_constraint=cmm, name="decoder")
+    encoder <- layer_dense(units=q,        kernel_regularizer=rl2,
+            kernel_constraint=cmm, name="encoder")
+    decoder <- layer_dense(units=inputDim, kernel_regularizer=rl2,
+            kernel_constraint=cmm, name="decoder")
 
     # full model
     transformedData <- list(
@@ -92,11 +94,15 @@ keras_loss_bb <- custom_metric("betabin", function(y_true, y_pred){
 #'   library(keras)
 #'   use_python("/opt/modules/i12g/anaconda/3-5.0.1/envs/omicsOUTRIDER/bin/python", required=TRUE)
 #'
-fit_keras_bb_dea <- function(fds, q, type, noiseAlpha, rhoRange, BPPARAM, lr=0.0001, epochs=50, patience=5, reUseWeights=TRUE, iterations=10){
+fit_keras_bb_dea <- function(fds, q, type, noiseAlpha, rhoRange, BPPARAM,
+                    lr=0.0001, epochs=50, patience=5, reUseWeights=TRUE,
+                    iterations=10, convergence=1e-4){
     currentType(fds)   <- type
 
-    counts(fds, type=type, side="other", HDF5=FALSE)      <- as.matrix(counts(fds, type=type, side="other"))
-    counts(fds, type=type, side="ofInterest", HDF5=FALSE) <- as.matrix(counts(fds, type=type, side="ofInterest"))
+    counts(fds, type=type, side="other", HDF5=FALSE)      <- as.matrix(
+            counts(fds, type=type, side="other"))
+    counts(fds, type=type, side="ofInterest", HDF5=FALSE) <- as.matrix(
+            counts(fds, type=type, side="ofInterest"))
 
     # data keras input
     kt       <- t(K(fds))
@@ -104,18 +110,19 @@ fit_keras_bb_dea <- function(fds, q, type, noiseAlpha, rhoRange, BPPARAM, lr=0.0
     xMat     <- x(fds, all=TRUE, noiseAlpha=NULL, center=FALSE)
     xOut     <- x(fds, all=TRUE, noiseAlpha=NULL, center=FALSE)
     bIn      <- colMeans(xMat)
-    noise    <- t(colSds(xMat) * noiseAlpha * t(matrix(rnorm(prod(dim(kt))), ncol=ncol(kt))))
+    noise    <- t(colSds(xMat) * noiseAlpha *
+            t(matrix(rnorm(prod(dim(kt))), ncol=ncol(kt))))
     rho(fds) <- methodOfMomentsRho(t(kt), t(nt))
 
     # get model
     message(date(), ": Init model ...")
     optimizer <- optimizer_adam(clipvalue=1, lr=lr)
-    model <- get_keras_model(inputDim=ncol(kt), q=q, b=bIn, rho=rho(fds), optimizer=optimizer)
+    model <- get_keras_model(inputDim=ncol(kt), q=q, b=bIn, rho=rho(fds),
+            optimizer=optimizer)
 
     # keep current weight setup
     curWeights  <- get_weights(model)
-    initWeights <- get_weights(model)
-    for(i in seq_len(10)){
+    for(i in seq_len(iterations)){
 
         # shuffel input
         sidx <- sample(nrow(kt), nrow(kt))
@@ -123,37 +130,39 @@ fit_keras_bb_dea <- function(fds, q, type, noiseAlpha, rhoRange, BPPARAM, lr=0.0
         nt <- nt[sidx,]
 
         # fit rho
-        message(date(), ": Fit rho ...")
+        message(date(), ": iter: ", i, ", Fit rho ...")
         pred_mu <- model %>% predict(list(kt, nt, noise))
         fitparameters <- bplapply(seq_len(ncol(kt)), estRho, nll=truncNLL_rho,
                 k=t(kt), n=t(nt), y=t(pred_mu), rhoRange=rhoRange,
                 BPPARAM=BPPARAM)
         rho(fds) <- vapply(fitparameters, "[[", double(1), "minimum")
         k_set_value(fds_rhoIn, rho(fds))
+        print.table(summary(rho(fds)))
 
         # train dAE
-        message(date(), ": fit model ...")
+        message(date(), ": iter: ", i, ", fit model ...")
         model <- get_keras_model(inputDim=ncol(kt), q=q, b=bIn,
                 rho=rho(fds), optimizer=optimizer)
         if(isTRUE(reUseWeights)){
-            set_weights(model) <- curWeights
+            set_weights(model, curWeights)
         }
         cb_list <- list(
             callback_terminate_on_naan(),
-            callback_early_stopping(patience=patience))
+            callback_early_stopping(monitor='loss', min_delta=convergence,
+                    patience=patience, mode='min'))
         history <- model %>% keras::fit(
             x = list(kt, nt, noise),
             y = xOut,
             shuffle = TRUE,
             epochs=epochs,
-            batch_size=ceiling(nrow(kt)/10),
-            validation_split=0.2,
+            batch_size=nrow(kt),
             callbacks=cb_list)
 
         # save weights
         curWeights <- get_weights(model)
 
-        message("Current loss:", rev(history$metrics$val_loss)[1])
+        message(date(), ": iter: ", i, ", Current loss:",
+                rev(history$metrics$val_loss)[1])
         curEval <- model %>% evaluate(x=list(kt, nt, noise), y=xOut)
         message(paste(names(curEval), curEval, sep=":\t", collapse="\n"))
     }
@@ -164,7 +173,7 @@ fit_keras_bb_dea <- function(fds, q, type, noiseAlpha, rhoRange, BPPARAM, lr=0.0
 
     # save weights
     metadata(fds)[[paste("dAE_keras_bb_weights_", type)]] <- curWeights
-    
+
     # save noise
     noise(fds, type) <- noise
 
