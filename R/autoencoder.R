@@ -31,6 +31,7 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, rhoRange=c(1e-5, 1
     fds <- fds[exMask,,by=type]
     exMask2 <- subsetKMostVariableJunctions(fds, type, nSubset)
     fds <- fds[exMask2,,by=type]
+    featureExclusionMask(fds) <- TRUE
 
     # set correct exclusion mask for x computation
     exMask[exMask == TRUE] <- exMask2
@@ -160,7 +161,7 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, rhoRange=c(1e-5, 1
                     - lossList[,ncol(lossList) - 1:0]))
             if(all(curLossDiff < convergence)){
                 message(date(), ': the final AE correction converged with:',
-                        mean(lossList[,length(lossList)]))
+                        mean(lossList[,ncol(lossList)]))
                 break
             } else {
                 if(isTRUE(verbose)){
