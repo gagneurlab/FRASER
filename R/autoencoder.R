@@ -4,10 +4,11 @@
 #' @noRd
 #'
 #' @export
-fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, rhoRange=c(1e-5, 1-1e-5), lambda=0,
-                           convergence=1e-5, iterations=15, initialize=TRUE, control=list(),
-                           BPPARAM=bpparam(), verbose=FALSE, nrDecoderBatches=5, weighted=FALSE,
-                           nSubset=15000, minDeltaPsi=0.1, multiRho=FALSE){
+fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, minDeltaPsi=0.1,
+                    rhoRange=c(1e-5, 1-1e-5), lambda=0, convergence=1e-5,
+                    iterations=15, initialize=TRUE, control=list(),
+                    BPPARAM=bpparam(), verbose=FALSE, nrDecoderBatches=5,
+                    weighted=FALSE, nSubset=15000, multiRho=FALSE){
 
     if(!bpisup(BPPARAM)){
         bpstart(BPPARAM)
@@ -35,6 +36,7 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, rhoRange=c(1e-5, 1
     # set correct exclusion mask for x computation
     exMask[exMask == TRUE] <- exMask2
     featureExclusionMask(copy_fds) <- exMask
+    featureExclusionMask(fds) <- !logical(sum(exMask))
 
     # initialize E and D using PCA and bias as zeros.
     if(isTRUE(initialize) | is.null(E(fds)) | is.null(D(fds))){
@@ -58,8 +60,9 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, rhoRange=c(1e-5, 1
     }
 
     # initialize D
-    fds <- updateD(fds, type=type, lambda=lambda, control=control, BPPARAM=BPPARAM, verbose=verbose,
-                   nrDecoderBatches=batches4EFit, multiRho=multiRho, weighted=FALSE)
+    fds <- updateD(fds, type=type, lambda=lambda, control=control,
+            BPPARAM=BPPARAM, verbose=verbose, nrDecoderBatches=batches4EFit,
+            multiRho=multiRho, weighted=FALSE)
     lossList <- updateLossList(fds, lossList, 'init', 'D', lambda, verbose=verbose)
 
     # initialize rho step
@@ -77,8 +80,9 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, rhoRange=c(1e-5, 1
         lossList <- updateLossList(fds, lossList, i, 'E', lambda, verbose=verbose)
 
         # update D step
-        fds <- updateD(fds, type=type, lambda=lambda, control=control, BPPARAM=BPPARAM, verbose=verbose,
-                       nrDecoderBatches=batches4EFit, multiRho=multiRho, weighted=FALSE)
+        fds <- updateD(fds, type=type, lambda=lambda, control=control,
+                BPPARAM=BPPARAM, verbose=verbose, nrDecoderBatches=batches4EFit,
+                multiRho=multiRho, weighted=FALSE)
         lossList <- updateLossList(fds, lossList, i, 'D', lambda, verbose=verbose)
 
         # update rho step
