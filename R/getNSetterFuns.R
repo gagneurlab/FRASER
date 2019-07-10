@@ -37,7 +37,7 @@ featureExclusionMask <- function(fds, type=currentType(fds)){
 #' @export "featureExclusionMask<-"
 `featureExclusionMask<-` <- function(fds, value, type=currentType(fds)){
     if(isScalarLogical(value)){
-        value <- rep(value, ncol(mcols(fds, type=type)))
+        value <- rep(value, nrow(mcols(fds, type=type)))
     }
     mcols(fds, type=type)[[paste0('featureExclude_', type)]] <- value
     return(fds)
