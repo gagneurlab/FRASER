@@ -169,15 +169,15 @@ betabinVglmTest <- function(cMat, alternative="two.sided",
     # one-sided p-value (alternative = "less")
     pval <- pbetabinom.ab(y[!naValues], N[!naValues], alpha, beta)
     dval <- dbetabinom.ab(y[!naValues], N[!naValues], alpha, beta)
-    pval <- sapply(pval, min, 1)
-    dval <- sapply(dval, min, 1)
+    pval <- pmin(pval, 1)
+    dval <- pmin(dval, 1)
 
     # two sieded test
     if(startsWith("two.sided", alternative)){
-        pval <- apply(cbind(pval, 1 - pval + dval) * 2, 1, min, 1)
+        pval <- pmin(pval * 2, (1 - pval + dval) * 2, 1)
     # one-sided greater test
     } else if(startsWith("greater", alternative)){
-        pval <- sapply(1 - pval + dval, min, 1)
+        pval <- pmin(1 - pval + dval, 1)
     } else if(!startsWith("less", alternative)){
         stop("")
     }
