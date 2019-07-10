@@ -87,7 +87,7 @@ keras_loss_bb <- custom_metric("betabin", function(y_true, y_pred){
 #'   envName=omicsOUTRIDER
 #'   module load i12g/anaconda/3-5.0.1
 #'   conda create -n $envName python=3.6
-#'   /opt/modules/i12g/anaconda/3-5.0.1/envs/$envName/bin/pip install -U keras tensorflow jupyterlab
+#'   /opt/modules/i12g/anaconda/3-5.0.1/envs/$envName/bin/pip install -U keras tensorflow jupyterlab wbuild pandas
 #'
 #' To use it run before training:
 #'
