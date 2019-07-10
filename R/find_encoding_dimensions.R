@@ -94,7 +94,7 @@ optimHyperParams <- function(fds, type, correction,
     # put the most important stuff into memory
     #
     dontWriteHDF5(fds) <- TRUE
-    counts(fds, type=type, side="other")      <-
+    counts(fds, type=type, side="other") <-
             as.matrix(counts(fds, type=type, side="other"))
     counts(fds, type=type, side="ofInterest") <-
             as.matrix(counts(fds, type=type, side="ofInterest"))
@@ -103,7 +103,7 @@ optimHyperParams <- function(fds, type, correction,
     #' remove non variable and low abundance junctions
     #'
     j2keepVa <- variableJunctions(fds, type, minDeltaPsi)
-    j2keepDP <- rowMedians(K(fds, type)) >= 5
+    j2keepDP <- rowQuantiles(K(fds, type), probs=0.75) >= 10
     j2keep <- j2keepDP & j2keepVa
     message("dPsi filter:", pasteTable(j2keep))
     fds <- fds[j2keep,,by=type]
@@ -120,8 +120,22 @@ optimHyperParams <- function(fds, type, correction,
     fds <- injectOutliers(fds, type=type, freq=injectFreq,
             minDpsi=minDeltaPsi, method="samplePSI")
 
+    # remove unneeded blocks to save memory
+    a2rm <- paste(sep="_", c("originalCounts", "originalOtherCounts"),
+            rep(psiTypes, 2))
+    for(a in a2rm){
+        assay(fds, a) <- NULL
+    }
+    metadata(fds) <- list()
+    gc()
+
+    # reset lost important values
+    currentType(fds) <- type
+    dontWriteHDF5(fds) <- TRUE
+
     # run hyper parameter optimization
     params <- expand.grid(q=q_param, noise=noise_param)
+    message(date(), ": Run hyper optimization with ", nrow(params), " options.")
     res <- bplapply(seq_len(nrow(params)), findEncodingDim, fds=fds, type=type,
                     iterations=iterations, params=params, correction=correction,
                     BPPARAM=BPPARAM, nrDecoderBatches=nrDecoderBatches)
