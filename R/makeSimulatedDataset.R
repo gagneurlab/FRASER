@@ -456,7 +456,7 @@ injectOutliers <- function(fds, type=type, freq=1E-3, minDpsi=0.2, deltaDistr="u
       }
 
       # ensure that injected points becomes an outlier by adding mean delta psi as an offset
-      meanDpsi <- mean(abs(psi[junctions,] - mean(psi[junction,])))
+      meanDpsi <- mean(abs(psi[junction,] - mean(psi[junction,])))
 
       # sample delta psi for injection from uniform distribution between min and max dpsi
       injDpsi <- injDirection * switch(deltaDistr,
