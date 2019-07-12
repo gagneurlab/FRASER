@@ -431,7 +431,7 @@ injectOutliers <- function(fds, type=type, freq=1E-3, minDpsi=0.2, deltaDistr="u
 
   # apply injection function to each outlier
   message(date(), ": Injecting ", nrow(list_index), " outliers ...")
-  result <- bplapply(seq_len(nrow(list_index)), list_index=list_index, indexOut_groups=indexOut_groups, type=type, psi=psi, n=n, dt=dt, minDpsi=minDpsi, verbose=verbose, BPPARAM=BPPARAM,
+  result <- bplapply(seq_len(nrow(list_index)), list_index=list_index, indexOut_groups=indexOut_groups, type=type, psi=psi, n=n, dt=dt, minDpsi=minDpsi, verbose=verbose, BBPPARAM=BPPARAM,
                      FUN=function(j, list_index, indexOut_groups, type, psi, n, dt=dt, minDpsi, verbose){
 
       # extract group, sample and injecetion direction (i.e +1/up or -1/down)
@@ -459,9 +459,14 @@ injectOutliers <- function(fds, type=type, freq=1E-3, minDpsi=0.2, deltaDistr="u
       meanDpsi <- mean(abs(psi[junction,] - mean(psi[junction,])))
 
       # sample delta psi for injection from uniform distribution between min and max dpsi
+      minDpsi <- ifelse(minDpsi+meanDpsi < maxDpsi, minDpsi+meanDpsi, maxDpsi)
       injDpsi <- injDirection * switch(deltaDistr,
-                        uniformDistr = runif(1, minDpsi+meanDpsi, maxDpsi),
+                        uniformDistr = runif(1, minDpsi, maxDpsi),
                         ifelse(as.double(deltaDistr) > maxDpsi, maxDpsi, as.double(deltaDistr)) )
+
+      # if(is.na(injDpsi)){
+      #   browser()
+      # }
 
       # get N of this junction
       n_ji <- n[junction,sample]
