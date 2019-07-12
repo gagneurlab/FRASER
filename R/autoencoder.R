@@ -41,7 +41,7 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, minDeltaPsi=0.1,
 
     # initialize E and D using PCA and bias as zeros.
     if(isTRUE(initialize) | is.null(E(fds)) | is.null(D(fds))){
-        fds <- initAutoencoder(fds, q, rhoRange, type=type)
+        fds <- initAutoencoder(fds, q, rhoRange, type=type, BPPARAM=BPPARAM)
     }
 
     # initial loss
@@ -128,7 +128,7 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, minDeltaPsi=0.1,
         # set noiseAlpha to 0 or NULL to NOT use noise now (latent space already fitted)
         currentNoiseAlpha(fds) <- NULL
 
-        copy_fds <- initAutoencoder(copy_fds, q, rhoRange, type=type)
+        copy_fds <- initAutoencoder(copy_fds, q, rhoRange, type=type, BPPARAM=BPPARAM)
         E(copy_fds) <- E(fds)
         currentLoss <- lossED(copy_fds, lambda, byRows=TRUE)
 
@@ -201,7 +201,7 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, minDeltaPsi=0.1,
     return(copy_fds)
 }
 
-initAutoencoder <- function(fds, q, rhoRange, type){
+initAutoencoder <- function(fds, q, rhoRange, type, BPPARAM){
 
     x <- x(fds, all=TRUE, center=FALSE)
     pca <- pca(as.matrix(x(fds, all=TRUE)), nPcs=q, center=FALSE)
@@ -213,7 +213,8 @@ initAutoencoder <- function(fds, q, rhoRange, type){
     b(fds) <- colMeans2(x)
 
     # initialize rho
-    rho(fds) <- methodOfMomentsRho(K(fds), N(fds))
+    # rho(fds) <- methodOfMomentsRho(K(fds), N(fds))
+    fds <- updateRho(fds, type=type, rhoRange, BPPARAM=BPPARAM, verbose=FALSE)
 
     # reset counters
     mcols(fds, type=type)[paste0('NumConvergedD_', type)] <- 0
