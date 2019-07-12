@@ -431,7 +431,7 @@ injectOutliers <- function(fds, type=type, freq=1E-3, minDpsi=0.2, deltaDistr="u
 
   # apply injection function to each outlier
   message(date(), ": Injecting ", nrow(list_index), " outliers ...")
-  result <- bplapply(seq_len(nrow(list_index)), list_index=list_index, indexOut_groups=indexOut_groups, type=type, psi=psi, n=n, dt=dt, minDpsi=minDpsi, verbose=verbose, BBPPARAM=BPPARAM,
+  result <- bplapply(seq_len(nrow(list_index)), list_index=list_index, indexOut_groups=indexOut_groups, type=type, psi=psi, n=n, dt=dt, minDpsi=minDpsi, verbose=verbose, BPPARAM=BPPARAM,
                      FUN=function(j, list_index, indexOut_groups, type, psi, n, dt=dt, minDpsi, verbose){
 
       # extract group, sample and injecetion direction (i.e +1/up or -1/down)
