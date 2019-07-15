@@ -37,7 +37,6 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, minDeltaPsi=0.1,
     # set correct exclusion mask for x computation
     exMask[exMask == TRUE] <- exMask2
     featureExclusionMask(copy_fds) <- exMask
-    featureExclusionMask(fds) <- !logical(sum(exMask))
 
     # initialize E and D using PCA and bias as zeros.
     if(isTRUE(initialize) | is.null(E(fds)) | is.null(D(fds))){
