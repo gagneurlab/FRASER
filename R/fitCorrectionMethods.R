@@ -1,6 +1,7 @@
 fit <- function(fds, correction=c("FraseR", "FraseR-weighted", "FraseR-5DecoderBatches",
                             "FraseR-1DecoderBatches", "fullFraseR", "PCA", "PCA+regression",
-                            "PEER", "PEERdecoder", "BB", "kerasDAE", "kerasBBdAE"),
+                            "PEER", "PEERdecoder", "BB", "kerasDAE", "kerasBBdAE",
+                            "PCA+BB-Decoder"),
                     q, type="psi3", rhoRange=c(1e-5, 1-1e-5), nrDecoderBatches=5,
                     weighted=FALSE, noiseAlpha=1, lambda=0, convergence=1e-5, iterations=15,
                     initialize=TRUE, control=list(), BPPARAM=bpparam(), nSubset=15000,
@@ -27,6 +28,10 @@ fit <- function(fds, correction=c("FraseR", "FraseR-weighted", "FraseR-5DecoderB
                                   rhoRange=rhoRange, lambda=lambda, convergence=convergence, iterations=iterations,
                                   initialize=initialize, weighted=TRUE, control=control, BPPARAM=BPPARAM,
                                   verbose=verbose, subset=TRUE, nrDecoderBatches=1),
+            "PCA+BB-Decoder" = fitFraserAE(fds=fds, q=q, type=type, noiseAlpha=noiseAlpha, nSubset=nSubset,
+                                            rhoRange=rhoRange, lambda=lambda, convergence=convergence, iterations=iterations,
+                                            initialize=initialize, weighted=TRUE, control=control, BPPARAM=BPPARAM,
+                                            verbose=verbose, subset=TRUE, nrDecoderBatches=1, latentSpace = 'PCA'),
             fullFraseR  = fitFraserAE(fds=fds, q=q, type=type, noiseAlpha=noiseAlpha, rhoRange=rhoRange, lambda=lambda,
                                   convergence=convergence, iterations=iterations, initialize=initialize, nSubset=nSubset, weighted=weighted,
                                   control=control, BPPARAM=BPPARAM, verbose=verbose, subset=FALSE, nrDecoderBatches=nrDecoderBatches),
@@ -238,15 +243,16 @@ fitBB <- function(fds, psiType){
     # predictedMeans(fds, type=psiType) <- rowMeans(
     #         getAssayMatrix(fds, type=psiType))
     predictedMeans(fds, type=psiType) <-
-      mcols(fds, type=psiType)[,paste0(psiType, "_alpha")] / 
-            ( mcols(fds, type=psiType)[,paste0(psiType, "_alpha")] + 
+      mcols(fds, type=psiType)[,paste0(psiType, "_alpha")] /
+            ( mcols(fds, type=psiType)[,paste0(psiType, "_alpha")] +
                 mcols(fds, type=psiType)[,paste0(psiType, "_beta")] )
     fds
 }
 
 fitFraserAE <- function(fds, q, type, noiseAlpha, rhoRange, lambda, convergence,
                     iterations, initialize, control, BPPARAM, verbose,
-                    subset=TRUE, nrDecoderBatches, nSubset=15000, weighted){
+                    subset=TRUE, nrDecoderBatches, nSubset=15000, weighted,
+                    latentSpace = 'AE'){
   #+ subset fitting
   curDims <- dim(K(fds, type))
   if(isTRUE(subset)){
@@ -262,7 +268,7 @@ fitFraserAE <- function(fds, q, type, noiseAlpha, rhoRange, lambda, convergence,
           rhoRange=rhoRange, lambda=lambda, convergence=convergence,
           iterations=iterations, initialize=initialize, nSubset=nSubset,
           weighted=weighted, control=control, BPPARAM=BPPARAM, verbose=verbose,
-          nrDecoderBatches=nrDecoderBatches)
+          nrDecoderBatches=nrDecoderBatches, latentSpace=latentSpace )
   return(fds)
 
 }
