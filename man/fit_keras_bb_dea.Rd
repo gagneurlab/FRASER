@@ -5,7 +5,8 @@
 \title{Keras denoising autoencoder with betabinomial loss}
 \usage{
 fit_keras_bb_dea(fds, q, type, noiseAlpha, rhoRange, BPPARAM, lr = 1e-04,
-  epochs = 50, patience = 5, reUseWeights = TRUE, iterations = 10)
+  epochs = 50, patience = 5, reUseWeights = TRUE, iterations = 10,
+  convergence = 1e-04)
 }
 \description{
 Install environment: (bash commands)
@@ -14,7 +15,7 @@ Install environment: (bash commands)
 envName=omicsOUTRIDER
   module load i12g/anaconda/3-5.0.1
   conda create -n $envName python=3.6
-  /opt/modules/i12g/anaconda/3-5.0.1/envs/$envName/bin/pip install -U keras tensorflow jupyterlab
+  /opt/modules/i12g/anaconda/3-5.0.1/envs/$envName/bin/pip install -U keras tensorflow jupyterlab wbuild pandas
 
 To use it run before training:
 

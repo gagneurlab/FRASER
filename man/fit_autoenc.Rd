@@ -5,7 +5,8 @@
 \title{### MODEL}
 \usage{
 fit_autoenc(fds, type = currentType(fds), q_guess = round(ncol(fds)/4),
-  noiseRatio = 0.5, BPPARAM = bpparam(), iterations = 3)
+  correction, noiseRatio = 0.5, BPPARAM = bpparam(), iterations = 3,
+  nrDecoderBatches = 1, verbose = FALSE)
 }
 \description{
 ### MODEL

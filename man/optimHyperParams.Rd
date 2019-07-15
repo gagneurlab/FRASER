@@ -2,13 +2,13 @@
 % Please edit documentation in R/find_encoding_dimensions.R
 \name{optimHyperParams}
 \alias{optimHyperParams}
-\title{remove non variable junctions}
+\title{remove non variable and low abundance junctions}
 \usage{
-optimHyperParams(fds, type, q_param = seq(3, min(30, ncol(fds)), by = 3),
-  noise_param = c(0, 0.5, 1, 2), minDeltaPsi = 0.1,
-  BPPARAM = bpparam(), iterations = 5, setSubset = 0.1,
-  injectFreq = 0.01)
+optimHyperParams(fds, type, correction, q_param = seq(2, min(40,
+  ncol(fds)), by = 3), noise_param = c(0, 0.5, 1, 2, 5),
+  minDeltaPsi = 0.1, iterations = 5, setSubset = 15000,
+  injectFreq = 0.01, nrDecoderBatches = 1, BPPARAM = bpparam())
 }
 \description{
-remove non variable junctions
+remove non variable and low abundance junctions
 }

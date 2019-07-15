@@ -6,7 +6,7 @@
 \usage{
 plotCountCorHeatmap(fds, type = c("psi5", "psi3", "psiSite"),
   logit = FALSE, topN = 50000, minMedian = 1, main = NULL,
-  normalized = TRUE, show_rownames = FALSE, show_colnames = FALSE,
+  normalized = FALSE, show_rownames = FALSE, show_colnames = FALSE,
   annotation_col = NA, annotation_row = NA, boder_color = NA, ...)
 }
 \description{

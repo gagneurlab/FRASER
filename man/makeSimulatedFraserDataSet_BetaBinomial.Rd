@@ -5,7 +5,7 @@
 \title{Create an simulated example data set for FraseR}
 \usage{
 makeSimulatedFraserDataSet_BetaBinomial(m = 200, j = 10000, q = 10,
-  nbMean = 350, nbSize = 0.25, rhoMeanlog = -5, rhoSdlog = 1,
+  nbMeanLog = 8, nbSize = 0.55, rhoMeanlog = -5, rhoSdlog = 1,
   Hmean = 0, Hsd = 100, Dmean = 0, Dsd = 0.007, ...)
 }
 \arguments{
