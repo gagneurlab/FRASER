@@ -8,7 +8,8 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, minDeltaPsi=0.1,
                     rhoRange=c(1e-5, 1-1e-5), lambda=0, convergence=1e-5,
                     iterations=15, initialize=TRUE, control=list(),
                     BPPARAM=bpparam(), verbose=FALSE, nrDecoderBatches=5,
-                    weighted=FALSE, nSubset=15000, multiRho=FALSE){
+                    weighted=FALSE, nSubset=15000, multiRho=FALSE,
+                    latentSpace=c('AE', 'PCA')){
 
     if(!bpisup(BPPARAM)){
         bpstart(BPPARAM)
@@ -49,74 +50,77 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, minDeltaPsi=0.1,
     colnames(lossList) <- "init_pca"
     print(paste0('Initial PCA loss: ', mean(lossList[,1])))
 
-    #inital rho values
-    if(isTRUE(verbose)){
-        print(summary(rho(fds)))
-    }
+    if(match.arg(latentSpace) == 'AE'){
 
-    # Dont use batche runs in E fitting state
-    batches4EFit <- nrDecoderBatches
-    if(nrow(mcols(fds, type=type)) < nrow(mcols(copy_fds, type=type))){
-        batches4EFit <- 1
-    }
-
-    # initialize D
-    fds <- updateD(fds, type=type, lambda=lambda, control=control,
-            BPPARAM=BPPARAM, verbose=verbose, nrDecoderBatches=batches4EFit,
-            multiRho=multiRho, weighted=FALSE)
-    lossList <- updateLossList(fds, lossList, 'init', 'D', lambda, verbose=verbose)
-
-    # initialize rho step
-    fds <- updateRho(fds, type=type, rhoRange, BPPARAM=BPPARAM, verbose=verbose)
-    lossList <- updateLossList(fds, lossList, 'init', 'Rho', lambda, verbose=verbose)
-
-    # optimize log likelihood
-    t1 <- Sys.time()
-    currentLoss <- lossED(fds, lambda, byRows=TRUE)
-    for(i in seq_len(iterations)){
-        t2 <- Sys.time()
-
-        # update E step
-        fds <- updateE(fds, control=control, BPPARAM=BPPARAM, verbose=verbose)
-        lossList <- updateLossList(fds, lossList, i, 'E', lambda, verbose=verbose)
-
-        # update D step
-        fds <- updateD(fds, type=type, lambda=lambda, control=control,
-                BPPARAM=BPPARAM, verbose=verbose, nrDecoderBatches=batches4EFit,
-                multiRho=multiRho, weighted=FALSE)
-        lossList <- updateLossList(fds, lossList, i, 'D', lambda, verbose=verbose)
-
-        # update rho step
-        fds <- updateRho(fds, type=type, rhoRange, BPPARAM=BPPARAM, verbose=verbose)
-        lossList <- updateLossList(fds, lossList, i, 'Rho', lambda, verbose=verbose)
-
+        #inital rho values
         if(isTRUE(verbose)){
-          print(paste('Time for one autoencoder loop:', Sys.time() - t2))
-        } else {
-            print(paste0(date(), ': Iteration: ', i, ' loss: ',
-                    mean(lossList[,ncol(lossList)])))
+            print(summary(rho(fds)))
         }
 
-        # check
-        curLossDiff <- rowMax(abs(
+        # Dont use batche runs in E fitting state
+        batches4EFit <- nrDecoderBatches
+        if(nrow(mcols(fds, type=type)) < nrow(mcols(copy_fds, type=type))){
+            batches4EFit <- 1
+        }
+
+        # initialize D
+        fds <- updateD(fds, type=type, lambda=lambda, control=control,
+                       BPPARAM=BPPARAM, verbose=verbose, nrDecoderBatches=batches4EFit,
+                       multiRho=multiRho, weighted=FALSE)
+        lossList <- updateLossList(fds, lossList, 'init', 'D', lambda, verbose=verbose)
+
+        # initialize rho step
+        fds <- updateRho(fds, type=type, rhoRange, BPPARAM=BPPARAM, verbose=verbose)
+        lossList <- updateLossList(fds, lossList, 'init', 'Rho', lambda, verbose=verbose)
+
+        # optimize log likelihood
+        t1 <- Sys.time()
+        currentLoss <- lossED(fds, lambda, byRows=TRUE)
+        for(i in seq_len(iterations)){
+            t2 <- Sys.time()
+
+            # update E step
+            fds <- updateE(fds, control=control, BPPARAM=BPPARAM, verbose=verbose)
+            lossList <- updateLossList(fds, lossList, i, 'E', lambda, verbose=verbose)
+
+            # update D step
+            fds <- updateD(fds, type=type, lambda=lambda, control=control,
+                           BPPARAM=BPPARAM, verbose=verbose, nrDecoderBatches=batches4EFit,
+                           multiRho=multiRho, weighted=FALSE)
+            lossList <- updateLossList(fds, lossList, i, 'D', lambda, verbose=verbose)
+
+            # update rho step
+            fds <- updateRho(fds, type=type, rhoRange, BPPARAM=BPPARAM, verbose=verbose)
+            lossList <- updateLossList(fds, lossList, i, 'Rho', lambda, verbose=verbose)
+
+            if(isTRUE(verbose)){
+                print(paste('Time for one autoencoder loop:', Sys.time() - t2))
+            } else {
+                print(paste0(date(), ': Iteration: ', i, ' loss: ',
+                             mean(lossList[,ncol(lossList)])))
+            }
+
+            # check
+            curLossDiff <- rowMax(abs(
                 matrix(currentLoss, ncol=3, nrow=length(currentLoss))
                 - lossList[,ncol(lossList) - 2:0]))
-        if(all(max(curLossDiff) < convergence)){
-          message(date(), ': the AE correction converged with: ',
-                  mean(lossList[,ncol(lossList)]))
-          break
-        } else {
-            if(isTRUE(verbose)){
-                message(date(), ": Current max diff is: ", max(curLossDiff))
-                message(date(), ": Summary: ", paste(collapse=", ", sep=": ",
-                        names(summary(curLossDiff)),
-                        signif(summary(curLossDiff), 2)))
+            if(all(max(curLossDiff) < convergence)){
+                message(date(), ': the AE correction converged with: ',
+                        mean(lossList[,ncol(lossList)]))
+                break
+            } else {
+                if(isTRUE(verbose)){
+                    message(date(), ": Current max diff is: ", max(curLossDiff))
+                    message(date(), ": Summary: ", paste(collapse=", ", sep=": ",
+                                                         names(summary(curLossDiff)),
+                                                         signif(summary(curLossDiff), 2)))
+                }
             }
+            currentLoss <- lossList[,ncol(lossList)]
         }
-        currentLoss <- lossList[,ncol(lossList)]
-    }
 
-    print(Sys.time() - t1)
+        print(Sys.time() - t1)
+    }
 
     if(nrow(fds) == nrow(copy_fds) & !isTRUE(weighted)){    # TODO when using all features (!=nrow(fds)) in fitting for SE: also stop here and set copy_fds to fitted fds but with all junctions
                                         # (at the moment: fds contains only a subset of all junctions, so copy_fds <- fds doesn't work for SE)
