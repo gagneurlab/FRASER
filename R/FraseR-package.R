@@ -67,7 +67,7 @@
 #'
 #' @importFrom BBmisc isScalarCharacter isScalarLogical chunk %nin%
 #'          isScalarInteger isFALSE is.error
-#' @importFrom R.utils renameFile
+#' @importFrom R.utils renameFile withTimeout
 #' @importFrom tools file_path_as_absolute
 #' @importFrom methods as callNextMethod is new slot slot<- validObject
 #' @importFrom utils browseURL capture.output sessionInfo

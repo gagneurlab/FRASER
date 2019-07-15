@@ -12,7 +12,8 @@
 #'
 #' @noRd
 pvalueByBetaBinomialPerType <- function(fds, aname, psiType, pvalFun,
-            minCov=5, alternative="two.sided", renjin=FALSE){
+            minCov=5, alternative="two.sided", renjin=FALSE, timeout=300,
+            BPPARAM=parallel(fds), returnFit=FALSE){
 
     message(date(), ": Calculate P-values for the ",
             psiType, " splice type ...")
@@ -47,7 +48,7 @@ pvalueByBetaBinomialPerType <- function(fds, aname, psiType, pvalFun,
 
     # TODO how to group groups?
     testFUN <- function(idx, rawCounts, rawOtherCounts, addNoise, pvalFun,
-                returnFit=FALSE){
+                        timeout, returnFit=FALSE, ...){
 
         ## get read coverage (y == reads of interests, N == all reads)
         y <- as.integer(as.matrix(rawCounts[idx,]))
@@ -65,8 +66,8 @@ pvalueByBetaBinomialPerType <- function(fds, aname, psiType, pvalFun,
 
         ## fitting
         timing <- sum(system.time(gcFirst=FALSE, expr={
-            pv_res <- lapply(list(countMatrix), FUN=tryCatchFactory(pvalFun),
-                             y=y, N=N, alternative=alternative)[[1]]
+            pv_res <- lapply(list(countMatrix), y=y, N=N, ...,
+                    FUN=tryCatchFactory(pvalFun, timeout=timeout))[[1]]
         })[c("user.self", "sys.self")])
 
         #
@@ -101,9 +102,10 @@ pvalueByBetaBinomialPerType <- function(fds, aname, psiType, pvalFun,
     }
     gc()
 
-    pvalues_ls <- bplapply(toTest, rawCounts=rawCounts,
-                    rawOtherCounts=rawOtherCounts, pvalFun,
-                    BPPARAM=parallel(fds), addNoise=addNoise, FUN=FUN)
+    pvalues_ls <- bplapply(toTest, rawCounts=rawCounts, alternative=alternative,
+                    rawOtherCounts=rawOtherCounts, pvalFun, timeout=timeout,
+                    returnFit=returnFit, addNoise=addNoise, FUN=FUN,
+                    BPPARAM=BPPARAM)
 
     # sort table again
     pvalues_ls <- pvalues_ls[order(toTest)]
@@ -205,14 +207,16 @@ betabinVglmTest <- function(cMat, alternative="two.sided",
 #' http://stackoverflow.com/questions/4948361/how-do-i-save-warnings-and-errors-as-output-from-a-function
 #'
 #' @noRd
-tryCatchFactory <- function(fun){
+tryCatchFactory <- function(fun, timeout=300){
     function(...) {
         warn <- err <- NULL
         res <- withCallingHandlers(
-            tryCatch(fun(...), error=function(e) {
-                err <<- conditionMessage(e)
-                NULL
-            }), warning=function(w) {
+            tryCatch(withTimeout(fun(...), timeout=timeout),
+                error=function(e) {
+                    err <<- conditionMessage(e)
+                    NULL
+                }),
+            warning=function(w) {
                 warn <<- append(warn, conditionMessage(w))
                 invokeRestart("muffleWarning")
             })
