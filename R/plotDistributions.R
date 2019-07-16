@@ -527,7 +527,7 @@ testPlotting <- function(){
 plotCountCorHeatmap <- function(fds, type=c("psi5", "psi3", "psiSite"),
             logit=FALSE, topN=50000, minMedian=1, main=NULL, normalized=FALSE,
             show_rownames=FALSE, show_colnames=FALSE, minDeltaPsi=0.1,
-            annotation_col=NA, annotation_row=NA, border_color=NA,
+            annotation_col=NA, annotation_row=NA, border_color=NA, topJ=5000,
             plotType=c("sampleCorrelation", "junctionSample"), ...){
 
     type <- match.arg(type)
@@ -552,6 +552,7 @@ plotCountCorHeatmap <- function(fds, type=c("psi5", "psi3", "psiSite"),
     xmat_rc_sd <- rowSds(xmat_rc)
     plotIdx <- rank(xmat_rc_sd) >= length(xmat_rc_sd) - topN
     xmat_rc_2_plot <- xmat_rc[plotIdx,]
+    cormatS <- cor(xmat_rc_2_plot)
     if(isTRUE(normalized)){
         pred_mu <- as.matrix(predictedMeans(fds, type=type)[
                     expRowsMax & expRowsMedian,][plotIdx,])
@@ -580,7 +581,8 @@ plotCountCorHeatmap <- function(fds, type=c("psi5", "psi3", "psiSite"),
                                  probs=0.75) >= 10
         j2keep <- j2keepDP & j2keepVa
         xmat_rc_2_plot <- xmat_rc[j2keep,]
-        mostVarKeep <- subsetKMostVariableJunctions(fds[j2keep,,by=type], type, topN)
+        mostVarKeep <- subsetKMostVariableJunctions(fds[j2keep,,by=type],
+                                                    type, topJ)
         xmat_rc_2_plot <- xmat_rc_2_plot[mostVarKeep,]
         rownames(xmat_rc_2_plot) <- seq_len(nrow(xmat_rc_2_plot))
         breaks <- seq(-5, 5, length.out=50)
@@ -596,7 +598,7 @@ plotCountCorHeatmap <- function(fds, type=c("psi5", "psi3", "psiSite"),
     }
 
     # annotate samples with clusters from sample correlation heatmap
-    clusters <- as.factor(cutree(hclust(dist(cormat)), h=2))
+    clusters <- as.factor(cutree(hclust(dist(cormatS)), h=2))
     if(!is.null(nrow(annotation_col))){
         annotation_col$sampleCluster <- clusters
     } else{
@@ -644,9 +646,9 @@ plotCountCorHeatmap <- function(fds, type=c("psi5", "psi3", "psiSite"),
             }
         } else {
             if(isTRUE(logit)){
-                main <- paste0(main, "Logit(PSI) data (", type, ", top ", topN, ")")
+                main <- paste0(main, "Logit(PSI) data (", type, ", top ", topJ, ")")
             } else {
-                main <- paste0(main, "PSI data (", type, ", top ", topN, ")")
+                main <- paste0(main, "PSI data (", type, ", top ", topJ, ")")
             }
         }
 
@@ -668,8 +670,8 @@ getColDataAsDFFactors <- function(fds, names){
         if(any(is.na(tmpDF[, i]))){
             tmpDF[,i] <- as.factor(paste0("", tmpDF[,i]))
         }
-        if(is.integer(tmpDF[,i])){
-            tmpDF[,i] <- as.factor(paste0("", tmpDF[,i]))
+        if(is.integer(tmpDF[,i]) && length(levels(as.factor(tmpDF[,i]))) <= 5){
+            tmpDF[,i] <- as.factor(tmpDF[,i])
         }
     }
     rownames(tmpDF) <- rownames(colData(fds))
