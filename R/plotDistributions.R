@@ -528,7 +528,8 @@ plotCountCorHeatmap <- function(fds, type=c("psi5", "psi3", "psiSite"),
             logit=FALSE, topN=50000, minMedian=1, main=NULL, normalized=FALSE,
             show_rownames=FALSE, show_colnames=FALSE, minDeltaPsi=0.1,
             annotation_col=NA, annotation_row=NA, border_color=NA, topJ=5000,
-            plotType=c("sampleCorrelation", "junctionSample"), ...){
+            plotType=c("sampleCorrelation", "junctionSample"),
+            nClust=5, ...){
 
     type <- match.arg(type)
     plotType <- match.arg(plotType)
@@ -598,7 +599,7 @@ plotCountCorHeatmap <- function(fds, type=c("psi5", "psi3", "psiSite"),
     }
 
     # annotate samples with clusters from sample correlation heatmap
-    clusters <- as.factor(cutree(hclust(dist(cormatS)), h=2))
+    clusters <- as.factor(cutree(hclust(dist(cormatS)), k=nClust))
     if(!is.null(nrow(annotation_col))){
         annotation_col$sampleCluster <- clusters
     } else{
