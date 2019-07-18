@@ -90,6 +90,8 @@
 #' @importFrom extraDistr rdirmnom
 #' @importFrom PRROC pr.curve
 #' @importFrom ggplot2 ggtitle xlab ylab ggplot geom_point geom_line geom_smooth aes
+#'          geom_line geom_hline geom_vline geom_abline geom_segment geom_ribbon
+#'          scale_color_manual scale_x_log10 scale_y_log10 labs theme_bw
 #' @importFrom patchwork plot_layout
 #'
 #' @importFrom keras custom_metric layer_input k_variable layer_lambda k_log

@@ -130,3 +130,42 @@ getSiteIndex <- function(fds, type){
     )
     return(ans)
 }
+
+getGeneIDs <- function(fds, type){
+    geneIDs <- unique(mcols(fds, type=type)$hgnc_symbol)
+    geneIDs <- geneIDs[!is.na(geneIDs)]
+    return(geneIDs)
+}
+
+getPvalsPerGene <- function(fds, type, pvals=pVals(fds, type=type), sampleID=NULL,
+                            method="holm", BPPARAM=parallel(fds)){
+
+  # extract data
+  dt <- data.table(
+    geneID=mcols(fds, type=type)$hgnc_symbol,
+    as.data.table(pvals) )
+  setkey(dt, geneID)
+
+  samples <- samples(fds)
+  if(!is.null(sampleID)){
+    samples <- sampleID
+  }
+
+  pvalsPerGene <- matrix(unlist(bplapply(samples, BPPARAM=BPPARAM, function(i){
+    dttmp <- dt[,min(p.adjust(get(i), method=method)),by=geneID]
+    dttmp <- dttmp[!is.na(geneID),]
+    setkey(dttmp, geneID)
+    dttmp[J(getGeneIDs(fds, type)), V1]
+  })), ncol=length(samples))
+
+  return(pvalsPerGene)
+
+}
+
+getPadjPerGene <- function(pvals, method="BY"){
+
+  padjPerGene <- apply(pvals, 2, p.adjust, method=method)
+
+  return(padjPerGene)
+
+}
