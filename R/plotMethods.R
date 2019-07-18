@@ -1,7 +1,7 @@
 
 # Plot methods
 
-plotVolcanoPlot <- function(fds, sampleID, type=c("psi5", "psi3", "psiSite"),
+plotVolcanoPerGene <- function(fds, sampleID, type=c("psi5", "psi3", "psiSite"),
                             labelGenes=NULL){
     # extract data
     dt2p <- data.table(
@@ -30,16 +30,20 @@ plotVolcanoPlot <- function(fds, sampleID, type=c("psi5", "psi3", "psiSite"),
     g
 }
 
-plotQQPlot <- function(fds, type=c("psi5", "psi3", "psiSite"), site, sampleID=NULL,
-                       maxOutlier=2, conf.alpha=0.05, breakTies=TRUE,
-                       sample=FALSE, highlightOutliers=TRUE,
-                       mainName=paste0("QQ-Plot (", type, ")"), cutYaxis=FALSE){
+plotQQPerGene <- function(fds, type=c("psi5", "psi3", "psiSite"), gene=NULL,
+                          sampleID=NULL, maxOutlier=2, conf.alpha=0.05,
+                          breakTies=TRUE, sample=FALSE, highlightOutliers=TRUE,
+                          mainName=paste0("QQ-Plot (", type, ")"), cutYaxis=FALSE){
 
     # extract data
     pvals <- getPvalsPerGene(fds, type, sampleID=sampleID)
+    if(!is.null(gene)){
+        index <- which(getGeneIDs(fds, type) == gene)
+        pvals <- pvals[index,]
+    }
 
     # points
-    obs <- -log10(sort(pvals))
+    obs <- -log10(sort(c(pvals)))
     obs[is.na(obs)] <- 0
     if(length(unique(obs)) < 2 | length(obs) < 2){
         warning("There are no pvalues or all are NA!")
@@ -55,7 +59,7 @@ plotQQPlot <- function(fds, type=c("psi5", "psi3", "psiSite"), site, sampleID=NU
     maxPoint <- max(c(exp, obs))
     ylim <- range(0, min(exp[1]*maxOutlier, maxPoint))
     outlier <- FALSE
-    if(isTRUE(highlightOutliers) & !is.null(sampleID)){
+    if(isTRUE(highlightOutliers) & (!is.null(gene) & !is.null(sampleID))){
         outlier <- obs > max(ylim)
     }
 
@@ -109,17 +113,30 @@ plotJunctionCounts <- function(fds, type=c("psi5", "psi3", "psiSite"), site){
     k <- K(fds, type)
     n <- N(fds, type)
 
-    dt <- data.table(ki=k[site,], ni=n[site,])
+    dt <- data.table(ki=(k[site,]+pseudocount()), ni=(n[site,]+2*pseudocount()))
 
-    g <- ggplot(dt, aes(x=(ni+2), y=(ki+1))) + geom_point() +
+    # estimate point densities
+    # adapted from http://auguga.blogspot.com/2015/10/r-heat-scatter-plot.html
+    dens <- kde2d(dt$ni,dt$ki)
+    # create a new data frame of that 2d density grid
+    gr <- data.frame(with(dens, expand.grid(x,y)), as.vector(dens$z))
+    names(gr) <- c("xgr", "ygr", "zgr")
+    # Fit a model
+    mod <- loess(zgr~xgr*ygr, data=gr)
+    # Apply the model to the original data to estimate density at that point
+    dt[,pointdens:=predict(mod, newdata=data.frame(xgr=dt$ni, ygr=dt$ki))]
+
+    g <- ggplot(dt, aes(x=ni, y=ki)) + geom_point(aes(color=pointdens),
+                                                  show.legend=FALSE) +
         scale_x_log10() + scale_y_log10() +
+        scale_color_gradientn(colors = colorpalette('heat', 5)) +
         geom_abline(intercept = 0, slope=1) + theme_bw() +
-        xlab("N (Total Site Coverage) + 2") + ylab("K (Junction Counts) + 1")
+        xlab("N (Total Junction Coverage) + 2") + ylab("K (Junction Counts) + 1")
     g
 
 }
 
-plotOutlierSampleRank <- function(fds, type=c("psi5", "psi3", "psiSite"),
+plotOutlierSampleRankPerGene <- function(fds, type=c("psi5", "psi3", "psiSite"),
                                   main=paste0("Number outliers per sample (", type, ")"),
                                   alpha=0.05){
 

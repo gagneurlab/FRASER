@@ -108,4 +108,5 @@ Collate:
     pvalsNzscore.R
     makeSimulatedDataset.R
     fitCorrectionMethods.R
+    plotMethods.R
 VignetteBuilder: knitr
