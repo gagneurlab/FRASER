@@ -185,30 +185,33 @@ plotJunctionCounts <- function(fds, type=c("psi5", "psi3", "psiSite"), site,
     k <- K(fds, type)
     n <- N(fds, type)
 
-    dt <- data.table(ki=(k[site,]+pseudocount()), ni=(n[site,]+2*pseudocount()))
+    dt <- data.table(ki=(k[site,]+pseudocount()), ni=(n[site,]+2*pseudocount()),
+                     outlier=FALSE)
+    dt[highlightSample,outlier:=TRUE]
 
-    # estimate point densities
-    # adapted from http://auguga.blogspot.com/2015/10/r-heat-scatter-plot.html
-    dens <- kde2d(dt$ni,dt$ki,
-                  h = c(ifelse(bandwidth.nrd(dt$ni) == 0, 0.1, bandwidth.nrd(dt$ni)),
-                        ifelse(bandwidth.nrd(dt$ki) == 0, 0.1, bandwidth.nrd(dt$ki))))
-    # create a new data frame of that 2d density grid
-    gr <- data.frame(with(dens, expand.grid(x,y)), as.vector(dens$z))
-    names(gr) <- c("xgr", "ygr", "zgr")
-    # Fit a model
-    mod <- loess(zgr~xgr*ygr, data=gr)
-    # Apply the model to the original data to estimate density at that point
-    dt[,pointdens:=predict(mod, newdata=data.frame(xgr=dt$ni, ygr=dt$ki))]
+    # # estimate point densities
+    # # adapted from http://auguga.blogspot.com/2015/10/r-heat-scatter-plot.html
+    # dens <- kde2d(dt$ni,dt$ki,
+    #               h = c(ifelse(bandwidth.nrd(dt$ni) == 0, 0.1, bandwidth.nrd(dt$ni)),
+    #                     ifelse(bandwidth.nrd(dt$ki) == 0, 0.1, bandwidth.nrd(dt$ki))))
+    # # create a new data frame of that 2d density grid
+    # gr <- data.frame(with(dens, expand.grid(x,y)), as.vector(dens$z))
+    # names(gr) <- c("xgr", "ygr", "zgr")
+    # # Fit a model
+    # mod <- loess(zgr~xgr*ygr, data=gr)
+    # # Apply the model to the original data to estimate density at that point
+    # dt[,pointdens:=predict(mod, newdata=data.frame(xgr=dt$ni, ygr=dt$ki))]
+    # g <- ggplot(dt, aes(x=ni, y=ki)) + geom_point(aes(color=pointdens),
+    #                                               show.legend=FALSE) +
+    #     scale_color_gradientn(colors = colorpalette('heat', 5)) +
 
-    g <- ggplot(dt, aes(x=ni, y=ki)) + geom_point(aes(color=pointdens),
-                                                  show.legend=FALSE) +
+    g <- ggplot(dt, aes(x=ni, y=ki)) + geom_point(color="gray", alpha=0.5) +
         scale_x_log10() + scale_y_log10() +
-        scale_color_gradientn(colors = colorpalette('heat', 5)) +
         geom_abline(intercept = 0, slope=1) + theme_bw() +
         xlab("N (Total Junction Coverage) + 2") + ylab("K (Junction Counts) + 1") +
         ggtitle(title)
     if(!is.null(highlightSample)){
-        g <- g + geom_point(data=dt[highlightSample, ], aes(x=ni, y=ki), colour="green", shape=17, size=3)
+        g <- g + geom_point(data=dt[highlightSample, ], aes(x=ni, y=ki), color="firebrick")
     }
     g
 
