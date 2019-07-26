@@ -230,6 +230,7 @@ plotOutlierSampleRankPerGenePerType <- function(fds, type=c("psi5", "psi3", "psi
     dt[,rank:=1:.N]
 
     g <- ggplot(dt, aes(x=rank, y=nrHits)) + geom_line() + theme_bw() +
+        scale_y_log10() +
         labs(title=main, x="Sample Rank", y="Number of Outliers")
 
     g
@@ -253,6 +254,7 @@ plotOutlierSampleRankPerGene <- function(fds, alpha=0.05, types=psiTypes, main=p
     dt2p <- rbindlist(dtls)
 
     g <- ggplot(dt2p, aes(x=rank, y=nrHits, color=type)) + geom_line() +
+        scale_y_log10() +
         labs(title=main, x="Sample Rank", y="Number of Outliers") +
         scale_color_discrete(name="", labels = c(bquote(Psi[3]), bquote(Psi[5]), "SE"))
 
