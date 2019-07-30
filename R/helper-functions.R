@@ -365,15 +365,18 @@ checkSeqLevelStyle <- function(gr, fds, sampleID, sampleSpecific=FALSE){
 }
 
 uniformSeqInfo <- function(grls){
-    seqn <- unique(unlist(sapply(grls, seqlevels)))
+    tmpSeqlevels <- unique(data.table(
+        seqlevel  = unlist(lapply(grls, seqlevels)),
+        seqlength = unlist(lapply(grls, seqlengths))
+    )[order(seqlevel)])
 
-    seql <- unlist(sapply(grls, seqlengths))
-    names(seql) <- gsub(".*\\.", "", names(seql))
-    seql <- na.omit(seql)[seqn]
+    if(any(duplicated(tmpSeqlevels[,seqlevel]))){
+        stop("There are non uniq chromosomes in this dataset!")
+    }
 
     ans <- lapply(grls, function(x){
-        seqlevels(x) <- seqn
-        seqlengths(x) <- seql
+        seqlevels(x)  <- tmpSeqlevels[,seqlevel]
+        seqlengths(x) <- tmpSeqlevels[,seqlength]
         x
     })
     ans
