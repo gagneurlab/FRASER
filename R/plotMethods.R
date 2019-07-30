@@ -15,10 +15,17 @@ plotVolcanoPerGene <- function(fds, sampleID, type=c("psi5", "psi3", "psiSite"),
     dt2p2 <- dt2p2[order(geneID, p)]  [!duplicated(geneID) & !is.na(geneID)]
     maxPByFDR <- dt2p2[padj < 0.1, max(p)]
 
+    # get x label
+    xlab <- switch(type,
+                   'psi3' = bquote(Delta * Psi[3]),
+                   'psi5' = bquote(Delta * Psi[5]),
+                   'psiSite' = bquote(Delta ~ "SE")
+    )
+
     # plot it
     g <- ggplot(dt2p2, aes(x=z, y=-log10(p))) + geom_point() +
-        xlab("delta PSI") +
-        ylab("-log10(P-value)") +
+        xlab(xlab) +
+        ylab(bquote(-log[10]~"(P-value)")) +
         geom_vline(xintercept=c(-0.3, 0.3), color="firebrick", linetype=2) +
         geom_hline(yintercept=-log10(maxPByFDR), color="firebrick", linetype=4) +
         ggtitle(paste("Volcano plot:", sampleID, " - ", type))
