@@ -529,7 +529,7 @@ plotCountCorHeatmap <- function(fds, type=c("psi5", "psi3", "psiSite"),
             show_rownames=FALSE, show_colnames=FALSE, minDeltaPsi=0.1,
             annotation_col=NA, annotation_row=NA, border_color=NA, topJ=5000,
             plotType=c("sampleCorrelation", "junctionSample"),
-            nClust=5, ...){
+            nClust=5, sampleClustering=NULL, ...){
 
     type <- match.arg(type)
     plotType <- match.arg(plotType)
@@ -598,13 +598,19 @@ plotCountCorHeatmap <- function(fds, type=c("psi5", "psi3", "psiSite"),
         annotation_row <- getColDataAsDFFactors(fds, annotation_row)
     }
 
-    # annotate samples with clusters from sample correlation heatmap
-    clusters <- as.factor(cutree(hclust(dist(cormatS)), k=nClust))
+    # annotate with sample clusters
+    if(!is.null(sampleClustering)){
+        clusters <- sampleClustering
+    } else{
+        # annotate samples with clusters from sample correlation heatmap
+        clusters <- as.factor(cutree(hclust(dist(cormatS)), k=nClust))
+    }
     if(!is.null(nrow(annotation_col))){
         annotation_col$sampleCluster <- clusters
     } else{
         annotation_col <- data.frame(sampleCluster=clusters)
     }
+
 
     if(plotType == "junctionSample"){
 
@@ -671,8 +677,8 @@ getColDataAsDFFactors <- function(fds, names){
         if(any(is.na(tmpDF[, i]))){
             tmpDF[,i] <- as.factor(paste0("", tmpDF[,i]))
         }
-        if(is.integer(tmpDF[,i]) && length(levels(as.factor(tmpDF[,i]))) <= 5){
-            tmpDF[,i] <- as.factor(tmpDF[,i])
+        if(is.integer(tmpDF[,i]) && length(levels(as.factor(tmpDF[,i]))) <= 10){
+            tmpDF[,i] <- as.factor(paste0("", tmpDF[,i]))
         }
     }
     rownames(tmpDF) <- rownames(colData(fds))
