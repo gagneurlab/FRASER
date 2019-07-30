@@ -1,17 +1,16 @@
 variables:
   PKGNAME:     "FraseR"
   PKGDIR:      "./"
-  RVER:        "3.5.0-Bioc3.7"
+  RVER:        "3.6.0-Bioc3.9"
   TEXVER:      "2016"
   R_LIBS_U:    "tmp_libs"
-#  CI_DEBUG_TRACE: "true"
-  
+
 before_script:
   - module load "i12g/R/$RVER"
   - module load "i12g/texlive/$TEXVER"
   - R --vanilla CMD build --no-build-vignettes --no-manual $PKGDIR
   - PKG_FILE_NAME=$(ls -1t *.tar.gz | head -n 1)
-  
+
 stages:
   - RCheck
   - BiocCheck
