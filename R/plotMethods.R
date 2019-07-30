@@ -217,6 +217,39 @@ plotJunctionCounts <- function(fds, type=c("psi5", "psi3", "psiSite"), site,
 
 }
 
+plotPredictedVsObservedPsi <- function(fds, type=c("psi5", "psi3", "psiSite"), site,
+                               highlightSample=NULL,
+                               title=paste0("Site: ", site)){
+
+    k <- K(fds, type)
+    n <- N(fds, type)
+    mu <- predictedMeans(fds, type)
+
+    dt <- data.table(obs=(k[site,]+pseudocount())/(n[site,]+2*pseudocount()),
+                     pred=mu[site,], outlier=FALSE)
+    dt[highlightSample,outlier:=TRUE]
+
+    xlab <- switch(type,
+        'psi3' = bquote("observed " ~ Psi[3]),
+        'psi5' = bquote("observed " ~ Psi[5]),
+        'psiSite' = "observed SE"
+    )
+    ylab <- switch(type,
+        'psi3' = bquote("predicted " ~ Psi[3]),
+        'psi5' = bquote("predicted " ~ Psi[5]),
+        'psiSite' = "predicted SE"
+    )
+
+    g <- ggplot(dt, aes(x=obs, y=pred)) + geom_point(color="gray", alpha=0.5) +
+        geom_abline(intercept = 0, slope=1) + theme_bw() +
+        xlab(xlab) + ylab(ylab) + ggtitle(title)
+    if(!is.null(highlightSample)){
+        g <- g + geom_point(data=dt[highlightSample, ], aes(x=obs, y=pred), color="firebrick")
+    }
+    g
+
+}
+
 plotOutlierSampleRankPerGenePerType <- function(fds, type=c("psi5", "psi3", "psiSite"),
                                   main=paste0("Number outliers per sample (", type, ")"),
                                   alpha=0.05){

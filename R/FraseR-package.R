@@ -92,7 +92,7 @@
 #' @importFrom ggplot2 ggtitle xlab ylab ggplot geom_point geom_line geom_smooth aes
 #'          geom_line geom_hline geom_vline geom_abline geom_segment geom_ribbon
 #'          scale_color_manual scale_x_log10 scale_y_log10 scale_color_gradientn
-#'          labs theme_bw scale_color_discrete
+#'          labs theme_bw scale_color_discrete annotate
 #' @importFrom MASS kde2d bandwidth.nrd
 #' @importFrom patchwork plot_layout
 #'
