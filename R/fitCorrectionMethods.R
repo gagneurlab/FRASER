@@ -67,6 +67,19 @@ needsHyperOpt <- function(method){
 }
 
 
+
+#'
+#' Setting the hyper parameter optimization algorithm
+#' for a given correction method
+#'
+#' @noRd
+getHyperOptimCorrectionMethod <- function(correction){
+    switch(correction,
+           "PCA-BB-Decoder"         = "PCA",
+           correction
+    )
+}
+
 fitPCA <- function(fds, q, psiType, rhoRange=c(1e-5, 1-1e-5), BPPARAM=parallel(fds), subset=FALSE){
 
     #+ subset fitting

@@ -61,6 +61,7 @@ findEncodingDim <- function(i, fds, type, params, correction,
     q_guess    <- params[i, "q"]
     noiseRatio <- params[i, "noise"]
     message(paste(i, ";\t", q_guess, ";\t", noiseRatio))
+    correction <- getHyperOptimCorrectionMethod(correction)
 
     res_fit <- fit_autoenc(fds=fds, type=type, q_guess=q_guess,
             correction=correction, nrDecoderBatches=nrDecoderBatches,
