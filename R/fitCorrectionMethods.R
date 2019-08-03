@@ -379,6 +379,3 @@ fitKerasDAE <-function(fds, q, psiType, rhoRange=c(1e-5, 1-1e-5), noiseAlpha=1, 
     return(fds)
 }
 
-x <- function(){
-
-}
