@@ -597,11 +597,10 @@ setReplaceMethod("counts", "FraseRDataSet", function(object, type=NULL,
 })
 
 
-options("FraseR-hdf5-chunks"=2000)
 options("FraseR-hdf5-cores"=1)
 options("FraseR-hdf5-num-chunks"=6)
 setAs("DelayedMatrix", "data.table", function(from){
-    chunk.size <- max(2000, options()[['FraseR-hdf5-chunks']])
+    chunk.size <- options()[['FraseR-hdf5-chunk-nrow']]
     mc.cores   <- max(8,    options()[['FraseR-hdf5-cors']])
     num.chunks <- max(6,    options()[['FraseR-hdf5-num-chunks']])
 
@@ -640,14 +639,16 @@ setAs("DataFrame", "matrix", function(from){
 #'
 #' retrieve a single sample result object
 #' @noRd
-resultsSingleSample <- function(sampleID, gr, pvals, padjs, zscores, psivals, rawCts,
-                                rawTotalCts, deltaPsiVals, muPsi, psiType, fdrCut, zscoreCut,
-                    dPsiCut){
+resultsSingleSample <- function(sampleID, gr, pvals, padjs, zscores, psivals,
+                rawCts, rawTotalCts, deltaPsiVals, muPsi, psiType, fdrCut,
+                zscoreCut, dPsiCut, rowMeansK, rowMeansN){
 
-    goodCut <- na2false(zscores[,abs(get(sampleID)) >= zscoreCut])
-    goodCut <- goodCut & na2false(deltaPsiVals[,abs(get(sampleID)) >= dPsiCut])
-    pval    <- pvals[,get(sampleID)]
-    padj    <- padjs[,get(sampleID)]
+    zscore  <- zscores[,sampleID]
+    dpsi    <- deltaPsiVals[,sampleID]
+    goodCut <- na2false(abs(zscore) >= zscoreCut)
+    goodCut <- goodCut & na2false(abs(dpsi >= dPsiCut))
+    pval    <- pvals[,sampleID]
+    padj    <- padjs[,sampleID]
     goodCut <- na2false(!is.na(padj) & padj <= fdrCut & goodCut)
 
     ans <- granges(gr[goodCut])
@@ -657,24 +658,24 @@ resultsSingleSample <- function(sampleID, gr, pvals, padjs, zscores, psivals, ra
     }
 
     # extract data
-    mcols(ans)$type            <- psiType
-    mcols(ans)$sampleID        <- sampleID
-    mcols(ans)$hgnc_symbol     <- mcols(gr[goodCut])$hgnc_symbol
-    mcols(ans)$zscore          <- round(zscores[goodCut,get(sampleID)], 2)
-    mcols(ans)$psiValue        <- round(psivals[goodCut,get(sampleID)], 2)
+    mcols(ans)$type            <- Rle(psiType)
+    mcols(ans)$sampleID        <- Rle(sampleID)
+    mcols(ans)$hgnc_symbol     <- Rle(mcols(gr[goodCut])$hgnc_symbol)
+    mcols(ans)$zscore          <- round(zscore[goodCut], 2)
+    mcols(ans)$psiValue        <- round(psivals[goodCut,sampleID], 2)
     mcols(ans)$pvalue          <- signif(pval[goodCut], 5)
     mcols(ans)$p.adj           <- signif(padj[goodCut], 5)
-    mcols(ans)$deltaPsi        <- round(deltaPsiVals[goodCut,get(sampleID)], 2)
-    mcols(ans)$meanCts         <- round(rowMeans(rawCts[goodCut]), 2)
-    mcols(ans)$meanTotalCts    <- round(rowMeans(rawTotalCts[goodCut]), 2)
-    mcols(ans)$expression      <- rawCts[goodCut, get(sampleID)]
-    mcols(ans)$expressionTotal <- rawTotalCts[goodCut, get(sampleID)]
+    mcols(ans)$deltaPsi        <- Rle(round(dpsi[goodCut], 2))
+    mcols(ans)$meanCts         <- Rle(round(rowMeansK[goodCut], 2))
+    mcols(ans)$meanTotalCts    <- Rle(round(rowMeansN[goodCut], 2))
+    mcols(ans)$expression      <- Rle(rawCts[goodCut, sampleID])
+    mcols(ans)$expressionTotal <- Rle(rawTotalCts[goodCut, sampleID])
 
     return(ans[order(mcols(ans)$pvalue)])
 }
 
 FraseR.results <- function(x, sampleIDs, fdrCut, zscoreCut, dPsiCut, psiType,
-                    BPPARAM=bpparam()){
+                    BPPARAM=bpparam(), maxCols=20){
 
     # check input
     stopifnot(is.numeric(fdrCut)    && fdrCut    <= 1   && fdrCut    >= 0)
@@ -689,27 +690,43 @@ FraseR.results <- function(x, sampleIDs, fdrCut, zscoreCut, dPsiCut, psiType,
         currentType(x) <- type
         gr <- rowRanges(x, type=type)
 
-        # extract values
-        pvals   <- as.data.table(pVals(x))
-        padjs   <- as.data.table(padjVals(x))
-        zscores <- as.data.table(zScores(x))
-        psivals <- as.data.table(assay(x, type))
-        muPsi   <- as.data.table(predictedMeans(x))
-        deltaPsiVals <- psivals - muPsi
+        # first get row means
+        rowMeansK <- rowMeans(K(x, type=type))
+        rowMeansN <- rowMeans(N(x, type=type))
 
-        rawCts <- as.data.table(K(x))
-        rawTotalCts <- as.data.table(N(x))
+        # then iterate by chunk
+        chunkCols <- getMaxChunks2Read(fds=x, assayName=type, max=maxCols)
+        sampleChunks <- getSamplesByChunk(fds=x, sampleIDs=sampleIDs,
+                chunkSize=chunkCols)
 
-        # create reult table
-        sampleRes <- sapply(sampleIDs,
-                resultsSingleSample, gr=gr, pvals=pvals, padjs=padjs,
-                zscores=zscores, psiType=type, psivals=psivals,
-                deltaPsiVals=deltaPsiVals, muPsi=muPsi, rawCts=rawCts,
-                rawTotalCts=rawTotalCts, fdrCut=fdrCut, zscoreCut=zscoreCut,
-                dPsiCut=dPsiCut)
+        ans <- lapply(seq_along(sampleChunks), function(idx){
+            message(date(), ": Process chunk: ", idx, " for: ", type)
+            sc <- sampleChunks[[idx]]
+            tmp_x <- x[,sc]
 
-        # return combined result
-        return(unlist(GRangesList(sampleRes)))
+            # extract values
+            rawCts       <- as.matrix(K(tmp_x))
+            rawTotalCts  <- as.matrix(N(tmp_x))
+            pvals        <- as.matrix(pVals(tmp_x))
+            padjs        <- as.matrix(padjVals(tmp_x))
+            zscores      <- as.matrix(zScores(tmp_x))
+            psivals      <- as.matrix(assay(tmp_x, type))
+            muPsi        <- as.matrix(predictedMeans(tmp_x))
+            deltaPsiVals <- psivals - muPsi
+
+            # create reult table
+            sampleRes <- sapply(sc,
+                    resultsSingleSample, gr=gr, pvals=pvals, padjs=padjs,
+                    zscores=zscores, psiType=type, psivals=psivals,
+                    deltaPsiVals=deltaPsiVals, muPsi=muPsi, rawCts=rawCts,
+                    rawTotalCts=rawTotalCts, fdrCut=fdrCut, zscoreCut=zscoreCut,
+                    dPsiCut=dPsiCut, rowMeansK=rowMeansK, rowMeansN=rowMeansN)
+
+            # return combined result
+            return(unlist(GRangesList(sampleRes)))
+        })
+
+        unlist(GRangesList(ans))
     })
 
     # merge results

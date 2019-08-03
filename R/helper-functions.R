@@ -381,3 +381,29 @@ uniformSeqInfo <- function(grls){
     })
     ans
 }
+
+getHDF5ChunkSize <- function(fds, assayName){
+    h5obj <- H5Fopen(getFraseRHDF5File(fds, assayName), flags="H5F_ACC_RDONLY")
+    ans <- rhdf5:::H5Dchunk_dims(h5obj&assayName)
+    H5Fclose(h5obj)
+    ans
+}
+
+getMaxChunks2Read <- function(fds, assayName, max=15, axis=c("col", "row")){
+    axis <- match.arg(axis)
+    dims <- getHDF5ChunkSize(fds, assayName)
+    if(axis == "col"){
+        ans <- dims[2]
+    } else {
+        ans <- dims[1]
+    }
+    max(1, ans/ceiling(ans/max))
+}
+
+getSamplesByChunk <- function(fds, sampleIDs, chunkSize){
+    chunks <- trunc(0:(ncol(fds)-1)/chunkSize)
+    ans <- lapply(1:max(chunks), function(x){
+        intersect(sampleIDs, samples(fds)[chunks == x])
+    })
+    ans[sapply(ans, length) >0]
+}
