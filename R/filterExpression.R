@@ -18,8 +18,8 @@ filterExpression <- function(fds, minExpressionInOneSample=10, quantile=0.5,
     }
 
     # cutoff functions
-    f1 <- function(cts, ...)
-            rowMaxs(cts)
+    f1 <- function(cts, ...){
+            rowMaxs(cts) }
     f2 <- function(cts, ctsN5, quantile, ...){
             rowQuantiles(ctsN5, probs=quantile) }
     f3 <- function(cts, ctsN3, quantile, ...) {
@@ -35,7 +35,7 @@ filterExpression <- function(fds, minExpressionInOneSample=10, quantile=0.5,
             maxDPsi3=f4, maxDPsi5=f5)
 
     # run it in parallel
-    cutoffs <- bplapply(funs, function(x, ...) x(...),
+    cutoffs <- bplapply(funs, function(f, ...) f(...),
             cts=cts, ctsN3=ctsN3, ctsN5=ctsN5, quantile=quantile,
             BPPARAM=BPPARAM)
 
@@ -43,7 +43,7 @@ filterExpression <- function(fds, minExpressionInOneSample=10, quantile=0.5,
     for(n in names(cutoffs)){
         mcols(fds, type="j")[n] <- cutoffs[[n]]
     }
-    mcols(fds, type="j")['passed'] <-
+    mcols(fds, type="j")[['passed']] <-
             cutoffs$maxCount >= minExpressionInOneSample &
             (cutoffs$quantileValue5    >= quantileMinExpression |
                 cutoffs$quantileValue3 >= quantileMinExpression) &
@@ -52,13 +52,31 @@ filterExpression <- function(fds, minExpressionInOneSample=10, quantile=0.5,
 
     # filter if requested
     if(filter==TRUE){
-        numFilt <- sum(mcols(fds, type="j")[,'passed'])
+        numFilt <- sum(mcols(fds, type="j")[['passed']])
         warning(paste0("Keeping ", numFilt, " junctions out of ", length(fds),
                 ". This is ", signif(numFilt/length(fds)*100, 3),
                 "% of the junctions"))
-        fds <- fds[mcols(fds, type="j")[,'passed']]
+        fds <- fds[mcols(fds, type="j")[['passed']], by="psi5"]
     }
 
     validObject(fds)
     return(fds)
+}
+
+plotFilterExpression <- function(fds){
+    cts    <- K(fds, "psi5")
+    rowlgm <- exp(rowMeans(log(cts + 1)))
+    dt <- data.table(
+        value=rowlgm,
+        passed=mcols(fds, type="j")[['passed']])
+    colors <- brewer.pal(3, "Dark2")
+    ggplot(dt, aes(value, fill=passed)) +
+        geom_histogram(data=dt[passed==TRUE],  aes(fill=colors[1]), alpha=0.75) +
+        geom_histogram(data=dt[passed==FALSE], aes(fill=colors[2]), alpha=0.75) +
+        scale_x_log10() +
+        scale_y_log10() +
+        scale_fill_manual(values=colors[1:2], name="Passed", labels=c("True", "False")) +
+        xlab("Junction Expression") +
+        ylab("Count") +
+        ggtitle("Expression filtering")
 }
