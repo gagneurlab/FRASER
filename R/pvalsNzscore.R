@@ -158,6 +158,9 @@ getPvalsPerGene <- function(fds, type, pvals=pVals(fds, type=type), sampleID=NUL
     dttmp[J(getGeneIDs(fds, type)), V1]
   })), ncol=length(samples))
 
+  colnames(pvalsPerGene) <- samples
+  rownames(pvalsPerGene) <- unique(dt$geneID)
+  
   return(pvalsPerGene)
 
 }
