@@ -159,7 +159,7 @@ getPvalsPerGene <- function(fds, type, pvals=pVals(fds, type=type), sampleID=NUL
   })), ncol=length(samples))
 
   colnames(pvalsPerGene) <- samples
-  rownames(pvalsPerGene) <- unique(dt$geneID)
+  rownames(pvalsPerGene) <- na.omit(unique(dt$geneID))
   
   return(pvalsPerGene)
 
