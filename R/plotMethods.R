@@ -186,10 +186,13 @@ plotGlobalQQPerGene <- function(fds, types=psiTypes, maxOutlier=2, conf.alpha=0.
 }
 
 
-plotJunctionCounts <- function(fds, type=c("psi5", "psi3", "psiSite"), site,
-                               highlightSample=NULL,
+plotJunctionCounts <- function(fds, type=c("psi5", "psi3", "psiSite"),
+                               site=NULL, result=NULL, highlightSample=NULL,
                                title=paste0("Site: ", site)){
-
+    if(!is.null(result)){
+        type <- result$type
+        site <- getIndexFromResultTable(fds, result)
+    }
     k <- K(fds, type)
     n <- N(fds, type)
 
@@ -222,12 +225,15 @@ plotJunctionCounts <- function(fds, type=c("psi5", "psi3", "psiSite"), site,
         g <- g + geom_point(data=dt[highlightSample, ], aes(x=ni, y=ki), color="firebrick")
     }
     g
-
 }
 
-plotPredictedVsObservedPsi <- function(fds, type=c("psi5", "psi3", "psiSite"), site,
-                               highlightSample=NULL,
-                               title=paste0("Site: ", site)){
+plotPredictedVsObservedPsi <- function(fds, type=c("psi5", "psi3", "psiSite"),
+                    site=NULL, result=NULL, highlightSample=NULL,
+                    title=paste0("Site: ", site)){
+    if(!is.null(result)){
+        type <- result$type
+        site <- getIndexFromResultTable(fds, result)
+    }
 
     k <- K(fds, type)
     n <- N(fds, type)
