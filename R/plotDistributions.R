@@ -520,6 +520,15 @@ testPlotting <- function(){
     plotValueVsCounts(gra[1], fds, gra[1]$type, plotLog=TRUE, rmZeroCts=FALSE)
 }
 
+qlogisWithCap <- function(x){
+    ans <- qlogis(x)
+    ans[is.infinite(ans)] <- NA
+    rowm <- rowMaxs(ans, na.rm=TRUE)
+    idx <- which(is.na(ans), arr.ind=TRUE)
+    ans[idx] <- rowm[idx[,"row"]]
+    return(ans)
+}
+
 #'
 #' Plot count correlation
 #'
@@ -547,7 +556,7 @@ plotCountCorHeatmap <- function(fds, type=c("psi5", "psi3", "psiSite"),
 
     xmat <- (skmat + 1)/(snmat + 2)
     if(isTRUE(logit)){
-        xmat <- qlogis(xmat)
+        xmat <- qlogisWithCap(xmat)
     }
     xmat_rc    <- xmat - rowMeans(xmat)
 
@@ -558,7 +567,7 @@ plotCountCorHeatmap <- function(fds, type=c("psi5", "psi3", "psiSite"),
     if(isTRUE(normalized)){
         pred_mu <- as.matrix(predictedMeans(fds, type=type)[
                     expRowsMax & expRowsMedian,][plotIdx,])
-        pred_mu <- qlogis(pred_mu)
+        pred_mu <- qlogisWithCap(pred_mu)
         lpred_mu_rc <- pred_mu - rowMeans(pred_mu)
         xmat_rc_2_plot <- xmat_rc_2_plot - lpred_mu_rc
     }
@@ -571,7 +580,7 @@ plotCountCorHeatmap <- function(fds, type=c("psi5", "psi3", "psiSite"),
             pred_mu <- as.matrix(predictedMeans(fds, type=type)[
                 expRowsMax & expRowsMedian,])
             if(isTRUE(logit)){
-                pred_mu <- qlogis(pred_mu)
+                pred_mu <- qlogisWithCap(pred_mu)
             }
             lpred_mu_rc <- pred_mu - rowMeans(pred_mu)
             xmat_rc <- xmat_rc - lpred_mu_rc
@@ -607,10 +616,12 @@ plotCountCorHeatmap <- function(fds, type=c("psi5", "psi3", "psiSite"),
         clusters <- sampleClustering
     }
 
-    if(!is.null(nrow(annotation_col))){
-        annotation_col$sampleCluster <- clusters
-    } else if(isFALSE(is.na(sampleClustering))){
+    if(!isTRUE(is.na(sampleClustering))){
+        if(!is.null(nrow(annotation_col))){
+            annotation_col$sampleCluster <- clusters
+        } else {
             annotation_col <- data.frame(sampleCluster=clusters)
+        }
     }
 
 
