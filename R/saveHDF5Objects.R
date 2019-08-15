@@ -129,8 +129,8 @@ saveAsHDF5 <- function(fds, name, object=NULL, rewrite=FALSE){
 
     # get defind chunk sizes
     chunkDims <- c(
-        options()[['FraseR-hdf5-chunk-nrow']],
-        options()[['FraseR-hdf5-chunk-ncol']])
+        min(nrow(object), options()[['FraseR-hdf5-chunk-nrow']]),
+        min(ncol(object), options()[['FraseR-hdf5-chunk-ncol']]))
 
     if(isTRUE(dontWriteHDF5(fds))){
         message(date(), ": Dont save HDF5 for assay: ", name)
