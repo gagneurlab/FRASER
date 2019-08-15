@@ -19,7 +19,9 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, minDeltaPsi=0.1,
     # set alpha for noise injection for denoising AE
     # init it corresponding to the size of 'x' not 'fds'
     currentNoiseAlpha(fds) <- noiseAlpha
-    noise(fds, type=type) <- matrix(rnorm(prod(dims)), nrow=dims['col'])
+    if(!is.null(noiseAlpha)){
+        noise(fds, type=type) <- matrix(rnorm(prod(dims)), nrow=dims['col'])
+    }
 
     # make sure its only in-memory data for k and n
     currentType(fds) <- type
@@ -238,13 +240,14 @@ updateLossList <- function(fds, lossList, i, stepText, lambda, verbose){
     return(lossList)
 }
 
-lossED <- function(fds, lambda, byRows=FALSE){
+lossED <- function(fds, lambda=0, byRows=FALSE,
+                    noiseAlpha=currentNoiseAlpha(fds)){
     K <- K(fds)
     N <- N(fds)
     rho <- matrix(rho(fds), ncol=ncol(K), nrow = nrow(K))
     D <- D(fds)
 
-    y <- predictY(fds, noiseAlpha=currentNoiseAlpha(fds))
+    y <- predictY(fds, noiseAlpha=noiseAlpha)
 
     return(fullNLL(y, rho, K, N, D, lambda, byRows=byRows))
 }
