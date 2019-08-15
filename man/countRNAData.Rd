@@ -5,7 +5,8 @@
 \title{Count RNA-seq data}
 \usage{
 countRNAData(fds, NcpuPerSample = 1, junctionMap = NULL,
-  minAnchor = 5, recount = FALSE)
+  minAnchor = 5, recount = FALSE, BPPARAM = parallel(fds),
+  genome = NULL)
 }
 \arguments{
 \item{fds}{A FraseRDataSet object with all the information

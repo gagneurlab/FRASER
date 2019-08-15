@@ -9,7 +9,8 @@ plotCountCorHeatmap(fds, type = c("psi5", "psi3", "psiSite"),
   normalized = FALSE, show_rownames = FALSE, show_colnames = FALSE,
   minDeltaPsi = 0.1, annotation_col = NA, annotation_row = NA,
   border_color = NA, topJ = 5000, plotType = c("sampleCorrelation",
-  "junctionSample"), nClust = 5, sampleClustering = NULL, ...)
+  "junctionSample"), nClust = 5, sampleClustering = NULL,
+  plotMeanPsi = TRUE, plotCov = TRUE, ...)
 }
 \description{
 Plot count correlation
