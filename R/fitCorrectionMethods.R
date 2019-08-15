@@ -1,11 +1,13 @@
-fit <- function(fds, correction=c("PCA-BB-Decoder", "FraseR", "FraseR-weighted",
+fit <- function(fds, correction=c("PCA-regression", "PCA-BB-Decoder", "FraseR",
+                        "FraseR-weighted", "PCA-BB-full", "PCA-reg-full",
                         "FraseR-5DecoderBatches", "FraseR-1DecoderBatches",
-                        "fullFraseR", "PCA", "PCA+regression", "PEER",
+                        "fullFraseR", "PCA", "PEER",
                         "PEERdecoder", "BB", "kerasDAE", "kerasBBdAE"),
-                    q, type="psi3", rhoRange=c(1e-5, 1-1e-5), nrDecoderBatches=5,
+                    q, type="psi3", rhoRange=c(1e-8, 1-1e-8), nrDecoderBatches=5,
                     weighted=FALSE, noiseAlpha=1, lambda=0, convergence=1e-5, iterations=15,
                     initialize=TRUE, control=list(), BPPARAM=bpparam(), nSubset=15000,
-                    verbose=FALSE, recommendedPEERq=TRUE, lr=0.00005, epochs=20){
+                    verbose=FALSE, recommendedPEERq=TRUE, lr=0.00005, epochs=20,
+                    minDeltaPsi=0.1){
     method <- match.arg(correction)
 
     # make sure its only in-memory data for k and n
@@ -32,11 +34,17 @@ fit <- function(fds, correction=c("PCA-BB-Decoder", "FraseR", "FraseR-weighted",
                                   rhoRange=rhoRange, lambda=lambda, convergence=convergence, iterations=iterations,
                                   initialize=initialize, weighted=TRUE, control=control, BPPARAM=BPPARAM,
                                   verbose=verbose, subset=TRUE, nrDecoderBatches=1, latentSpace = 'PCA'),
+            "PCA-BB-full"       = fitFraserAE(fds=fds, q=q, type=type, noiseAlpha=noiseAlpha,
+                            rhoRange=rhoRange, lambda=lambda, convergence=convergence, iterations=iterations,
+                            initialize=initialize, weighted=TRUE, control=control, BPPARAM=BPPARAM,
+                            verbose=verbose, subset=FALSE, nrDecoderBatches=1, latentSpace='PCA'),
+            "PCA-reg-full"      = fitPCA(fds=fds, q=q, psiType=type, noiseAlpha=noiseAlpha,
+                            rhoRange=rhoRange, subset=FALSE, minDeltaPsi=minDeltaPsi, useLM=TRUE),
             fullFraseR  = fitFraserAE(fds=fds, q=q, type=type, noiseAlpha=noiseAlpha, rhoRange=rhoRange, lambda=lambda,
                                   convergence=convergence, iterations=iterations, initialize=initialize, nSubset=nSubset, weighted=weighted,
                                   control=control, BPPARAM=BPPARAM, verbose=verbose, subset=FALSE, nrDecoderBatches=nrDecoderBatches),
-            PCA         = fitPCA(fds=fds, q=q, psiType=type, rhoRange=rhoRange, BPPARAM=BPPARAM, subset=FALSE),
-            'PCA+regression' = fitPCA(fds=fds, q=q, psiType=type, rhoRange=rhoRange, BPPARAM=BPPARAM, subset=TRUE),
+            PCA         = fitPCA(fds=fds, q=q, psiType=type, rhoRange=rhoRange, noiseAlpha=NULL, BPPARAM=BPPARAM, subset=FALSE),
+            'PCA-regression' = fitPCA(fds=fds, q=q, psiType=type, rhoRange=rhoRange, noiseAlpha=noiseAlpha, BPPARAM=BPPARAM, subset=TRUE, nSubset=nSubset, minDeltaPsi=minDeltaPsi),
             PEER        = fitPEER(fds=fds, q=q, psiType=type, recomendedQ=recommendedPEERq, rhoRange=rhoRange, BPPARAM=BPPARAM),
             PEERdecoder = fitPEERDecoder(fds=fds, q=q, psiType=type, recomendedQ=recommendedPEERq, rhoRange=rhoRange, BPPARAM=BPPARAM, nrDecoderBatches=nrDecoderBatches),
             BB          = fitBB(fds=fds, psiType=type),
@@ -50,6 +58,8 @@ fit <- function(fds, correction=c("PCA-BB-Decoder", "FraseR", "FraseR-weighted",
 
 needsHyperOpt <- function(method){
     switch(method,
+        "PCA-BB-full"            = TRUE,
+        "PCA-reg-full"           = TRUE,
         FraseR                   = TRUE,
         "PCA-BB-Decoder"         = TRUE,
         "FraseR-5DecoderBatches" = TRUE,
@@ -57,7 +67,7 @@ needsHyperOpt <- function(method){
         "FraseR-weighted"        = TRUE,
         fullFraseR               = TRUE,
         PCA                      = TRUE,
-        'PCA+regression'         = TRUE,
+        'PCA-regression'         = TRUE,
         PEER                     = FALSE,
         BB                       = FALSE,
         kerasDAE                 = TRUE,
@@ -75,36 +85,53 @@ needsHyperOpt <- function(method){
 #' @noRd
 getHyperOptimCorrectionMethod <- function(correction){
     switch(correction,
+           "PCA-BB-full"            = "PCA",
+           "PCA-reg-full"           = "PCA",
            "PCA-BB-Decoder"         = "PCA",
            correction
     )
 }
 
-fitPCA <- function(fds, q, psiType, rhoRange=c(1e-5, 1-1e-5), BPPARAM=parallel(fds), subset=FALSE){
+fitPCA <- function(fds, q, psiType, rhoRange=c(1e-5, 1-1e-5), noiseAlpha=NULL,
+                    BPPARAM=parallel(fds), subset=FALSE, minDeltaPsi,
+                    nSubset=15000, useLM=FALSE){
+    counts(fds, type=psiType, side="other", HDF5=FALSE) <- as.matrix(
+            counts(fds, type=psiType, side="other"))
+    counts(fds, type=psiType, side="ofInterest", HDF5=FALSE) <- as.matrix(
+            counts(fds, type=psiType, side="ofInterest"))
 
     #+ subset fitting
     currentType(fds) <- psiType
     curDims <- dim(K(fds, psiType))
-    if(isTRUE(subset)){
-        probE <- max(0.001, min(1,30000/curDims[1]))
-        featureExclusionMask(fds) <- sample(c(TRUE, FALSE), curDims[1],
-                                            replace=TRUE, prob=c(probE, 1-probE))
-    } else{
-        featureExclusionMask(fds) <- rep(TRUE,curDims[1])
+    if(!is.null(noiseAlpha)){
+        noise(fds, type=type) <- matrix(rnorm(prod(curDims)), nrow=curDims[2])
     }
-    print(table(featureExclusionMask(fds)))
+
+    # subset to fit the encoder
+    fds_pca <- fds
+    if(isTRUE(subset)){
+        exMask <- variableJunctions(fds, type, minDeltaPsi=minDeltaPsi)
+        fds_pca <- fds[exMask,,by=type]
+        exMask2 <- subsetKMostVariableJunctions(fds_pca, type, nSubset)
+        fds_pca <- fds_pca[exMask2,,by=type]
+        featureExclusionMask(fds_pca) <- TRUE
+
+        # set correct exclusion mask for x computation
+        exMask[exMask == TRUE] <- exMask2
+        featureExclusionMask(fds) <- exMask
+    }
 
     # PCA on subset -> E matrix
-    currentNoiseAlpha(fds) <- NULL
     message(date(), " Computing PCA ...")
-    pca <- pca(as.matrix(x(fds, noiseAlpha=NULL, center=TRUE)), nPcs=q)
+    pca <- pca(x(fds_pca, noiseAlpha=noiseAlpha, center=TRUE), nPcs=q)
     pc <- pcaMethods::loadings(pca)
     E(fds) <- pc
 
+    # D and b on full matrix
     x <- x(fds, all=TRUE, noiseAlpha=NULL, center=FALSE)
-    if(isTRUE(subset)){
+    if(isTRUE(subset) | isTRUE(useLM)){
         # linear regression to fit D matrix
-        lmFit <- lm(as.matrix(x) ~ as.matrix(H(fds)))
+        lmFit  <- lm(x ~ H(fds))
         D(fds) <- t(lmFit$coefficients[-1,])
         b(fds) <- lmFit$coefficients[1,]
     } else{
@@ -114,9 +141,11 @@ fitPCA <- function(fds, q, psiType, rhoRange=c(1e-5, 1-1e-5), BPPARAM=parallel(f
 
     # fit rho
     message(date(), " Fitting rho ...")
-    counts(fds, type=psiType, side="other", HDF5=FALSE) <- as.matrix(N(fds) - K(fds))
-    counts(fds, type=psiType, side="ofInterest", HDF5=FALSE) <- as.matrix(K(fds))
-    fds <- updateRho(fds, type=psiType, rhoRange=rhoRange, BPPARAM=BPPARAM, verbose=TRUE)
+    fds <- updateRho(fds, type=psiType, rhoRange=rhoRange,
+            BPPARAM=BPPARAM, verbose=TRUE)
+
+    metadata(fds)[[paste0('loss_', psiType)]] <- lossED(
+            fds, byRows=TRUE, noiseAlpha=noiseAlpha)
     # store corrected logit psi
     predictedMeans(fds, psiType) <- t(predictMu(fds))
 
