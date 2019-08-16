@@ -7,6 +7,10 @@ based on the FraseRDataSet object}
 \usage{
 calculatePSIValues(fds, types = psiTypes, overwriteCts = FALSE)
 }
+\arguments{
+\item{overwriteCts}{FALSE or TRUE (the default) the total counts (aka N) will
+be recalculated based on the existing junction counts (aka K)}
+}
 \description{
 This function calculates the PSI values for each junction and splice site
 based on the FraseRDataSet object

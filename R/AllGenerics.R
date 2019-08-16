@@ -597,19 +597,19 @@ setReplaceMethod("counts", "FraseRDataSet", function(object, type=NULL,
 })
 
 
-options("FraseR-hdf5-chunks"=2000)
-options("FraseR-hdf5-cores"=8)
+options("FraseR-hdf5-cores"=1)
 options("FraseR-hdf5-num-chunks"=6)
 setAs("DelayedMatrix", "data.table", function(from){
-    chunk.size <- max(2000, options()[['FraseR-hdf5-chunks']])
+    chunk.size <- options()[['FraseR-hdf5-chunk-nrow']]
     mc.cores   <- max(8,    options()[['FraseR-hdf5-cors']])
     num.chunks <- max(6,    options()[['FraseR-hdf5-num-chunks']])
 
     mc.cores <- min(mc.cores, max(1, detectCores() - 1))
     chunks <- chunk(1:dim(from)[1], chunk.size)
     fun <- function(x, from) as.data.table(from[x,])
-
-    if(length(chunks) < num.chunks){
+    if(mc.cores == 1){
+        return(as.data.table(x))
+    } else if(length(chunks) < num.chunks){
         ans <- lapply(chunks, fun, from=from)
     } else {
         ans <- mclapply(chunks, fun, from=from, mc.cores=mc.cores)
@@ -639,14 +639,16 @@ setAs("DataFrame", "matrix", function(from){
 #'
 #' retrieve a single sample result object
 #' @noRd
-resultsSingleSample <- function(sampleID, gr, pvals, padjs, zscores, psivals, rawCts,
-                                rawTotalCts, deltaPsiVals, muPsi, psiType, fdrCut, zscoreCut,
-                    dPsiCut){
+resultsSingleSample <- function(sampleID, gr, pvals, padjs, zscores, psivals,
+                rawCts, rawTotalCts, deltaPsiVals, muPsi, psiType, fdrCut,
+                zscoreCut, dPsiCut, rowMeansK, rowMeansN){
 
-    goodCut <- na2false(zscores[,abs(get(sampleID)) >= zscoreCut])
-    goodCut <- goodCut & na2false(deltaPsiVals[,abs(get(sampleID)) >= dPsiCut])
-    pval    <- pvals[,get(sampleID)]
-    padj    <- padjs[,get(sampleID)]
+    zscore  <- zscores[,sampleID]
+    dpsi    <- deltaPsiVals[,sampleID]
+    goodCut <- na2false(abs(zscore) >= zscoreCut)
+    goodCut <- goodCut & na2false(abs(dpsi >= dPsiCut))
+    pval    <- pvals[,sampleID]
+    padj    <- padjs[,sampleID]
     goodCut <- na2false(!is.na(padj) & padj <= fdrCut & goodCut)
 
     ans <- granges(gr[goodCut])
@@ -656,23 +658,24 @@ resultsSingleSample <- function(sampleID, gr, pvals, padjs, zscores, psivals, ra
     }
 
     # extract data
-    mcols(ans)$type         <- psiType
-    mcols(ans)$sampleID     <- sampleID
-    mcols(ans)$hgnc_symbol  <- mcols(gr[goodCut])$hgnc_symbol
-    mcols(ans)$zscore       <- round(zscores[goodCut,get(sampleID)], 2)
-    mcols(ans)$psiValue     <- round(psivals[goodCut,get(sampleID)], 2)
-    mcols(ans)$pvalue       <- signif(pval[goodCut], 5)
-    mcols(ans)$p.adj        <- signif(padj[goodCut], 5)
-    mcols(ans)$deltaPsi     <- round(deltaPsiVals[goodCut,get(sampleID)], 2)
-    mcols(ans)$meanCts      <- round(rowMeans(rawCts[goodCut]), 2)
-    mcols(ans)$meanTotalCts <- round(rowMeans(rawTotalCts[goodCut]), 2)
-    mcols(ans)$expression   <- rawCts[goodCut, get(sampleID)]
-    mcols(ans)$expressionOther <- rawTotalCts[goodCut, get(sampleID)]
+    mcols(ans)$type            <- Rle(psiType)
+    mcols(ans)$sampleID        <- Rle(sampleID)
+    mcols(ans)$hgnc_symbol     <- Rle(mcols(gr[goodCut])$hgnc_symbol)
+    mcols(ans)$zscore          <- round(zscore[goodCut], 2)
+    mcols(ans)$psiValue        <- round(psivals[goodCut,sampleID], 2)
+    mcols(ans)$pvalue          <- signif(pval[goodCut], 5)
+    mcols(ans)$p.adj           <- signif(padj[goodCut], 5)
+    mcols(ans)$deltaPsi        <- Rle(round(dpsi[goodCut], 2))
+    mcols(ans)$meanCts         <- Rle(round(rowMeansK[goodCut], 2))
+    mcols(ans)$meanTotalCts    <- Rle(round(rowMeansN[goodCut], 2))
+    mcols(ans)$expression      <- Rle(rawCts[goodCut, sampleID])
+    mcols(ans)$expressionTotal <- Rle(rawTotalCts[goodCut, sampleID])
 
     return(ans[order(mcols(ans)$pvalue)])
 }
 
-FraseR.results <- function(x, sampleIDs, fdrCut, zscoreCut, dPsiCut, psiType){
+FraseR.results <- function(x, sampleIDs, fdrCut, zscoreCut, dPsiCut, psiType,
+                    BPPARAM=bpparam(), maxCols=20){
 
     # check input
     stopifnot(is.numeric(fdrCut)    && fdrCut    <= 1   && fdrCut    >= 0)
@@ -682,32 +685,48 @@ FraseR.results <- function(x, sampleIDs, fdrCut, zscoreCut, dPsiCut, psiType){
     stopifnot(is(x, "FraseRDataSet"))
     stopifnot(all(sampleIDs %in% samples(x)))
 
-    resultsls <- bplapply(psiType, function(type){
+    resultsls <- bplapply(psiType, BPPARAM=BPPARAM, function(type){
         message(date(), ": Collecting results for: ", type)
         currentType(x) <- type
         gr <- rowRanges(x, type=type)
 
-        # extract values
-        pvals <- as(Class="data.table", object=pVals(x))
-        padjs <- as(Class="data.table", object=padjVals(x))
-        zscores <- as(Class="data.table", object=zScores(x))
-        psivals <- as(Class="data.table", object=assay(x, type))
-        muPsi  <- as(Class="data.table", object=predictedMeans(x))
-        deltaPsiVals <- psivals - muPsi
+        # first get row means
+        rowMeansK <- rowMeans(K(x, type=type))
+        rowMeansN <- rowMeans(N(x, type=type))
 
-        rawCts <- as(Class="data.table", K(x))
-        rawTotalCts <- as(Class="data.table", N(x))
+        # then iterate by chunk
+        chunkCols <- getMaxChunks2Read(fds=x, assayName=type, max=maxCols)
+        sampleChunks <- getSamplesByChunk(fds=x, sampleIDs=sampleIDs,
+                chunkSize=chunkCols)
 
-        # create reult table
-        sampleRes <- sapply(sampleIDs,
-                resultsSingleSample, gr=gr, pvals=pvals, padjs=padjs,
-                zscores=zscores, psiType=type, psivals=psivals,
-                deltaPsiVals=deltaPsiVals, muPsi=muPsi, rawCts=rawCts,
-                rawTotalCts=rawTotalCts, fdrCut=fdrCut, zscoreCut=zscoreCut,
-                dPsiCut=dPsiCut)
+        ans <- lapply(seq_along(sampleChunks), function(idx){
+            message(date(), ": Process chunk: ", idx, " for: ", type)
+            sc <- sampleChunks[[idx]]
+            tmp_x <- x[,sc]
 
-        # return combined result
-        return(unlist(GRangesList(sampleRes)))
+            # extract values
+            rawCts       <- as.matrix(K(tmp_x))
+            rawTotalCts  <- as.matrix(N(tmp_x))
+            pvals        <- as.matrix(pVals(tmp_x))
+            padjs        <- as.matrix(padjVals(tmp_x))
+            zscores      <- as.matrix(zScores(tmp_x))
+            psivals      <- as.matrix(assay(tmp_x, type))
+            muPsi        <- as.matrix(predictedMeans(tmp_x))
+            deltaPsiVals <- psivals - muPsi
+
+            # create reult table
+            sampleRes <- sapply(sc,
+                    resultsSingleSample, gr=gr, pvals=pvals, padjs=padjs,
+                    zscores=zscores, psiType=type, psivals=psivals,
+                    deltaPsiVals=deltaPsiVals, muPsi=muPsi, rawCts=rawCts,
+                    rawTotalCts=rawTotalCts, fdrCut=fdrCut, zscoreCut=zscoreCut,
+                    dPsiCut=dPsiCut, rowMeansK=rowMeansK, rowMeansN=rowMeansN)
+
+            # return combined result
+            return(unlist(GRangesList(sampleRes)))
+        })
+
+        unlist(GRangesList(ans))
     })
 
     # merge results
@@ -731,11 +750,48 @@ FraseR.results <- function(x, sampleIDs, fdrCut, zscoreCut, dPsiCut, psiType){
 #' @rdname results
 #' @export
 setMethod("results", "FraseRDataSet", function(x, sampleIDs=samples(x),
-                    fdrCut=0.1, zscoreCut=2,
-                    dPsiCut=0.01, psiType=c("psi3", "psi5", "psiSite")){
+                    fdrCut=0.1, zscoreCut=2, dPsiCut=0.03,
+                    psiType=c("psi3", "psi5", "psiSite"), BPPARAM=bpparam()){
     FraseR.results(x, sampleIDs=sampleIDs, fdrCut=fdrCut, zscoreCut=zscoreCut,
-            dPsiCut=dPsiCut, psiType=match.arg(psiType, several.ok=TRUE))
+            dPsiCut=dPsiCut, psiType=match.arg(psiType, several.ok=TRUE),
+            BPPARAM=BPPARAM)
 })
+
+resultsByGenes <- function(res, geneColumn="hgnc_symbol", method="BY"){
+    # sort by pvalue
+    res <- res[order(res$pvalue)]
+
+    # extract subset
+    if(is(res, "GRanges")){
+        ans <- as.data.table(mcols(res)[,c(geneColumn, "pvalue", "sampleID")])
+        colnames(ans) <- c("features", "pval", "sampleID")
+    } else {
+        ans <- featureNames <- res[,.(
+                features=get(geneColumn), pval=pvalue, sampleID=sampleID)]
+    }
+
+    # remove NAs
+    naIdx <- ans[,is.na(features)]
+    ansNoNA <- ans[!is.na(features)]
+
+    # compute pvalues by gene
+    ansNoNA[,pByFeature:=min(p.adjust(pval, method="holm")),
+            by="sampleID,features"]
+
+    # subset to lowest pvalue by gene
+    dupIdx <- duplicated(ansNoNA[,.(features,sampleID)])
+    ansGenes <- ansNoNA[!dupIdx]
+
+    # compute FDR
+    ansGenes[,fdrByFeature:=p.adjust(pByFeature, method=method),
+            by="sampleID"]
+
+    # get final result table
+    finalAns <- res[!naIdx][!dupIdx]
+    finalAns$pvalue_gene <- ansGenes$pByFeature
+    finalAns$p.adj_gene <- ansGenes$fdrByFeature
+    finalAns
+}
 
 #'
 #' Mapping of chromosome names

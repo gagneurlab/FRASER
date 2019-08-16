@@ -36,7 +36,7 @@
 #' @importFrom plotly plot_ly subplot layout add_trace
 #' @importFrom gplots col2hex
 #' @importFrom htmlwidgets saveWidget
-#' @importFrom LSD heatscatter
+#' @importFrom LSD heatscatter colorpalette
 #' @importFrom pheatmap pheatmap
 #' @importFrom RColorBrewer brewer.pal
 #'
@@ -55,7 +55,7 @@
 #'          setnames
 #' @import tidyr
 #' @importFrom HDF5Array writeHDF5Array path
-#' @importFrom rhdf5 h5ls
+#' @importFrom rhdf5 h5ls H5Fopen H5Fclose
 #'
 ### P-Value calculation
 #'
@@ -67,7 +67,7 @@
 #'
 #' @importFrom BBmisc isScalarCharacter isScalarLogical chunk %nin%
 #'          isScalarInteger isFALSE is.error
-#' @importFrom R.utils renameFile
+#' @importFrom R.utils renameFile withTimeout
 #' @importFrom tools file_path_as_absolute
 #' @importFrom methods as callNextMethod is new slot slot<- validObject
 #' @importFrom utils browseURL capture.output sessionInfo
@@ -90,6 +90,10 @@
 #' @importFrom extraDistr rdirmnom
 #' @importFrom PRROC pr.curve
 #' @importFrom ggplot2 ggtitle xlab ylab ggplot geom_point geom_line geom_smooth aes
+#'          geom_line geom_hline geom_vline geom_abline geom_segment geom_ribbon
+#'          scale_color_manual scale_x_log10 scale_y_log10 scale_color_gradientn
+#'          labs theme_bw scale_color_discrete annotate
+#' @importFrom MASS kde2d bandwidth.nrd
 #' @importFrom patchwork plot_layout
 #'
 #' @importFrom keras custom_metric layer_input k_variable layer_lambda k_log

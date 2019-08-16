@@ -2,7 +2,8 @@
 #' ### MODEL
 #'
 fit_autoenc <- function(fds, type=currentType(fds), q_guess=round(ncol(fds)/4),
-                    noiseRatio=0.5, BPPARAM=bpparam(), iterations=3, nrDecoderBatches=1){
+                    correction, noiseRatio=0.5, BPPARAM=bpparam(),
+                    iterations=3, nrDecoderBatches=1, verbose=FALSE){
 
     message(paste(date(), "; q:", q_guess, "; noise: ", noiseRatio))
 
@@ -10,17 +11,19 @@ fit_autoenc <- function(fds, type=currentType(fds), q_guess=round(ncol(fds)/4),
     currentType(fds) <- type
 
     # train AE
-    fds <- fitAutoencoder(fds, type=type, q=q_guess, iterations=iterations,
-            nrDecoderBatches=nrDecoderBatches, verbose=TRUE, BPPARAM=BPPARAM)
+    fds <- fit(fds, type=type, q=q_guess, correction=correction,
+            iterations=iterations, nrDecoderBatches=nrDecoderBatches,
+            verbose=verbose, BPPARAM=BPPARAM)
     curLoss <- metadata(fds)[[paste0('loss_', type)]]
     curLoss <- mean(curLoss[,ncol(curLoss)])
 
     return(list(fds=fds, evaluation=curLoss))
 }
 
-predict_outliers <- function(fds, type, BPPARAM){
+predict_outliers <- function(fds, type, correction, BPPARAM){
 
-    fds <- calculatePvalues(fds, type=type, BPPARAM=BPPARAM)
+    fds <- calculatePvalues(fds, type=type, correction=correction,
+            BPPARAM=BPPARAM)
 
     return(fds)
 }
@@ -31,7 +34,8 @@ eval_prot <- function(fds, type){
 
     scores <- -as.vector(pVals(fds, type=type)[idx,])
 
-    dt <- cbind(data.table(id=index), as.data.table(assay(fds, paste0("trueOutliers_", type))))
+    dt <- cbind(data.table(id=index),
+            as.data.table(assay(fds, paste0("trueOutliers_", type))))
     setkey(dt, id)
     labels <- as.vector(sapply(samples(fds), function(i){
         dttmp <- dt[,any(get(i) != 0),by=id]
@@ -50,79 +54,127 @@ eval_prot <- function(fds, type){
 }
 
 
-findEncodingDim <- function(i, fds, type, params, internalBPPARAM=SerialParam(), iterations, nrDecoderBatches){
+findEncodingDim <- function(i, fds, type, params, correction,
+                    internalBPPARAM=1, iterations,
+                    nrDecoderBatches){
+    iBPPARAM <- MulticoreParam(internalBPPARAM)
 
     q_guess    <- params[i, "q"]
     noiseRatio <- params[i, "noise"]
     message(paste(i, ";\t", q_guess, ";\t", noiseRatio))
+    correction <- getHyperOptimCorrectionMethod(correction)
 
     res_fit <- fit_autoenc(fds=fds, type=type, q_guess=q_guess,
-            nrDecoderBatches=nrDecoderBatches,
-            noiseRatio=noiseRatio, BPPARAM=internalBPPARAM, iterations=iterations)
-    res_pvals <- predict_outliers(res_fit$fds, type=type, BPPARAM=internalBPPARAM)
+            correction=correction, nrDecoderBatches=nrDecoderBatches,
+            noiseRatio=noiseRatio, BPPARAM=iBPPARAM,
+            iterations=iterations)
+    res_pvals <- predict_outliers(res_fit$fds, correction=correction,
+            type=type, BPPARAM=iBPPARAM)
     evals <- eval_prot(res_pvals, type=type)
 
     return(list(q=q_guess, noiseRatio=noiseRatio, loss=res_fit$evaluation, aroc=evals))
 }
 
-optimHyperParams <- function(fds, type, q_param=seq(2, min(40, ncol(fds)), by=3),
-                    noise_param=c(0, 0.5, 1, 2, 5), minDeltaPsi=0.1, BPPARAM=bpparam(),
-                    iterations=5, setSubset=15000, injectFreq=1e-2, nrDecoderBatches=1){
-    # make copy to return it later
-    fds_copy <- fds
-    currentType(fds) <- type
+optimHyperParams <- function(fds, type, correction,
+                    q_param=seq(2, min(40, ncol(fds)), by=3),
+                    noise_param=c(0, 0.5, 1, 2, 5), minDeltaPsi=0.1,
+                    iterations=5, setSubset=15000, injectFreq=1e-2,
+                    nrDecoderBatches=1, BPPARAM=bpparam(), internalThreads=3){
+    if(isFALSE(needsHyperOpt(correction))){
+        message(date(), ": For correction '", correction, "' no hyper paramter",
+                "optimization is needed.")
+        data <- data.table(q=NA, noise=0, eval=1, aroc=1)
+        hyperParams(fds, type=type) <- data
+        return(fds)
+    }
 
     #
     # put the most important stuff into memory
     #
-    dontWriteHDF5(fds) <- TRUE
-    counts(fds, type=type, side="other")      <- as.matrix(counts(fds, type=type, side="other"))
-    counts(fds, type=type, side="ofInterest") <- as.matrix(counts(fds, type=type, side="ofInterest"))
+    currentType(fds) <- type
+    counts(fds, type=type, side="other", HDF5=FALSE) <-
+            as.matrix(counts(fds, type=type, side="other"))
+    counts(fds, type=type, side="ofInterest", HDF5=FALSE) <-
+            as.matrix(counts(fds, type=type, side="ofInterest"))
 
     #'
-    #' remove non variable junctions
+    #' remove non variable and low abundance junctions
     #'
-    psi <- K(fds)/N(fds)
-    j2keep <- rowMaxs(abs(psi - rowMeans(psi, na.rm=TRUE)), na.rm=TRUE) >= minDeltaPsi
-    message("dPsi filter:", paste(names(table(j2keep)), table(j2keep), collapse="\t", sep=": "))
-    fds <- fds[j2keep,,by=type]
+    j2keepVa <- variableJunctions(fds, type, minDeltaPsi)
+    j2keepDP <- rowQuantiles(K(fds, type), probs=0.75) >= 10
+    j2keep <- j2keepDP & j2keepVa
+    message("dPsi filter:", pasteTable(j2keep))
+    # TODO fds <- fds[j2keep,,by=type]
 
-    #
-    # subset for finding encoding dimensions
-    #
-    curX <- x(fds, type=type, all=TRUE, center=FALSE, noiseAlpha=NULL)
-    xsd <- colSds(as.matrix(curX))
-    nMostVarJuncs <- which(xsd >= sort(xsd, TRUE)[min(length(xsd), setSubset*2)])
-    exMask <- logical(length(xsd))
-    exMask[sample(nMostVarJuncs, min(length(xsd), setSubset))] <- TRUE
+    optData <- data.table()
+    for(nsub in setSubset){
+        #
+        # subset for finding encoding dimensions
+        # most variable functions + random subset for decoder
+        exMask <- subsetKMostVariableJunctions(fds[j2keep,,by=type], type, nsub)
+        j2keep[j2keep==TRUE] <- exMask
 
-    featureExclusionMask(fds) <- exMask
-    fds <- fds[featureExclusionMask(fds, type=type),,by=type]
-    message("Exclusion matrix: ", paste(names(table(exMask)), table(exMask), collapse="\t", sep=": "))
+        # keep n most variable junctions + random subset
+        j2keep <- j2keep | sample(c(TRUE, FALSE), length(j2keep), replace=TRUE,
+                prob=c(nsub/length(j2keep), 1 - nsub/length(j2keep)))
+        message("Exclusion matrix: ", pasteTable(j2keep))
 
-    # inject outliers
-    fds <- injectOutliers(fds, type=type, freq=injectFreq, minDpsi=0.1, method="samplePSI")
+        # make copy for testing
+        fds_copy <- fds
+        dontWriteHDF5(fds_copy) <- TRUE
+        featureExclusionMask(fds_copy) <- j2keep
+        fds_copy <- fds_copy[j2keep,,by=type]
+        currentType(fds_copy) <- type
 
-    # run hyper parameter optimization
-    params <- expand.grid(q=q_param, noise=noise_param)
-    res <- bplapply(seq_len(nrow(params)), findEncodingDim, fds=fds, type=type,
-                    iterations=iterations, params=params, BPPARAM=BPPARAM,
-                    nrDecoderBatches=nrDecoderBatches)
+        # inject outliers
+        fds_copy <- injectOutliers(fds_copy, type=type, freq=injectFreq,
+                minDpsi=minDeltaPsi, method="samplePSI", BPPARAM=BPPARAM)
 
-    # res2 <- res
-    data <- data.table(
-        q=sapply(res, "[[", "q"),
-        noise=sapply(res, "[[", "noiseRatio"),
-        eval=sapply(res, "[[", "loss"),
-        aroc=sapply(res, "[[", "aroc"))
-    print(plot_find_enc_results(data))
+        # remove unneeded blocks to save memory
+        a2rm <- paste(sep="_", c("originalCounts", "originalOtherCounts"),
+                rep(psiTypes, 2))
+        for(a in a2rm){
+            assay(fds_copy, a) <- NULL
+        }
+        metadata(fds_copy) <- list()
+        gc()
 
-    hyperParams(fds_copy, type=type) <- data
-    return(fds_copy)
+        # reset lost important values
+        currentType(fds_copy) <- type
+        dontWriteHDF5(fds_copy) <- TRUE
+
+        # run hyper parameter optimization
+        params <- expand.grid(q=q_param, noise=noise_param)
+        message(date(), ": Run hyper optimization with ", nrow(params), " options.")
+        res <- bplapply(seq_len(nrow(params)), findEncodingDim, fds=fds_copy, type=type,
+                        iterations=iterations, params=params, correction=correction,
+                        BPPARAM=BPPARAM, nrDecoderBatches=nrDecoderBatches,
+                        internalBPPARAM=internalThreads)
+
+        data <- data.table(
+            q=sapply(res, "[[", "q"),
+            noise=sapply(res, "[[", "noiseRatio"),
+            nsubset=nsub,
+            eval=sapply(res, "[[", "loss"),
+            aroc=sapply(res, "[[", "aroc"))
+
+        optData <- rbind(optData, data)
+    }
+
+    print(plot_find_enc_results(optData))
+
+    hyperParams(fds, type=type) <- optData
+    return(fds)
 }
 
 plot_find_enc_results <- function(data){
-    g1 <- ggplot(data, aes(q, aroc, col=as.factor(noise))) +
+    if(!"nsubset" %in% colnames(data)){
+        data[,nsbuset:="NA"]
+    }
+    data[,noise:=as.factor(noise)]
+    data[,nsubset:=as.factor(nsubset)]
+
+    g1 <- ggplot(data, aes(q, aroc, col=nsubset, linetype=noise)) +
         geom_point() +
         geom_line() +
         geom_smooth() +
@@ -130,7 +182,7 @@ plot_find_enc_results <- function(data){
         xlab("Estimated q") +
         ylab("Area under the ROC curve")
 
-    g2 <- ggplot(data, aes(q, eval, col=as.factor(noise))) +
+    g2 <- ggplot(data, aes(q, eval, col=nsubset, linetype=noise)) +
         geom_point() +
         geom_line() +
         geom_smooth() +

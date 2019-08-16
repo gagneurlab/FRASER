@@ -15,7 +15,7 @@ annotate_strand_by_seq <- function(fds, genome="hg19", txdb=NULL){
     stopifnot(is(genome, "BSgenome"))
 
     # get ranges of interest
-    gr <- granges(fds)
+    gr <- granges(granges(fds))
 
     # get the dinucleotide seq
     gr_start <- resize(gr, 2, fix="start")

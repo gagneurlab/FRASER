@@ -24,7 +24,7 @@ setClass("FraseRDataSet",
         name            = "Data Analysis",
         method          = "betaBin",
         parallel        = SerialParam(),
-        bamParam        = ScanBamParam(mapqFilter=10),
+        bamParam        = ScanBamParam(mapqFilter=0),
         strandSpecific  = FALSE,
         workingDir      = file.path(Sys.getenv("HOME"), "FraseR"),
         nonSplicedReads = SummarizedExperiment(rowRanges=GRanges())

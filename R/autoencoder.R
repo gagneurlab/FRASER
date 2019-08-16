@@ -4,9 +4,12 @@
 #' @noRd
 #'
 #' @export
-fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, rhoRange=c(1e-5, 1-1e-5), lambda=0,
-                           convergence=1e-5, iterations=15, initialize=TRUE, control=list(), 
-                           BPPARAM=bpparam(), verbose=FALSE, nrDecoderBatches=5){
+fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, minDeltaPsi=0.1,
+                    rhoRange=c(1e-5, 1-1e-5), lambda=0, convergence=1e-5,
+                    iterations=15, initialize=TRUE, control=list(),
+                    BPPARAM=bpparam(), verbose=FALSE, nrDecoderBatches=5,
+                    weighted=FALSE, nSubset=15000, multiRho=FALSE,
+                    latentSpace=c('AE', 'PCA')){
 
     if(!bpisup(BPPARAM)){
         bpstart(BPPARAM)
@@ -16,7 +19,9 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, rhoRange=c(1e-5, 1
     # set alpha for noise injection for denoising AE
     # init it corresponding to the size of 'x' not 'fds'
     currentNoiseAlpha(fds) <- noiseAlpha
-    noise(fds, type=type) <- matrix(rnorm(prod(dims)), nrow=dims['col'])
+    if(!is.null(noiseAlpha)){
+        noise(fds, type=type) <- matrix(rnorm(prod(dims)), nrow=dims['col'])
+    }
 
     # make sure its only in-memory data for k and n
     currentType(fds) <- type
@@ -26,15 +31,19 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, rhoRange=c(1e-5, 1
     # copy fds object to save original input object
     # and create second object with only the subset to fit the encoder
     copy_fds <- fds
-    fds <- fds[featureExclusionMask(fds, type=type),,by=type]
+    exMask <- variableJunctions(fds, type, minDeltaPsi=minDeltaPsi)
+    fds <- fds[exMask,,by=type]
+    exMask2 <- subsetKMostVariableJunctions(fds, type, nSubset)
+    fds <- fds[exMask2,,by=type]
+    featureExclusionMask(fds) <- TRUE
 
-    # subset noise so that it works with subsetted x
-    noise(fds, type=type) <- noise(fds, type=type)[,
-            featureExclusionMask(copy_fds, type=type)]
+    # set correct exclusion mask for x computation
+    exMask[exMask == TRUE] <- exMask2
+    featureExclusionMask(copy_fds) <- exMask
 
     # initialize E and D using PCA and bias as zeros.
     if(isTRUE(initialize) | is.null(E(fds)) | is.null(D(fds))){
-        fds <- initAutoencoder(fds, q, rhoRange, type=type)
+        fds <- initAutoencoder(fds, q, rhoRange, type=type, BPPARAM=BPPARAM)
     }
 
     # initial loss
@@ -42,65 +51,79 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, rhoRange=c(1e-5, 1
     colnames(lossList) <- "init_pca"
     print(paste0('Initial PCA loss: ', mean(lossList[,1])))
 
-    #inital rho values
-    if(isTRUE(verbose)){
-        print(summary(rho(fds)))
-    }
+    if(match.arg(latentSpace) == 'AE'){
 
-    # initialize D
-    fds <- updateD(fds, type=type, lambda=lambda, control=control, BPPARAM=BPPARAM, verbose=verbose, 
-                   nrDecoderBatches=ifelse( nrow(mcols(fds, type=type)) == nrow(mcols(copy_fds, type=type)), nrDecoderBatches, 1))
-    lossList <- updateLossList(fds, lossList, 'init', 'D', lambda, verbose=verbose)
-
-    # initialize rho step
-    fds <- updateRho(fds, type=type, rhoRange, BPPARAM=BPPARAM, verbose=verbose)
-    lossList <- updateLossList(fds, lossList, 'init', 'Rho', lambda, verbose=verbose)
-
-    # optimize log likelihood
-    t1 <- Sys.time()
-    currentLoss <- lossED(fds, lambda, byRows=TRUE)
-    for(i in seq_len(iterations)){
-        t2 <- Sys.time()
-
-        # update E step
-        fds <- updateE(fds, control=control, BPPARAM=BPPARAM, verbose=verbose)
-        lossList <- updateLossList(fds, lossList, i, 'E', lambda, verbose=verbose)
-
-        # update D step
-        fds <- updateD(fds, type=type, lambda=lambda, control=control, BPPARAM=BPPARAM, verbose=verbose, 
-                       nrDecoderBatches=ifelse( nrow(mcols(fds, type=type)) == nrow(mcols(copy_fds, type=type)), nrDecoderBatches, 1))
-        lossList <- updateLossList(fds, lossList, i, 'D', lambda, verbose=verbose)
-
-        # update rho step
-        fds <- updateRho(fds, type=type, rhoRange, BPPARAM=BPPARAM, verbose=verbose)
-        lossList <- updateLossList(fds, lossList, i, 'Rho', lambda, verbose=verbose)
-
+        #inital rho values
         if(isTRUE(verbose)){
-          print(paste('Time for one autoencoder loop:', Sys.time() - t2))
-        } else {
-          print(paste0(date(), ': Iteration: ', i, ' loss: ',
-                       mean(lossList[nrow(lossList)])))
+            print(summary(rho(fds)))
         }
 
-        # check
-        curLossDiff <- rowMax(abs(
+        # Dont use batche runs in E fitting state
+        batches4EFit <- nrDecoderBatches
+        if(nrow(mcols(fds, type=type)) < nrow(mcols(copy_fds, type=type))){
+            batches4EFit <- 1
+        }
+
+        # initialize D
+        fds <- updateD(fds, type=type, lambda=lambda, control=control,
+                       BPPARAM=BPPARAM, verbose=verbose, nrDecoderBatches=batches4EFit,
+                       multiRho=multiRho, weighted=FALSE)
+        lossList <- updateLossList(fds, lossList, 'init', 'D', lambda, verbose=verbose)
+
+        # initialize rho step
+        fds <- updateRho(fds, type=type, rhoRange, BPPARAM=BPPARAM, verbose=verbose)
+        lossList <- updateLossList(fds, lossList, 'init', 'Rho', lambda, verbose=verbose)
+
+        # optimize log likelihood
+        t1 <- Sys.time()
+        currentLoss <- lossED(fds, lambda, byRows=TRUE)
+        for(i in seq_len(iterations)){
+            t2 <- Sys.time()
+
+            # update E step
+            fds <- updateE(fds, control=control, BPPARAM=BPPARAM, verbose=verbose)
+            lossList <- updateLossList(fds, lossList, i, 'E', lambda, verbose=verbose)
+
+            # update D step
+            fds <- updateD(fds, type=type, lambda=lambda, control=control,
+                           BPPARAM=BPPARAM, verbose=verbose, nrDecoderBatches=batches4EFit,
+                           multiRho=multiRho, weighted=FALSE)
+            lossList <- updateLossList(fds, lossList, i, 'D', lambda, verbose=verbose)
+
+            # update rho step
+            fds <- updateRho(fds, type=type, rhoRange, BPPARAM=BPPARAM, verbose=verbose)
+            lossList <- updateLossList(fds, lossList, i, 'Rho', lambda, verbose=verbose)
+
+            if(isTRUE(verbose)){
+                print(paste('Time for one autoencoder loop:', Sys.time() - t2))
+            } else {
+                print(paste0(date(), ': Iteration: ', i, ' loss: ',
+                             mean(lossList[,ncol(lossList)])))
+            }
+
+            # check
+            curLossDiff <- rowMax(abs(
                 matrix(currentLoss, ncol=3, nrow=length(currentLoss))
                 - lossList[,ncol(lossList) - 2:0]))
-        if(all(max(curLossDiff) < convergence)){
-          message(date(), ': the AE correction converged with: ',
-                  mean(lossList[,ncol(lossList)]))
-          break
-        } else {
-            if(isTRUE(verbose)){
-                message(date(), ": Current max diff is: ", max(curLossDiff))
+            if(all(max(curLossDiff) < convergence)){
+                message(date(), ': the AE correction converged with: ',
+                        mean(lossList[,ncol(lossList)]))
+                break
+            } else {
+                if(isTRUE(verbose)){
+                    message(date(), ": Current max diff is: ", max(curLossDiff))
+                    message(date(), ": Summary: ", paste(collapse=", ", sep=": ",
+                                                         names(summary(curLossDiff)),
+                                                         signif(summary(curLossDiff), 2)))
+                }
             }
+            currentLoss <- lossList[,ncol(lossList)]
         }
-        currentLoss <- lossList[,ncol(lossList)]
+
+        print(Sys.time() - t1)
     }
 
-    print(Sys.time() - t1)
-
-    if(nrow(fds) == nrow(copy_fds)){    # TODO when using all features (!=nrow(fds)) in fitting for SE: also stop here and set copy_fds to fitted fds but with all junctions
+    if(nrow(fds) == nrow(copy_fds) & !isTRUE(weighted)){    # TODO when using all features (!=nrow(fds)) in fitting for SE: also stop here and set copy_fds to fitted fds but with all junctions
                                         # (at the moment: fds contains only a subset of all junctions, so copy_fds <- fds doesn't work for SE)
         copy_fds <- fds
     } else {
@@ -110,7 +133,7 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, rhoRange=c(1e-5, 1
         # set noiseAlpha to 0 or NULL to NOT use noise now (latent space already fitted)
         currentNoiseAlpha(fds) <- NULL
 
-        copy_fds <- initAutoencoder(copy_fds, q, rhoRange, type=type)
+        copy_fds <- initAutoencoder(copy_fds, q, rhoRange, type=type, BPPARAM=BPPARAM)
         E(copy_fds) <- E(fds)
         currentLoss <- lossED(copy_fds, lambda, byRows=TRUE)
 
@@ -124,7 +147,9 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, rhoRange=c(1e-5, 1
             t2 <- Sys.time()
 
             # update D step
-            copy_fds <- updateD(copy_fds, type=type, lambda=lambda, control=control, BPPARAM=BPPARAM, verbose=verbose, nrDecoderBatches=nrDecoderBatches)
+            copy_fds <- updateD(copy_fds, type=type, lambda=lambda, control=control,
+                    BPPARAM=BPPARAM, verbose=verbose, nrDecoderBatches=nrDecoderBatches,
+                    multiRho=multiRho, weighted=weighted)
             lossList <- updateLossList(copy_fds, lossList, paste0("final_", i), 'D', lambda, verbose=verbose)
 
             # update rho step
@@ -145,7 +170,7 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, rhoRange=c(1e-5, 1
                     - lossList[,ncol(lossList) - 1:0]))
             if(all(curLossDiff < convergence)){
                 message(date(), ': the final AE correction converged with:',
-                        lossList[length(lossList)])
+                        mean(lossList[,ncol(lossList)]))
                 break
             } else {
                 if(isTRUE(verbose)){
@@ -170,12 +195,18 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, rhoRange=c(1e-5, 1
     stopifnot(identical(dim(K(copy_fds)), dim(predictedMeans)))
     predictedMeans(copy_fds, type) <- predictedMeans
 
+    # store weights if weighted version
+    if(isTRUE(weighted)){
+        weights <- weights(copy_fds, type)
+        weights(copy_fds, type) <- weights
+    }
+
     # validate object
     validObject(copy_fds)
     return(copy_fds)
 }
 
-initAutoencoder <- function(fds, q, rhoRange, type){
+initAutoencoder <- function(fds, q, rhoRange, type, BPPARAM){
 
     x <- x(fds, all=TRUE, center=FALSE)
     pca <- pca(as.matrix(x(fds, all=TRUE)), nPcs=q, center=FALSE)
@@ -187,7 +218,8 @@ initAutoencoder <- function(fds, q, rhoRange, type){
     b(fds) <- colMeans2(x)
 
     # initialize rho
-    rho(fds) <- methodOfMomemtsRho(K(fds))
+    # rho(fds) <- methodOfMomentsRho(K(fds), N(fds))
+    fds <- updateRho(fds, type=type, rhoRange, BPPARAM=BPPARAM, verbose=FALSE)
 
     # reset counters
     mcols(fds, type=type)[paste0('NumConvergedD_', type)] <- 0
@@ -208,13 +240,14 @@ updateLossList <- function(fds, lossList, i, stepText, lambda, verbose){
     return(lossList)
 }
 
-lossED <- function(fds, lambda, byRows=FALSE){
+lossED <- function(fds, lambda=0, byRows=FALSE,
+                    noiseAlpha=currentNoiseAlpha(fds)){
     K <- K(fds)
     N <- N(fds)
     rho <- matrix(rho(fds), ncol=ncol(K), nrow = nrow(K))
     D <- D(fds)
 
-    y <- predictY(fds, noiseAlpha=currentNoiseAlpha(fds))
+    y <- predictY(fds, noiseAlpha=noiseAlpha)
 
     return(fullNLL(y, rho, K, N, D, lambda, byRows=byRows))
 }

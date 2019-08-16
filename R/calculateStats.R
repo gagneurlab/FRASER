@@ -15,18 +15,14 @@
 #'   fds <- countRNAData(createTestFraseRSettings())
 #'   fds <- calculatePSIValues(fds)
 #'   fds <- calculateZScores(fds)
-calculateZScores <- function(fds){
+calculateZScores <- function(fds, type=psiTypes){
 
     # check input
     stopifnot(class(fds) == "FraseRDataSet")
 
     # calculate zscore for each psi type
-    for(psiType in c("psi5", "psi3", "psiSite")){
-        assayName <- paste0("zscore_", psiType)
-        if(assayExists(fds, assayName)){
-            next
-        }
-        fds <- calculateZScorePerDataSet(fds, psiType, assayName)
+    for(pt in type){
+        fds <- calculateZScorePerDataSet(fds, pt)
     }
 
     return(fds)
@@ -37,12 +33,12 @@ calculateZScores <- function(fds){
 #' and adds it directly to the dataset itself
 #'
 #' @noRd
-calculateZScorePerDataSet <- function(fds, psiType, assayName){
+calculateZScorePerDataSet <- function(fds, psiType){
 
     message(date(), ": Calculate the Zscore for ", psiType, " values ...")
 
     # get raw data and replace NA's with zeros
-    psiVal <- assays(fds)[[psiType]]
+    psiVal <- assay(fds, psiType)
 
     # z = ( x - mean ) / sd
     rowmean <- rowMeans(psiVal, na.rm = TRUE)
@@ -50,7 +46,7 @@ calculateZScorePerDataSet <- function(fds, psiType, assayName){
     zscores <- (psiVal - rowmean) / rowsd
 
     # use as.matrix to rewrite it as a new hdf5 array
-    assays(fds, type=psiType)[[assayName]] <- as.matrix(zscores)
+    zScores(fds, type=psiType) <- as.matrix(zscores)
 
     return(fds)
 }
@@ -65,7 +61,7 @@ calculateZScorePerDataSet <- function(fds, psiType, assayName){
 #'   fds <- countRNAData(createTestFraseRSettings())
 #'   fds <- calculatePSIValues(fds)
 #'   fds <- calculatePValues(fds)
-calculatePValues <- function(fds, internBPPARAM=bpparam(), ...){
+calculatePValues <- function(fds, type=psiTypes, internBPPARAM=bpparam(), ...){
     # check input
     stopifnot(class(fds) == "FraseRDataSet")
     enforceHDF5 <- FALSE
@@ -92,27 +88,16 @@ calculatePValues <- function(fds, internBPPARAM=bpparam(), ...){
         message(date(), ": The data is not stored in a HDF5Array. ",
                 "To improve the performance we will store now ",
                 "the data in HDF5 format.")
-        fds <- saveFraseRDataSet(fds)
+        # fds <- saveFraseRDataSet(fds)
     }
 
     # test all 3 different types
-    for(psiType in c("psi5", "psi3", "psiSite")){
-        aname <- paste0("pvalue_", psiType)
-        if(assayExists(fds, aname)){
-            next
-        }
-        gc()
+    for(psiType in type){
         fds <- do.call(FUN[[1]],
             c(fds=fds, aname=aname, psiType=psiType, FUN[-1], ...)
         )
         fds <- saveFraseRDataSet(fds)
-
-        # complete memory reduction if possible
-        name <- name(fds)
-        dir  <- workingDir(fds)
-        rm(fds)
         gc()
-        fds <- loadFraseRDataSet(dir, name)
     }
 
     # return the new datasets

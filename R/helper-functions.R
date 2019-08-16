@@ -92,6 +92,12 @@ whichReadType <- function(fds, name){
     stopifnot(isScalarCharacter(name))
     fdsNames <- assayNames(fds)
     if(!name %in% fdsNames){
+        if(endsWith(name, "psiSite")){
+            return("ss")
+        }
+        if(endsWith(name, "psi5") | endsWith(name, "psi3")){
+            return("j")
+        }
         return(NA)
     }
     nsrNamesL <- length(assayNames(nonSplicedReads(fds)))
@@ -324,3 +330,99 @@ getAssayAsVector <- function(fds, prefix, psiType, sampleID){
 }
 
 
+variableJunctions <- function(fds, type, minDeltaPsi=0.1){
+    psi <- K(fds, type=type)/N(fds, type=type)
+    j2keep <- rowMaxs(abs(psi - rowMeans(psi, na.rm=TRUE)), na.rm=TRUE)
+    j2keep >= minDeltaPsi
+}
+
+subsetKMostVariableJunctions <- function(fds, type, n){
+    curX <- as.matrix(x(fds, type=type, all=TRUE, center=FALSE, noiseAlpha=NULL))
+    xsd <- colSds(curX)
+    nMostVarJuncs <- which(xsd >= sort(xsd, TRUE)[min(length(xsd), n*2)])
+    ans <- logical(length(xsd))
+    ans[sample(nMostVarJuncs, min(length(xsd), n))] <- TRUE
+    ans
+}
+
+getSubsetVector <- function(fds, type, minDeltaPsi=0.1, nSubset=15000){
+    # get any variable intron
+    ans <- variableJunctions(fds, type, minDeltaPsi=minDeltaPsi)
+
+    # subset most variable intron
+    fds_sub <- fds[ans,,by=type]
+    ans_sub <- subsetKMostVariableJunctions(fds_sub, type, nSubset)
+
+    # set correct exclusion mask for x computation
+    ans[ans] <- ans_sub
+    featureExclusionMask(fds) <- exMask
+}
+
+pasteTable <- function(x, ...){
+    tab <- table(x, ...)
+    paste(names(tab), tab, collapse="\t", sep=": ")
+}
+
+#'
+#' Map between individual seq level style and dataset common one
+#' for counting and aggregating the reads
+#'
+checkSeqLevelStyle <- function(gr, fds, sampleID, sampleSpecific=FALSE){
+    if(!"SeqLevelStyle" %in% colnames(colData(fds))){
+        return(gr)
+    }
+    style <- colData(fds)[sampleID,"SeqLevelStyle"]
+    if(isFALSE(sampleSpecific)){
+        style <- names(sort(table(colData(fds)[,"SeqLevelStyle"]), TRUE)[1])
+        if(length(unique(colData(fds)[,"SeqLevelStyle"])) > 1){
+            gr <- keepStandardChromosomes(gr, pruning.mode="coarse")
+        }
+    }
+
+    seqlevelsStyle(gr) <- style
+    gr
+}
+
+uniformSeqInfo <- function(grls){
+    tmpSeqlevels <- unique(data.table(
+        seqlevel  = unlist(lapply(grls, seqlevels)),
+        seqlength = unlist(lapply(grls, seqlengths))
+    )[order(seqlevel)])
+
+    if(any(duplicated(tmpSeqlevels[,seqlevel]))){
+        stop("There are non uniq chromosomes in this dataset!")
+    }
+
+    ans <- lapply(grls, function(x){
+        seqlevels(x)  <- tmpSeqlevels[,seqlevel]
+        seqlengths(x) <- tmpSeqlevels[,seqlength]
+        x
+    })
+    ans
+}
+
+getHDF5ChunkSize <- function(fds, assayName){
+    h5obj <- H5Fopen(getFraseRHDF5File(fds, assayName), flags="H5F_ACC_RDONLY")
+    ans <- rhdf5:::H5Dchunk_dims(h5obj&assayName)
+    H5Fclose(h5obj)
+    ans
+}
+
+getMaxChunks2Read <- function(fds, assayName, max=15, axis=c("col", "row")){
+    axis <- match.arg(axis)
+    dims <- getHDF5ChunkSize(fds, assayName)
+    if(axis == "col"){
+        ans <- dims[2]
+    } else {
+        ans <- dims[1]
+    }
+    max(1, ans/ceiling(ans/max))
+}
+
+getSamplesByChunk <- function(fds, sampleIDs, chunkSize){
+    chunks <- trunc(0:(ncol(fds)-1)/chunkSize)
+    ans <- lapply(1:max(chunks), function(x){
+        intersect(sampleIDs, samples(fds)[chunks == x])
+    })
+    ans[sapply(ans, length) >0]
+}
