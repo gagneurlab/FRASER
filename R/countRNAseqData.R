@@ -421,7 +421,10 @@ countNonSplicedReads <- function(sampleID, spliceSiteCoords, settings,
             checkFragLength=FALSE,
             minMQS=bamMapqFilter(scanBamParam(settings)),
             strandSpecific=as.integer(strandSpecific(settings)),
-
+            
+            # activating long read mode
+            isLongRead=TRUE, 
+            
             # multi-mapping reads
             countMultiMappingReads=TRUE,
 
