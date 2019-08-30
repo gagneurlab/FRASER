@@ -57,8 +57,7 @@ Suggests:
     knitr,
     rmarkdown,
     testthat,
-    covr,
-    RSelenium
+    covr
 LinkingTo:
     Rcpp,
     RcppArmadillo
