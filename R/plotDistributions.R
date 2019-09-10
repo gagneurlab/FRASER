@@ -520,6 +520,15 @@ testPlotting <- function(){
     plotValueVsCounts(gra[1], fds, gra[1]$type, plotLog=TRUE, rmZeroCts=FALSE)
 }
 
+qlogisWithCap <- function(x){
+    ans <- qlogis(x)
+    ans[is.infinite(ans)] <- NA
+    rowm <- rowMaxs(ans, na.rm=TRUE)
+    idx <- which(is.na(ans), arr.ind=TRUE)
+    ans[idx] <- rowm[idx[,"row"]]
+    return(ans)
+}
+
 #'
 #' Plot count correlation
 #'
@@ -529,7 +538,8 @@ plotCountCorHeatmap <- function(fds, type=c("psi5", "psi3", "psiSite"),
             show_rownames=FALSE, show_colnames=FALSE, minDeltaPsi=0.1,
             annotation_col=NA, annotation_row=NA, border_color=NA, topJ=5000,
             plotType=c("sampleCorrelation", "junctionSample"),
-            nClust=5, sampleClustering=NULL, ...){
+            nClust=5, sampleClustering=NULL, plotMeanPsi=TRUE, plotCov=TRUE,
+            ...){
 
     type <- match.arg(type)
     plotType <- match.arg(plotType)
@@ -546,7 +556,7 @@ plotCountCorHeatmap <- function(fds, type=c("psi5", "psi3", "psiSite"),
 
     xmat <- (skmat + 1)/(snmat + 2)
     if(isTRUE(logit)){
-        xmat <- qlogis(xmat)
+        xmat <- qlogisWithCap(xmat)
     }
     xmat_rc    <- xmat - rowMeans(xmat)
 
@@ -557,7 +567,7 @@ plotCountCorHeatmap <- function(fds, type=c("psi5", "psi3", "psiSite"),
     if(isTRUE(normalized)){
         pred_mu <- as.matrix(predictedMeans(fds, type=type)[
                     expRowsMax & expRowsMedian,][plotIdx,])
-        pred_mu <- qlogis(pred_mu)
+        pred_mu <- qlogisWithCap(pred_mu)
         lpred_mu_rc <- pred_mu - rowMeans(pred_mu)
         xmat_rc_2_plot <- xmat_rc_2_plot - lpred_mu_rc
     }
@@ -570,7 +580,7 @@ plotCountCorHeatmap <- function(fds, type=c("psi5", "psi3", "psiSite"),
             pred_mu <- as.matrix(predictedMeans(fds, type=type)[
                 expRowsMax & expRowsMedian,])
             if(isTRUE(logit)){
-                pred_mu <- qlogis(pred_mu)
+                pred_mu <- qlogisWithCap(pred_mu)
             }
             lpred_mu_rc <- pred_mu - rowMeans(pred_mu)
             xmat_rc <- xmat_rc - lpred_mu_rc
@@ -599,16 +609,19 @@ plotCountCorHeatmap <- function(fds, type=c("psi5", "psi3", "psiSite"),
     }
 
     # annotate with sample clusters
-    if(!is.null(sampleClustering)){
-        clusters <- sampleClustering
-    } else{
+    if(is.null(sampleClustering)){
         # annotate samples with clusters from sample correlation heatmap
         clusters <- as.factor(cutree(hclust(dist(cormatS)), k=nClust))
+    } else if(!is.na(sampleClustering)){
+        clusters <- sampleClustering
     }
-    if(!is.null(nrow(annotation_col))){
-        annotation_col$sampleCluster <- clusters
-    } else{
-        annotation_col <- data.frame(sampleCluster=clusters)
+
+    if(!isTRUE(is.na(sampleClustering))){
+        if(!is.null(nrow(annotation_col))){
+            annotation_col$sampleCluster <- clusters
+        } else {
+            annotation_col <- data.frame(sampleCluster=clusters)
+        }
     }
 
 
@@ -622,11 +635,14 @@ plotCountCorHeatmap <- function(fds, type=c("psi5", "psi3", "psiSite"),
         } else{
             rowMeans(xmat)
         }
-        meanPsiBins <- cut(meanPsi, breaks = c(0, 0.33, 0.66, 1), include.lowest = T)
-        if(!is.null(nrow(annotation_row))){
-            annotation_row$meanPsi <- meanPsiBins
-        } else{
-            annotation_row <- data.frame(meanPsi=meanPsiBins)
+        meanPsiBins <- cut(meanPsi, breaks = c(0, 0.33, 0.66, 1),
+                include.lowest=TRUE)
+        if(isTRUE(plotMeanPsi)){
+            if(!is.null(nrow(annotation_row))){
+                annotation_row$meanPsi <- meanPsiBins
+            } else{
+                annotation_row <- data.frame(meanPsi=meanPsiBins)
+            }
         }
 
         snmat <- snmat[j2keep,]
@@ -636,10 +652,15 @@ plotCountCorHeatmap <- function(fds, type=c("psi5", "psi3", "psiSite"),
         if(max(cutpoints) < ceiling(log10(max(meanCoverage)))){
             cutpoints <- c(cutpoints, ceiling(log10(max(meanCoverage))))
         }
-        meanCoverage <- cut(meanCoverage, breaks=10^(cutpoints), include.lowest = TRUE)
-        annotation_row$meanCoverage <- meanCoverage
+        meanCoverage <- cut(meanCoverage, breaks=10^(cutpoints),
+                include.lowest=TRUE)
 
-        rownames(annotation_row) <- rownames(xmat_rc_2_plot)
+        if(isTRUE(plotCov)){
+            annotation_row$meanCoverage <- meanCoverage
+        }
+        if(isTRUE(nrow(annotation_row) > 0)){
+            rownames(annotation_row) <- rownames(xmat_rc_2_plot)
+        }
         cormat <- xmat_rc_2_plot
     }
 
@@ -658,14 +679,12 @@ plotCountCorHeatmap <- function(fds, type=c("psi5", "psi3", "psiSite"),
                 main <- paste0(main, "PSI data (", type, ", top ", topJ, ")")
             }
         }
-
     }
 
     pheatmap(cormat, show_rownames=show_rownames, show_colnames=show_colnames,
-             main=main, annotation_col=annotation_col,
-             annotation_row=annotation_row, ..., border_color=border_color,
-             breaks=breaks,
-             color=colorRampPalette(colors=rev(brewer.pal(11, "RdBu")))(50)
+            main=main, annotation_col=annotation_col, breaks=breaks,
+            annotation_row=annotation_row, ..., border_color=border_color,
+            color=colorRampPalette(colors=rev(brewer.pal(11, "RdBu")))(50)
     )
 }
 

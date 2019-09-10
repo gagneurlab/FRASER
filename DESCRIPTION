@@ -23,6 +23,7 @@ Imports:
     DelayedArray (>= 0.5.11),
     DelayedMatrixStats,
     DT,
+    extraDistr,
     GenomeInfoDb,
     GenomicAlignments, 
     GenomicRanges,
@@ -34,10 +35,12 @@ Imports:
     HDF5Array,
     keras,
     LSD, 
+    MASS,
     matrixStats,
     methods,
     parallel,
     patchwork,
+    pcaMethods,
     pheatmap,
     plotly (>= 4.6.0),
     PRROC,
@@ -48,6 +51,7 @@ Imports:
     S4Vectors,
     shiny,
     stats,
+    tensorflow,
     tidyr,
     tools,
     utils,
@@ -57,8 +61,7 @@ Suggests:
     knitr,
     rmarkdown,
     testthat,
-    covr,
-    RSelenium
+    covr
 LinkingTo:
     Rcpp,
     RcppArmadillo

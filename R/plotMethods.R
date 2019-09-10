@@ -2,17 +2,17 @@
 # Plot methods
 
 plotVolcanoPerGene <- function(fds, sampleID, type=c("psi5", "psi3", "psiSite"),
-                            labelGenes=NULL){
+                            labelGenes=NULL, xoffset=0.8){
     # extract data
     dt2p <- data.table(
         p=pVals(fds, type=type)[,sampleID],
-        padj=padjVals(fds, type=type)[,sampleID],
         z=getAssayMatrix(fds, "delta", type=type)[,sampleID],
         geneID=mcols(fds, type=type)$hgnc_symbol)
 
     # group by gene
     dt2p2 <- dt2p[, p:=p.adjust(p, method="holm"), by=geneID]
     dt2p2 <- dt2p2[order(geneID, p)]  [!duplicated(geneID) & !is.na(geneID)]
+    dt2p2 <- dt2p2[, padj:=p.adjust(p, method="BY")]
     maxPByFDR <- dt2p2[padj < 0.1, max(p)]
 
     # get x label
@@ -23,16 +23,17 @@ plotVolcanoPerGene <- function(fds, sampleID, type=c("psi5", "psi3", "psiSite"),
     )
 
     # plot it
-    g <- ggplot(dt2p2, aes(x=z, y=-log10(p))) + geom_point() +
+    g <- ggplot(dt2p2, aes(x=z, y=-log10(p))) + geom_point(col="gray70", alpha=0.4) +
         xlab(xlab) +
-        ylab(bquote(-log[10]~"(P-value)")) +
+        ylab(bquote(-log[10]~"(p value)")) +
         geom_vline(xintercept=c(-0.3, 0.3), color="firebrick", linetype=2) +
         geom_hline(yintercept=-log10(maxPByFDR), color="firebrick", linetype=4) +
-        ggtitle(paste("Volcano plot:", sampleID, " - ", type))
+        ggtitle(paste("Volcano plot:", sampleID, " - ", type)) +
+        geom_point(data=dt2p2[abs(z) > 0.3 & padj < 0.1], aes(x=z, y=-log10(p)), col="firebrick")
 
     for(lg in labelGenes){
         g <- g + dt2p2[geneID == lg,
-                       annotate("text", x=z, y=-log10(p)*1.0, label=geneID)]
+                       annotate("text", x=z*xoffset, y=-log10(p)*1.0, label=geneID)]
     }
     g
 }
@@ -105,8 +106,8 @@ plotQQPerGene <- function(fds, type=c("psi5", "psi3", "psiSite"), gene=NULL,
                                                                 show.legend=FALSE) +
         scale_color_manual(values=c("black", "firebrick")) +
         theme_bw() + labs(title=mainName,
-                          x=expression(-log[10] ~  "(expected P-value)"),
-                          y=expression(-log[10] ~ "(observed P-value)") ) +
+                          x=expression(-log[10] ~  "(exp. p value)"),
+                          y=expression(-log[10] ~ "(obs. p value)") ) +
         geom_ribbon(alpha=0.2, col="gray", aes(x=exp, ymin = lower, ymax = upper)) +
         geom_segment(aes(x=min(exp), y=min(exp), xend=max(exp), yend=max(exp)),
                      col="firebrick")
@@ -175,8 +176,8 @@ plotGlobalQQPerGene <- function(fds, types=psiTypes, maxOutlier=2, conf.alpha=0.
     g <- ggplot(dt2p, aes(x=exp, y=obs, color=type)) + geom_point() +
         scale_color_discrete(name="", labels=c(bquote(Psi[3]), bquote(Psi[5]), "SE")) +
         labs(title=mainName,
-                          x=expression(-log[10] ~  "(expected P-value)"),
-                          y=expression(-log[10] ~ "(observed P-value)") ) +
+                          x=expression(-log[10] ~  "(exp. p value)"),
+                          y=expression(-log[10] ~ "(obs. p value)") ) +
         geom_ribbon(alpha=0.2, col="gray", aes(x=exp, ymin = lower, ymax = upper)) +
         geom_segment(aes(x=min(exp), y=min(exp), xend=max(exp), yend=max(exp)),
                      col="firebrick")
@@ -185,10 +186,13 @@ plotGlobalQQPerGene <- function(fds, types=psiTypes, maxOutlier=2, conf.alpha=0.
 }
 
 
-plotJunctionCounts <- function(fds, type=c("psi5", "psi3", "psiSite"), site,
-                               highlightSample=NULL,
+plotJunctionCounts <- function(fds, type=c("psi5", "psi3", "psiSite"),
+                               site=NULL, result=NULL, highlightSample=NULL,
                                title=paste0("Site: ", site)){
-
+    if(!is.null(result)){
+        type <- result$type
+        site <- getIndexFromResultTable(fds, result)
+    }
     k <- K(fds, type)
     n <- N(fds, type)
 
@@ -215,18 +219,21 @@ plotJunctionCounts <- function(fds, type=c("psi5", "psi3", "psiSite"), site,
     g <- ggplot(dt, aes(x=ni, y=ki)) + geom_point(color="gray", alpha=0.5) +
         scale_x_log10() + scale_y_log10() +
         geom_abline(intercept = 0, slope=1) + theme_bw() +
-        xlab("N (Total Junction Coverage) + 2") + ylab("K (Junction Counts) + 1") +
+        xlab("Total Junction Coverage + 2 (N)") + ylab("Junction Count + 1 (K)") +
         ggtitle(title)
     if(!is.null(highlightSample)){
         g <- g + geom_point(data=dt[highlightSample, ], aes(x=ni, y=ki), color="firebrick")
     }
     g
-
 }
 
-plotPredictedVsObservedPsi <- function(fds, type=c("psi5", "psi3", "psiSite"), site,
-                               highlightSample=NULL,
-                               title=paste0("Site: ", site)){
+plotPredictedVsObservedPsi <- function(fds, type=c("psi5", "psi3", "psiSite"),
+                    site=NULL, result=NULL, highlightSample=NULL,
+                    title=paste0("Site: ", site)){
+    if(!is.null(result)){
+        type <- result$type
+        site <- getIndexFromResultTable(fds, result)
+    }
 
     k <- K(fds, type)
     n <- N(fds, type)
@@ -271,7 +278,7 @@ plotOutlierSampleRankPerGenePerType <- function(fds, type=c("psi5", "psi3", "psi
 
     g <- ggplot(dt, aes(x=rank, y=nrHits)) + geom_line() + theme_bw() +
         scale_y_log10() +
-        labs(title=main, x="Sample Rank", y="Number of Outliers")
+        labs(title=main, x="Sample rank", y="Number of outliers")
 
     g
 
@@ -295,7 +302,7 @@ plotOutlierSampleRankPerGene <- function(fds, alpha=0.05, types=psiTypes, main=p
 
     g <- ggplot(dt2p, aes(x=rank, y=nrHits, color=type)) + geom_line() +
         scale_y_log10() +
-        labs(title=main, x="Sample Rank", y="Number of Outliers") +
+        labs(title=main, x="Sample rank", y="Number of outliers") +
         scale_color_discrete(name="", labels = c(bquote(Psi[3]), bquote(Psi[5]), "SE"))
 
     g
@@ -304,15 +311,16 @@ plotOutlierSampleRankPerGene <- function(fds, alpha=0.05, types=psiTypes, main=p
 
 plotQQPerJunction <- function(fds, type=c("psi5", "psi3", "psiSite"), site,
                           maxOutlier=2, conf.alpha=0.05, breakTies=TRUE,
-                          sample=FALSE, highlightOutliers=NULL, cutYaxis=FALSE,
+                          sample=FALSE, highlightOutliers=FALSE, cutYaxis=FALSE,
                           mainName=paste0("QQ-Plot (", type, ")")){
 
     # extract data
     pvals <- pVals(fds, type, byGroup=FALSE)[site,]
+    padj  <- padjVals(fds, type, byGroup=FALSE)[site,]
 
-    outlier <- rep(FALSE, length(c(pvals)))
-    if(!is.null(highlightOutliers)){
-        outlier[highlightOutliers] <- TRUE
+    outlier <- logical(length(pvals))
+    if(isTRUE(highlightOutliers)){
+        outlier[padj < 0.1] <- TRUE
     }
 
     # points
@@ -364,12 +372,12 @@ plotQQPerJunction <- function(fds, type=c("psi5", "psi3", "psiSite"), site,
     }
 
     # create qq-plot
-    g <- ggplot(dt[plotPoint,], aes(x=exp, y=obs)) + geom_point(aes(color=outlier),
-                                                                show.legend=FALSE) +
+    g <- ggplot(dt[plotPoint,], aes(x=exp, y=obs, color=outlier)) +
+        geom_point(show.legend=FALSE) +
         scale_color_manual(values=c("black", "firebrick")) +
         theme_bw() + labs(title=mainName,
-                          x=expression(-log[10] ~  "(expected P-value)"),
-                          y=expression(-log[10] ~ "(observed P-value)") ) +
+                          x=expression(-log[10] ~  "(exp. p value)"),
+                          y=expression(-log[10] ~ "(obs. p value)") ) +
         geom_ribbon(alpha=0.2, col="gray", aes(x=exp, ymin = lower, ymax = upper)) +
         geom_segment(aes(x=min(exp), y=min(exp), xend=max(exp), yend=max(exp)),
                      col="firebrick")

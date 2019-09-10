@@ -4,8 +4,8 @@
 \alias{filterExpression}
 \title{Filtering FraseRDataSets}
 \usage{
-filterExpression(fds, minExpressionInOneSample = 10, quantile = 0.5,
-  quantileMinExpression = 1, minDeltaPsi = 0.025, filter = FALSE,
+filterExpression(fds, minExpressionInOneSample = 20, quantile = 0.5,
+  quantileMinExpression = 0, minDeltaPsi = 0, filter = FALSE,
   BPPARAM = bpparam(), delayed = FALSE)
 }
 \description{

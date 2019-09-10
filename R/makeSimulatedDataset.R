@@ -360,8 +360,10 @@ makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=1000, q=10, groups=r
 #
 # Inject artificial outliers in an existing fds
 #
-injectOutliers <- function(fds, type=type, freq=1E-3, minDpsi=0.2, deltaDistr="uniformDistr",
-                           method=c('meanPSI', 'samplePSI', 'simulatedPSI'), verbose=FALSE, BPPARAM=parallel(fds)){
+injectOutliers <- function(fds, type=type, freq=1E-3, minDpsi=0.2,
+                    deltaDistr="uniformDistr", verbose=FALSE,
+                    method=c('meanPSI', 'samplePSI', 'simulatedPSI'),
+                    BPPARAM=bpparam()){
 
   # copy original k and o
   if(type == "psiSite"){
@@ -431,8 +433,10 @@ injectOutliers <- function(fds, type=type, freq=1E-3, minDpsi=0.2, deltaDistr="u
 
   # apply injection function to each outlier
   message(date(), ": Injecting ", nrow(list_index), " outliers ...")
-  result <- bplapply(seq_len(nrow(list_index)), list_index=list_index, indexOut_groups=indexOut_groups, type=type, psi=psi, n=n, dt=dt, minDpsi=minDpsi, verbose=verbose, BPPARAM=BPPARAM,
-                     FUN=function(j, list_index, indexOut_groups, type, psi, n, dt=dt, minDpsi, verbose){
+  result <- bplapply(seq_len(nrow(list_index)), list_index=list_index,
+              indexOut_groups=indexOut_groups, type=type, psi=psi, n=n, dt=dt,
+              minDpsi=minDpsi, verbose=verbose, BPPARAM=BPPARAM,
+              FUN=function(j, list_index, indexOut_groups, type, psi, n, dt=dt, minDpsi, verbose){
 
       # extract group, sample and injecetion direction (i.e +1/up or -1/down)
       row       <- list_index[j,'row']

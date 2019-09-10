@@ -279,7 +279,7 @@ hyperParams <- function(fds, type=currentType(fds), all=FALSE){
         return(ans)
     }
     if(isFALSE(all)){
-        ans <- ans[aroc == max(aroc)]
+        ans <- ans[aroc == max(aroc)][1]
     }
     ans
 }
@@ -290,21 +290,21 @@ hyperParams <- function(fds, type=currentType(fds), all=FALSE){
 }
 
 bestQ <- function(fds, type=currentType(fds)){
-    ans <- hyperParams(fds, type=type)[,q]
+    ans <- hyperParams(fds, type=type)[1,q]
     if(is.null(ans)){
         warnings("Please set q by estimating it correctly.")
         ans <- min(100, max(2, round(ncol(fds)/10)))
     }
-    return(ans)
+    return(as.integer(ans))
 }
 
 bestNoise <- function(fds, type=currentType(fds)){
-    ans <- hyperParams(fds, type=type)[,noise]
+    ans <- hyperParams(fds, type=type)[1,noise]
     if(is.null(ans)){
         warnings("Please set noise by estimating it correctly.")
         ans <- 1
     }
-    ans
+    as.numeric(as.character(ans))
 }
 
 #' @export
@@ -392,3 +392,21 @@ weights <- function(fds, type){
   setAssayMatrix(fds, name="weights", type=type, ...) <- value
   return(fds)
 }
+
+getIndexFromResultTable <- function(fds, resultTable){
+    type <- resultTable$type
+    target <- makeGRangesFromDataFrame(resultTable)
+    if(type == "psiSite"){
+        gr <- granges(asSE(nonSplicedReads(fds)))
+    } else {
+        gr <- granges(asSE(fds))
+    }
+
+    hits <- findOverlaps(target, gr, type="equal")
+    ov <- to(hits)
+    if(!isScalarInteger(ov)){
+        stop("Can not find the given range within the FraseR object.")
+    }
+    ov
+}
+

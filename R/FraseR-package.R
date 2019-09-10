@@ -55,11 +55,13 @@
 #'          setnames
 #' @import tidyr
 #' @importFrom HDF5Array writeHDF5Array path
-#' @importFrom rhdf5 h5ls
+#' @importFrom rhdf5 h5ls H5Fopen H5Fclose
 #'
 ### P-Value calculation
 #'
-#' @importFrom stats sd rbinom fisher.test na.omit p.adjust ppoints qbeta rnorm predict
+#' @importFrom stats sd rbinom fisher.test na.omit p.adjust ppoints qbeta rnorm
+#'          predict cor cutree dbinom dist hclust lm optim optimize pbinom
+#'          plogis qlogis rlnorm rnbinom
 #' @importFrom VGAM rbetabinom vglm Coef pbetabinom pbetabinom.ab betabinomial
 #'          dbetabinom.ab dbetabinom
 #'
@@ -77,8 +79,9 @@
 ### To be added into the functions above
 #
 #' @importFrom S4Vectors DataFrame metadata
-#' @importFrom grDevices dev.off adjustcolor pdf
+#' @importFrom grDevices dev.off adjustcolor pdf colorRampPalette
 #' @importFrom graphics abline axis grid legend lines title text points polygon
+#'          hist   
 #' @importFrom plotly event_data
 #' @importFrom GenomeInfoDb seqlevels<- seqlevels seqlengths
 #'          keepStandardChromosomes

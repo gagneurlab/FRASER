@@ -1,4 +1,4 @@
-annotate_strand_by_seq <- function(fds, genome="hg19", ...){
+annotate_strand_by_seq <- function(fds, genome="hg19", txdb=NULL){
     #load genome
     if (genome=="hg19") {
         library(BSgenome.Hsapiens.UCSC.hg19)
@@ -14,23 +14,27 @@ annotate_strand_by_seq <- function(fds, genome="hg19", ...){
     }
     stopifnot(is(genome, "BSgenome"))
 
-
     # get ranges of interest
     gr <- granges(granges(fds))
 
     # get the dinucleotide seq
-    gr_start <- resize(gr, 2, fix = "start")
-    gr_end   <- resize(gr, 2, fix = "end")
+    gr_start <- resize(gr, 2, fix="start")
+    gr_end <- resize(gr, 2, fix="end")
 
-    mcols(fds, type="j")[["psi5_dinuc"]] <- getSeq(genome, gr_start, as.character=TRUE)
-    mcols(fds, type="j")[["psi3_dinuc"]] <- getSeq(genome, gr_end,   as.character=TRUE)
+    dn_s5 <- Rle(getSeq(genome, gr_start, as.character=TRUE))
+    dn_s3 <- Rle(getSeq(genome, gr_end, as.character=TRUE))
 
     # set the new seq based annotation
-    pos <- mcols(fds, type="j")[["psi5_dinuc"]] %in% c("GT", "GC") & mcols(fds, type="j")[["psi3_dinuc"]] == "AG"
-    neg <- mcols(fds, type="j")[["psi5_dinuc"]] == "CT" & mcols(fds, type="j")[["psi3_dinuc"]] %in% c("AC", "GC")
+    # GT -> AG (~96%) | GC -> AG (~3%) | AT -> AC (0.2%)
+    pos <- dn_s5 %in%c("GT", "GC") & dn_s3 %in% "AG"  # | dn_s5 %in% "AT" & dn_s3 %in% "AC"
+    neg <- dn_s3 %in% c("AC", "GC") & dn_s5 %in% "CT" # | dn_s3 %in% "GT" & dn_s5 %in% "AT"
 
 
-    mcols(fds, type="j")[["predicted_strand"]] <- "*"
+    # annotate object
+    mcols(fds, type="j")[["psi5_dinuc"]] <- dn_s5
+    mcols(fds, type="j")[["psi3_dinuc"]] <- dn_s3
+
+    mcols(fds, type="j")[["predicted_strand"]] <- Rle(factor("*", c("+", "-", "*")))
     mcols(fds, type="j")[pos, ][["predicted_strand"]] <- "+"
     mcols(fds, type="j")[neg, ][["predicted_strand"]] <- "-"
 

@@ -114,12 +114,23 @@ saveFraseRDataSet <- function(fds, dir=NULL, name=NULL, rewrite=FALSE) {
     return(fds)
 }
 
+#'
+#' Defaults for HDF5 global options
+#' To save the underlying assays
+#'
+options("FraseR-hdf5-chunk-nrow"=30000)
+options("FraseR-hdf5-chunk-ncol"=20)
 
 #'
 #' saves the given assay as HDF5 array on disk
 #' @noRd
 saveAsHDF5 <- function(fds, name, object=NULL, rewrite=FALSE){
     if(is.null(object)) object <- assay(fds, name)
+
+    # get defind chunk sizes
+    chunkDims <- c(
+        min(nrow(object), options()[['FraseR-hdf5-chunk-nrow']]),
+        min(ncol(object), options()[['FraseR-hdf5-chunk-ncol']]))
 
     if(isTRUE(dontWriteHDF5(fds))){
         message(date(), ": Dont save HDF5 for assay: ", name)
@@ -138,7 +149,8 @@ saveAsHDF5 <- function(fds, name, object=NULL, rewrite=FALSE){
     message(date(), ": Preparing data for HDF5 conversion: ", name)
     aMat <- as(object, "matrix")
     message(date(), ": Writing data: ", name, " to file: ", h5File)
-    h5 <- writeHDF5Array(aMat, h5FileTmp, name, verbose=FALSE, level=0)
+    h5 <- writeHDF5Array(aMat, h5FileTmp, name, verbose=FALSE, level=0,
+            chunkdim=chunkDims)
 
     # override old h5 file if present and move tmp to correct place
     if(file.exists(h5File)) unlink(h5File)
