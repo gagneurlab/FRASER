@@ -39,6 +39,7 @@ Imports:
     methods,
     parallel,
     patchwork,
+    pcaMethods
     pheatmap,
     plotly (>= 4.6.0),
     PRROC,
