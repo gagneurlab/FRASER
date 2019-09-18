@@ -23,6 +23,7 @@ Imports:
     DelayedArray (>= 0.5.11),
     DelayedMatrixStats,
     DT,
+    extraDistr,
     GenomeInfoDb,
     GenomicAlignments, 
     GenomicRanges,
