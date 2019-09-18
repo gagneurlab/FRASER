@@ -65,6 +65,7 @@ Suggests:
 LinkingTo:
     Rcpp,
     RcppArmadillo
+Remotes: thomasp85/patchwork
 biocViews: 
     RNASeq,
     AlternativeSplicing,
@@ -85,6 +86,7 @@ Collate:
     Fraser-pipeline.R
     accessor-methods.R
     annotationOfRanges.R
+    annotate_junctions.R
     beta-binomial-testing.R
     calculatePSIValue.R
     calculateStats.R
