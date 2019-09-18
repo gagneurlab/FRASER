@@ -89,18 +89,18 @@ To start quickly with \fraser{} just call this 4 functions to get a standard ana
 library(FraseR)
 
 # create sample annotation and settings
-fds <- makeSimulatedFraserDataSet_BetaBinomial(m=60, j=500)
-fds <- injectOutliers(fds)
+# fds <- makeSimulatedFraserDataSet_BetaBinomial(m=60, j=500)
+# fds <- injectOutliers(fds)
 
 # run full standard analysis (with specified
 # dimensions q and iterations to speed it up)
-fds <- FraseR(fds, q=5, iterations=4)
+# fds <- FraseR(fds, q=5, iterations=4)
 
 # annotate junctions and splice sites
-fds <- annotateRanges(fds)
+# fds <- annotateRanges(fds)
 
 # visualize results
-plotOutlierSampleRankPerGene(fds)
+# plotOutlierSampleRankPerGene(fds)
 @
 
 The result html will be discussed in the corresponding section \ref{sec:Results}
