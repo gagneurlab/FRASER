@@ -80,7 +80,6 @@ Collate:
     getNSetterFuns.R
     FraseR-package.R
     FraseRDataSet-class.R
-    annotate_junctions.R
     AllGenerics.R
     Fraser-pipeline.R
     accessor-methods.R
