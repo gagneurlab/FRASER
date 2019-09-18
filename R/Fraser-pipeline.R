@@ -31,7 +31,8 @@ FraseR <- function(fds, q, NcpuPerSample=1, ...){
     stopifnot(class(fds) == "FraseRDataSet")
 
     # count data
-    fds <- countRNAData(fds, NcpuPerSample=NcpuPerSample)
+    if(!"rawCountsJ" %in% assayNames(fds))
+        fds <- countRNAData(fds, NcpuPerSample=NcpuPerSample)
 
     # calculate PSI values
     fds <- calculatePSIValues(fds)

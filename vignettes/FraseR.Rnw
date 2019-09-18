@@ -89,11 +89,12 @@ To start quickly with \fraser{} just call this 4 functions to get a standard ana
 library(FraseR)
 
 # create sample annotation and settings
-fds <- createTestFraseRSettings()
+fds <- makeSimulatedFraserDataSet_BetaBinomial(m=60, j=500)
+fds <- injectOutliers(fds)
 
 # run full standard analysis (with specified
 # dimensions q and iterations to speed it up)
-fds <- FraseR(fds, q=2, iterations=4)
+fds <- FraseR(fds, q=5, iterations=4)
 
 # annotate junctions and splice sites
 fds <- annotateRanges(fds)
