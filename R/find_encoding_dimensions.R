@@ -191,6 +191,6 @@ plot_find_enc_results <- function(data){
         ylab("Model loss")
 
 
-    g1 + g2 + plot_layout(ncol=1, nrow=2)
+    ggarrange(g1, g2, nrow=2)
 }
 

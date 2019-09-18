@@ -81,7 +81,7 @@
 #' @importFrom S4Vectors DataFrame metadata
 #' @importFrom grDevices dev.off adjustcolor pdf colorRampPalette
 #' @importFrom graphics abline axis grid legend lines title text points polygon
-#'          hist   
+#'          hist
 #' @importFrom plotly event_data
 #' @importFrom GenomeInfoDb seqlevels<- seqlevels seqlengths
 #'          keepStandardChromosomes
@@ -96,8 +96,9 @@
 #'          geom_line geom_hline geom_vline geom_abline geom_segment geom_ribbon
 #'          scale_color_manual scale_x_log10 scale_y_log10 scale_color_gradientn
 #'          labs theme_bw scale_color_discrete annotate
+#' @importFrom ggpubr ggarrange
+#'
 #' @importFrom MASS kde2d bandwidth.nrd
-#' @importFrom patchwork plot_layout
 #'
 #' @importFrom keras custom_metric layer_input k_variable layer_lambda k_log
 #'          layer_dense constraint_minmaxnorm regularizer_l2 get_weights
