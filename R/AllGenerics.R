@@ -645,11 +645,19 @@ resultsSingleSample <- function(sampleID, gr, pvals, padjs, zscores, psivals,
 
     zscore  <- zscores[,sampleID]
     dpsi    <- deltaPsiVals[,sampleID]
-    goodCut <- na2false(abs(zscore) >= zscoreCut)
-    goodCut <- goodCut & na2false(abs(dpsi >= dPsiCut))
     pval    <- pvals[,sampleID]
     padj    <- padjs[,sampleID]
-    goodCut <- na2false(!is.na(padj) & padj <= fdrCut & goodCut)
+
+    goodCut <- !logical(length(zscore))
+    if(!is.na(zscoreCut)){
+        goodCut <- goodCut & na2default(abs(zscore) >= zscoreCut, TRUE)
+    }
+    if(!is.na(dPsiCut)){
+        goodCut <- goodCut & na2default(abs(dpsi) >= dPsiCut, TRUE)
+    }
+    if(!is.na(fdrCut)){
+        goodCut <- goodCut & na2false(padj <= fdrCut)
+    }
 
     ans <- granges(gr[goodCut])
 
@@ -657,30 +665,34 @@ resultsSingleSample <- function(sampleID, gr, pvals, padjs, zscores, psivals,
         return(ans)
     }
 
-    # extract data
-    mcols(ans)$type            <- Rle(psiType)
-    mcols(ans)$sampleID        <- Rle(sampleID)
-    mcols(ans)$hgnc_symbol     <- Rle(mcols(gr[goodCut])$hgnc_symbol)
-    mcols(ans)$zscore          <- round(zscore[goodCut], 2)
-    mcols(ans)$psiValue        <- round(psivals[goodCut,sampleID], 2)
-    mcols(ans)$pvalue          <- signif(pval[goodCut], 5)
-    mcols(ans)$p.adj           <- signif(padj[goodCut], 5)
-    mcols(ans)$deltaPsi        <- Rle(round(dpsi[goodCut], 2))
-    mcols(ans)$meanCts         <- Rle(round(rowMeansK[goodCut], 2))
-    mcols(ans)$meanTotalCts    <- Rle(round(rowMeansN[goodCut], 2))
-    mcols(ans)$expression      <- Rle(rawCts[goodCut, sampleID])
-    mcols(ans)$expressionTotal <- Rle(rawTotalCts[goodCut, sampleID])
+    if(!"hgnc_symbol" %in% colnames(mcols(gr))){
+        mcols(gr)$hgnc_symbol <- NA_character_
+    }
 
-    return(ans[order(mcols(ans)$pvalue)])
+    # extract data
+    mcols(ans)$sampleID        <- Rle(sampleID)
+    mcols(ans)$hgncSymbol      <- Rle(mcols(gr[goodCut])$hgnc_symbol)
+    mcols(ans)$type            <- Rle(psiType)
+    mcols(ans)$pValue          <- signif(pval[goodCut], 5)
+    mcols(ans)$padjust         <- signif(padj[goodCut], 5)
+    mcols(ans)$zScore          <- Rle(round(zscore[goodCut], 2))
+    mcols(ans)$psiValue        <- Rle(round(psivals[goodCut,sampleID], 2))
+    mcols(ans)$deltaPsi        <- Rle(round(dpsi[goodCut], 2))
+    mcols(ans)$meanCounts      <- Rle(round(rowMeansK[goodCut], 2))
+    mcols(ans)$meanTotalCounts <- Rle(round(rowMeansN[goodCut], 2))
+    mcols(ans)$counts          <- Rle(rawCts[goodCut, sampleID])
+    mcols(ans)$totalCounts     <- Rle(rawTotalCts[goodCut, sampleID])
+
+    return(ans[order(mcols(ans)$pValue)])
 }
 
-FraseR.results <- function(x, sampleIDs, fdrCut, zscoreCut, dPsiCut, psiType,
-                    BPPARAM=bpparam(), maxCols=20){
+FraseR.results <- function(x, sampleIDs, fdrCutoff, zscoreCutoff, dPsiCutoff,
+                    psiType, BPPARAM=bpparam(), maxCols=20){
 
     # check input
-    stopifnot(is.numeric(fdrCut)    && fdrCut    <= 1   && fdrCut    >= 0)
-    stopifnot(is.numeric(dPsiCut)   && dPsiCut   <= 1   && dPsiCut   >= 0)
-    stopifnot(is.numeric(zscoreCut) && zscoreCut <= 100 && zscoreCut >= 0)
+    checkNaAndRange(fdrCutoff,    min=0, max=1,   scalar=TRUE, na.ok=TRUE)
+    checkNaAndRange(dPsiCutoff,   min=0, max=1,   scalar=TRUE, na.ok=TRUE)
+    checkNaAndRange(zscoreCutoff, min=0, max=100, scalar=TRUE, na.ok=TRUE)
 
     stopifnot(is(x, "FraseRDataSet"))
     stopifnot(all(sampleIDs %in% samples(x)))
@@ -719,8 +731,9 @@ FraseR.results <- function(x, sampleIDs, fdrCut, zscoreCut, dPsiCut, psiType,
                     resultsSingleSample, gr=gr, pvals=pvals, padjs=padjs,
                     zscores=zscores, psiType=type, psivals=psivals,
                     deltaPsiVals=deltaPsiVals, muPsi=muPsi, rawCts=rawCts,
-                    rawTotalCts=rawTotalCts, fdrCut=fdrCut, zscoreCut=zscoreCut,
-                    dPsiCut=dPsiCut, rowMeansK=rowMeansK, rowMeansN=rowMeansN)
+                    rawTotalCts=rawTotalCts, fdrCut=fdrCutoff,
+                    zscoreCut=zscoreCutoff, dPsiCut=dPsiCutoff,
+                    rowMeansK=rowMeansK, rowMeansN=rowMeansN)
 
             # return combined result
             return(unlist(GRangesList(sampleRes)))
@@ -734,7 +747,7 @@ FraseR.results <- function(x, sampleIDs, fdrCut, zscoreCut, dPsiCut, psiType,
 
     # sort it if existing
     if(length(ans) > 0){
-        ans <- ans[order(ans$pvalue)]
+        ans <- ans[order(ans$pValue)]
     }
 
     # return only the results
@@ -750,20 +763,20 @@ FraseR.results <- function(x, sampleIDs, fdrCut, zscoreCut, dPsiCut, psiType,
 #' @rdname results
 #' @export
 setMethod("results", "FraseRDataSet", function(x, sampleIDs=samples(x),
-                    fdrCut=0.1, zscoreCut=2, dPsiCut=0.03,
+                    fdrCutoff=0.05, zscoreCutoff=NA, dPsiCutoff=0.3,
                     psiType=c("psi3", "psi5", "psiSite"), BPPARAM=bpparam()){
-    FraseR.results(x, sampleIDs=sampleIDs, fdrCut=fdrCut, zscoreCut=zscoreCut,
-            dPsiCut=dPsiCut, psiType=match.arg(psiType, several.ok=TRUE),
-            BPPARAM=BPPARAM)
+    FraseR.results(x, sampleIDs=sampleIDs, fdrCutoff=fdrCutoff,
+            zscoreCutoff=zscoreCutoff, dPsiCutoff=dPsiCutoff,
+            psiType=match.arg(psiType, several.ok=TRUE), BPPARAM=BPPARAM)
 })
 
-resultsByGenes <- function(res, geneColumn="hgnc_symbol", method="BY"){
+resultsByGenes <- function(res, geneColumn="hgncSymbol", method="BY"){
     # sort by pvalue
-    res <- res[order(res$pvalue)]
+    res <- res[order(res$pValue)]
 
     # extract subset
     if(is(res, "GRanges")){
-        ans <- as.data.table(mcols(res)[,c(geneColumn, "pvalue", "sampleID")])
+        ans <- as.data.table(mcols(res)[,c(geneColumn, "pValue", "sampleID")])
         colnames(ans) <- c("features", "pval", "sampleID")
     } else {
         ans <- featureNames <- res[,.(
@@ -788,8 +801,8 @@ resultsByGenes <- function(res, geneColumn="hgnc_symbol", method="BY"){
 
     # get final result table
     finalAns <- res[!naIdx][!dupIdx]
-    finalAns$pvalue_gene <- ansGenes$pByFeature
-    finalAns$p.adj_gene <- ansGenes$fdrByFeature
+    finalAns$pValueGene  <- ansGenes$pByFeature
+    finalAns$padjustGene <- ansGenes$fdrByFeature
     finalAns
 }
 
@@ -824,3 +837,23 @@ mapSeqlevels <- function(fds, style="UCSC", ...){
 }
 
 
+aberrant <- function(fds, type=currentType(fds), fdrCutoff=0.05, dPsiCutoff=0.3,
+                    zScoreCutoff=NA, zscores=zScores(fds, type),
+                    ...){
+
+    goodCutoff <- matrix(logical(prod(dim(zscores))), ncol=ncol(zscores))
+    if(!is.na(zScoreCutoff)){
+        goodCutoff <- goodCutoff & abs(zscores) > zScoreCutoff
+    }
+    if(!is.na(dPsiCut)){
+        goodCutoff <- goodCutoff & abs(dpsi) > dPsiCutoff
+    }
+    zscore  <- zscores[,sampleID]
+    dpsi    <- deltaPsiVals[,sampleID]
+    goodCut <- na2false(abs(zscore) >= zscoreCut)
+    goodCut <- goodCut & na2false(abs(dpsi >= dPsiCut))
+    pval    <- pvals[,sampleID]
+    padj    <- padjs[,sampleID]
+    goodCut <- na2false(!is.na(padj) & padj <= fdrCut & goodCut)
+
+}

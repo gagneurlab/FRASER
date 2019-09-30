@@ -426,3 +426,30 @@ getSamplesByChunk <- function(fds, sampleIDs, chunkSize){
     })
     ans[sapply(ans, length) >0]
 }
+
+checkNaAndRange <- function(x, min=-Inf, max=Inf, scalar=TRUE, na.ok=FALSE){
+    xname <- deparse(substitute(x))
+    if(isTRUE(scalar) & !isScalarValue(x)){
+        stop(xname, " should be a scalar value!")
+    }
+    if(any(is.na(x)) && isFALSE(na.ok)){
+        stop(xname, " contains NA values, which is not allowed.")
+    }
+    if(sum(!is.na(x)) == 0){
+        return(invisible(TRUE))
+    }
+    if(!is.numeric(x[!is.na(x)])){
+        stop(xname, " should be numeric!")
+    }
+    if(x[!is.na(x)] < min){
+        stop(xname, " should be bigger than ", min)
+    }
+    if(x[!is.na(x)] > max){
+        stop(xname, " should be smaller than ", max)
+    }
+    invisible(TRUE)
+}
+
+testme <- function(test=NA){
+    deparse(substitute(test))
+}
