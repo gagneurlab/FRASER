@@ -37,7 +37,7 @@ featureExclusionMask <- function(fds, type=currentType(fds)){
 #' @export "featureExclusionMask<-"
 `featureExclusionMask<-` <- function(fds, value, type=currentType(fds)){
     if(isScalarLogical(value)){
-        value <- rep(value, ncol(mcols(fds, type=type)))
+        value <- rep(value, nrow(mcols(fds, type=type)))
     }
     mcols(fds, type=type)[[paste0('featureExclude_', type)]] <- value
     return(fds)
@@ -155,7 +155,7 @@ predictY <- function(fds, type=currentType(fds), noiseAlpha=NULL){
 
 `setAssayMatrix<-` <- function(fds, value, name, type, ...){
     if(!is.matrix(value)){
-        value <- matrix(value, ncol=ncol(fds))
+        value <- matrix(value, ncol=ncol(fds), nrow=nrow(mcols(fds, type=type)))
     }
     if(is.null(colnames(value))){
         colnames(value) <- colnames(fds)
@@ -163,12 +163,22 @@ predictY <- function(fds, type=currentType(fds), noiseAlpha=NULL){
     if(is.null(rownames(value))){
         rownames(value) <- rownames(counts(fds, type=type))
     }
-    assay(fds, paste(name, type, sep="_"), ...) <- value
-    return(fds)
+    if(missing(name)){
+        name <- type
+    } else {
+        name <- paste(name, type, sep="_")
+    }
+    assay(fds, name, ...) <- value
+    fds
 }
 
 getAssayMatrix <- function(fds, name, type){
-    return(assay(fds, paste(name, type, sep="_")))
+    if(missing(name)){
+        name <- type
+    } else {
+        name <- paste(name, type, sep="_")
+    }
+    assay(fds, name)
 }
 
 zScores <- function(fds, type=currentType(fds)){
@@ -251,28 +261,25 @@ currentNoiseAlpha <- function(fds){
   return(fds)
 }
 
-
 noise <- function(fds, type=currentType(fds)){
-  return(metadata(fds)[[paste0('noise_', type)]])
-  # return(getAssayMatrix(fds, name="noise", type=type))
+  return(t(getAssayMatrix(fds, name="noise", type=type)))
 }
 
-`noise<-` <- function(fds, value, type=currentType(fds), ...){
+`noise<-` <- function(fds, value, type=currentType(fds), HDF5=FALSE, ...){
   if(!is.matrix(value)){
     value <- matrix(value, nrow=nrow(mcols(fds, type=type)), ncol=ncol(fds))
   }
-  metadata(fds)[[paste0('noise_', type)]] <- value
+  setAssayMatrix(fds, name='noise', type=type, HDF5=HDF5) <- t(value)
   return(fds)
-  # setAssayMatrix(fds, name="noise", type=type, ...) <- value
-  # return(fds)
 }
+
 hyperParams <- function(fds, type=currentType(fds), all=FALSE){
     ans <- metadata(fds)[[paste0("hyperParams_", type)]]
     if(is.null(ans)){
         return(ans)
     }
     if(isFALSE(all)){
-        ans <- ans[aroc == max(aroc)]
+        ans <- ans[aroc == max(aroc)][1]
     }
     ans
 }
@@ -283,21 +290,21 @@ hyperParams <- function(fds, type=currentType(fds), all=FALSE){
 }
 
 bestQ <- function(fds, type=currentType(fds)){
-    ans <- hyperParams(fds, type=type)[,q]
+    ans <- hyperParams(fds, type=type)[1,q]
     if(is.null(ans)){
         warnings("Please set q by estimating it correctly.")
         ans <- min(100, max(2, round(ncol(fds)/10)))
     }
-    return(ans)
+    return(as.integer(ans))
 }
 
 bestNoise <- function(fds, type=currentType(fds)){
-    ans <- hyperParams(fds, type=type)[,noise]
+    ans <- hyperParams(fds, type=type)[1,noise]
     if(is.null(ans)){
         warnings("Please set noise by estimating it correctly.")
         ans <- 1
     }
-    ans
+    as.numeric(as.character(ans))
 }
 
 #' @export
@@ -345,3 +352,61 @@ getByGroup <- function(fds, type, value){
   idx   <- !duplicated(index)
   return(value[idx,])
 }
+
+getDeltaPsi <- function(fds, type, byGroup=FALSE){
+  mu <- predictedMeans(fds, type)
+  dataPsi <- (K(fds, type)+pseudocount()) /(N(fds, type)+2*pseudocount())
+  deltaPSI <- dataPsi-mu
+  if(isTRUE(byGroup)){
+    deltaPSI <- getAbsMaxByGroup(fds, psiType, deltaPSI)
+  }
+  return(deltaPSI)
+}
+
+
+# calculate FraseR weights
+calcFraseRWeights <- function(fds, psiType){
+  k <- as.matrix(K(fds, psiType))
+  n <- as.matrix(N(fds, psiType))
+  mu <- t(predictMu(fds, psiType))
+  rho <- rho(fds, psiType)
+  dataPsi <- plogis(t(x(fds, type=psiType, all=TRUE, center=FALSE, noiseAlpha = NULL)))
+
+  # pearson residuals for BB
+  # r <- ((k+pseudocount()) - (n+2*pseudocount()) * mu) / sqrt((n+2*pseudocount()) * mu * (1-mu) * (1+((n+2*pseudocount())-1)*rho)) # on counts of success k
+  r <- (dataPsi - mu) / sqrt( mu * (1-mu) * (1+((n+2*pseudocount())-1)*rho)/(n+2*pseudocount()) )   # on probability of success mu
+
+  # weights according to Huber function (as in edgeR)
+  c <- 1.345; # constant, as suggested in edgeR paper
+  w <- ifelse(abs(r) > c, c/abs(r) , 1)
+
+  return(w)
+}
+
+# get FraseR weights
+weights <- function(fds, type){
+    return(getAssayMatrix(fds, "weights", type))
+}
+# set FraseR weights
+`weights<-` <- function(fds, value, type=currentType(fds), ...){
+  setAssayMatrix(fds, name="weights", type=type, ...) <- value
+  return(fds)
+}
+
+getIndexFromResultTable <- function(fds, resultTable){
+    type <- resultTable$type
+    target <- makeGRangesFromDataFrame(resultTable)
+    if(type == "psiSite"){
+        gr <- granges(asSE(nonSplicedReads(fds)))
+    } else {
+        gr <- granges(asSE(fds))
+    }
+
+    hits <- findOverlaps(target, gr, type="equal")
+    ov <- to(hits)
+    if(!isScalarInteger(ov)){
+        stop("Can not find the given range within the FraseR object.")
+    }
+    ov
+}
+

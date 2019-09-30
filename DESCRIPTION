@@ -1,7 +1,7 @@
 Package: FraseR
 Type: Package
 Title: Find RAre Splicing Events in RNA-Seq Data
-Version: 0.99.3
+Version: 0.99.4
 Date: 2017-05-27
 Author: Christian Mertes <mertes@in.tum.de>, Prof. Julien Gagneur
     <gagneur@in.tum.de>
@@ -31,14 +31,15 @@ Imports:
     graphics,
     gplots,
     ggplot2,
+    ggpubr,
     htmlwidgets,
     HDF5Array,
     keras,
     LSD, 
+    MASS,
     matrixStats,
     methods,
     parallel,
-    patchwork,
     pcaMethods,
     pheatmap,
     plotly (>= 4.6.0),
@@ -50,6 +51,7 @@ Imports:
     S4Vectors,
     shiny,
     stats,
+    tensorflow,
     tidyr,
     tools,
     utils,
@@ -59,12 +61,10 @@ Suggests:
     knitr,
     rmarkdown,
     testthat,
-    covr,
-    RSelenium
+    covr
 LinkingTo:
     Rcpp,
     RcppArmadillo
-Remotes: thomasp85/patchwork
 biocViews: 
     RNASeq,
     AlternativeSplicing,
@@ -84,7 +84,6 @@ Collate:
     Fraser-pipeline.R
     accessor-methods.R
     annotationOfRanges.R
-    annotate_junctions.R
     beta-binomial-testing.R
     calculatePSIValue.R
     calculateStats.R
@@ -111,4 +110,5 @@ Collate:
     pvalsNzscore.R
     makeSimulatedDataset.R
     fitCorrectionMethods.R
+    plotMethods.R
 VignetteBuilder: knitr

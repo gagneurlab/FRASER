@@ -6,7 +6,7 @@
 The P-Value calculation is based on the given method in the
 FraseRSettings object}
 \usage{
-calculatePValues(fds, internBPPARAM = bpparam(), ...)
+calculatePValues(fds, type = psiTypes, internBPPARAM = bpparam(), ...)
 }
 \description{
 calculates the P-Value for the given FraseR dataset object

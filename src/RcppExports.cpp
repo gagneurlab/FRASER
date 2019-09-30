@@ -153,6 +153,40 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// truncWeightedNLL_db
+double truncWeightedNLL_db(arma::vec par, arma::mat H, arma::vec k, arma::vec n, double rho, double lambda, arma::vec w);
+RcppExport SEXP _FraseR_truncWeightedNLL_db(SEXP parSEXP, SEXP HSEXP, SEXP kSEXP, SEXP nSEXP, SEXP rhoSEXP, SEXP lambdaSEXP, SEXP wSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::vec >::type par(parSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type H(HSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type k(kSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type n(nSEXP);
+    Rcpp::traits::input_parameter< double >::type rho(rhoSEXP);
+    Rcpp::traits::input_parameter< double >::type lambda(lambdaSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type w(wSEXP);
+    rcpp_result_gen = Rcpp::wrap(truncWeightedNLL_db(par, H, k, n, rho, lambda, w));
+    return rcpp_result_gen;
+END_RCPP
+}
+// truncWeightedGrad_db
+arma::vec truncWeightedGrad_db(arma::vec par, arma::mat H, arma::vec k, arma::vec n, double rho, double lambda, arma::vec w);
+RcppExport SEXP _FraseR_truncWeightedGrad_db(SEXP parSEXP, SEXP HSEXP, SEXP kSEXP, SEXP nSEXP, SEXP rhoSEXP, SEXP lambdaSEXP, SEXP wSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::vec >::type par(parSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type H(HSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type k(kSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type n(nSEXP);
+    Rcpp::traits::input_parameter< double >::type rho(rhoSEXP);
+    Rcpp::traits::input_parameter< double >::type lambda(lambdaSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type w(wSEXP);
+    rcpp_result_gen = Rcpp::wrap(truncWeightedGrad_db(par, H, k, n, rho, lambda, w));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_FraseR_predictYCpp", (DL_FUNC) &_FraseR_predictYCpp, 3},
@@ -165,6 +199,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_FraseR_truncGrad_e", (DL_FUNC) &_FraseR_truncGrad_e, 7},
     {"_FraseR_truncNLL_rho", (DL_FUNC) &_FraseR_truncNLL_rho, 4},
     {"_FraseR_fullNLL", (DL_FUNC) &_FraseR_fullNLL, 7},
+    {"_FraseR_truncWeightedNLL_db", (DL_FUNC) &_FraseR_truncWeightedNLL_db, 7},
+    {"_FraseR_truncWeightedGrad_db", (DL_FUNC) &_FraseR_truncWeightedGrad_db, 7},
     {NULL, NULL, 0}
 };
 

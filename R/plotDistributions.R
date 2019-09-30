@@ -520,16 +520,29 @@ testPlotting <- function(){
     plotValueVsCounts(gra[1], fds, gra[1]$type, plotLog=TRUE, rmZeroCts=FALSE)
 }
 
+qlogisWithCap <- function(x){
+    ans <- qlogis(x)
+    ans[is.infinite(ans)] <- NA
+    rowm <- rowMaxs(ans, na.rm=TRUE)
+    idx <- which(is.na(ans), arr.ind=TRUE)
+    ans[idx] <- rowm[idx[,"row"]]
+    return(ans)
+}
+
 #'
 #' Plot count correlation
 #'
 #' @export
 plotCountCorHeatmap <- function(fds, type=c("psi5", "psi3", "psiSite"),
             logit=FALSE, topN=50000, minMedian=1, main=NULL, normalized=FALSE,
-            show_rownames=FALSE, show_colnames=FALSE,
-            annotation_col=NA, annotation_row=NA, boder_color=NA, ...){
+            show_rownames=FALSE, show_colnames=FALSE, minDeltaPsi=0.1,
+            annotation_col=NA, annotation_row=NA, border_color=NA, topJ=5000,
+            plotType=c("sampleCorrelation", "junctionSample"),
+            nClust=5, sampleClustering=NULL, plotMeanPsi=TRUE, plotCov=TRUE,
+            ...){
 
     type <- match.arg(type)
+    plotType <- match.arg(plotType)
 
     kmat <- as.matrix(counts(fds, type=type, side="ofIn"))
     nmat <- kmat + as.matrix(counts(fds, type=type, side="other"))
@@ -543,19 +556,50 @@ plotCountCorHeatmap <- function(fds, type=c("psi5", "psi3", "psiSite"),
 
     xmat <- (skmat + 1)/(snmat + 2)
     if(isTRUE(logit)){
-        xmat <- qlogis(xmat)
+        xmat <- qlogisWithCap(xmat)
     }
     xmat_rc    <- xmat - rowMeans(xmat)
+
     xmat_rc_sd <- rowSds(xmat_rc)
     plotIdx <- rank(xmat_rc_sd) >= length(xmat_rc_sd) - topN
     xmat_rc_2_plot <- xmat_rc[plotIdx,]
+    cormatS <- cor(xmat_rc_2_plot)
     if(isTRUE(normalized)){
-        pred_mu <- predictedMeans(fds)[expRowsMax & expRowsMedian,]
-        pred_mu <- qlogis(pred_mu)
+        pred_mu <- as.matrix(predictedMeans(fds, type=type)[
+                    expRowsMax & expRowsMedian,][plotIdx,])
+        pred_mu <- qlogisWithCap(pred_mu)
         lpred_mu_rc <- pred_mu - rowMeans(pred_mu)
-        xmat_rc_2_plot <- xmat_rc_2_plot - lpred_mu_rc[plotIdx,]
+        xmat_rc_2_plot <- xmat_rc_2_plot - lpred_mu_rc
     }
     cormat <- cor(xmat_rc_2_plot)
+    breaks <- seq(-1, 1, length.out=50)
+
+    if(plotType == "junctionSample"){
+
+        if(isTRUE(normalized)){
+            pred_mu <- as.matrix(predictedMeans(fds, type=type)[
+                expRowsMax & expRowsMedian,])
+            if(isTRUE(logit)){
+                pred_mu <- qlogisWithCap(pred_mu)
+            }
+            lpred_mu_rc <- pred_mu - rowMeans(pred_mu)
+            xmat_rc <- xmat_rc - lpred_mu_rc
+        }
+
+        fds <- fds[expRowsMax & expRowsMedian,,by=type]
+        j2keepVa <- variableJunctions(fds, type, minDeltaPsi)
+        j2keepDP <- rowQuantiles(kmat[expRowsMax & expRowsMedian,],
+                                 probs=0.75) >= 10
+        j2keep <- j2keepDP & j2keepVa
+        xmat_rc_2_plot <- xmat_rc[j2keep,]
+        mostVarKeep <- subsetKMostVariableJunctions(fds[j2keep,,by=type],
+                                                    type, topJ)
+        xmat_rc_2_plot <- xmat_rc_2_plot[mostVarKeep,]
+        rownames(xmat_rc_2_plot) <- seq_len(nrow(xmat_rc_2_plot))
+        breaks <- seq(-5, 5, length.out=50)
+
+    }
+
 
     if(is.character(annotation_col)){
         annotation_col <- getColDataAsDFFactors(fds, annotation_col)
@@ -564,19 +608,83 @@ plotCountCorHeatmap <- function(fds, type=c("psi5", "psi3", "psiSite"),
         annotation_row <- getColDataAsDFFactors(fds, annotation_row)
     }
 
-    if(is.null(main)){
-        if(isTRUE(logit)){
-            main <- paste0("Row-centered Logit(PSI) correlation (", type, ")")
+    # annotate with sample clusters
+    if(is.null(sampleClustering)){
+        # annotate samples with clusters from sample correlation heatmap
+        clusters <- as.factor(cutree(hclust(dist(cormatS)), k=nClust))
+    } else if(!is.na(sampleClustering)){
+        clusters <- sampleClustering
+    }
+
+    if(!isTRUE(is.na(sampleClustering))){
+        if(!is.null(nrow(annotation_col))){
+            annotation_col$sampleCluster <- clusters
         } else {
-            main <- paste0("Row-centered PSI correlation (", type, ")")
+            annotation_col <- data.frame(sampleCluster=clusters)
+        }
+    }
+
+
+    if(plotType == "junctionSample"){
+
+        # annotate junctions with meanPsi and meanCoverage
+        xmat <- xmat[j2keep,]
+        xmat <- xmat[mostVarKeep,]
+        meanPsi <- if(isTRUE(logit)){
+            rowMeans(plogis(xmat))
+        } else{
+            rowMeans(xmat)
+        }
+        meanPsiBins <- cut(meanPsi, breaks = c(0, 0.33, 0.66, 1),
+                include.lowest=TRUE)
+        if(isTRUE(plotMeanPsi)){
+            if(!is.null(nrow(annotation_row))){
+                annotation_row$meanPsi <- meanPsiBins
+            } else{
+                annotation_row <- data.frame(meanPsi=meanPsiBins)
+            }
+        }
+
+        snmat <- snmat[j2keep,]
+        snmat <- snmat[mostVarKeep,]
+        meanCoverage <- rowMeans(snmat)
+        cutpoints <- sort(unique(round(log10(meanCoverage))))
+        if(max(cutpoints) < ceiling(log10(max(meanCoverage)))){
+            cutpoints <- c(cutpoints, ceiling(log10(max(meanCoverage))))
+        }
+        meanCoverage <- cut(meanCoverage, breaks=10^(cutpoints),
+                include.lowest=TRUE)
+
+        if(isTRUE(plotCov)){
+            annotation_row$meanCoverage <- meanCoverage
+        }
+        if(isTRUE(nrow(annotation_row) > 0)){
+            rownames(annotation_row) <- rownames(xmat_rc_2_plot)
+        }
+        cormat <- xmat_rc_2_plot
+    }
+
+    if(is.null(main)){
+        main <- ifelse(normalized, "Normalized row-centered ", "Raw row-centered ")
+        if(plotType == "sampleCorrelation"){
+            if(isTRUE(logit)){
+                main <- paste0(main, "Logit(PSI) correlation (", type, ")")
+            } else {
+                main <- paste0(main, "PSI correlation (", type, ")")
+            }
+        } else {
+            if(isTRUE(logit)){
+                main <- paste0(main, "Logit(PSI) data (", type, ", top ", topJ, ")")
+            } else {
+                main <- paste0(main, "PSI data (", type, ", top ", topJ, ")")
+            }
         }
     }
 
     pheatmap(cormat, show_rownames=show_rownames, show_colnames=show_colnames,
-             main=main, annotation_col=annotation_col,
-             annotation_row=annotation_row, ..., boder_color=boder_color,
-             breaks=seq(-1, 1, length.out=50),
-             color=colorRampPalette(colors=rev(brewer.pal(11, "RdBu")))(50)
+            main=main, annotation_col=annotation_col, breaks=breaks,
+            annotation_row=annotation_row, ..., border_color=border_color,
+            color=colorRampPalette(colors=rev(brewer.pal(11, "RdBu")))(50)
     )
 }
 
@@ -586,6 +694,9 @@ getColDataAsDFFactors <- function(fds, names){
     colnames(tmpDF) <- names
     for(i in names){
         if(any(is.na(tmpDF[, i]))){
+            tmpDF[,i] <- as.factor(paste0("", tmpDF[,i]))
+        }
+        if(is.integer(tmpDF[,i]) && length(levels(as.factor(tmpDF[,i]))) <= 10){
             tmpDF[,i] <- as.factor(paste0("", tmpDF[,i]))
         }
     }

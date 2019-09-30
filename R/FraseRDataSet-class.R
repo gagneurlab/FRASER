@@ -24,7 +24,7 @@ setClass("FraseRDataSet",
         name            = "Data Analysis",
         method          = "betaBin",
         parallel        = SerialParam(),
-        bamParam        = ScanBamParam(mapqFilter=10),
+        bamParam        = ScanBamParam(mapqFilter=0),
         strandSpecific  = FALSE,
         workingDir      = file.path(Sys.getenv("HOME"), "FraseR"),
         nonSplicedReads = SummarizedExperiment(rowRanges=GRanges())
@@ -238,17 +238,29 @@ setMethod("show", "FraseRDataSet", function(object) {
 ## ==========
 
 #'
-#' The constructor function for FraseRSettings
+#' The FraseR dataset object
 #'
+#' Constructs an FraseR object based on the given input. It can take only the
+#' annotation (colData) or count tables (junctions/spliceSites).
+#'
+#' @param colData A DataFrame containing the annotation of the samples
+#' @param junctions A matrix like object containing the raw counts for each
+#'                junction. It requires the \code{start} and the \code{endID}
+#'                column that identifies the corresponding splice site for
+#'                the given junction.
+#' @param spliceSites A matrix like object containing the raw counts for each
+#'                splice site. it requires the \code{spliceSiteID} and the
+#'                \code{type} column that gives the ID and the type of the
+#'                given splice site. The ID maps back to the junction.
 #' @param ... Any parameters corresponding to the slots and their possible
-#' values. See \linkS4class{FraseRDataSet}
+#'                values. See \linkS4class{FraseRDataSet}
 #' @return A FraseRDataSet object.
 #' @author Christian Mertes \email{mertes@@in.tum.de}
 #' @export
 #' @examples
 #'     fraser <- FraseRDataSet()
 #'     fraser <- countRNAData(createTestFraseRSettings())
-FraseRDataSet <- function(colData=NULL, ...) {
+FraseRDataSet <- function(colData=NULL, junctions=NULL, spliceSites=NULL, ...) {
     if(!is.null(colData)){
         if(is.data.table(colData)){
             colData <- DataFrame(colData)
@@ -256,7 +268,34 @@ FraseRDataSet <- function(colData=NULL, ...) {
         if(is.null(rownames(colData))){
             rownames(colData) <- colData[['sampleID']]
         }
-        return(new("FraseRDataSet", colData=colData, ...))
+        if(is.null(junctions) & is.null(spliceSites))
+            return(new("FraseRDataSet", colData=colData, ...))
+        if(is.null(junctions)){
+            stop("Please provide junctions counts if you provide ",
+                    "spliceSite counts.")
+        }
+        if(is.null(spliceSites)){
+            stop("Please provdie splice site counts if you provide ",
+                    "junction counts.")
+        }
+        if(is.data.frame(junctions)){
+            junctions <- makeGRangesFromDataFrame(junctions,
+                    keep.extra.columns=TRUE)
+        }
+        if(is.data.frame(spliceSites)){
+            spliceSites <- makeGRangesFromDataFrame(spliceSites,
+                    keep.extra.columns=TRUE)
+        }
+        nsr <- SummarizedExperiment(
+                rowRanges=spliceSites[,c("spliceSiteID", "type")],
+                assays=SimpleList(rawCountsSS=as.data.frame(
+                        mcols(spliceSites)[colData[,"sampleID"]]), a=NULL)[1])
+        se <- SummarizedExperiment(
+                rowRanges=junctions[,c("startID", "endID")],
+                colData=colData,
+                assays=SimpleList(rawCountsJ=as.data.frame(
+                        mcols(junctions)[colData[,"sampleID"]]), a=NULL)[1])
+        return(new("FraseRDataSet", se, nonSplicedReads=nsr, ...))
     }
     return(new("FraseRDataSet", ...))
 }
