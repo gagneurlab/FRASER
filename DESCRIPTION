@@ -84,7 +84,6 @@ Collate:
     Fraser-pipeline.R
     accessor-methods.R
     annotationOfRanges.R
-    annotate_junctions.R
     beta-binomial-testing.R
     calculatePSIValue.R
     calculateStats.R
