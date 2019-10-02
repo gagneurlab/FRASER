@@ -12,14 +12,15 @@
 #'
 #' @noRd
 pvalueByBetaBinomialPerType <- function(fds, aname, psiType, pvalFun,
-            minCov=5, alternative="two.sided", renjin=FALSE){
+            minCov=5, alternative="two.sided", renjin=FALSE, timeout=300,
+            BPPARAM=parallel(fds), returnFit=FALSE){
 
     message(date(), ": Calculate P-values for the ",
             psiType, " splice type ...")
 
     # go over each group but no NA's
     group         <- condition(fds)
-    addNoise      <- TRUE
+    addNoise      <- FALSE
 
     # raw reads to test for abberent splicing
     rawCounts      <- counts(fds, type=psiType, side="ofInterest")
@@ -46,9 +47,8 @@ pvalueByBetaBinomialPerType <- function(fds, aname, psiType, pvalFun,
     toTest <- sample(toTest)
 
     # TODO how to group groups?
-    testFUN <- function(idx, rawCounts, rawOtherCounts, addNoise, pvalFun){
-        # idx <- toTest[[2]]
-        suppressPackageStartupMessages(require(FraseR))
+    testFUN <- function(idx, rawCounts, rawOtherCounts, addNoise, pvalFun,
+                        timeout, returnFit=FALSE, ...){
 
         ## get read coverage (y == reads of interests, N == all reads)
         y <- as.integer(as.matrix(rawCounts[idx,]))
@@ -56,8 +56,8 @@ pvalueByBetaBinomialPerType <- function(fds, aname, psiType, pvalFun,
 
         # TODO betabinom fails if only zeros in one row
         # add noise to avoid zero variants in alternative reads
-        if(sd(N) == 0 & addNoise){
-            N <- N + sample(c(0,1),dim(rawCounts)[2], replace = TRUE)
+        if(sd(N) == 0 | sd(N-y) == 0 | addNoise == TRUE){
+            N <- N + sample(c(0,1), ncol(rawCounts), replace=TRUE)
         }
 
         # count matrix per site
@@ -66,15 +66,15 @@ pvalueByBetaBinomialPerType <- function(fds, aname, psiType, pvalFun,
 
         ## fitting
         timing <- sum(system.time(gcFirst=FALSE, expr={
-            pv_res <- lapply(list(countMatrix), FUN=tryCatchFactory(pvalFun),
-                             y=y, N=N, alternative=alternative)[[1]]
+            pv_res <- lapply(list(countMatrix), y=y, N=N, ...,
+                    FUN=tryCatchFactory(pvalFun, timeout=timeout))[[1]]
         })[c("user.self", "sys.self")])
 
         #
         # put pvalues into correct boundaries
         if(is.null(pv_res[[1]])){
             pv_res[[1]] <- list(
-                pval = rep(as.numeric(NA), dim(rawCounts)[2]),
+                pval = rep(as.numeric(NA), ncol(rawCounts)),
                 alpha = NA,
                 beta = NA
             )
@@ -87,6 +87,9 @@ pvalueByBetaBinomialPerType <- function(fds, aname, psiType, pvalFun,
         # add index for later sorting
         pv_res[[1]]$idx <- idx
 
+        if(isFALSE(returnFit)){
+            pv_res[[1]]$fit <- NULL
+        }
         return(pv_res)
     }
 
@@ -98,10 +101,11 @@ pvalueByBetaBinomialPerType <- function(fds, aname, psiType, pvalFun,
         FUN <- function(...){ testFUN(...) }
     }
     gc()
-    gc()
-    pvalues_ls <- bplapply(toTest, rawCounts=rawCounts,
-                    rawOtherCounts=rawOtherCounts, pvalFun,
-                    BPPARAM=parallel(fds), addNoise=addNoise, FUN=FUN)
+
+    pvalues_ls <- bplapply(toTest, rawCounts=rawCounts, alternative=alternative,
+                    rawOtherCounts=rawOtherCounts, pvalFun, timeout=timeout,
+                    returnFit=returnFit, addNoise=addNoise, FUN=FUN,
+                    BPPARAM=BPPARAM)
 
     # sort table again
     pvalues_ls <- pvalues_ls[order(toTest)]
@@ -167,15 +171,15 @@ betabinVglmTest <- function(cMat, alternative="two.sided",
     # one-sided p-value (alternative = "less")
     pval <- pbetabinom.ab(y[!naValues], N[!naValues], alpha, beta)
     dval <- dbetabinom.ab(y[!naValues], N[!naValues], alpha, beta)
-    pval <- sapply(pval, min, 1)
-    dval <- sapply(dval, min, 1)
+    pval <- pmin(pval, 1)
+    dval <- pmin(dval, 1)
 
     # two sieded test
     if(startsWith("two.sided", alternative)){
-        pval <- apply(cbind(pval, 1 - pval + dval) * 2, 1, min, 1)
+        pval <- pmin(pval * 2, (1 - pval + dval) * 2, 1)
     # one-sided greater test
     } else if(startsWith("greater", alternative)){
-        pval <- sapply(1 - pval + dval, min, 1)
+        pval <- pmin(1 - pval + dval, 1)
     } else if(!startsWith("less", alternative)){
         stop("")
     }
@@ -203,14 +207,16 @@ betabinVglmTest <- function(cMat, alternative="two.sided",
 #' http://stackoverflow.com/questions/4948361/how-do-i-save-warnings-and-errors-as-output-from-a-function
 #'
 #' @noRd
-tryCatchFactory <- function(fun){
+tryCatchFactory <- function(fun, timeout=300){
     function(...) {
         warn <- err <- NULL
         res <- withCallingHandlers(
-            tryCatch(fun(...), error=function(e) {
-                err <<- conditionMessage(e)
-                NULL
-            }), warning=function(w) {
+            tryCatch(withTimeout(fun(...), timeout=timeout),
+                error=function(e) {
+                    err <<- conditionMessage(e)
+                    NULL
+                }),
+            warning=function(w) {
                 warn <<- append(warn, conditionMessage(w))
                 invokeRestart("muffleWarning")
             })
@@ -270,4 +276,15 @@ testing <- function(){
     plot(-log10((1:length(pval))/length(pval)), -log10(sort(pval)))
     abline(0,1)
     grid()
+}
+
+
+#' @export
+cpp_truncNll_db <- function(par, H, k, n, rho){
+    truncNLL_db(par=par, H=H, k=k, n=n, rho=rho)
+}
+
+#' @export
+cpp_truncGrad_db <- function(par, H, k, n, rho){
+    truncGrad_db(par=par, H=H, k=k, n=n, rho=rho)
 }

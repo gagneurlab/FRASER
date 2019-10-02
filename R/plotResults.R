@@ -88,12 +88,45 @@ createMainPlotFraseR <- function(fds, sampleID, source=NULL){
     ))
 }
 
+#'
+#' Volcano plot
+#'
+#' Plots the p values over the delta psi values, known as volcano plot.
+#' Visualizes per sample the outliers. By type and aggregate by
+#' gene if requested.
+#'
+#' @export
+plotVolcano <- function(fds, sampleID, type, minDeltaPsi=0.3, minPVal=5.5,
+                    basePlot=TRUE, aggregate=FALSE){
+
+    dt2p <- data.table(
+        p       = pVals(fds, type=type)[,sampleID],
+        padj    = padjVals(fds, type=type)[,sampleID],
+        dPsi    = getAssayMatrix(fds, "delta", type=type)[,sampleID],
+        geneID  = mcols(fds, type=mytype)$hgnc_symbol,
+        outlier = FALSE)
+
+    if(isTRUE(aggregate)){
+        dt2p <- dt2p[,.(p=min(p), z=z[min(p) == p][1]), by="geneID"]
+    }
+
+
+    ggplot(dt2p2, aes(x=z, y=-log10(p))) +
+        geom_point() +
+        xlab("delta PSI") +
+        ylab("-log10(P-value)") +
+        geom_vline(xintercept=c(-0.3, 0.3), color="firebrick", linetype=2) +
+        geom_hline(yintercept=c(5.5), color="firebrick", linetype=4) +
+        ggtitle(paste0("Volcano plot: ",sampleID))
+}
+
+
 
 #'
 #' generate a volcano plot
 #'
 #' @noRd
-plotVolcano <- function(fds, sampleID, psiType,
+plotVolcano_old <- function(fds, sampleID, psiType,
             ylim=c(0,30), xlim=c(-5,5), source=NULL, deltaPsiCutoff=0.05){
 
     # extract values

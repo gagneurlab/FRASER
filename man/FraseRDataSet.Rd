@@ -2,11 +2,24 @@
 % Please edit documentation in R/FraseRDataSet-class.R
 \name{FraseRDataSet}
 \alias{FraseRDataSet}
-\title{The constructor function for FraseRSettings}
+\title{The FraseR dataset object}
 \usage{
-FraseRDataSet(colData = NULL, ...)
+FraseRDataSet(colData = NULL, junctions = NULL, spliceSites = NULL,
+  ...)
 }
 \arguments{
+\item{colData}{A DataFrame containing the annotation of the samples}
+
+\item{junctions}{A matrix like object containing the raw counts for each
+junction. It requires the \code{start} and the \code{endID}
+column that identifies the corresponding splice site for
+the given junction.}
+
+\item{spliceSites}{A matrix like object containing the raw counts for each
+splice site. it requires the \code{spliceSiteID} and the
+\code{type} column that gives the ID and the type of the
+given splice site. The ID maps back to the junction.}
+
 \item{...}{Any parameters corresponding to the slots and their possible
 values. See \linkS4class{FraseRDataSet}}
 }
@@ -14,7 +27,8 @@ values. See \linkS4class{FraseRDataSet}}
 A FraseRDataSet object.
 }
 \description{
-The constructor function for FraseRSettings
+Constructs an FraseR object based on the given input. It can take only the
+annotation (colData) or count tables (junctions/spliceSites).
 }
 \examples{
     fraser <- FraseRDataSet()

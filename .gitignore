@@ -14,3 +14,13 @@ cache
 vignettes/*.pdf
 vignettes/*.tex
 vignettes/*.txt
+vignettes/*.log
+
+# ignore cpp files
+*.o
+*.so
+*.dll
+*.db
+.nfs000*
+.Rsubread*
+kremer_ae_*.pdf

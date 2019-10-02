@@ -43,11 +43,16 @@ cleanCache <- function(fds, all=FALSE, cache=TRUE, assays=FALSE, results=FALSE){
 #'
 #' @noRd
 checkReadType <- function(fds, type){
+
     # check if type is null or missing
     if(missing(type) | is.null(type)){
-        warning("Read type was not specified! We will assume the default: 'j'")
+        if(verbose(fds) > 0){
+            warning("Read type was not specified!",
+                    "We will assume the default: 'j'")
+        }
         return("j")
     }
+    stopifnot(isScalarCharacter(type))
 
     stopifnot(isScalarCharacter(type))
     correctTypes <- c(psi3="j", psi5="j", psiSite="ss")
@@ -61,6 +66,12 @@ checkReadType <- function(fds, type){
     # check assay names
     atype <- whichReadType(fds, type)
     if(!is.na(atype)) return(atype)
+
+    # regex on the psi type
+    atype <- correctTypes[sapply(names(correctTypes), grepl, type)]
+    if(length(atype) == 1){
+        return(atype)
+    }
 
     stop("Given read type: '", type, "' not recognized. ",
             "It needs to be 'j' (junction) or 'ss' (splice sites)",
@@ -84,6 +95,12 @@ whichReadType <- function(fds, name){
     stopifnot(isScalarCharacter(name))
     fdsNames <- assayNames(fds)
     if(!name %in% fdsNames){
+        if(endsWith(name, "psiSite")){
+            return("ss")
+        }
+        if(endsWith(name, "psi5") | endsWith(name, "psi3")){
+            return("j")
+        }
         return(NA)
     }
     nsrNamesL <- length(assayNames(nonSplicedReads(fds)))
@@ -313,4 +330,129 @@ assayExists <- function(fds, assayName){
 
 getAssayAsVector <- function(fds, prefix, psiType, sampleID){
     as.vector(assay(fds, paste0(prefix, psiType))[,sampleID])
+}
+
+
+variableJunctions <- function(fds, type, minDeltaPsi=0.1){
+    psi <- K(fds, type=type)/N(fds, type=type)
+    j2keep <- rowMaxs(abs(psi - rowMeans(psi, na.rm=TRUE)), na.rm=TRUE)
+    j2keep >= minDeltaPsi
+}
+
+subsetKMostVariableJunctions <- function(fds, type, n){
+    curX <- as.matrix(x(fds, type=type, all=TRUE, center=FALSE, noiseAlpha=NULL))
+    xsd <- colSds(curX)
+    nMostVarJuncs <- which(xsd >= sort(xsd, TRUE)[min(length(xsd), n*2)])
+    ans <- logical(length(xsd))
+    ans[sample(nMostVarJuncs, min(length(xsd), n))] <- TRUE
+    ans
+}
+
+getSubsetVector <- function(fds, type, minDeltaPsi=0.1, nSubset=15000){
+    # get any variable intron
+    ans <- variableJunctions(fds, type, minDeltaPsi=minDeltaPsi)
+
+    # subset most variable intron
+    fds_sub <- fds[ans,,by=type]
+    ans_sub <- subsetKMostVariableJunctions(fds_sub, type, nSubset)
+
+    # set correct exclusion mask for x computation
+    ans[ans] <- ans_sub
+    featureExclusionMask(fds) <- exMask
+}
+
+pasteTable <- function(x, ...){
+    tab <- table(x, ...)
+    paste(names(tab), tab, collapse="\t", sep=": ")
+}
+
+#'
+#' Map between individual seq level style and dataset common one
+#' for counting and aggregating the reads
+#'
+checkSeqLevelStyle <- function(gr, fds, sampleID, sampleSpecific=FALSE){
+    if(!"SeqLevelStyle" %in% colnames(colData(fds))){
+        return(gr)
+    }
+    style <- colData(fds)[sampleID,"SeqLevelStyle"]
+    if(isFALSE(sampleSpecific)){
+        style <- names(sort(table(colData(fds)[,"SeqLevelStyle"]), TRUE)[1])
+        if(length(unique(colData(fds)[,"SeqLevelStyle"])) > 1){
+            gr <- keepStandardChromosomes(gr, pruning.mode="coarse")
+        }
+    }
+
+    seqlevelsStyle(gr) <- style
+    gr
+}
+
+uniformSeqInfo <- function(grls){
+    tmpSeqlevels <- unique(data.table(
+        seqlevel  = unlist(lapply(grls, seqlevels)),
+        seqlength = unlist(lapply(grls, seqlengths))
+    )[order(seqlevel)])
+
+    if(any(duplicated(tmpSeqlevels[,seqlevel]))){
+        stop("There are non uniq chromosomes in this dataset!")
+    }
+
+    ans <- lapply(grls, function(x){
+        seqlevels(x)  <- tmpSeqlevels[,seqlevel]
+        seqlengths(x) <- tmpSeqlevels[,seqlength]
+        x
+    })
+    ans
+}
+
+getHDF5ChunkSize <- function(fds, assayName){
+    h5obj <- H5Fopen(getFraseRHDF5File(fds, assayName), flags="H5F_ACC_RDONLY")
+    ans <- rhdf5:::H5Dchunk_dims(h5obj&assayName)
+    H5Fclose(h5obj)
+    ans
+}
+
+getMaxChunks2Read <- function(fds, assayName, max=15, axis=c("col", "row")){
+    axis <- match.arg(axis)
+    dims <- getHDF5ChunkSize(fds, assayName)
+    if(axis == "col"){
+        ans <- dims[2]
+    } else {
+        ans <- dims[1]
+    }
+    max(1, ans/ceiling(ans/max))
+}
+
+getSamplesByChunk <- function(fds, sampleIDs, chunkSize){
+    chunks <- trunc(0:(ncol(fds)-1)/chunkSize)
+    ans <- lapply(0:max(chunks), function(x){
+        intersect(sampleIDs, samples(fds)[chunks == x])
+    })
+    ans[sapply(ans, length) >0]
+}
+
+checkNaAndRange <- function(x, min=-Inf, max=Inf, scalar=TRUE, na.ok=FALSE){
+    xname <- deparse(substitute(x))
+    if(isTRUE(scalar) & !isScalarValue(x)){
+        stop(xname, " should be a scalar value!")
+    }
+    if(any(is.na(x)) && isFALSE(na.ok)){
+        stop(xname, " contains NA values, which is not allowed.")
+    }
+    if(sum(!is.na(x)) == 0){
+        return(invisible(TRUE))
+    }
+    if(!is.numeric(x[!is.na(x)])){
+        stop(xname, " should be numeric!")
+    }
+    if(x[!is.na(x)] < min){
+        stop(xname, " should be bigger than ", min)
+    }
+    if(x[!is.na(x)] > max){
+        stop(xname, " should be smaller than ", max)
+    }
+    invisible(TRUE)
+}
+
+testme <- function(test=NA){
+    deparse(substitute(test))
 }

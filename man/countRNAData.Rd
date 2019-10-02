@@ -4,7 +4,9 @@
 \alias{countRNAData}
 \title{Count RNA-seq data}
 \usage{
-countRNAData(fds, NcpuPerSample = 1, junctionMap = NULL)
+countRNAData(fds, NcpuPerSample = 1, junctionMap = NULL,
+  minAnchor = 5, recount = FALSE, BPPARAM = parallel(fds),
+  genome = NULL)
 }
 \arguments{
 \item{fds}{A FraseRDataSet object with all the information
@@ -16,6 +18,11 @@ of the internal loop per sample}
 
 \item{junctionMap}{A object or file containing a map of
 all junctions of interest across all samples}
+
+\item{minAnchor}{Minimum overlap around the Donor/Acceptor for
+non spliced reads. Default to 5}
+
+\item{recount}{if TRUE the cache is ignored and the bam file is recounted.}
 }
 \value{
 FraseRDataSet

@@ -4,7 +4,7 @@
 \alias{calculateZScores}
 \title{Calculate the zscore for each PSI value.}
 \usage{
-calculateZScores(fds)
+calculateZScores(fds, type = psiTypes)
 }
 \description{
 Calculate the zscore for each PSI value.

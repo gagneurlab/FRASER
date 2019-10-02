@@ -25,23 +25,38 @@
 #'   # finally visualize the results
 #'   plotSampleResults(fds, 'sample1')
 #'
-FraseR <- function(settings=createTestFraseRSettings(), NcpuPerSample=1){
+FraseR <- function(fds, q, NcpuPerSample=1, ...){
 
     # Check input
-    stopifnot(class(settings) == "FraseRDataSet")
-    # stopifnot(is(NcpuPerSample, "BiocParallelParam"))
+    stopifnot(class(fds) == "FraseRDataSet")
 
     # count data
-    fds <- countRNAData(settings, NcpuPerSample=NcpuPerSample)
+    if(!"rawCountsJ" %in% assayNames(fds))
+        fds <- countRNAData(fds, NcpuPerSample=NcpuPerSample)
 
     # calculate PSI values
     fds <- calculatePSIValues(fds)
 
+
+    # fit autoencoder
+    if(missing(q)){
+        warning("Please provide a fitted q to get better results!")
+        q <- ceiling(ncol(fds)/10)
+    }
+    for(pt in psiTypes)
+        fds <- fit(fds, q=q, type=pt, ...)
+
     # calculate ZScores
-    fds <- calculateZScores(fds)
+    for(pt in psiTypes)
+        fds <- calculateZscore(fds, type=pt)
 
     # calculte P-values
-    fds <- calculatePValues(fds)
+    for(pt in psiTypes)
+        fds <- calculatePvalues(fds, type=pt)
+
+    # adjust pvalues
+    for(pt in psiTypes)
+        fds <- calculatePadjValues(fds, type=pt)
 
     # return final analysis
     return(fds)
