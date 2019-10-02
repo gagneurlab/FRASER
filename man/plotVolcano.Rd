@@ -2,10 +2,13 @@
 % Please edit documentation in R/plotResults.R
 \name{plotVolcano}
 \alias{plotVolcano}
-\title{generate a volcano plot}
+\title{Volcano plot}
 \usage{
-plotVolcano(fds, sampleID, mytype, minDPSI = 0.3, minPVal = 5.5)
+plotVolcano(fds, sampleID, type, minDeltaPsi = 0.3, minPVal = 5.5,
+  basePlot = TRUE, aggregate = FALSE)
 }
 \description{
-Code from Chriss - SR
+Plots the p values over the delta psi values, known as volcano plot.
+Visualizes per sample the outliers. By type and aggregate by
+gene if requested.
 }

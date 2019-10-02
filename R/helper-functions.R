@@ -46,7 +46,10 @@ checkReadType <- function(fds, type){
 
     # check if type is null or missing
     if(missing(type) | is.null(type)){
-        warning("Read type was not specified! We will assume the default: 'j'")
+        if(verbose(fds) > 0){
+            warning("Read type was not specified!",
+                    "We will assume the default: 'j'")
+        }
         return("j")
     }
     stopifnot(isScalarCharacter(type))
@@ -421,7 +424,7 @@ getMaxChunks2Read <- function(fds, assayName, max=15, axis=c("col", "row")){
 
 getSamplesByChunk <- function(fds, sampleIDs, chunkSize){
     chunks <- trunc(0:(ncol(fds)-1)/chunkSize)
-    ans <- lapply(1:max(chunks), function(x){
+    ans <- lapply(0:max(chunks), function(x){
         intersect(sampleIDs, samples(fds)[chunks == x])
     })
     ans[sapply(ans, length) >0]

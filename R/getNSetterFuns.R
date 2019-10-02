@@ -418,3 +418,30 @@ getIndexFromResultTable <- function(fds, resultTable){
     }
     ov
 }
+
+#'
+#' Verbosity level of package
+#'
+#' Dependend on the level of verbosity the algorithm reports more or less to
+#' the user. 0 means being quiet and 10 means everything.
+#'
+#' @rdname verbose
+#' @export
+verbose <- function(fds){
+    if("verbosity" %in% colnames(metadata(fds))){
+        return(metadata(fds)[["verbosity"]])
+    }
+    return(0)
+}
+
+#' @rdname verbose
+#' @export
+`verbose<-` <- function(fds, value){
+    verbose <- value
+    if(is.logical(verbose)){
+        verbose <- verbose + 0
+    }
+    checkNaAndRange(verbose, min=0, max=10, na.ok=FALSE)
+    metadata(fds)[["verbosity"]] <- floor(verbose)
+    return(fds)
+}

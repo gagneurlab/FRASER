@@ -2,8 +2,8 @@
 #' Filtering FraseRDataSets
 #'
 #' @export
-filterExpression <- function(fds, minExpressionInOneSample=20, quantile=0.5,
-                    quantileMinExpression=0, minDeltaPsi=0.0, filter=FALSE,
+filterExpression <- function(fds, minExpressionInOneSample=20, quantile=0.05,
+                    quantileMinExpression=1, minDeltaPsi=0.3, filter=TRUE,
                     BPPARAM=bpparam(), delayed=FALSE){
 
     # extract counts
@@ -50,9 +50,9 @@ filterExpression <- function(fds, minExpressionInOneSample=20, quantile=0.5,
                  cutoffs$maxDPsi5 >= minDeltaPsi)
 
     # filter if requested
-    if(filter==TRUE){
+    if(isTRUE(filter)){
         numFilt <- sum(mcols(fds, type="j")[['passed']])
-        warning(paste0("Keeping ", numFilt, " junctions out of ", length(fds),
+        message(paste0("Keeping ", numFilt, " junctions out of ", length(fds),
                 ". This is ", signif(numFilt/length(fds)*100, 3),
                 "% of the junctions"))
         fds <- fds[mcols(fds, type="j")[['passed']], by="psi5"]
@@ -67,6 +67,7 @@ filterExpression <- function(fds, minExpressionInOneSample=20, quantile=0.5,
 #'
 #' Histogram of the geometric mean per junction based on the filter status
 #'
+#' @export
 plotFilterExpression <- function(fds, bins=200, alpha=0.75){
     cts    <- K(fds, "psi5")
     rowlgm <- exp(rowMeans(log(cts + 1)))

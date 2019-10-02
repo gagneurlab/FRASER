@@ -641,7 +641,7 @@ setAs("DataFrame", "matrix", function(from){
 #' @noRd
 resultsSingleSample <- function(sampleID, gr, pvals, padjs, zscores, psivals,
                 rawCts, rawTotalCts, deltaPsiVals, muPsi, psiType, fdrCut,
-                zscoreCut, dPsiCut, rowMeansK, rowMeansN){
+                zscoreCut, dPsiCut, rowMeansK, rowMeansN, minCount){
 
     zscore  <- zscores[,sampleID]
     dpsi    <- deltaPsiVals[,sampleID]
@@ -657,6 +657,9 @@ resultsSingleSample <- function(sampleID, gr, pvals, padjs, zscores, psivals,
     }
     if(!is.na(fdrCut)){
         goodCut <- goodCut & na2false(padj <= fdrCut)
+    }
+    if(!is.na(minCount)){
+        goodCut <- goodCut & rawTotalCts[,sampleID] >= minCount
     }
 
     ans <- granges(gr[goodCut])
@@ -687,12 +690,13 @@ resultsSingleSample <- function(sampleID, gr, pvals, padjs, zscores, psivals,
 }
 
 FraseR.results <- function(x, sampleIDs, fdrCutoff, zscoreCutoff, dPsiCutoff,
-                    psiType, BPPARAM=bpparam(), maxCols=20){
+                    psiType, BPPARAM=bpparam(), maxCols=20, minCount){
 
     # check input
     checkNaAndRange(fdrCutoff,    min=0, max=1,   scalar=TRUE, na.ok=TRUE)
     checkNaAndRange(dPsiCutoff,   min=0, max=1,   scalar=TRUE, na.ok=TRUE)
     checkNaAndRange(zscoreCutoff, min=0, max=100, scalar=TRUE, na.ok=TRUE)
+    checkNaAndRange(minCount,     min=0, max=Inf, scalar=TRUE, na.ok=TRUE)
 
     stopifnot(is(x, "FraseRDataSet"))
     stopifnot(all(sampleIDs %in% samples(x)))
@@ -733,7 +737,7 @@ FraseR.results <- function(x, sampleIDs, fdrCutoff, zscoreCutoff, dPsiCutoff,
                     deltaPsiVals=deltaPsiVals, muPsi=muPsi, rawCts=rawCts,
                     rawTotalCts=rawTotalCts, fdrCut=fdrCutoff,
                     zscoreCut=zscoreCutoff, dPsiCut=dPsiCutoff,
-                    rowMeansK=rowMeansK, rowMeansN=rowMeansN)
+                    rowMeansK=rowMeansK, rowMeansN=rowMeansN, minCount=minCount)
 
             # return combined result
             return(unlist(GRangesList(sampleRes)))
@@ -763,10 +767,10 @@ FraseR.results <- function(x, sampleIDs, fdrCutoff, zscoreCutoff, dPsiCutoff,
 #' @rdname results
 #' @export
 setMethod("results", "FraseRDataSet", function(x, sampleIDs=samples(x),
-                    fdrCutoff=0.05, zscoreCutoff=NA, dPsiCutoff=0.3,
+                    fdrCutoff=0.05, zScoreCutoff=NA, dPsiCutoff=0.3, minCount=5,
                     psiType=c("psi3", "psi5", "psiSite"), BPPARAM=bpparam()){
     FraseR.results(x, sampleIDs=sampleIDs, fdrCutoff=fdrCutoff,
-            zscoreCutoff=zscoreCutoff, dPsiCutoff=dPsiCutoff,
+            zscoreCutoff=zScoreCutoff, dPsiCutoff=dPsiCutoff, minCount=minCount,
             psiType=match.arg(psiType, several.ok=TRUE), BPPARAM=BPPARAM)
 })
 

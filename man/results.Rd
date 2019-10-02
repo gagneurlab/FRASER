@@ -9,8 +9,9 @@
 results(x, ...)
 
 \S4method{results}{FraseRDataSet}(x, sampleIDs = samples(x),
-  fdrCutoff = 0.05, zscoreCutoff = NA, dPsiCutoff = 0.3,
-  psiType = c("psi3", "psi5", "psiSite"), BPPARAM = bpparam())
+  fdrCutoff = 0.05, zScoreCutoff = NA, dPsiCutoff = 0.3,
+  minCount = 5, psiType = c("psi3", "psi5", "psiSite"),
+  BPPARAM = bpparam())
 }
 \description{
 The result function extracts the results from the given analysis object

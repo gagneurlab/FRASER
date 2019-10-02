@@ -187,8 +187,9 @@ plotGlobalQQPerGene <- function(fds, types=psiTypes, maxOutlier=2, conf.alpha=0.
 
 
 plotJunctionCounts <- function(fds, type=c("psi5", "psi3", "psiSite"),
-                               site=NULL, result=NULL, highlightSample=NULL,
-                               title=paste0("Site: ", site)){
+                    site=NULL, result=NULL, colGroup=NULL, basePlot=TRUE,
+                    title=paste0("Expression plot: ", site),
+                    fdrCutoff=0.05){
     if(!is.null(result)){
         type <- result$type
         site <- getIndexFromResultTable(fds, result)
@@ -196,9 +197,25 @@ plotJunctionCounts <- function(fds, type=c("psi5", "psi3", "psiSite"),
     k <- K(fds, type)
     n <- N(fds, type)
 
-    dt <- data.table(ki=(k[site,]+pseudocount()), ni=(n[site,]+2*pseudocount()),
-                     outlier=FALSE)
-    dt[highlightSample,outlier:=TRUE]
+    dt <- data.table(
+            sampleID=samples(fds),
+            ki=(k[site,]+pseudocount()),
+            ni=(n[site,]+2*pseudocount()),
+            pval=pVals(fds, type=type)[site,],
+            padj=padjVals(fds, type=type)[site,],
+            psi=assay(fds, type)[site,],
+            mu=predictedMeans(fds, type=type)[site,],
+            outlier=FALSE)
+    checkNaAndRange(fdrCutoff, min=0, max=1)
+    if(!is.na(fdrCutoff)){
+        dt[padj <= fdrCutoff,outlier:=TRUE]
+    }
+    if(!is.null(colGroup)){
+        if(all(colGroup %in% samples(fds))){
+            colGroup <- samples(fds) %in% colGroup
+        }
+        dt[colGroup,outlier:=TRUE]
+    }
 
     # # estimate point densities
     # # adapted from http://auguga.blogspot.com/2015/10/r-heat-scatter-plot.html
@@ -216,19 +233,34 @@ plotJunctionCounts <- function(fds, type=c("psi5", "psi3", "psiSite"),
     #                                               show.legend=FALSE) +
     #     scale_color_gradientn(colors = colorpalette('heat', 5)) +
 
-    g <- ggplot(dt, aes(x=ni, y=ki)) + geom_point(color="gray", alpha=0.5) +
-        scale_x_log10() + scale_y_log10() +
-        geom_abline(intercept = 0, slope=1) + theme_bw() +
-        xlab("Total Junction Coverage + 2 (N)") + ylab("Junction Count + 1 (K)") +
+    g <- ggplot(dt, aes(x=ni, y=ki, color=!outlier, text=paste0(
+                "Sample: ", sampleID, "<br>",
+                "Counts (K): ", ki, "<br>",
+                "Total counts (N): ", ni, "<br>",
+                "p value: ", pval, "<br>",
+                "padjust: ", padj, "<br>",
+                "Psi: ", psi, "<br>",
+                "predicted mu: ", mu, "<br>"))) +
+        geom_point(alpha=0.7) +
+        scale_x_log10() +
+        scale_y_log10() +
+        geom_abline(intercept=0, slope=1) +
+        theme_bw() +
+        theme(legend.position="none") +
+        xlab("Total junction coverage + 2 (N)") +
+        ylab("Junction count + 1 (K)") +
         ggtitle(title)
-    if(!is.null(highlightSample)){
-        g <- g + geom_point(data=dt[highlightSample, ], aes(x=ni, y=ki), color="firebrick")
+    if(isFALSE(basePlot)){
+        if(!require(plotly)){
+            stop("Please install plotly, if you use the option basePlot=FALSE!")
+        }
+        return(plotly::ggplotly(g, tooltip="text"))
     }
     g
 }
 
 plotPredictedVsObservedPsi <- function(fds, type=c("psi5", "psi3", "psiSite"),
-                    site=NULL, result=NULL, highlightSample=NULL,
+                    site=NULL, result=NULL, colGroup=NULL,
                     title=paste0("Site: ", site)){
     if(!is.null(result)){
         type <- result$type
@@ -241,7 +273,7 @@ plotPredictedVsObservedPsi <- function(fds, type=c("psi5", "psi3", "psiSite"),
 
     dt <- data.table(obs=(k[site,]+pseudocount())/(n[site,]+2*pseudocount()),
                      pred=mu[site,], outlier=FALSE)
-    dt[highlightSample,outlier:=TRUE]
+    dt[colGroup,outlier:=TRUE]
 
     xlab <- switch(type,
         'psi3' = bquote("observed " ~ Psi[3]),
@@ -257,8 +289,8 @@ plotPredictedVsObservedPsi <- function(fds, type=c("psi5", "psi3", "psiSite"),
     g <- ggplot(dt, aes(x=obs, y=pred)) + geom_point(color="gray", alpha=0.5) +
         geom_abline(intercept = 0, slope=1) + theme_bw() +
         xlab(xlab) + ylab(ylab) + ggtitle(title)
-    if(!is.null(highlightSample)){
-        g <- g + geom_point(data=dt[highlightSample, ], aes(x=obs, y=pred), color="firebrick")
+    if(!is.null(colGroup)){
+        g <- g + geom_point(data=dt[colGroup, ], aes(x=obs, y=pred), color="firebrick")
     }
     g
 

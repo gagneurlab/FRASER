@@ -12,9 +12,9 @@ featureExclusionMask(fds, type = currentType(fds))
 featureExclusionMask(fds, type = currentType(fds)) <- value
 }
 \arguments{
-\item{value}{A logical vector of the length of the features. If \code{TRUE},
-the corresponding feature will be excluded from the encoding dimension
-fit.}
+\item{value}{A logical vector of the length of the features. If
+\code{TRUE}, the corresponding feature will be excluded
+from the encoding dimension fit.}
 
 \item{ods}{An OutriderDataSet object}
 }
@@ -22,9 +22,10 @@ fit.}
 The exclusion vector
 }
 \description{
-To remove certain junctions from being used in the train step of the encoding dimension
-we can set the \code{featureExclusion} vector to \code{FALSE}. This can be helpfull if
-we have local linkage between features which we do not want to model by the autoencoder.
+To remove certain junctions from being used in the train step of the
+encoding dimension we can set the \code{featureExclusion} vector to
+\code{FALSE}. This can be helpfull if we have local linkage between
+features which we do not want to model by the autoencoder.
 }
 \examples{
 ods <- makeExampleFraseRDataSet()

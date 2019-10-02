@@ -194,7 +194,7 @@ showFraseRDataSet <- function(object) {
             })
         )
     }
-    show(sampleData)
+    show(as_tibble(sampleData))
     cat("\n")
     if(length(object) > 0){
         cat(paste0("Number of samples:      ", dim(object)[2]), "\n")

@@ -86,7 +86,9 @@ loadFraseRDataSet <- function(dir, name=NULL, upgrade=FALSE){
 saveFraseRDataSet <- function(fds, dir=NULL, name=NULL, rewrite=FALSE) {
 
     if(isTRUE(dontWriteHDF5(fds))){
-        message(date(), ": Dont save fds object")
+        if(verbose(fds) > 0){
+            message(date(), ": Dont save fds object.")
+        }
         return(fds)
     }
 
