@@ -3,7 +3,7 @@
 #'
 #' @export
 filterExpression <- function(fds, minExpressionInOneSample=20, quantile=0.05,
-                    quantileMinExpression=1, minDeltaPsi=0.3, filter=TRUE,
+                    quantileMinExpression=1, minDeltaPsi=0, filter=TRUE,
                     BPPARAM=bpparam(), delayed=FALSE){
 
     # extract counts
