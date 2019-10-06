@@ -5,6 +5,34 @@
 ##
 
 #'
+#' Input check functions
+#'
+#' Checks all user input and returns corresponding messages
+#' * checkFraseRDataSet
+#' *
+#'
+#' @rdname checkInputFunctions
+checkFraseRDataSet <- function(fds){
+    if(class(fds) != "FraseRDataSet"){
+        stop("Please provide a FraseRDataSet object.")
+    }
+    return(invisible(TRUE))
+}
+
+#'
+#' @rdname checkInputFunctions
+checkCountData <- function(fds){
+    checkFraseRDataSet(fds)
+    if(!all(c("rawCountsJ", "rawCountsSS") %in% assayNames(fds))){
+        stop("No counts detected! Please provide counts first.")
+    }
+    if(!all(paste0("rawOtherCounts", psiTypes) %in% assayNames(fds))){
+        stop("Please compute first the total expression at each junction.")
+    }
+    return(invisible(TRUE))
+}
+
+#'
 #' clear the files in the cache to start fresh
 #'
 #' @examples
@@ -52,8 +80,7 @@ checkReadType <- function(fds, type){
         }
         return("j")
     }
-    stopifnot(isScalarCharacter(type))
-
+    type <- unique(type)
     stopifnot(isScalarCharacter(type))
     correctTypes <- c(psi3="j", psi5="j", psiSite="ss")
 
@@ -453,6 +480,3 @@ checkNaAndRange <- function(x, min=-Inf, max=Inf, scalar=TRUE, na.ok=FALSE){
     invisible(TRUE)
 }
 
-testme <- function(test=NA){
-    deparse(substitute(test))
-}

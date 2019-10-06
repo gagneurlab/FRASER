@@ -150,22 +150,17 @@ calculateSitePSIValue <- function(fds, overwriteCts){
     )
 
     psiSiteValues <- bplapply(samples(fds), countData=countData, fds=fds,
-        overwriteCts=overwriteCts, BPPARAM=parallel(fds), FUN =
-                    function(sample, countData, fds, overwriteCts){
-
+        BPPARAM=parallel(fds), FUN=function(sample, countData, fds){
+            if(verbose(fds) > 3){
+                message("sample: ", sample)
+            }
             # add sample specific counts to the data.table
             sample <- as.character(sample)
             sdata <- data.table(k=c(
                     rep(K(fds, type="psi3")[,sample], 2),
                     K(fds, type="psiSite")[,sample]))
             sdata <- cbind(countData, sdata)
-
-            # calculate other split read counts
-            if(isTRUE(overwriteCts)){
-                sdata[,os:=sum(k)-k, by="spliceSiteID"]
-            } else {
-                sdata[,os:=counts(fds, type="psiSite", side="oth")[,sample]]
-            }
+            sdata[,os:=sum(k)-k, by="spliceSiteID"]
 
             # remove the junction part since we only want to calculate the
             # psi values for the splice sites themselfs

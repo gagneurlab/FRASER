@@ -402,8 +402,8 @@ weights <- function(fds, type){
     return(fds)
 }
 
-getIndexFromResultTable <- function(fds, resultTable){
-    type <- resultTable$type
+getIndexFromResultTable <- function(fds, resultTable, padj.method="holm"){
+    type <- as.character(resultTable$type)
     target <- makeGRangesFromDataFrame(resultTable)
     if(type == "psiSite"){
         gr <- granges(asSE(nonSplicedReads(fds)))
@@ -419,6 +419,61 @@ getIndexFromResultTable <- function(fds, resultTable){
     ov
 }
 
+getPlottingDT <- function(fds, axis=c("row", "col"), type=NULL,
+                    result=NULL, idx=NULL, aggregate=FALSE){
+    if(!is.null(result)){
+        type <- as.character(result$type)
+        idx  <- getIndexFromResultTable(fds, result)
+    }
+
+    axis <- match.arg(axis)
+    idxrow <- idx
+    idxcol <- TRUE
+    if(axis == "col"){
+        idxcol <- idx
+        if(is.character(idx)){
+            idxcol <- colnames(fds) %in% idx
+        }
+        idxrow <- TRUE
+    }
+
+    k <- K(fds, type)[idxrow, idxcol]
+    n <- N(fds, type)[idxrow, idxcol]
+
+    dt <- data.table(
+        idx       = idx,
+        k         = k,
+        n         = n,
+        pval      = pVals(fds, type=type)[idxrow, idxcol],
+        padj      = padjVals(fds, type=type)[idxrow, idxcol],
+        zscore    = zScores(fds, type=type)[idxrow, idxcol],
+        obsPsi    = (k + pseudocount())/(n + 2*pseudocount()),
+        predPsi   = predictedMeans(fds, type)[idxrow, idxcol],
+        sampleID  = as.character(colnames(K(fds, type))[idxcol]),
+        featureID = as.character(rownames(K(fds, type)[idxrow,])),
+        type      = type)
+
+    dt[,deltaPsi:=obsPsi - predPsi]
+
+    if("hgnc_symbol" %in% colnames(mcols(fds, type=type))){
+        dt[,featureID:=mcols(fds, type=type)[idxrow,"hgnc_symbol"]]
+    }
+
+    # if requested return gene p values (correct for multiple testing again)
+    if(isTRUE(aggregate)){
+        dt <- dt[!is.na(featureID)]
+
+        # correct by gene and take the smallest p value
+        dt <- dt[, pval:=p.adjust(pval, method=padj.method),
+                    by="sampleID,featureID"]
+        dt <- dt[order(featureID, pval)][!duplicated(featureID)]
+        dt <- dt[, padj:=p.adjust(pval, method="BY"), by="sampleID,featureID"]
+    }
+
+    dt
+}
+
+
 #'
 #' Verbosity level of package
 #'
@@ -428,7 +483,7 @@ getIndexFromResultTable <- function(fds, resultTable){
 #' @rdname verbose
 #' @export
 verbose <- function(fds){
-    if("verbosity" %in% colnames(metadata(fds))){
+    if("verbosity" %in% names(metadata(fds))){
         return(metadata(fds)[["verbosity"]])
     }
     return(0)

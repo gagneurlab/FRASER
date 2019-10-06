@@ -32,7 +32,7 @@
 ### Plotting
 #'
 #' @importFrom graphics plot par
-#' @importFrom plotly plot_ly subplot layout add_trace
+#' @importFrom plotly plot_ly subplot layout add_trace ggplotly
 #' @importFrom gplots col2hex
 #' @importFrom htmlwidgets saveWidget
 #' @importFrom LSD heatscatter colorpalette
@@ -105,6 +105,8 @@
 #'          set_weights keras_model k_exp k_mean optimizer_adam use_python
 #'          callback_terminate_on_naan callback_early_stopping
 #' @importFrom tensorflow install_tensorflow
+#'
+#' @importFrom tibble as_tibble
 #'
 #' @useDynLib FraseR
 #'

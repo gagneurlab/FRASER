@@ -1,17 +1,25 @@
-##
-## @author Christian Mertes \email{mertes@@in.tum.de}
-##
-## This file contains the standard pipeline for a FraseR analysis
-##
 #'
-#' Find rare splicing events within RNA-seq data
+#' FraseR: Find RAre Splicing Events in RNA-seq data
 #'
-#' @description This function performs a default analysis of RNA-seq data
+#' The FraseR function runs the default FraseR pipeline combinig the fit,
+#' the computation of Z scores and p values as well as the delta-PSI values.
+#' All computed values are returned as an FraseRDataSet object. To have
+#' more control over each analysis step, one can call each function separately.
 #'
-#' @param settings A FraseRDataSet object with all the information
-#'             how and what to count
-#' @param NcpuPerSample A BiocParallel param object to configure the
-#'             parallel backend of the internal loop for counting
+#' * controlForConfounders to control for confounding effects
+#' * fitParams to fit the additional beta binomial model parameters
+#'         (only needed if the autoencoder is not used)
+#' * computePvalues to calculate the nominal and adjusted p values
+#' * computeZscores to calculate the Z scores
+#' * computeDeltaPsi to calculate the delta PSI values
+#'
+#' @param fds A FraseRDataSet object
+#' @param q The encoding dimensions to be used during the fitting proceadure.
+#'         If a named vector is provided it is used for the different
+#'         splicing types.
+#' @param implementation the correction method to use
+#' @param BPPARAM A BiocParallel object to run the computation in parallel
+#' @param ... Additional parameters passed on to the internal fit function
 #'
 #' @return FraseRDataSet
 #' @export
@@ -25,38 +33,42 @@
 #'   # finally visualize the results
 #'   plotSampleResults(fds, 'sample1')
 #'
-FraseR <- function(fds, q, NcpuPerSample=1, ...){
+#' @author Christian Mertes \email{mertes@@in.tum.de}
+#' @export
+FraseR <- function(fds, q, correction="PCA-BB-Decoder", iterations=15,
+                    BPPARAM=bpparam(), ...){
 
     # Check input
-    stopifnot(class(fds) == "FraseRDataSet")
-
-    # count data
-    if(!"rawCountsJ" %in% assayNames(fds))
-        fds <- countRNAData(fds, NcpuPerSample=NcpuPerSample)
-
-    # calculate PSI values
-    fds <- calculatePSIValues(fds)
-
+    checkCountData(fds)
 
     # fit autoencoder
     if(missing(q)){
         warning("Please provide a fitted q to get better results!")
         q <- ceiling(ncol(fds)/10)
     }
-    for(pt in psiTypes)
-        fds <- fit(fds, q=q, type=pt, ...)
 
-    # calculate ZScores
-    for(pt in psiTypes)
-        fds <- calculateZscore(fds, type=pt)
+    # fit each splicing type separately
+    for(i in psiTypes){
 
-    # calculte P-values
-    for(pt in psiTypes)
-        fds <- calculatePvalues(fds, type=pt)
+        # get type specific q
+        currQ <- q
+        if(i %in% names(q)){
+            currQ <- q[i]
+        }
 
-    # adjust pvalues
-    for(pt in psiTypes)
-        fds <- calculatePadjValues(fds, type=pt)
+        message("\n", date(), ": Fit step for: '", i, "'.\n")
+        fds <- fit(fds, correction=correction, q=currQ,
+                iterations=iterations, type=i, BPPARAM=BPPARAM, ...)
+
+        message("\n", date(), ": Compute p values for: '", i, "'.\n")
+        fds <- calculatePvalues(fds, type=i)
+
+        message("\n", date(), ": Adjust p values for: '", i, "'.\n")
+        fds <- calculatePadjValues(fds, type=i)
+
+        message("\n", date(), ": Compute Z scores for: '", i, "'.\n")
+        fds <- calculateZScores(fds, type=i)
+    }
 
     # return final analysis
     return(fds)

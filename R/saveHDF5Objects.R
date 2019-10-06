@@ -135,7 +135,9 @@ saveAsHDF5 <- function(fds, name, object=NULL, rewrite=FALSE){
         min(ncol(object), options()[['FraseR-hdf5-chunk-ncol']]))
 
     if(isTRUE(dontWriteHDF5(fds))){
-        message(date(), ": Dont save HDF5 for assay: ", name)
+        if(verbose(fds) > 0){
+            message(date(), ": Dont save HDF5 for assay: ", name)
+        }
         return(object)
     }
     h5File <- getFraseRHDF5File(fds, name)

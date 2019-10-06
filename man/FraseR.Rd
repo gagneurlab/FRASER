@@ -5,20 +5,38 @@
 \title{FraseR: A package providing a workflow to detect aberrant splicing events
     in RNA sequencing data in a rare disease cohort}
 \usage{
-FraseR(fds, q, NcpuPerSample = 1, ...)
+FraseR(fds, q, correction = "PCA-BB-Decoder", iterations = 15,
+  BPPARAM = bpparam(), ...)
 }
 \arguments{
-\item{NcpuPerSample}{A BiocParallel param object to configure the
-parallel backend of the internal loop for counting}
+\item{fds}{A FraseRDataSet object}
 
-\item{settings}{A FraseRDataSet object with all the information
-how and what to count}
+\item{q}{The encoding dimensions to be used during the fitting proceadure.
+If a named vector is provided it is used for the different
+splicing types.}
+
+\item{BPPARAM}{A BiocParallel object to run the computation in parallel}
+
+\item{...}{Additional parameters passed on to the internal fit function}
+
+\item{implementation}{the correction method to use}
 }
 \value{
 FraseRDataSet
 }
 \description{
-This function performs a default analysis of RNA-seq data
+The FraseR function runs the default FraseR pipeline combinig the fit,
+the computation of Z scores and p values as well as the delta-PSI values.
+All computed values are returned as an FraseRDataSet object. To have
+more control over each analysis step, one can call each function separately.
+}
+\details{
+* controlForConfounders to control for confounding effects
+* fitParams to fit the additional beta binomial model parameters
+        (only needed if the autoencoder is not used)
+* computePvalues to calculate the nominal and adjusted p values
+* computeZscores to calculate the Z scores
+* computeDeltaPsi to calculate the delta PSI values
 }
 \examples{
   fds <- createTestFraseRSettings()
@@ -30,4 +48,7 @@ This function performs a default analysis of RNA-seq data
   # finally visualize the results
   plotSampleResults(fds, 'sample1')
 
+}
+\author{
+Christian Mertes \email{mertes@in.tum.de}
 }
