@@ -139,151 +139,61 @@ plotVolcano <- function(fds, sampleID, type, minDeltaPsi=0.3, padjCutoff=0.05,
 }
 
 
-
 #'
-#' generate a volcano plot
+#' Number of aberrant events per sample
 #'
-#' @noRd
-plotVolcano_old <- function(fds, sampleID, psiType,
-            ylim=c(0,30), xlim=c(-5,5), source=NULL, deltaPsiCutoff=0.05){
+#' Plot the number of aberrant events per samples
+#'
+#' @export
+plotAberrantPerSample <- function(fds, main, padjCutoff=0.05, zScoreCutoff=NA,
+                    deltaPsiCutoff=0.1, col="#1B9E77",
+                    yadjust=c(1.2, 1.2), labLine=c(3.5, 3), ymax=NULL,
+                    ylab="#Aberrantly spliced events", labCex=par()$cex, ...){
 
-    # extract values
-    zscores  <- getAssayAsVector(fds, "zscore_", psiType, sampleID)
-    pvalues  <- -log10(getAssayAsVector(fds, "pvalue_", psiType, sampleID))
-    psivals  <- getAssayAsVector(fds, "", psiType, sampleID)
-    deltaPsiVals <- getAssayAsVector(fds, "delta_", psiType, sampleID)
-    counts   <- as.vector(counts(fds, type=psiType, side="ofInt")[,sampleID])
-    ocounts  <- as.vector(counts(fds, type=psiType, side="other")[,sampleID])
-
-    # remove NAs from data
-    toplot <- abs(deltaPsiVals) >= deltaPsiCutoff & !is.na(zscores) &
-            !is.na(pvalues) & !is.infinite(pvalues)
-
-    # remove unsignificant data (to keep plotly responsive)
-    # max 50k points
-    xCutoff <- 1.5
-    yCutoff <- 1.5
-    unsigni <- abs(zscores[toplot]) < xCutoff & pvalues[toplot] < yCutoff
-    toplot[toplot]  <- !unsigni
-
-    # trim data to ylim and xlim
-    pvalue2plot <- pvalues
-    zscore2plot <- zscores
-    pvalue2plot[toplot & pvalue2plot > max(ylim)] <- max(ylim)
-    zscore2plot[toplot & zscore2plot > max(xlim)] <- max(xlim)
-    zscore2plot[toplot & zscore2plot < min(xlim)] <- min(xlim)
-
-    # filter bad betabinom results
-    filteredRes <- na2false(
-        (psivals <= 0.01 | psivals >= 0.99) &
-        abs(zscores) <= xCutoff &
-        counts + ocounts > 10000
-    )[toplot]
-
-    # traces to plot
-    plotTraces <- list(
-        "&#936; &#8804; 30%"       = na2false(psivals[toplot] <= 0.3),
-        "30% < &#936; &#8804; 60%" = na2false(psivals[toplot] <= 0.6 & psivals[toplot] > 0.3),
-        "60% < &#936;"             = na2false(psivals[toplot] > 0.6),
-        "filtered"                 = filteredRes
-    )
-
-    plotDF <- data.table()
-    p <- plot_ly(type="scatter", mode="markers", source=source)
-    for(i in seq_along(plotTraces)){
-        if(names(plotTraces)[i] != 'filtered'){
-            t <- which(toplot)[plotTraces[[i]] & !filteredRes]
-        } else {
-            t <- which(toplot)[filteredRes]
-        }
-        if(length(t) == 0) {
-            next
-        }
-
-        # generate data to plot
-        tmpFds <- fds
-        if(psiType == "psiSite") tmpFds <- nonSplicedReads(fds)
-        if(is.null(mcols(fds, type=psiType)$hgnc_symbol)){
-            mcols(fds, type=psiType)$hgnc_symbol <- NA
-        }
-        tmpData <- data.table(
-            psiType   = psiType,
-            traceNr   = i,
-            traceName = names(plotTraces)[i],
-            zscore2p  = zscore2plot,
-            pvalue2p  = pvalue2plot,
-            zscore    = zscores,
-            pvalue    = pvalues,
-            psivalue  = psivals,
-            symbol    = mcols(fds, type=psiType)$hgnc_symbol,
-            chr       = as.character(seqnames(tmpFds)),
-            start     = start(tmpFds),
-            end       = end(tmpFds),
-            counts    = counts,
-            ocounts   = ocounts
-        )[t]
-        tmpData[,pointNr:=1:.N]
-
-        # show legend if we request shiny figure
-        tmpShowlegend <- ifelse(is.null(source), psiType=="psiSite", TRUE)
-
-        # save data in data.table object for later use
-        plotDF <- rbind(plotDF, tmpData)
-
-        # create trace
-        p <- add_trace(p, data=tmpData, x=~zscore2p, y=~pvalue2p,
-            marker = list(color = ~pvalue2p,
-                cmin = 0, cmax = max(ylim),
-                colorbar = list(y = 0.8, len = 0.4,
-                        title = "-log<sub>10</sub>(<i>P</i>-value)"
-                )
-            ),
-            name = names(plotTraces)[i],
-            legendgroup = names(plotTraces)[i],
-            showlegend = tmpShowlegend,
-            visible = ifelse(i<=2, TRUE, "legendonly"),
-            text = paste0(
-                "Symbol:           ", tmpData$symbol,  "<br>",
-                "Chromosome:       ", tmpData$chr,     "<br>",
-                "Start:            ", tmpData$start,   "<br>",
-                "End:              ", tmpData$end,     "<br>",
-                "raw counts:       ", tmpData$counts,  "<br>",
-                "raw other counts: ", tmpData$ocounts, "<br>",
-                "-log<sub>10</sub>(<i>P</i>-value):   ", round(tmpData$pvalue, 2), "<br>",
-                "Z-score:          ", round(tmpData$zscore, 2), "<br>",
-                "PSI-value:        ", round(tmpData$psival, 3)*100, "%<br>"
-            )
-        )
+    if(missing(main)){
+        main <- 'Aberrant events per sample'
     }
 
-    nxlim <- c(xlim[1]*1.05, xlim[2]*1.05)
-    nylim <- c(ylim[1], ylim[2]*1.05)
+    count_vector <- sort(aberrant(fds, by="sample", type=type,
+            padjCutoff=padjCutoff, zScoreCutoff=zScoreCutoff,
+            deltaPsiCutoff=deltaPsiCutoff, ...))
 
-    # TODO: see: https://github.com/ropensci/plotly/issues/1019
-    subID <- ""
-    subY0axisAdjusted <- 0
-    subY1axisAdjusted <- yCutoff
-    if(is.null(source)){
-        subID <- which(c("psi3", "psi5", "psiSite") == psiType)
-        subY0axisAdjusted <- 6.0*(3-subID)
-        subY1axisAdjusted <- yCutoff*3 + subY0axisAdjusted
+    ylim <- c(0.4, max(1, count_vector)*1.1)
+    if(!is.null(ymax)){
+        ylim[2] <- ymax
     }
+    replace_zero_unknown <- 0.5
+    ticks <- c(replace_zero_unknown, signif(10^seq(
+        from=0, to=round(log10(max(1, count_vector))), by=1/3), 1))
 
-    p <- layout(p, showlegend = TRUE,
-        xaxis=list(range=nxlim, title="Z-score"),
-        # TODO P-value does not appear in italic
-        yaxis=list(range=nylim, title=paste0("-log<sub>10</sub>(<i>P</i>-value)<br>", psiType)),
-        shapes = list(list(
-            type = "rect", fillcolor = "blue",
-            line = list(color = "blue"), opacity = 0.3,
-            x0 = -xCutoff, x1 = xCutoff,
-            xref = paste0("x", subID), yref = paste0("y", subID),
-            y0 = subY0axisAdjusted, y1 = subY1axisAdjusted
-        ))
-    )
+    labels_for_ticks <- sub(replace_zero_unknown, '0', as.character(ticks))
 
-    return(list(plot=p, plotDF=plotDF))
+    bp <- barplot2(
+        replace(count_vector, count_vector==0, replace_zero_unknown),
+        log='y', ylim=ylim, names.arg='', xlab='', plot.grid=TRUE,
+        grid.col='lightgray', ylab='', yaxt='n', border=NA, xpd=TRUE,
+        col=col, main=main)
+
+    n_names <- floor(length(count_vector)/20)
+    xnames= seq_len(n_names*20)
+    axis(side=1, at= c(0,bp[xnames,]), labels= c(0,xnames))
+    axis(side=2, at=ticks, labels= labels_for_ticks, ylog=TRUE, las=2)
+
+    # labels
+    mtext('Sample rank', side=1, line=labLine[1], cex=labCex)
+    mtext(ylab, side=2, line=labLine[2], cex=labCex)
+
+    # legend and lines
+    hlines <- pmax(c(Median=pminmedian(count_vector), Quantile90=quantile(
+            count_vector, 0.9, names=FALSE)), replace_zero_unknown)
+    color_hline <- c('black','black')
+    abline(h=hlines, col=color_hline)
+    text(x=c(1,1), y=hlines*yadjust, col=color_hline, adj=0,
+         labels=c('Median', expression(90^th ~ 'percentile')))
+
+    box()
 }
+
 
 #'
 #' plot count distribution

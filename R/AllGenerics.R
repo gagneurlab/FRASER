@@ -841,23 +841,86 @@ mapSeqlevels <- function(fds, style="UCSC", ...){
 }
 
 
-aberrant <- function(fds, type=currentType(fds), fdrCutoff=0.05, dPsiCutoff=0.3,
-                    zScoreCutoff=NA, zscores=zScores(fds, type),
-                    ...){
+#'
+#' Aberrant splicing events
+#'
+#' Use cutoffs to define splicing outlier event.
+#'
+#' @param fds FraseRDataSet object
+#' @param type Splicing type
+#' @param padjCutoff Adjusted p value cutoff to be used or NA if not requested
+#' @param deltaPsiCutoff Delta PSI cutoff to be used or NA if not requested
+#' @param zSCoreCutoff Z score cutoff to be used or NA if not requested
+#' @param by By default NA which means no grouping. But if \code{sample}
+#'              or \code{feature} is specified the sum by sample or feature is
+#'              returned
+#' @param aggregate If TRUE the returned object is based on the grouped features
+#'
+#' @export
+#'
+aberrant <- function(fds, type=currentType(fds), padjCutoff=0.05,
+                    deltaPsiCutoff=0.3, zScoreCutoff=NA,
+                    by=c(NA, "sample", "feature"), aggregate=FALSE, ...){
 
-    goodCutoff <- matrix(logical(prod(dim(zscores))), ncol=ncol(zscores))
+    checkNaAndRange(zScoreCutoff,   min=0, max=Inf, na.ok=TRUE)
+    checkNaAndRange(padjCutoff,     min=0, max=1,   na.ok=TRUE)
+    checkNaAndRange(deltaPsiCutoff, min=0, max=1,   na.ok=TRUE)
+    by <- match.arg(by)
+
+    dots <- list(...)
+    if("zscores" %in% names(dots)){
+        zscores <- dots[['zscores']]
+    } else {
+        zscores <- zScores(fds, type=type)
+    }
+    if("padj" %in% names(dots)){
+        padj <- dots[['padj']]
+    } else {
+        padj <- padjVals(fds, type=type)
+    }
+    if("dPsi" %in% names(dots)){
+        dpsi <- dots[['dpsi']]
+    } else {
+        dpsi <- deltaPsiValue(fds, type=type)
+    }
+
+    goodCutoff <- matrix(TRUE, nrow=nrow(zscores), ncol=ncol(zscores),
+            dimnames=dimnames(zscores))
+
+    # TODO to speed it up currently we only use the smallest one per feature
+    if(isTRUE(aggregate)){
+        if("pvalue" %in% names(dots)){
+            pvals <- dots[['pvalue']]
+        } else {
+            pvals <- pVals(fds, type=type)
+        }
+        if(!"hgnc_symbol" %in% colnames(mcols(fds, type=type))){
+            stop("Please provide hgnc symbols to compute gene p values!")
+        }
+        groups <- mcols(fds, type=type)[,"hgnc_symbol"]
+        smallestPVal <- apply(pvals, 2, groups=groups, function(i, groups) {
+            data.table(p=i, groups, order=seq_along(i))[,
+                    .(order, min=seq_len(.N) == which.min(p)), by=groups][
+                    order(order)][,min]
+        })
+        goodCutoff <- goodCutoff & smallestPVal
+    }
+
     if(!is.na(zScoreCutoff)){
         goodCutoff <- goodCutoff & abs(zscores) > zScoreCutoff
     }
-    if(!is.na(dPsiCut)){
-        goodCutoff <- goodCutoff & abs(dpsi) > dPsiCutoff
+    if(!is.na(deltaPsiCutoff)){
+        goodCutoff <- goodCutoff & abs(dpsi) > deltaPsiCutoff
     }
-    zscore  <- zscores[,sampleID]
-    dpsi    <- deltaPsiVals[,sampleID]
-    goodCut <- na2false(abs(zscore) >= zscoreCut)
-    goodCut <- goodCut & na2false(abs(dpsi >= dPsiCut))
-    pval    <- pvals[,sampleID]
-    padj    <- padjs[,sampleID]
-    goodCut <- na2false(!is.na(padj) & padj <= fdrCut & goodCut)
+    if(!is.na(padjCutoff)){
+        goodCutoff <- goodCutoff & padj < padjCutoff
+    }
 
+    if(is.na(by)){
+        return(goodCutoff)
+    }
+    if(by == "sample"){
+        return(colSums(goodCutoff))
+    }
+    return(rowSums(goodCutoff))
 }

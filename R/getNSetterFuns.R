@@ -232,6 +232,10 @@ predictedMeans <- function(fds, type=currentType(fds)){
     return(fds)
 }
 
+deltaPsiValue <- function(fds, type=currentType(fds)){
+    return(assay(fds, type) - predictedMeans(fds, type=type))
+}
+
 currentType <- function(fds){
     return(metadata(fds)[['currentType']])
 }
