@@ -242,19 +242,37 @@ currentType <- function(fds){
     return(fds)
 }
 
-pseudocount <- function(){
-    ans <- options()[['FraseR.pseudoCount']]
-    if(isScalarNumeric(ans)){
-        return(ans)
+#'
+#' Set/get global pseudo count option
+#'
+#' Set and returns the pseudo count used within the FraseR fitting procedure.
+#'
+#' @examples
+#' # set
+#' pseudocount(4L)
+#'
+#' # get
+#' psuedocount()
+#'
+#' @export
+pseudocount <- function(value){
+    # return if not provided
+    if(missing(value)){
+        ans <- options()[['FraseR.pseudoCount']]
+        if(isScalarNumeric(ans)){
+            return(ans)
+        }
+        return(1)
     }
-    return(1)
-}
 
-`pseudocount<-` <- function(value){
+    # set pseudo count if provided
     stopifnot(isScalarNumeric(value))
     stopifnot(value >= 0)
+    value <- as.integer(value)
     options('FraseR.pseudoCount'=value)
     setPseudoCount(value)
+
+    invisible(value)
 }
 
 currentNoiseAlpha <- function(fds){
