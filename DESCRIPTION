@@ -1,10 +1,10 @@
 Package: FraseR
 Type: Package
 Title: Find RAre Splicing Events in RNA-Seq Data
-Version: 0.99.4
-Date: 2017-05-27
-Author: Christian Mertes <mertes@in.tum.de>, Prof. Julien Gagneur
-    <gagneur@in.tum.de>
+Version: 0.99.5
+Date: 2019-10-05
+Author: Christian Mertes <mertes@in.tum.de>, Ines Scheller <scheller@in.tum.de>,
+    Prof. Julien Gagneur <gagneur@in.tum.de>
 Maintainer: Christian Mertes <mertes@in.tum.de>
 Description: Detection of rare aberrant splicing events in transcriptome 
     profiles. The workflow aims to assist the diagnostics in the field of 

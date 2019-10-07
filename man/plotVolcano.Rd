@@ -4,8 +4,9 @@
 \alias{plotVolcano}
 \title{Volcano plot}
 \usage{
-plotVolcano(fds, sampleID, type, minDeltaPsi = 0.3, minPVal = 5.5,
-  basePlot = TRUE, aggregate = FALSE)
+plotVolcano(fds, sampleID, type, minDeltaPsi = 0.3, padjCutoff = 0.05,
+  basePlot = TRUE, aggregate = FALSE, main = paste0("Volcano plot: ",
+  sampleID))
 }
 \description{
 Plots the p values over the delta psi values, known as volcano plot.

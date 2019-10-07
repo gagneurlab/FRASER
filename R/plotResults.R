@@ -96,28 +96,46 @@ createMainPlotFraseR <- function(fds, sampleID, source=NULL){
 #' gene if requested.
 #'
 #' @export
-plotVolcano <- function(fds, sampleID, type, minDeltaPsi=0.3, minPVal=5.5,
-                    basePlot=TRUE, aggregate=FALSE){
+plotVolcano <- function(fds, sampleID, type, minDeltaPsi=0.3, padjCutoff=0.05,
+                    basePlot=TRUE, aggregate=FALSE,
+                    main=paste0("Volcano plot: ", sampleID)){
 
-    dt2p <- data.table(
-        p       = pVals(fds, type=type)[,sampleID],
-        padj    = padjVals(fds, type=type)[,sampleID],
-        dPsi    = getAssayMatrix(fds, "delta", type=type)[,sampleID],
-        geneID  = mcols(fds, type=mytype)$hgnc_symbol,
-        outlier = FALSE)
+    dt <- getPlottingDT(fds, axis="col", type=type, idx=sampleID,
+            aggregate=aggregate)
 
-    if(isTRUE(aggregate)){
-        dt2p <- dt2p[,.(p=min(p), z=z[min(p) == p][1]), by="geneID"]
+    padj_line <- dt[padj < 0.05, min(5.5, -log10(pval))]
+    if(length(padj_line) == 0){
+        padj_line <- 5.5
     }
 
+    dt[,aberrant:=FALSE]
+    dt[abs(deltaPsi) >= minDeltaPsi & padj <= padjCutoff, aberrant:=TRUE]
 
-    ggplot(dt2p2, aes(x=z, y=-log10(p))) +
-        geom_point() +
-        xlab("delta PSI") +
-        ylab("-log10(P-value)") +
-        geom_vline(xintercept=c(-0.3, 0.3), color="firebrick", linetype=2) +
-        geom_hline(yintercept=c(5.5), color="firebrick", linetype=4) +
-        ggtitle(paste0("Volcano plot: ",sampleID))
+    g <- ggplot(dt, aes(x=deltaPsi, y=-log10(pval), color=aberrant, text=paste0(
+                "SampleID: ", sampleID, "<br>",
+                "featureID: ", featureID, "<br>",
+                "Raw count (K): ", k, "<br>",
+                "Raw total count (N): ", n, "<br>",
+                "p value: ", signif(pval, 5), "<br>",
+                "delta Psi: ", round(deltaPsi, 2), "<br>",
+                "Type: ", type))) +
+        geom_point(aes(alpha=ifelse(isTRUE(aberrant), 1, 0.5))) +
+        xlab(expression(paste(Delta, Psi))) +
+        ylab(expression(paste(-log[10], "(p value)"))) +
+        geom_vline(xintercept=c(-minDeltaPsi, minDeltaPsi),
+                color="firebrick", linetype=2) +
+        geom_hline(yintercept=padj_line, color="firebrick", linetype=4) +
+        ggtitle(main) +
+        theme_bw() +
+        theme(legend.position="none") +
+        scale_color_manual(values=c("gray70", "firebrick"))
+
+    if(isFALSE(basePlot)){
+        g <- g + xlab("delta Psi") +
+            ylab("-log[10](p value)")
+        return(ggplotly(g, tooltip="text"))
+    }
+    g
 }
 
 

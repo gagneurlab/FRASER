@@ -259,41 +259,49 @@ plotJunctionCounts <- function(fds, type=c("psi5", "psi3", "psiSite"),
     g
 }
 
-plotPredictedVsObservedPsi <- function(fds, type=c("psi5", "psi3", "psiSite"),
-                    site=NULL, result=NULL, colGroup=NULL,
-                    title=paste0("Site: ", site)){
-    if(!is.null(result)){
-        type <- result$type
-        site <- getIndexFromResultTable(fds, result)
+plotExpectedVsObservedPsi <- function(fds, type=c("psi5", "psi3", "psiSite"),
+                    idx=NULL, result=NULL, colGroup=NULL, main=NULL,
+                    basePlot=TRUE, padjCutoff=0.05){
+
+    # get plotting data
+    dt <- getPlottingDT(fds, axis="row", result=result, idx=idx)
+    idx <- unique(dt$idx)
+
+    if(is.null(main)){
+        # TODO extract feature name if present: siteName <- ...
+        main <- paste0("Expression vs prediction plot: ", idx)
     }
 
-    k <- K(fds, type)
-    n <- N(fds, type)
-    mu <- predictedMeans(fds, type)
+    dt[,aberrant:=FALSE]
+    dt[padj < padjCutoff, aberrant:=TRUE]
 
-    dt <- data.table(obs=(k[site,]+pseudocount())/(n[site,]+2*pseudocount()),
-                     pred=mu[site,], outlier=FALSE)
-    dt[colGroup,outlier:=TRUE]
+    if(is.logical(colGroup)){
+        dt[colGroup, aberrant:=TRUE]
+    } else {
+        warning("not implemented yet!")
+    }
 
     xlab <- switch(type,
-        'psi3' = bquote("observed " ~ Psi[3]),
-        'psi5' = bquote("observed " ~ Psi[5]),
-        'psiSite' = "observed SE"
+        'psi3' = bquote("Observed " ~ Psi[3]),
+        'psi5' = bquote("Observed " ~ Psi[5]),
+        'psiSite' = "Observed SE"
     )
     ylab <- switch(type,
-        'psi3' = bquote("predicted " ~ Psi[3]),
-        'psi5' = bquote("predicted " ~ Psi[5]),
-        'psiSite' = "predicted SE"
+        'psi3' = bquote("Predicted " ~ Psi[3]),
+        'psi5' = bquote("Predicted " ~ Psi[5]),
+        'psiSite' = "Predicted SE"
     )
 
-    g <- ggplot(dt, aes(x=obs, y=pred)) + geom_point(color="gray", alpha=0.5) +
-        geom_abline(intercept = 0, slope=1) + theme_bw() +
-        xlab(xlab) + ylab(ylab) + ggtitle(title)
-    if(!is.null(colGroup)){
-        g <- g + geom_point(data=dt[colGroup, ], aes(x=obs, y=pred), color="firebrick")
-    }
-    g
+    g <- ggplot(dt, aes(x=obsPsi, y=predPsi, color=!aberrant)) +
+        geom_point(alpha=ifelse(dt$aberrant, 1, 0.5)) +
+        geom_abline(intercept = 0, slope=1) +
+        theme_bw() +
+        theme(legend.position="none") +
+        xlab(xlab) +
+        ylab(ylab) +
+        ggtitle(main)
 
+    g
 }
 
 plotOutlierSampleRankPerGenePerType <- function(fds, type=c("psi5", "psi3", "psiSite"),
