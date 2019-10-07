@@ -243,7 +243,11 @@ currentType <- function(fds){
 }
 
 pseudocount <- function(){
-    options()[['FraseR.pseudoCount']]
+    ans <- options()[['FraseR.pseudoCount']]
+    if(isScalarNumeric(ans)){
+        return(ans)
+    }
+    return(1)
 }
 
 `pseudocount<-` <- function(value){
