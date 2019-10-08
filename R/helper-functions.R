@@ -439,6 +439,11 @@ getHDF5ChunkSize <- function(fds, assayName){
 }
 
 getMaxChunks2Read <- function(fds, assayName, max=15, axis=c("col", "row")){
+    if(!any(c("DelayedArray", "DelayedMatrix") %in%
+            class(assay(fds, assayName)))){
+        return(1)
+    }
+
     axis <- match.arg(axis)
     dims <- getHDF5ChunkSize(fds, assayName)
     if(axis == "col"){
