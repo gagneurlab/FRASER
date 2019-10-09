@@ -907,13 +907,13 @@ aberrant <- function(fds, type=currentType(fds), padjCutoff=0.05,
     }
 
     if(!is.na(zScoreCutoff)){
-        goodCutoff <- goodCutoff & abs(zscores) > zScoreCutoff
+        goodCutoff <- goodCutoff & as.matrix(abs(zscores) > zScoreCutoff)
     }
     if(!is.na(deltaPsiCutoff)){
-        goodCutoff <- goodCutoff & abs(dpsi) > deltaPsiCutoff
+        goodCutoff <- goodCutoff & as.matrix(abs(dpsi) > deltaPsiCutoff)
     }
     if(!is.na(padjCutoff)){
-        goodCutoff <- goodCutoff & padj < padjCutoff
+        goodCutoff <- goodCutoff & as.matrix(padj < padjCutoff)
     }
 
     if(is.na(by)){
