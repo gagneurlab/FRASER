@@ -82,6 +82,76 @@ Mertes C, Gagneur J, \emph{et al.}
 
 \section{Quick guide to \fraser{}}
 
+<<quick faser guide all, echo=TRUE>>=
+if(!requireNamespace("FraseR", quietly=TRUE)){
+    devtools::install("../FraseR")
+}
+
+library(FraseR)
+
+# download data
+dir.create("splicing")
+
+system("wget -q -Osplicing/raw_junction_counts.tsv.gz -c https://i12g-gagneurweb.in.tum.de/public/workshops/RNAseq_ASHG19/input_data/splicing/raw_junction_counts.tsv.gz", inter=TRUE)
+system("wget -q -Osplicing/raw_site_counts.tsv.gz -c https://i12g-gagneurweb.in.tum.de/public/workshops/RNAseq_ASHG19/input_data/splicing/raw_site_counts.tsv.gz", inter=TRUE)
+system("wget -q -Oannotation.tsv -c https://i12g-gagneurweb.in.tum.de/public/workshops/RNAseq_ASHG19/input_data/annotation.tsv", inter=TRUE)
+
+# load and prepare annotation
+anno <- fread("annotation.tsv")[,.(
+    sampleID=INDIVIDUAL,
+    bamFile="<path/to/bam/file/for/each/sample.bam>")]
+
+# get raw counts (remove first column since it is the row index)
+junctionCts   <- fread("./splicing/raw_junction_counts.tsv.gz")[,-1]
+spliceSiteCts <- fread("./splicing/raw_site_counts.tsv.gz")[,-1]
+
+# create FraseR object
+fds <- FraseRDataSet(colData=anno, junctions=junctionCts,
+        spliceSites=spliceSiteCts)
+fds
+
+register(MulticoreParam(3, 6, progressbar=TRUE))
+register(SerialParam())
+parallel(fds) <- bpparam()
+
+fds <- fds[seqnames(fds) %in% c("chr3"), 1:50]
+dontWriteHDF5(fds) <- TRUE
+fds
+
+fds <- calculatePSIValues(fds)
+
+fds <- filterExpression(fds, minExpressionInOneSample=20, minDeltaPsi=0.0,
+        filter=FALSE, BPPARAM=SerialParam())
+
+plotFilterExpression(fds, bins=100)
+
+fds <- fds[mcols(fds, type="j")[,"passed"],]
+fds
+
+fds <- FraseR(fds, q=10, correction="PCA",
+        BPPARAM=MulticoreParam(5, progressbar=TRUE))
+
+
+fds <- annotateRanges(fds)
+
+plotCountCorHeatmap(fds, "psi5", normalized=FALSE, logit=TRUE)
+plotCountCorHeatmap(fds, "psi5", normalized=TRUE, logit=TRUE)
+
+res <- results(fds, padjCutoff=0.05, BPPARAM=SerialParam())
+
+
+plotVolcano(fds, sampleID="NA12400", type="psi5", aggregate=TRUE)
+
+plotPredictedVsObservedPsi()
+plotMu
+res
+
+
+plotSampleRank()
+plotSampleResults(fds)
+
+@
+
 To start quickly with \fraser{} just call this 4 functions to get a standard analysis on an example data set from the following publication \cite{FraseR}.
 
 <<quick fraser guide, echo=TRUE>>=

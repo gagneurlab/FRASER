@@ -74,17 +74,15 @@ plotFilterExpression <- function(fds, bins=200, alpha=0.75){
     dt <- data.table(
         value=rowlgm,
         passed=mcols(fds, type="j")[['passed']])
-    colors <- brewer.pal(3, "Dark2")
-    ggplot(dt, aes(value, fill=passed)) +
-        geom_histogram(data=dt[passed==TRUE],
-                aes(fill=colors[1]), alpha=alpha, bins=bins) +
-        geom_histogram(data=dt[passed==FALSE],
-                aes(fill=colors[2]), alpha=alpha, bins=bins) +
+    colors <- brewer.pal(3, "Dark2")[2:1]
+    ggplot(dt, aes(value, fill=as.character(passed))) +
+        geom_histogram(bins=bins) +
         scale_x_log10() +
         scale_y_log10() +
-        scale_fill_manual(values=colors[1:2], name="Passed",
-                labels=c("True", "False")) +
+        scale_fill_manual(values=colors, name="Passed",
+                labels=c("FALSE", "TRUE")) +
         xlab("Mean Junction Expression") +
         ylab("Count") +
-        ggtitle("Expression filtering")
+        ggtitle("Expression filtering") +
+        theme_bw()
 }
