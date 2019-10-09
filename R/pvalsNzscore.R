@@ -48,6 +48,8 @@ calculatePvalues <- function(fds, type=currentType(fds),
 
     mu <- as.matrix(predictedMeans(fds))
     rho <- rho(fds)
+    alpha <- mu * (1 - rho)/rho
+    beta <- (1 - mu) * (1 - rho)/rho
     k <- as.matrix(K(fds))
     n <- as.matrix(N(fds))
 
@@ -55,7 +57,8 @@ calculatePvalues <- function(fds, type=currentType(fds),
     pval_list <- bplapply(seq_len(nrow(mu)), singlePvalueBetaBinomial,
             k=k, n=n, mu=mu, rho=rho, BPPARAM=BPPARAM)
     pval <- do.call(rbind, pval_list)
-    dval <- dbetabinom(k, n, mu, rho)
+    # dval <- dbetabinom(k, n, mu, rho)
+    dval <- matrix(extraDistr::dbbinom(k, n, alpha, beta), nrow=nrow(k), ncol=ncol(k))
     pvals <- 2 * pmin(pval, 1 - pval + dval, 0.5)
     fwer_pval <- bplapply(seq_len(ncol(pvals)), adjust_FWER_PValues,
             pvals=pvals, index, BPPARAM=BPPARAM)
@@ -88,8 +91,11 @@ singlePvalueBetaBinomial <- function(idx, k, n, mu, rho){
     ni <- n[idx,]
     mui <- mu[idx,]
     rhoi <- rho[idx]
+    alphai <- mui * (1 - rhoi)/rhoi
+    betai <- (1 - mui) * (1 - rhoi)/rhoi
 
-    pvals <- pmin(1, pbetabinom(ki, ni, mui, rhoi))
+    # pvals <- pmin(1, pbetabinom(ki, ni, mui, rhoi))
+    pvals <- pmin(1, extraDistr::pbbinom(ki, ni, alphai, betai))
     return (pvals)
 }
 
