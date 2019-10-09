@@ -110,34 +110,31 @@ fds <- FraseRDataSet(colData=anno, junctions=junctionCts,
         spliceSites=spliceSiteCts)
 fds
 
-register(MulticoreParam(3, 6, progressbar=TRUE))
-register(SerialParam())
-parallel(fds) <- bpparam()
-
-fds <- fds[seqnames(fds) %in% c("chr3"), 1:50]
+# subset to speed up the tutorial
+fds <- fds[seqnames(fds) %in% c("chr3", "chr7", "chr19"), 1:50]
 dontWriteHDF5(fds) <- TRUE
 fds
 
 fds <- calculatePSIValues(fds)
 
-fds <- filterExpression(fds, minExpressionInOneSample=20, minDeltaPsi=0.0,
-        filter=FALSE, BPPARAM=SerialParam())
+fds <- filterExpression(fds, minExpressionInOneSample=20,
+        minDeltaPsi=0.0, filter=FALSE)
 
 plotFilterExpression(fds, bins=100)
 
 fds <- fds[mcols(fds, type="j")[,"passed"],]
 fds
 
+# use PCA to speed up the tutorial
 fds <- FraseR(fds, q=10, correction="PCA",
         BPPARAM=MulticoreParam(5, progressbar=TRUE))
-
 
 fds <- annotateRanges(fds)
 
 plotCountCorHeatmap(fds, "psi5", normalized=FALSE, logit=TRUE)
 plotCountCorHeatmap(fds, "psi5", normalized=TRUE, logit=TRUE)
 
-res <- results(fds, padjCutoff=0.05, BPPARAM=SerialParam())
+res <- results(fds, padjCutoff=0.05)
 
 
 plotVolcano(fds, sampleID="NA12400", type="psi5", aggregate=TRUE)

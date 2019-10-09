@@ -68,21 +68,23 @@ filterExpression <- function(fds, minExpressionInOneSample=20, quantile=0.05,
 #' Histogram of the geometric mean per junction based on the filter status
 #'
 #' @export
-plotFilterExpression <- function(fds, bins=200, alpha=0.75){
+plotFilterExpression <- function(fds, bins=200, legend.position=c(0.8, 0.8)){
     cts    <- K(fds, "psi5")
     rowlgm <- exp(rowMeans(log(cts + 1)))
+
     dt <- data.table(
         value=rowlgm,
         passed=mcols(fds, type="j")[['passed']])
     colors <- brewer.pal(3, "Dark2")[2:1]
-    ggplot(dt, aes(value, fill=as.character(passed))) +
+    ggplot(dt, aes(value, fill=passed)) +
         geom_histogram(bins=bins) +
         scale_x_log10() +
         scale_y_log10() +
         scale_fill_manual(values=colors, name="Passed",
-                labels=c("FALSE", "TRUE")) +
+                labels=c("False", "True")) +
         xlab("Mean Junction Expression") +
         ylab("Count") +
         ggtitle("Expression filtering") +
-        theme_bw()
+        theme_bw() +
+        theme(legend.position=legend.position)
 }
