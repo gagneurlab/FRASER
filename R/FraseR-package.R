@@ -33,7 +33,7 @@
 #'
 #' @importFrom graphics plot par
 #' @importFrom plotly plot_ly subplot layout add_trace ggplotly
-#' @importFrom gplots col2hex
+#' @importFrom gplots col2hex barplot2
 #' @importFrom htmlwidgets saveWidget
 #' @importFrom LSD heatscatter colorpalette
 #' @importFrom pheatmap pheatmap
