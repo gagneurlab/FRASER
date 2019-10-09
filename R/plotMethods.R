@@ -1,42 +1,42 @@
 
 # Plot methods
-
-plotVolcanoPerGene <- function(fds, sampleID, type=c("psi5", "psi3", "psiSite"),
-                            labelGenes=NULL, xoffset=0.8){
-    # extract data
-    dt2p <- data.table(
-        p=pVals(fds, type=type)[,sampleID],
-        z=getAssayMatrix(fds, "delta", type=type)[,sampleID],
-        geneID=mcols(fds, type=type)$hgnc_symbol)
-
-    # group by gene
-    dt2p2 <- dt2p[, p:=p.adjust(p, method="holm"), by=geneID]
-    dt2p2 <- dt2p2[order(geneID, p)]  [!duplicated(geneID) & !is.na(geneID)]
-    dt2p2 <- dt2p2[, padj:=p.adjust(p, method="BY")]
-    maxPByFDR <- dt2p2[padj < 0.1, max(p)]
-
-    # get x label
-    xlab <- switch(type,
-                   'psi3' = bquote(Delta * Psi[3]),
-                   'psi5' = bquote(Delta * Psi[5]),
-                   'psiSite' = bquote(Delta ~ "SE")
-    )
-
-    # plot it
-    g <- ggplot(dt2p2, aes(x=z, y=-log10(p))) + geom_point(col="gray70", alpha=0.4) +
-        xlab(xlab) +
-        ylab(bquote(-log[10]~"(p value)")) +
-        geom_vline(xintercept=c(-0.3, 0.3), color="firebrick", linetype=2) +
-        geom_hline(yintercept=-log10(maxPByFDR), color="firebrick", linetype=4) +
-        ggtitle(paste("Volcano plot:", sampleID, " - ", type)) +
-        geom_point(data=dt2p2[abs(z) > 0.3 & padj < 0.1], aes(x=z, y=-log10(p)), col="firebrick")
-
-    for(lg in labelGenes){
-        g <- g + dt2p2[geneID == lg,
-                       annotate("text", x=z*xoffset, y=-log10(p)*1.0, label=geneID)]
-    }
-    g
-}
+#
+# plotVolcanoPerGene <- function(fds, sampleID, type=c("psi5", "psi3", "psiSite"),
+#                             labelGenes=NULL, xoffset=0.8){
+#     # extract data
+#     dt2p <- data.table(
+#         p=pVals(fds, type=type)[,sampleID],
+#         z=getAssayMatrix(fds, "delta", type=type)[,sampleID],
+#         geneID=mcols(fds, type=type)$hgnc_symbol)
+#
+#     # group by gene
+#     dt2p2 <- dt2p[, p:=p.adjust(p, method="holm"), by=geneID]
+#     dt2p2 <- dt2p2[order(geneID, p)]  [!duplicated(geneID) & !is.na(geneID)]
+#     dt2p2 <- dt2p2[, padj:=p.adjust(p, method="BY")]
+#     maxPByFDR <- dt2p2[padj < 0.1, max(p)]
+#
+#     # get x label
+#     xlab <- switch(type,
+#                    'psi3' = bquote(Delta * Psi[3]),
+#                    'psi5' = bquote(Delta * Psi[5]),
+#                    'psiSite' = bquote(Delta ~ "SE")
+#     )
+#
+#     # plot it
+#     g <- ggplot(dt2p2, aes(x=z, y=-log10(p))) + geom_point(col="gray70", alpha=0.4) +
+#         xlab(xlab) +
+#         ylab(bquote(-log[10]~"(p value)")) +
+#         geom_vline(xintercept=c(-0.3, 0.3), color="firebrick", linetype=2) +
+#         geom_hline(yintercept=-log10(maxPByFDR), color="firebrick", linetype=4) +
+#         ggtitle(paste("Volcano plot:", sampleID, " - ", type)) +
+#         geom_point(data=dt2p2[abs(z) > 0.3 & padj < 0.1], aes(x=z, y=-log10(p)), col="firebrick")
+#
+#     for(lg in labelGenes){
+#         g <- g + dt2p2[geneID == lg,
+#                        annotate("text", x=z*xoffset, y=-log10(p)*1.0, label=geneID)]
+#     }
+#     g
+# }
 
 plotQQPerGene <- function(fds, type=c("psi5", "psi3", "psiSite"), gene=NULL,
                           sampleID=NULL, maxOutlier=2, conf.alpha=0.05,
@@ -186,35 +186,23 @@ plotGlobalQQPerGene <- function(fds, types=psiTypes, maxOutlier=2, conf.alpha=0.
 }
 
 
-plotJunctionCounts <- function(fds, type=c("psi5", "psi3", "psiSite"),
+plotExpression <- function(fds, type=c("psi5", "psi3", "psiSite"),
                     site=NULL, result=NULL, colGroup=NULL, basePlot=TRUE,
-                    title=paste0("Expression plot: ", site),
-                    fdrCutoff=0.05){
+                    title=paste0("Expression plot: ", site), ...){
     if(!is.null(result)){
-        type <- result$type
+        type <- as.character(result$type)
         site <- getIndexFromResultTable(fds, result)
+    } else {
+        type <- match.arg(type)
     }
-    k <- K(fds, type)
-    n <- N(fds, type)
 
-    dt <- data.table(
-            sampleID=samples(fds),
-            ki=(k[site,]+pseudocount()),
-            ni=(n[site,]+2*pseudocount()),
-            pval=pVals(fds, type=type)[site,],
-            padj=padjVals(fds, type=type)[site,],
-            psi=assay(fds, type)[site,],
-            mu=predictedMeans(fds, type=type)[site,],
-            outlier=FALSE)
-    checkNaAndRange(fdrCutoff, min=0, max=1)
-    if(!is.na(fdrCutoff)){
-        dt[padj <= fdrCutoff,outlier:=TRUE]
-    }
+    dt <- getPlottingDT(fds, axis="row", type=type, idx=site, ...)
+
     if(!is.null(colGroup)){
         if(all(colGroup %in% samples(fds))){
             colGroup <- samples(fds) %in% colGroup
         }
-        dt[colGroup,outlier:=TRUE]
+        dt[colGroup,aberrant:=TRUE]
     }
 
     # # estimate point densities
@@ -233,15 +221,15 @@ plotJunctionCounts <- function(fds, type=c("psi5", "psi3", "psiSite"),
     #                                               show.legend=FALSE) +
     #     scale_color_gradientn(colors = colorpalette('heat', 5)) +
 
-    g <- ggplot(dt, aes(x=ni, y=ki, color=!outlier, text=paste0(
+    g <- ggplot(dt, aes(x=n, y=k, color=!aberrant, text=paste0(
                 "Sample: ", sampleID, "<br>",
-                "Counts (K): ", ki, "<br>",
-                "Total counts (N): ", ni, "<br>",
-                "p value: ", pval, "<br>",
-                "padjust: ", padj, "<br>",
-                "Psi: ", psi, "<br>",
-                "predicted mu: ", mu, "<br>"))) +
-        geom_point(alpha=0.7) +
+                "Counts (K): ", k, "<br>",
+                "Total counts (N): ", n, "<br>",
+                "p value: ", signif(pval, 5), "<br>",
+                "padjust: ", signif(padj, 5), "<br>",
+                "Observed Psi: ", round(obsPsi, 2), "<br>",
+                "Predicted mu: ", round(predPsi), "<br>"))) +
+        geom_point(alpha=ifelse(dt$aberrant, 1, 0.7)) +
         scale_x_log10() +
         scale_y_log10() +
         geom_abline(intercept=0, slope=1) +
@@ -250,18 +238,14 @@ plotJunctionCounts <- function(fds, type=c("psi5", "psi3", "psiSite"),
         xlab("Total junction coverage + 2 (N)") +
         ylab("Junction count + 1 (K)") +
         ggtitle(title)
-    if(isFALSE(basePlot)){
-        if(!require(plotly)){
-            stop("Please install plotly, if you use the option basePlot=FALSE!")
-        }
-        return(plotly::ggplotly(g, tooltip="text"))
-    }
-    g
+
+    plotBasePlot(g, basePlot)
 }
 
 plotExpectedVsObservedPsi <- function(fds, type=c("psi5", "psi3", "psiSite"),
                     idx=NULL, result=NULL, colGroup=NULL, main=NULL,
                     basePlot=TRUE, padjCutoff=0.05){
+    type <- match.arg(type)
 
     # get plotting data
     dt <- getPlottingDT(fds, axis="row", result=result, idx=idx)
@@ -275,20 +259,22 @@ plotExpectedVsObservedPsi <- function(fds, type=c("psi5", "psi3", "psiSite"),
     dt[,aberrant:=FALSE]
     dt[padj < padjCutoff, aberrant:=TRUE]
 
-    if(is.logical(colGroup)){
-        dt[colGroup, aberrant:=TRUE]
-    } else {
-        warning("not implemented yet!")
+    if(!is.null(colGroup)){
+        if(is.logical(colGroup)){
+            dt[colGroup, aberrant:=TRUE]
+        } else {
+            warning("not implemented yet!")
+        }
     }
 
     xlab <- switch(type,
-        'psi3' = bquote("Observed " ~ Psi[3]),
-        'psi5' = bquote("Observed " ~ Psi[5]),
+        'psi3' = bquote("Observed " ~ psi[3]),
+        'psi5' = bquote("Observed " ~ psi[5]),
         'psiSite' = "Observed SE"
     )
     ylab <- switch(type,
-        'psi3' = bquote("Predicted " ~ Psi[3]),
-        'psi5' = bquote("Predicted " ~ Psi[5]),
+        'psi3' = bquote("Predicted " ~ psi[3]),
+        'psi5' = bquote("Predicted " ~ psi[5]),
         'psiSite' = "Predicted SE"
     )
 
@@ -301,7 +287,7 @@ plotExpectedVsObservedPsi <- function(fds, type=c("psi5", "psi3", "psiSite"),
         ylab(ylab) +
         ggtitle(main)
 
-    g
+    plotBasePlot(g, basePlot)
 }
 
 plotOutlierSampleRankPerGenePerType <- function(fds, type=c("psi5", "psi3", "psiSite"),
