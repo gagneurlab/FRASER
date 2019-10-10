@@ -169,7 +169,7 @@ optimHyperParams <- function(fds, type, correction,
 
 plot_find_enc_results <- function(data){
     if(!"nsubset" %in% colnames(data)){
-        data[,nsbuset:="NA"]
+        data[,nsubset:="NA"]
     }
     data[,noise:=as.factor(noise)]
     data[,nsubset:=as.factor(nsubset)]
