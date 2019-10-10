@@ -4,7 +4,11 @@
 \alias{pseudocount}
 \title{Set/get global pseudo count option}
 \usage{
-pseudocount(value)
+pseudocount(value = NULL)
+}
+\arguments{
+\item{value}{If given, is sets the psuedocount. It requires a positive
+number and rounds it to the next integer.}
 }
 \description{
 Set and returns the pseudo count used within the FraseR fitting procedure.

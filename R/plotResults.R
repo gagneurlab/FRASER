@@ -146,12 +146,14 @@ plotVolcano <- function(fds, sampleID, type, minDeltaPsi=0.3, padjCutoff=0.05,
 #'
 #' @export
 plotAberrantPerSample <- function(fds, main, padjCutoff=0.05, zScoreCutoff=NA,
-                    deltaPsiCutoff=0.1, col="#1B9E77",
+                    deltaPsiCutoff=0.1, col="#1B9E77", type=c("psi3", "psi5", "psiSite"),
                     yadjust=c(1.2, 1.2), labLine=c(3.5, 3), ymax=NULL,
                     ylab="#Aberrantly spliced events", labCex=par()$cex, ...){
 
+    type <- match.arg(type)
+
     if(missing(main)){
-        main <- 'Aberrant events per sample'
+        main <- paste('Aberrant events per sample (', type, ')')
     }
 
     count_vector <- sort(aberrant(fds, by="sample", type=type,
@@ -184,8 +186,8 @@ plotAberrantPerSample <- function(fds, main, padjCutoff=0.05, zScoreCutoff=NA,
     mtext(ylab, side=2, line=labLine[2], cex=labCex)
 
     # legend and lines
-    hlines <- pmax(c(Median=pminmedian(count_vector), Quantile90=quantile(
-            count_vector, 0.9, names=FALSE)), replace_zero_unknown)
+    hlines <- c(Median=max(replace_zero_unknown, median(count_vector)),
+            Quantile90=quantile(count_vector, 0.9, names=FALSE))
     color_hline <- c('black','black')
     abline(h=hlines, col=color_hline)
     text(x=c(1,1), y=hlines*yadjust, col=color_hline, adj=0,

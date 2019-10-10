@@ -4,7 +4,7 @@
 \alias{plotFilterExpression}
 \title{Plot filter expression}
 \usage{
-plotFilterExpression(fds, bins = 200, legend.position = c(0.1, 0.9))
+plotFilterExpression(fds, bins = 200, legend.position = c(0.8, 0.8))
 }
 \description{
 Histogram of the geometric mean per junction based on the filter status

@@ -33,7 +33,7 @@
 #'
 #' @importFrom graphics plot par
 #' @importFrom plotly plot_ly subplot layout add_trace ggplotly
-#' @importFrom gplots col2hex
+#' @importFrom gplots col2hex barplot2
 #' @importFrom htmlwidgets saveWidget
 #' @importFrom LSD heatscatter colorpalette
 #' @importFrom pheatmap pheatmap
@@ -89,7 +89,7 @@
 #' @importFrom data.table rbindlist
 #' @importFrom DelayedMatrixStats rowMedians rowSds colMeans2 rowMeans2 rowQuantiles
 #' @importFrom stats runif median quantile
-#' @importFrom extraDistr rdirmnom
+#' @importFrom extraDistr rdirmnom dbbinom
 #' @importFrom PRROC pr.curve
 #' @importFrom ggplot2 ggtitle xlab ylab ggplot geom_point geom_line geom_smooth aes
 #'          geom_line geom_hline geom_vline geom_abline geom_segment geom_ribbon

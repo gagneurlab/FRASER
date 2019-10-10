@@ -5,9 +5,10 @@
 \title{Number of aberrant events per sample}
 \usage{
 plotAberrantPerSample(fds, main, padjCutoff = 0.05, zScoreCutoff = NA,
-  deltaPsiCutoff = 0.1, col = "#1B9E77", yadjust = c(1.2, 1.2),
-  labLine = c(3.5, 3), ymax = NULL,
-  ylab = "#Aberrantly spliced events", labCex = par()$cex, ...)
+  deltaPsiCutoff = 0.1, col = "#1B9E77", type = c("psi3", "psi5",
+  "psiSite"), yadjust = c(1.2, 1.2), labLine = c(3.5, 3),
+  ymax = NULL, ylab = "#Aberrantly spliced events",
+  labCex = par()$cex, ...)
 }
 \description{
 Plot the number of aberrant events per samples

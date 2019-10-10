@@ -24,12 +24,15 @@ calculateZscore <- function(fds, type=currentType(fds), correction="FraseR"){
 
 # Function to calculate the p-values (both beta binomial and binomial)
 calculatePvalues <- function(fds, type=currentType(fds),
-                    correction="FraseR", BPPARAM=parallel(fds)){
+                    correction="FraseR", BPPARAM=parallel(fds),
+                    distributions="betabinomial"){
+    distributions <- match.arg(distributions, several.ok=TRUE,
+            choices=c("betabinomial", "binomial"))
 
     # make sure its only in-memory data for k and n
     currentType(fds) <- type
     counts(fds, type=type, side="other", HDF5=FALSE) <-
-            as.matrix(N(fds) - K(fds))
+        as.matrix(N(fds) - K(fds))
     counts(fds, type=type, side="ofInterest", HDF5=FALSE) <- as.matrix(K(fds))
 
     # if method BB is used take the old FraseR code
@@ -48,30 +51,37 @@ calculatePvalues <- function(fds, type=currentType(fds),
 
     mu <- as.matrix(predictedMeans(fds))
     rho <- rho(fds)
+    alpha <- mu * (1 - rho)/rho
+    beta <- (1 - mu) * (1 - rho)/rho
     k <- as.matrix(K(fds))
     n <- as.matrix(N(fds))
 
-    # beta binomial p-values
-    pval_list <- bplapply(seq_len(nrow(mu)), singlePvalueBetaBinomial,
-            k=k, n=n, mu=mu, rho=rho, BPPARAM=BPPARAM)
-    pval <- do.call(rbind, pval_list)
-    dval <- dbetabinom(k, n, mu, rho)
-    pvals <- 2 * pmin(pval, 1 - pval + dval, 0.5)
-    fwer_pval <- bplapply(seq_len(ncol(pvals)), adjust_FWER_PValues,
-            pvals=pvals, index, BPPARAM=BPPARAM)
-    fwer_pvals <- do.call(cbind, fwer_pval)
-    pVals(fds, dist="BetaBinomial") <- fwer_pvals
+    if("betabinomial" %in% distributions){
+        # beta binomial p-values
+        pval_list <- bplapply(seq_len(nrow(mu)), singlePvalueBetaBinomial,
+                k=k, n=n, mu=mu, rho=rho, BPPARAM=BPPARAM)
+        pval <- do.call(rbind, pval_list)
+        # dval <- dbetabinom(k, n, mu, rho)
+        dval <- matrix(dbbinom(k, n, alpha, beta), nrow=nrow(k), ncol=ncol(k))
+        pvals <- 2 * pmin(pval, 1 - pval + dval, 0.5)
+        fwer_pval <- bplapply(seq_len(ncol(pvals)), adjust_FWER_PValues,
+                pvals=pvals, index, BPPARAM=BPPARAM)
+        fwer_pvals <- do.call(cbind, fwer_pval)
+        pVals(fds, dist="BetaBinomial") <- fwer_pvals
+    }
 
-    # binomial p-values
-    pval_list <- bplapply(seq_len(nrow(mu)), singlePvalueBinomial, k=k, n=n,
-            mu=mu, BPPARAM=BPPARAM)
-    pval <- do.call(rbind, pval_list)
-    dval <- dbinom(k, n , mu)
-    pvals <- 2 * pmin(pval, 1 - pval + dval, 0.5)
-    fwer_pval <- bplapply(seq_len(ncol(pvals)), adjust_FWER_PValues,
-            pvals=pvals, index, BPPARAM=BPPARAM)
-    fwer_pvals <- do.call(cbind, fwer_pval)
-    pVals(fds, dist="Binomial") <- fwer_pvals
+    if("binomial" %in% distributions){
+        # binomial p-values
+        pval_list <- bplapply(seq_len(nrow(mu)), singlePvalueBinomial, k=k, n=n,
+                mu=mu, BPPARAM=BPPARAM)
+        pval <- do.call(rbind, pval_list)
+        dval <- dbinom(k, n , mu)
+        pvals <- 2 * pmin(pval, 1 - pval + dval, 0.5)
+        fwer_pval <- bplapply(seq_len(ncol(pvals)), adjust_FWER_PValues,
+                pvals=pvals, index, BPPARAM=BPPARAM)
+        fwer_pvals <- do.call(cbind, fwer_pval)
+        pVals(fds, dist="Binomial") <- fwer_pvals
+    }
 
     return(fds)
 }
@@ -88,8 +98,11 @@ singlePvalueBetaBinomial <- function(idx, k, n, mu, rho){
     ni <- n[idx,]
     mui <- mu[idx,]
     rhoi <- rho[idx]
+    alphai <- mui * (1 - rhoi)/rhoi
+    betai <- (1 - mui) * (1 - rhoi)/rhoi
 
-    pvals <- pmin(1, pbetabinom(ki, ni, mui, rhoi))
+    # pvals <- pmin(1, pbetabinom(ki, ni, mui, rhoi))
+    pvals <- pmin(1, extraDistr::pbbinom(ki, ni, alphai, betai))
     return (pvals)
 }
 
