@@ -441,7 +441,10 @@ getHDF5ChunkSize <- function(fds, assayName){
 getMaxChunks2Read <- function(fds, assayName, max=15, axis=c("col", "row")){
     if(!any(c("DelayedArray", "DelayedMatrix") %in%
             class(assay(fds, assayName)))){
-        return(1)
+        if(axis == "col"){
+            return(ceiling(ncol(assay(fds, assayName))/bpworkers(bpparam())))
+        }
+        return(ceiling(nrow(assay(fds, assayName))/bpworkers(bpparam())))
     }
 
     axis <- match.arg(axis)
@@ -485,3 +488,13 @@ checkNaAndRange <- function(x, min=-Inf, max=Inf, scalar=TRUE, na.ok=FALSE){
     invisible(TRUE)
 }
 
+
+plotBasePlot <- function(ggplot, basePlot=FALSE){
+    if(isFALSE(basePlot)){
+        if(!require(plotly)){
+            stop("Please install plotly, if you use the option basePlot=FALSE!")
+        }
+        return(plotly::ggplotly(ggplot, tooltip="text"))
+    }
+    ggplot
+}

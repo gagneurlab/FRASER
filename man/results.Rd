@@ -9,7 +9,7 @@
 results(x, ...)
 
 \S4method{results}{FraseRDataSet}(x, sampleIDs = samples(x),
-  fdrCutoff = 0.05, zScoreCutoff = NA, dPsiCutoff = 0.3,
+  padjCutoff = 0.05, zScoreCutoff = NA, deltaPsiCutoff = 0.3,
   minCount = 5, psiType = c("psi3", "psi5", "psiSite"),
   BPPARAM = bpparam())
 }

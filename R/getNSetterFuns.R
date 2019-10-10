@@ -251,6 +251,8 @@ currentType <- function(fds){
 #'
 #' Set and returns the pseudo count used within the FraseR fitting procedure.
 #'
+#' @param value If given, is sets the psuedocount. It requires a positive
+#'                number and rounds it to the next integer.
 #' @examples
 #' # set
 #' pseudocount(4L)
@@ -259,9 +261,9 @@ currentType <- function(fds){
 #' psuedocount()
 #'
 #' @export
-pseudocount <- function(value){
+pseudocount <- function(value=NULL){
     # return if not provided
-    if(missing(value)){
+    if(is.null(value)){
         ans <- options()[['FraseR.pseudoCount']]
         if(isScalarNumeric(ans)){
             return(ans)
@@ -446,7 +448,7 @@ getIndexFromResultTable <- function(fds, resultTable, padj.method="holm"){
 }
 
 getPlottingDT <- function(fds, axis=c("row", "col"), type=NULL,
-                    result=NULL, idx=NULL, aggregate=FALSE){
+                    result=NULL, idx=NULL, aggregate=FALSE, ...){
     if(!is.null(result)){
         type <- as.character(result$type)
         idx  <- getIndexFromResultTable(fds, result)
@@ -466,6 +468,11 @@ getPlottingDT <- function(fds, axis=c("row", "col"), type=NULL,
     k <- K(fds, type)[idxrow, idxcol]
     n <- N(fds, type)[idxrow, idxcol]
 
+    feature_names <- rownames(mcols(fds, type))[idxrow]
+    if("hgnc_symbol" %in% colnames(mcols(fds, type=type))){
+        feature_names <- mcols(fds, type)[idxrow,"hgnc_symbol"]
+    }
+
     dt <- data.table(
         idx       = idx,
         k         = k,
@@ -476,25 +483,26 @@ getPlottingDT <- function(fds, axis=c("row", "col"), type=NULL,
         obsPsi    = (k + pseudocount())/(n + 2*pseudocount()),
         predPsi   = predictedMeans(fds, type)[idxrow, idxcol],
         sampleID  = as.character(colnames(K(fds, type))[idxcol]),
-        featureID = as.character(rownames(K(fds, type)[idxrow,])),
+        featureID = feature_names,
         type      = type)
 
     dt[,deltaPsi:=obsPsi - predPsi]
-
-    if("hgnc_symbol" %in% colnames(mcols(fds, type=type))){
-        dt[,featureID:=mcols(fds, type=type)[idxrow,"hgnc_symbol"]]
-    }
 
     # if requested return gene p values (correct for multiple testing again)
     if(isTRUE(aggregate)){
         dt <- dt[!is.na(featureID)]
 
         # correct by gene and take the smallest p value
-        dt <- dt[, pval:=p.adjust(pval, method=padj.method),
+        dt <- dt[, pval:=p.adjust(pval, method="holm"),
                     by="sampleID,featureID"]
         dt <- dt[order(featureID, pval)][!duplicated(featureID)]
         dt <- dt[, padj:=p.adjust(pval, method="BY"), by="sampleID,featureID"]
     }
+
+    # add aberrant information to it
+    aberrantVec <- aberrant(fds, ..., padjVals=dt[,.(padj)],
+            dPsi=dt[,.(deltaPsi)], zscores=dt[,.(zscore)])
+    dt[,aberrant:=aberrantVec]
 
     dt
 }

@@ -767,11 +767,13 @@ FraseR.results <- function(x, sampleIDs, fdrCutoff, zscoreCutoff, dPsiCutoff,
 #' @rdname results
 #' @export
 setMethod("results", "FraseRDataSet", function(x, sampleIDs=samples(x),
-                    fdrCutoff=0.05, zScoreCutoff=NA, dPsiCutoff=0.3, minCount=5,
-                    psiType=c("psi3", "psi5", "psiSite"), BPPARAM=bpparam()){
-    FraseR.results(x, sampleIDs=sampleIDs, fdrCutoff=fdrCutoff,
-            zscoreCutoff=zScoreCutoff, dPsiCutoff=dPsiCutoff, minCount=minCount,
-            psiType=match.arg(psiType, several.ok=TRUE), BPPARAM=BPPARAM)
+                    padjCutoff=0.05, zScoreCutoff=NA, deltaPsiCutoff=0.3,
+                    minCount=5, psiType=c("psi3", "psi5", "psiSite"),
+                    BPPARAM=bpparam()){
+    FraseR.results(x, sampleIDs=sampleIDs, fdrCutoff=padjCutoff,
+            zscoreCutoff=zScoreCutoff, dPsiCutoff=deltaPsiCutoff,
+            minCount=minCount, psiType=match.arg(psiType, several.ok=TRUE),
+            BPPARAM=BPPARAM)
 })
 
 resultsByGenes <- function(res, geneColumn="hgncSymbol", method="BY"){
@@ -873,13 +875,13 @@ aberrant <- function(fds, type=currentType(fds), padjCutoff=0.05,
     } else {
         zscores <- zScores(fds, type=type)
     }
-    if("padj" %in% names(dots)){
-        padj <- dots[['padj']]
+    if("padjVals" %in% names(dots)){
+        padj <- dots[['padjVals']]
     } else {
         padj <- padjVals(fds, type=type)
     }
     if("dPsi" %in% names(dots)){
-        dpsi <- dots[['dpsi']]
+        dpsi <- dots[['dPsi']]
     } else {
         dpsi <- deltaPsiValue(fds, type=type)
     }
