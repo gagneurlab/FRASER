@@ -89,7 +89,7 @@
 #' @importFrom data.table rbindlist
 #' @importFrom DelayedMatrixStats rowMedians rowSds colMeans2 rowMeans2 rowQuantiles
 #' @importFrom stats runif median quantile
-#' @importFrom extraDistr rdirmnom dbbinom
+#' @importFrom extraDistr rdirmnom dbbinom pbbinom
 #' @importFrom PRROC pr.curve
 #' @importFrom ggplot2 ggtitle xlab ylab ggplot geom_point geom_line geom_smooth aes
 #'          geom_line geom_hline geom_vline geom_abline geom_segment geom_ribbon
