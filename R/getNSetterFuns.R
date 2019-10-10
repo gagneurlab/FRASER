@@ -492,8 +492,8 @@ getPlottingDT <- function(fds, axis=c("row", "col"), type=NULL,
         # correct by gene and take the smallest p value
         dt <- dt[, pval:=p.adjust(pval, method=padj.method),
                     by="sampleID,featureID"]
-        dt <- dt[order(featureID, pval)][!duplicated(featureID)]
-        dt <- dt[, padj:=p.adjust(pval, method="BY"), by="sampleID,featureID"]
+        dt <- dt[order(featureID, pval)][!duplicated(featureID, sampleID)]
+        dt <- dt[, padj:=p.adjust(pval, method="BY"), by="sampleID"]
     }
 
     dt
