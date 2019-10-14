@@ -161,13 +161,14 @@ optimHyperParams <- function(fds, type, correction,
         optData <- rbind(optData, data)
     }
 
-    print(plot_find_enc_results(optData))
-
     hyperParams(fds, type=type) <- optData
+    print(plotEncDimSearch(fds, type=type))
     return(fds)
 }
 
-plot_find_enc_results <- function(data){
+plotEncDimSearch <- function(fds, type=c("psi3", "psi5", "psiSite")){
+    type <- match.arg(type)
+    data <- hyperParams(fds, type=type, all=TRUE)
     if(!"nsubset" %in% colnames(data)){
         data[,nsubset:="NA"]
     }
