@@ -185,7 +185,13 @@ plotGlobalQQPerGene <- function(fds, types=psiTypes, maxOutlier=2, conf.alpha=0.
 
 }
 
-
+#'
+#' Junction expression plot
+#'
+#' Plots the observed split reads of the junction of interest over all reads
+#' coming from the given donor/acceptor.
+#'
+#' @export
 plotExpression <- function(fds, type=c("psi5", "psi3", "psiSite"),
                     site=NULL, result=NULL, colGroup=NULL, basePlot=TRUE,
                     title=paste0("Expression plot: ", site), ...){
@@ -242,6 +248,13 @@ plotExpression <- function(fds, type=c("psi5", "psi3", "psiSite"),
     plotBasePlot(g, basePlot)
 }
 
+#'
+#' Expected over Overserved plot
+#'
+#' Plots the expected psi value over the observed psi value of the given
+#' junction.
+#'
+#' @export
 plotExpectedVsObservedPsi <- function(fds, type=c("psi5", "psi3", "psiSite"),
                     idx=NULL, result=NULL, colGroup=NULL, main=NULL,
                     basePlot=TRUE, padjCutoff=0.05){
