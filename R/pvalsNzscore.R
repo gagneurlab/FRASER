@@ -102,7 +102,7 @@ singlePvalueBetaBinomial <- function(idx, k, n, mu, rho){
     betai <- (1 - mui) * (1 - rhoi)/rhoi
 
     # pvals <- pmin(1, pbetabinom(ki, ni, mui, rhoi))
-    pvals <- pmin(1, extraDistr::pbbinom(ki, ni, alphai, betai))
+    pvals <- pmin(1, pbbinom(ki, ni, alphai, betai))
     return (pvals)
 }
 

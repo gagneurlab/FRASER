@@ -544,6 +544,12 @@ plotCountCorHeatmap <- function(fds, type=c("psi5", "psi3", "psiSite"),
     type <- match.arg(type)
     plotType <- match.arg(plotType)
 
+    # use counts as matrix, otherwise x(fds,...) does not work later on
+    counts(fds, type=type, side="other", HDF5=FALSE)      <-
+        as.matrix(counts(fds, type=type, side="other"))
+    counts(fds, type=type, side="ofInterest", HDF5=FALSE) <-
+        as.matrix(counts(fds, type=type, side="ofInterest"))
+
     kmat <- as.matrix(counts(fds, type=type, side="ofIn"))
     nmat <- kmat + as.matrix(counts(fds, type=type, side="other"))
 
