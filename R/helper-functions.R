@@ -442,9 +442,9 @@ getMaxChunks2Read <- function(fds, assayName, max=15, axis=c("col", "row")){
     if(!any(c("DelayedArray", "DelayedMatrix") %in%
             class(assay(fds, assayName)))){
         if(axis == "col"){
-            return(ceiling(ncol(assay(fds, assayName))/bpworkers(bpparam())))
+            return(ceiling(ncol(assay(fds, assayName))/bpnworkers(bpparam())))
         }
-        return(ceiling(nrow(assay(fds, assayName))/bpworkers(bpparam())))
+        return(ceiling(nrow(assay(fds, assayName))/bpnworkers(bpparam())))
     }
 
     axis <- match.arg(axis)
