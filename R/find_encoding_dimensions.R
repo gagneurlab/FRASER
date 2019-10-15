@@ -166,32 +166,3 @@ optimHyperParams <- function(fds, type, correction,
     return(fds)
 }
 
-plotEncDimSearch <- function(fds, type=c("psi3", "psi5", "psiSite")){
-    type <- match.arg(type)
-    data <- hyperParams(fds, type=type, all=TRUE)
-    if(!"nsubset" %in% colnames(data)){
-        data[,nsubset:="NA"]
-    }
-    data[,noise:=as.factor(noise)]
-    data[,nsubset:=as.factor(nsubset)]
-
-    g1 <- ggplot(data, aes(q, aroc, col=nsubset, linetype=noise)) +
-        geom_point() +
-        geom_line() +
-        geom_smooth() +
-        ggtitle("Q estimation") +
-        xlab("Estimated q") +
-        ylab("Area under the ROC curve")
-
-    g2 <- ggplot(data, aes(q, eval, col=nsubset, linetype=noise)) +
-        geom_point() +
-        geom_line() +
-        geom_smooth() +
-        ggtitle("Q estimation") +
-        xlab("Estimated q") +
-        ylab("Model loss")
-
-
-    ggarrange(g1, g2, nrow=2)
-}
-

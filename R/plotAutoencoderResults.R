@@ -88,59 +88,59 @@ plotPvalHist <- function(idx, fds, dist){
     hist(pVals(fds, dist=dist)[idx,], xlab="P-values", main=paste("Pvalues (", dist, ") for", idx))
 }
 
-plotQQ <- function(idx, fds, dist, main=NULL, threshold=5e-2){
-    pval <- pVals(fds, dist=dist)[idx,]
-    exp <- -log10(ppoints(length(pval)))
-    obs <- -log10(sort(pval))
-    if(is.null(main)){
-        main <- paste("QQ-plot", "(", dist, ") for", idx)
-    }
-
-    xlim=range(exp)
-    ylim=range(obs)
-
-    plot(NA, xlim=xlim, ylim=ylim,
-       main=main,
-       xlab=expression(
-           paste(-log[10], " (expected ", italic(P), "-value)")),
-       ylab=expression(
-           paste(-log[10], " (observed ", italic(P), "-value)")))
-
-    # confidence band
-    # http://genome.sph.umich.edu/wiki/Code_Sample:_Generating_QQ_Plots_in_R
-    conf.alpha <- 0.05
-
-    if(is.numeric(conf.alpha)){
-    len <- length(exp)
-    slen <- seq_len(len)
-    getY <- function(x, exp){
-      x1 <- exp[2]
-      x2 <- exp[1]
-      y1 <- -log10(x[2])
-      y2 <- -log10(x[1])
-      m <- (y2-y1)/(x2-x1)
-      return(10^-(y1 + m*((x2+1)-x1)))
-    }
-    upper <- qbeta(    conf.alpha/2, slen, rev(slen))
-    lower <- qbeta(1 - conf.alpha/2, slen, rev(slen))
-    polygon(col="gray", border="gray", x=c(rev(exp), max(exp)+c(1,1), exp),
-            y=-log10(c(
-              rev(upper), getY(upper, exp), getY(lower, exp), lower)))
-    }
-
-    # Add points
-    points(exp, obs, pch=16)
-
-    if(any(obs > -log10(threshold))){
-        pos <- which(obs > -log10(threshold))
-        points(exp[pos], obs[pos], pch=19, col="firebrick")
-    }
-
-    # diagonal and grid
-    abline(0,1,col="firebrick")
-    grid()
-
-}
+# plotQQ <- function(idx, fds, dist, main=NULL, threshold=5e-2){
+#     pval <- pVals(fds, dist=dist)[idx,]
+#     exp <- -log10(ppoints(length(pval)))
+#     obs <- -log10(sort(pval))
+#     if(is.null(main)){
+#         main <- paste("QQ-plot", "(", dist, ") for", idx)
+#     }
+#
+#     xlim=range(exp)
+#     ylim=range(obs)
+#
+#     plot(NA, xlim=xlim, ylim=ylim,
+#        main=main,
+#        xlab=expression(
+#            paste(-log[10], " (expected ", italic(P), "-value)")),
+#        ylab=expression(
+#            paste(-log[10], " (observed ", italic(P), "-value)")))
+#
+#     # confidence band
+#     # http://genome.sph.umich.edu/wiki/Code_Sample:_Generating_QQ_Plots_in_R
+#     conf.alpha <- 0.05
+#
+#     if(is.numeric(conf.alpha)){
+#     len <- length(exp)
+#     slen <- seq_len(len)
+#     getY <- function(x, exp){
+#       x1 <- exp[2]
+#       x2 <- exp[1]
+#       y1 <- -log10(x[2])
+#       y2 <- -log10(x[1])
+#       m <- (y2-y1)/(x2-x1)
+#       return(10^-(y1 + m*((x2+1)-x1)))
+#     }
+#     upper <- qbeta(    conf.alpha/2, slen, rev(slen))
+#     lower <- qbeta(1 - conf.alpha/2, slen, rev(slen))
+#     polygon(col="gray", border="gray", x=c(rev(exp), max(exp)+c(1,1), exp),
+#             y=-log10(c(
+#               rev(upper), getY(upper, exp), getY(lower, exp), lower)))
+#     }
+#
+#     # Add points
+#     points(exp, obs, pch=16)
+#
+#     if(any(obs > -log10(threshold))){
+#         pos <- which(obs > -log10(threshold))
+#         points(exp[pos], obs[pos], pch=19, col="firebrick")
+#     }
+#
+#     # diagonal and grid
+#     abline(0,1,col="firebrick")
+#     grid()
+#
+# }
 
 # plotQQbinomial <- function(idx, pvals){#fds, mu){
 #   # pval <- singlePvalueBinomial(idx, K(fds), N(fds), mu)
