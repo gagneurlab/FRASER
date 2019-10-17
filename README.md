@@ -1,13 +1,13 @@
-[![build status](https://i12g-gagneurweb.informatik.tu-muenchen.de/gitlab/mertes/FraseR/badges/master/build.svg)](https://i12g-gagneurweb.informatik.tu-muenchen.de/gitlab/mertes/FraseR/commits/master)
-[![coverage report](https://i12g-gagneurweb.informatik.tu-muenchen.de/gitlab/mertes/FraseR/badges/master/coverage.svg)](https://i12g-gagneurweb.informatik.tu-muenchen.de/gitlab/mertes/FraseR/commits/master)
+# FraseR - Find RAre Splicing Events in RNA-seq
+[![Build Status](https://travis-ci.org/c-mertes/FraseR.svg?branch=master)](https://travis-ci.org/c-mertes/FraseR)
 
-# FraseR - Find RAre Splicing Events in RNA-seq data
+This is the preliminary repository for the R based splicing outlier detection package. **It's not yet production ready. So please be patient and stay tuned for updates.** 
 
-Detection of rare aberrant splicing events in transcriptome profiles. 
-The workflow aims to assist the diagnostics in the field of 
-rare diseases where RNA-seq is performed to identify splicing defects.
+The workflow aims to assist the diagnostics in the field of rare diseases where RNA-seq is performed to identify aberrant splicing defects.
 
-This is the main repo of the R/Bioconductor package FraseR.
+This is the main repo of the R package FraseR. It's Bioconductor compliant and is planned to be submitted to Bioconductor.
 
-If you have any problems or feedback please leave a [new issue here](https://i12g-gagneurweb.in.tum.de/gitlab/mertes/FraseR/issues/new)
+For a short tutorial on how to use FraseR on a dataset please use our Colab tutorial at: [http://tinyurl.com/RNA-ASHG-colab](http://tinyurl.com/RNA-ASHG-colab)
+
+If you have any problems or feedback please leave a [new issue here](https://github.com/c-mertes/FraseR/issues/new).
 
