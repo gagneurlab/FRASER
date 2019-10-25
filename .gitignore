@@ -6,7 +6,7 @@
 .RData
 
 # ignore tmp files
-inst/tmp
+tmp
 
 # ignore vignette artefacts
 FraseR.pdf
