@@ -622,7 +622,7 @@ plotCountCorHeatmap <- function(fds, type=c("psi5", "psi3", "psiSite"),
         clusters <- sampleClustering
     }
 
-    if(!isTRUE(is.na(sampleClustering))){
+    if(isFALSE(is.na(sampleClustering))){
         if(!is.null(nrow(annotation_col))){
             annotation_col$sampleCluster <- clusters
         } else {

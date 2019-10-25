@@ -22,7 +22,7 @@
 #' @importFrom IRanges subsetByOverlaps from to IRanges
 #' @importFrom Rsamtools ScanBamParam scanBamHeader bamMapqFilter
 #'          bamWhich bamWhich<-
-#'
+#' @importFrom Rsubread featureCounts
 #'
 ### Annotation
 #'

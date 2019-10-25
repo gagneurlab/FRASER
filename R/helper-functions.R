@@ -1,15 +1,8 @@
-########
-## @author Christian Mertes \email{mertes@@in.tum.de}
-##
-## Helperfunctions to convert or extract data within the FraseR package
-##
-
 #'
 #' Input check functions
 #'
 #' Checks all user input and returns corresponding messages
-#' * checkFraseRDataSet
-#' *
+#' checkFraseRDataSet
 #'
 #' @rdname checkInputFunctions
 checkFraseRDataSet <- function(fds){
@@ -19,7 +12,6 @@ checkFraseRDataSet <- function(fds){
     return(invisible(TRUE))
 }
 
-#'
 #' @rdname checkInputFunctions
 checkCountData <- function(fds){
     checkFraseRDataSet(fds)

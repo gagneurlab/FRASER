@@ -11,6 +11,5 @@ checkCountData(fds)
 }
 \description{
 Checks all user input and returns corresponding messages
-* checkFraseRDataSet
-*
+checkFraseRDataSet
 }

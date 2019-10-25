@@ -1,3 +1,4 @@
+
 if(FALSE){
 get_combined_keras_model <- function(inputDim, q, b, rho, optimizer, weights=NULL){
     if(FALSE){
@@ -166,6 +167,7 @@ model <- fds_model
 #'   library(keras)
 #'   use_python("/opt/modules/i12g/anaconda/3-5.0.1/envs/omicsOUTRIDER/bin/python", required=TRUE)
 #'
+#' @noRd
 fit_keras_bb_dea_combined <- function(fds, q, type, noiseAlpha, rhoRange, BPPARAM, lr=0.0001, epochs=50, patience=5, reUseWeights=TRUE){
     currentType(fds)   <- type
 

@@ -119,7 +119,7 @@ saveFraseRDataSet <- function(fds, dir=NULL, name=NULL, rewrite=FALSE) {
 #'
 #' Defaults for HDF5 global options
 #' To save the underlying assays
-#'
+#' @noRd
 options("FraseR-hdf5-chunk-nrow"=30000)
 options("FraseR-hdf5-chunk-ncol"=20)
 
