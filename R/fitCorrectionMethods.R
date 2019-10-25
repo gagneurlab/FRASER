@@ -374,7 +374,7 @@ fitKerasDAE <-function(fds, q, psiType, rhoRange=c(1e-5, 1-1e-5), noiseAlpha=1, 
     history <- model %>% keras::fit(x=X_corr, y=X,
                                     epochs=300, batch_size=16,
                                     callbacks=cb_es, validation_split=0.2)
-    require(ggplot2)
+
     print(plot(history, main = "History of fitting the model, batch-aware PCA", method="ggplot2") +
               scale_y_log10() +
               xlim(0, cb_es[[1]]$stopped_epoch))
@@ -384,7 +384,6 @@ fitKerasDAE <-function(fds, q, psiType, rhoRange=c(1e-5, 1-1e-5), noiseAlpha=1, 
 
     # plot predictions vs observerd
     d2p <- data.table(x=as.vector(X), mu=as.vector(pred_mu))[sample(.N, 1e5)]
-    require(LSD)
     heatscatter(d2p[,mu], d2p[,x], ylab="observed", xlab="predicted",
                 main="predictions vs observed\nrandom 100k points")
     grid()

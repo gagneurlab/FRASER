@@ -89,32 +89,22 @@ if(!requireNamespace("FraseR", quietly=TRUE)){
 
 library(FraseR)
 
-# download data
-dir.create("splicing")
+# load data
+colData <- fread(system.file(
+    "extdata", "sampleTable.tsv", package="FraseR", mustWork=TRUE
+))
+if(FALSE){
+    colData[,bamFile:=paste0("inst/", bamFile)]
+}
 
-system("wget -q -Osplicing/raw_junction_counts.tsv.gz -c https://i12g-gagneurweb.in.tum.de/public/workshops/RNAseq_ASHG19/input_data/splicing/raw_junction_counts.tsv.gz", inter=TRUE)
-system("wget -q -Osplicing/raw_site_counts.tsv.gz -c https://i12g-gagneurweb.in.tum.de/public/workshops/RNAseq_ASHG19/input_data/splicing/raw_site_counts.tsv.gz", inter=TRUE)
-system("wget -q -Oannotation.tsv -c https://i12g-gagneurweb.in.tum.de/public/workshops/RNAseq_ASHG19/input_data/annotation.tsv", inter=TRUE)
-
-# load and prepare annotation
-anno <- fread("annotation.tsv")[,.(
-    sampleID=INDIVIDUAL,
-    bamFile="<path/to/bam/file/for/each/sample.bam>")]
-
-# get raw counts (remove first column since it is the row index)
-junctionCts   <- fread("./splicing/raw_junction_counts.tsv.gz")[,-1]
-spliceSiteCts <- fread("./splicing/raw_site_counts.tsv.gz")[,-1]
-
-# create FraseR object
-fds <- FraseRDataSet(colData=anno, junctions=junctionCts,
-        spliceSites=spliceSiteCts)
-fds
-
-# subset to speed up the tutorial
-fds <- fds[seqnames(fds) %in% c("chr3", "chr7", "chr19"), 1:50]
+# count data
+fds <- FraseRDataSet(colData=colData, parallel=bpparam())
 dontWriteHDF5(fds) <- TRUE
+
+fds <- countRNAData(fds, recount=TRUE)
 fds
 
+# compute stats
 fds <- calculatePSIValues(fds)
 
 fds <- filterExpression(fds, minExpressionInOneSample=20,
@@ -126,26 +116,29 @@ fds <- fds[mcols(fds, type="j")[,"passed"],]
 fds
 
 # use PCA to speed up the tutorial
-fds <- FraseR(fds, q=10, correction="PCA",
-        BPPARAM=MulticoreParam(5, progressbar=TRUE))
+fds <- FraseR(fds, q=2, correction="PCA")
 
 fds <- annotateRanges(fds)
 
 plotCountCorHeatmap(fds, "psi5", normalized=FALSE, logit=TRUE)
 plotCountCorHeatmap(fds, "psi5", normalized=TRUE, logit=TRUE)
 
-res <- results(fds, padjCutoff=0.05)
+res <- results(fds, zScoreCutoff=2, padjCutoff=NA, deltaPsiCutoff=0.01)
+res <- res[names(res) %in% c("sample1", "sample2", "sample3") &
+    res$counts >= 10 & !is.na(res$zScore)]
+res
 
+plotVolcano(fds, sampleID="sample1", type="psi5", aggregate=TRUE)
 
-plotVolcano(fds, sampleID="NA12400", type="psi5", aggregate=TRUE)
+plotExpectedVsObservedPsi(fds, result=res[1])
+plotExpression(fds, result=res[1])
 
-plotPredictedVsObservedPsi()
-plotMu
+# plotMu
 res
 
 
-plotSampleRank()
-plotSampleResults(fds)
+# plotSampleRank()
+# plotSampleResults(fds)
 
 @
 

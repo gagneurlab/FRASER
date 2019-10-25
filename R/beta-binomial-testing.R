@@ -12,7 +12,7 @@
 #'
 #' @noRd
 pvalueByBetaBinomialPerType <- function(fds, aname, psiType, pvalFun,
-            minCov=5, alternative="two.sided", renjin=FALSE, timeout=300,
+            minCov=5, alternative="two.sided", timeout=300,
             BPPARAM=parallel(fds), returnFit=FALSE){
 
     message(date(), ": Calculate P-values for the ",
@@ -93,13 +93,7 @@ pvalueByBetaBinomialPerType <- function(fds, aname, psiType, pvalFun,
         return(pv_res)
     }
 
-    if(!missing("renjin") && renjin == TRUE){
-        FUN <- function(...){
-            renjin::renjin({testFUN(...)})
-        }
-    } else {
-        FUN <- function(...){ testFUN(...) }
-    }
+    FUN <- function(...){ testFUN(...) }
     gc()
 
     pvalues_ls <- bplapply(toTest, rawCounts=rawCounts, alternative=alternative,

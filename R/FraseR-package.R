@@ -7,6 +7,8 @@
 #' @name FraseR
 #'
 #'
+#' @import data.table
+#'
 ### Parallel computing
 #'
 #' @importFrom parallel mclapply
@@ -14,12 +16,13 @@
 #' @importFrom pcaMethods pca loadings
 #'
 ### GRange/Experiment/bamFile packages
-#'
-#' @importFrom BiocGenerics updateObject counts
-#' @import GenomicAlignments
-#' @import SummarizedExperiment
-#' @import GenomicRanges
-#' @importFrom IRanges subsetByOverlaps from to IRanges
+#' @importFrom BiocGenerics updateObject counts counts<- strand strand<-
+#' @importFrom GenomicAlignments junctions readGAlignments summarizeJunctions
+#' @importFrom SummarizedExperiment assay assay<- assays assays<- assayNames
+#'          colData rowData rowRanges rowRanges<- SummarizedExperiment
+#' @importFrom GenomicRanges findOverlaps granges GRanges GRangesList
+#'          makeGRangesFromDataFrame
+#' @importFrom IRanges subsetByOverlaps from to IRanges ranges
 #' @importFrom Rsamtools ScanBamParam scanBamHeader bamMapqFilter
 #'          bamWhich bamWhich<-
 #' @importFrom Rsubread featureCounts
@@ -31,7 +34,9 @@
 #'
 ### Plotting
 #'
-#' @importFrom graphics plot par
+#' @importFrom graphics abline axis box grid hist legend lines mtext par plot
+#'          points polygon text title
+#'
 #' @importFrom plotly plot_ly subplot layout add_trace ggplotly
 #' @importFrom gplots col2hex barplot2
 #' @importFrom htmlwidgets saveWidget
@@ -52,7 +57,7 @@
 #'
 #' @importFrom data.table data.table as.data.table is.data.table := fread
 #'          setnames
-#' @import tidyr
+#' @importFrom tidyr %>%
 #' @importFrom HDF5Array writeHDF5Array path
 #' @importFrom rhdf5 h5ls H5Fopen H5Fclose
 #'
@@ -70,24 +75,24 @@
 #'          isScalarInteger isFALSE is.error isScalarValue isScalarNumeric
 #' @importFrom R.utils renameFile withTimeout
 #' @importFrom tools file_path_as_absolute
-#' @importFrom methods as callNextMethod is new slot slot<- validObject
+#' @importFrom methods as callNextMethod is new show slot slot<- validObject
 #' @importFrom utils browseURL capture.output sessionInfo
 #'
 #'
 #
 ### To be added into the functions above
 #
-#' @importFrom S4Vectors DataFrame metadata
+#' @importFrom S4Vectors DataFrame metadata Rle SimpleList mcols mcols<-
+#'          start end metadata metadata<-
 #' @importFrom grDevices dev.off adjustcolor pdf colorRampPalette
-#' @importFrom graphics abline axis grid legend lines title text points polygon
-#'          hist
 #' @importFrom plotly event_data
-#' @importFrom GenomeInfoDb seqlevels<- seqlevels seqlengths
-#'          keepStandardChromosomes
+#' @importFrom GenomeInfoDb keepStandardChromosomes seqlevels<- seqlevels
+#'          seqlengths seqlengths<- seqlevelsStyle<- seqnames seqinfo
 #' @importFrom shiny renderUI reactive renderPrint renderPlot
 #' @importFrom DelayedArray rowMaxs rowMeans path<-
-#' @importFrom data.table rbindlist
-#' @importFrom DelayedMatrixStats rowMedians rowSds colMeans2 rowMeans2 rowQuantiles
+#' @importFrom DelayedMatrixStats colSds rowMedians rowSds colMeans2 rowMeans2
+#'          rowQuantiles
+#' @importFrom matrixStats colMaxs colMedians colMins
 #' @importFrom stats runif median quantile
 #' @importFrom extraDistr rdirmnom dbbinom pbbinom
 #' @importFrom PRROC pr.curve
@@ -95,16 +100,17 @@
 #'          geom_line geom_hline geom_vline geom_abline geom_segment geom_ribbon
 #'          scale_color_manual scale_x_log10 scale_y_log10 scale_color_gradientn
 #'          labs theme_bw scale_color_discrete annotate geom_histogram theme
-#'          scale_fill_manual
+#'          scale_fill_manual xlim
 #' @importFrom ggpubr ggarrange
 #'
 #' @importFrom MASS kde2d bandwidth.nrd
 #'
-#' @importFrom keras custom_metric layer_input k_variable layer_lambda k_log
-#'          layer_dense constraint_minmaxnorm regularizer_l2 get_weights
-#'          set_weights keras_model k_exp k_mean optimizer_adam use_python
-#'          callback_terminate_on_naan callback_early_stopping
-#' @importFrom tensorflow install_tensorflow
+#' @importFrom keras callback_terminate_on_naan callback_early_stopping
+#'          compile constraint_minmaxnorm custom_metric keras_model k_exp k_mean
+#'          k_log k_set_value k_variable layer_input layer_lambda layer_dense
+#'          regularizer_l2 get_weights set_weights optimizer_adam use_python
+
+#' @importFrom tensorflow install_tensorflow evaluate
 #'
 #' @importFrom tibble as_tibble
 #'
@@ -125,5 +131,3 @@ globalVariables(c(".N", ".asDataFrame", "End", "FN", "HTML", "Start", "TP",
 
 
 options("FraseR.pseudoCount"=1)
-
-

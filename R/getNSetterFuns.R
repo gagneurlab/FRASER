@@ -35,7 +35,7 @@ featureExclusionMask <- function(fds, type=currentType(fds)){
 
 #' @rdname featureExclusionMask
 #' @export "featureExclusionMask<-"
-`featureExclusionMask<-` <- function(fds, value, type=currentType(fds)){
+`featureExclusionMask<-` <- function(fds, type=currentType(fds), value){
     if(isScalarLogical(value)){
         value <- rep(value, nrow(mcols(fds, type=type)))
     }
@@ -91,7 +91,7 @@ H <- function(fds, type=currentType(fds), noiseAlpha=NULL){
     x(fds, all=FALSE, type=type, noiseAlpha=noiseAlpha) %*% E(fds, type=type)
 }
 
-`D<-` <- function(fds, value, type=currentType(fds)){
+`D<-` <- function(fds, type=currentType(fds), value){
     if(!is.matrix(value)){
         value <- matrix(value, nrow=nrow(fds))
     }
@@ -103,7 +103,7 @@ D <- function(fds, type=currentType(fds)){
     return(metadata(fds)[[paste0('D_', type)]])
 }
 
-`E<-` <- function(fds, value, type=currentType(fds)){
+`E<-` <- function(fds, type=currentType(fds), value){
     if(!is.matrix(value)){
         value <- matrix(value, nrow=sum(featureExclusionMask(fds, type=type)))
     }
@@ -115,7 +115,7 @@ E <- function(fds, type=currentType(fds)){
     return(metadata(fds)[[paste0('E_', type)]])
 }
 
-`b<-` <- function(fds, value, type=currentType(fds)){
+`b<-` <- function(fds, type=currentType(fds), value){
     mcols(fds, type=type)[[paste0('b_', type)]] <- value
     return(fds)
 }
@@ -124,7 +124,7 @@ b <- function(fds, type=currentType(fds)){
     return(mcols(fds, type=type)[[paste0('b_', type)]])
 }
 
-`rho<-` <- function(fds, value, type=currentType(fds)){
+`rho<-` <- function(fds, type=currentType(fds), value){
     mcols(fds, type=type)[[paste0('rho_', type)]] <- value
     return(fds)
 }
@@ -150,7 +150,7 @@ predictY <- function(fds, type=currentType(fds), noiseAlpha=NULL){
 }
 
 
-`setAssayMatrix<-` <- function(fds, value, name, type, ...){
+`setAssayMatrix<-` <- function(fds, name, type, ..., value){
     if(!is.matrix(value)){
         value <- matrix(value, ncol=ncol(fds), nrow=nrow(mcols(fds, type=type)))
     }
@@ -182,7 +182,7 @@ zScores <- function(fds, type=currentType(fds)){
     return(getAssayMatrix(fds, name='zScores', type=type))
 }
 
-`zScores<-` <- function(fds, value, type=currentType(fds), ...){
+`zScores<-` <- function(fds, type=currentType(fds), ..., value){
     setAssayMatrix(fds, name="zScores", type=type, ...) <- value
     return(fds)
 }
@@ -198,8 +198,8 @@ pVals <- function(fds, type=currentType(fds),
     return(getAssayMatrix(fds, paste0("pvalues", dist), type=type))
 }
 
-`pVals<-` <- function(fds, value, type=currentType(fds),
-                    dist=c("BetaBinomial", "Binomial"), ...){
+`pVals<-` <- function(fds, type=currentType(fds),
+                    dist=c("BetaBinomial", "Binomial"), ..., value){
     dist <- match.arg(dist)
     setAssayMatrix(fds, name=paste0("pvalues", dist), type=type, ...) <- value
     return(fds)
@@ -216,8 +216,8 @@ padjVals <- function(fds, type=currentType(fds),
     return(getAssayMatrix(fds, paste0("pajd", dist), type=type))
 }
 
-`padjVals<-` <- function(fds, value, type=currentType(fds),
-                    dist=c("BetaBinomial", "Binomial"), ...){
+`padjVals<-` <- function(fds, type=currentType(fds),
+                    dist=c("BetaBinomial", "Binomial"), ..., value){
     dist <- match.arg(dist)
     setAssayMatrix(fds, name=paste0("pajd", dist), type=type, ...) <- value
     return(fds)
@@ -227,7 +227,7 @@ predictedMeans <- function(fds, type=currentType(fds)){
     return(getAssayMatrix(fds, name="predictedMeans", type=type))
 }
 
-`predictedMeans<-` <- function(fds, value, type=currentType(fds), ...){
+`predictedMeans<-` <- function(fds, type=currentType(fds), ..., value){
     setAssayMatrix(fds, name="predictedMeans", type=type, ...) <- value
     return(fds)
 }
@@ -294,7 +294,7 @@ noise <- function(fds, type=currentType(fds)){
     return(t(getAssayMatrix(fds, name="noise", type=type)))
 }
 
-`noise<-` <- function(fds, value, type=currentType(fds), HDF5=FALSE, ...){
+`noise<-` <- function(fds, type=currentType(fds), HDF5=FALSE, ..., value){
     if(!is.matrix(value)){
         value <- matrix(value, nrow=nrow(mcols(fds, type=type)), ncol=ncol(fds))
     }
@@ -425,7 +425,7 @@ weights <- function(fds, type){
 }
 
 # set FraseR weights
-`weights<-` <- function(fds, value, type=currentType(fds), ...){
+`weights<-` <- function(fds, type=currentType(fds), ..., value){
     setAssayMatrix(fds, name="weights", type=type, ...) <- value
     return(fds)
 }

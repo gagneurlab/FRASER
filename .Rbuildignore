@@ -1,21 +1,29 @@
-# ignore the gitlab ci file
-^.gitlab-ci.yaml$
-^.gitlab-ci.yml$
-^tmp_libs/$
+# git files
+.gitignore
+.git
 
-# ignore all vignette builds
-^vignettes/build$
+# ignore ci/app files
+.gitlab-ci.yaml
+.gitlab-ci.yml
+setupEnv.R
+.travis.yml
+codecov\.yml
+appveyor\.yml
 
 # ignore this file
-^.Rbuildignore$
+.Rbuildignore
 
 # ignore RStudio files
-^.*\.Rproj$
-^\.Rproj\.user$
+.Rproj/
+.Rproj\.user/
 
 # ignore the Rprofile
 .Rprofile
 
 # ignore tmp files
+vignettes/cache
+vignettes/figure
+vignettes/build
 .Rsubread_*
 kremer_ae_*
+^tmp_libs/

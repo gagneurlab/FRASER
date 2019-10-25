@@ -67,7 +67,7 @@ countRNAData <- function(fds, NcpuPerSample=1, junctionMap=NULL, minAnchor=5,
             BPPARAM_old$numWorkers, BPPARAM_old$numTasks, set=TRUE)
 
     # create summarized objects
-    h5 <- saveAsHDF5(fds, "rawCountsJ", mcols(counts)[samples(fds)])
+    h5 <- saveAsHDF5(fds, "rawCountsJ", as.matrix(mcols(counts)[samples(fds)]))
     colnames(h5) <- samples(fds)
     splitCounts <- SummarizedExperiment(
         colData=colData(fds),
@@ -109,7 +109,8 @@ countRNAData <- function(fds, NcpuPerSample=1, junctionMap=NULL, minAnchor=5,
     )
 
     # create summarized objects
-    h5 <- saveAsHDF5(fds, "rawCountsSS", mcols(siteCounts)[samples(fds)])
+    h5 <- saveAsHDF5(fds, "rawCountsSS",
+            as.matrix(mcols(siteCounts)[samples(fds)]))
     colnames(h5) <- samples(fds)
     nonSplicedCounts <- SummarizedExperiment(
         colData=colData(fds),
@@ -128,7 +129,8 @@ countRNAData <- function(fds, NcpuPerSample=1, junctionMap=NULL, minAnchor=5,
         bamParam        = scanBamParam(fds),
         strandSpecific  = strandSpecific(fds),
         workingDir      = workingDir(fds),
-        nonSplicedReads = nonSplicedCounts
+        nonSplicedReads = nonSplicedCounts,
+        metadata        = metadata(fds)
     )
 
     # save it so the FraseR object also gets saved
@@ -421,10 +423,10 @@ countNonSplicedReads <- function(sampleID, spliceSiteCoords, settings,
             checkFragLength=FALSE,
             minMQS=bamMapqFilter(scanBamParam(settings)),
             strandSpecific=as.integer(strandSpecific(settings)),
-            
+
             # activating long read mode
-            isLongRead=TRUE, 
-            
+            isLongRead=TRUE,
+
             # multi-mapping reads
             countMultiMappingReads=TRUE,
 
