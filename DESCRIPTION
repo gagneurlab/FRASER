@@ -42,7 +42,7 @@ Imports:
     parallel,
     pcaMethods,
     pheatmap,
-    plotly (>= 4.6.0),
+    plotly,
     PRROC,
     RColorBrewer,
     rhdf5,

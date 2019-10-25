@@ -82,7 +82,7 @@ Mertes C, Gagneur J, \emph{et al.}
 
 \section{Quick guide to \fraser{}}
 
-<<quick faser guide all, echo=TRUE>>=
+<<quick faser guide all, echo=TRUE, eval=FALSE>>=
 if(!requireNamespace("FraseR", quietly=TRUE)){
     devtools::install("../FraseR")
 }

@@ -89,115 +89,6 @@ createMainPlotFraseR <- function(fds, sampleID, source=NULL){
 }
 
 #'
-#' Volcano plot
-#'
-#' Plots the p values over the delta psi values, known as volcano plot.
-#' Visualizes per sample the outliers. By type and aggregate by
-#' gene if requested.
-#'
-#' @export
-plotVolcano <- function(fds, sampleID, type, minDeltaPsi=0.3, padjCutoff=0.05,
-                    basePlot=TRUE, aggregate=FALSE,
-                    main=paste0("Volcano plot: ", sampleID)){
-
-    dt <- getPlottingDT(fds, axis="col", type=type, idx=sampleID,
-            aggregate=aggregate)
-
-    padj_line <- dt[padj < 0.05, min(5.5, -log10(pval))]
-    if(length(padj_line) == 0){
-        padj_line <- 5.5
-    }
-
-    dt[,aberrant:=FALSE]
-    dt[abs(deltaPsi) >= minDeltaPsi & padj <= padjCutoff, aberrant:=TRUE]
-
-    g <- ggplot(dt, aes(x=deltaPsi, y=-log10(pval), color=aberrant, text=paste0(
-                "SampleID: ", sampleID, "<br>",
-                "featureID: ", featureID, "<br>",
-                "Raw count (K): ", k, "<br>",
-                "Raw total count (N): ", n, "<br>",
-                "p value: ", signif(pval, 5), "<br>",
-                "delta Psi: ", round(deltaPsi, 2), "<br>",
-                "Type: ", type))) +
-        geom_point(aes(alpha=ifelse(isTRUE(aberrant), 1, 0.5))) +
-        xlab(expression(paste(Delta, Psi))) +
-        ylab(expression(paste(-log[10], "(p value)"))) +
-        geom_vline(xintercept=c(-minDeltaPsi, minDeltaPsi),
-                color="firebrick", linetype=2) +
-        geom_hline(yintercept=padj_line, color="firebrick", linetype=4) +
-        ggtitle(main) +
-        theme_bw() +
-        theme(legend.position="none") +
-        scale_color_manual(values=c("gray70", "firebrick"))
-
-    if(isFALSE(basePlot)){
-        g <- g + xlab("delta Psi") +
-            ylab("-log[10](p value)")
-        return(ggplotly(g, tooltip="text"))
-    }
-    g
-}
-
-
-#'
-#' Number of aberrant events per sample
-#'
-#' Plot the number of aberrant events per samples
-#'
-#' @export
-plotAberrantPerSample <- function(fds, main, padjCutoff=0.05, zScoreCutoff=NA,
-                    deltaPsiCutoff=0.1, col="#1B9E77", type=c("psi3", "psi5", "psiSite"),
-                    yadjust=c(1.2, 1.2), labLine=c(3.5, 3), ymax=NULL,
-                    ylab="#Aberrantly spliced events", labCex=par()$cex, ...){
-
-    type <- match.arg(type)
-
-    if(missing(main)){
-        main <- paste('Aberrant events per sample (', type, ')')
-    }
-
-    count_vector <- sort(aberrant(fds, by="sample", type=type,
-            padjCutoff=padjCutoff, zScoreCutoff=zScoreCutoff,
-            deltaPsiCutoff=deltaPsiCutoff, ...))
-
-    ylim <- c(0.4, max(1, count_vector)*1.1)
-    if(!is.null(ymax)){
-        ylim[2] <- ymax
-    }
-    replace_zero_unknown <- 0.5
-    ticks <- c(replace_zero_unknown, signif(10^seq(
-        from=0, to=round(log10(max(1, count_vector))), by=1/3), 1))
-
-    labels_for_ticks <- sub(replace_zero_unknown, '0', as.character(ticks))
-
-    bp <- barplot2(
-        replace(count_vector, count_vector==0, replace_zero_unknown),
-        log='y', ylim=ylim, names.arg='', xlab='', plot.grid=TRUE,
-        grid.col='lightgray', ylab='', yaxt='n', border=NA, xpd=TRUE,
-        col=col, main=main)
-
-    n_names <- floor(length(count_vector)/20)
-    xnames= seq_len(n_names*20)
-    axis(side=1, at= c(0,bp[xnames,]), labels= c(0,xnames))
-    axis(side=2, at=ticks, labels= labels_for_ticks, ylog=TRUE, las=2)
-
-    # labels
-    mtext('Sample rank', side=1, line=labLine[1], cex=labCex)
-    mtext(ylab, side=2, line=labLine[2], cex=labCex)
-
-    # legend and lines
-    hlines <- c(Median=max(replace_zero_unknown, median(count_vector)),
-            Quantile90=quantile(count_vector, 0.9, names=FALSE))
-    color_hline <- c('black','black')
-    abline(h=hlines, col=color_hline)
-    text(x=c(1,1), y=hlines*yadjust, col=color_hline, adj=0,
-         labels=c('Median', expression(90^th ~ 'percentile')))
-
-    box()
-}
-
-
-#'
 #' plot count distribution
 #'
 plotCountsAtSite <- function(gr, fds, type, sample=NULL, plotLog=TRUE){
@@ -207,7 +98,7 @@ plotCountsAtSite <- function(gr, fds, type, sample=NULL, plotLog=TRUE){
     }
     rcname <- paste0("rawCounts", toupper(checkReadType(fds, type)))
     rocname <- paste0("rawOtherCounts_",
-        unlist(regmatches(type, gregexpr("psi(3|5|Site)", type, perl=TRUE)))
+                      unlist(regmatches(type, gregexpr("psi(3|5|Site)", type, perl=TRUE)))
     )
 
     se2plot <- se[from(findOverlaps(granges(se), gr, type="equal"))]
@@ -226,16 +117,16 @@ plotCountsAtSite <- function(gr, fds, type, sample=NULL, plotLog=TRUE){
     }
 
     heatscatter(rcx, rocy,
-            main=paste("Heatscatter of raw counts for type: ", type,
-                    "\nRange: ", seqnames(se2plot), ":",
-                    start(se2plot), "-", end(se2plot)
-            ),
-            xlab=paste0(logpre, "raw counts", logsuf),
-            ylab=paste0(logpre, "raw other counts", logsuf)
+                main=paste("Heatscatter of raw counts for type: ", type,
+                           "\nRange: ", seqnames(se2plot), ":",
+                           start(se2plot), "-", end(se2plot)
+                ),
+                xlab=paste0(logpre, "raw counts", logsuf),
+                ylab=paste0(logpre, "raw other counts", logsuf)
     )
     if(!is.null(sample)){
         sapply(sample, addSamplePoints, fds=fds,
-                x=rcx, y=rocy, pch=20, col="red"
+               x=rcx, y=rocy, pch=20, col="red"
         )
     }
 }

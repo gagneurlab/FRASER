@@ -475,13 +475,13 @@ getPlottingDT <- function(fds, axis=c("row", "col"), type=NULL,
 
     dt <- data.table(
         idx       = idx,
-        k         = k,
-        n         = n,
-        pval      = pVals(fds, type=type)[idxrow, idxcol],
-        padj      = padjVals(fds, type=type)[idxrow, idxcol],
-        zscore    = zScores(fds, type=type)[idxrow, idxcol],
-        obsPsi    = (k + pseudocount())/(n + 2*pseudocount()),
-        predPsi   = predictedMeans(fds, type)[idxrow, idxcol],
+        k         = c(k),
+        n         = c(n),
+        pval      = c(pVals(fds, type=type)[idxrow, idxcol]),
+        padj      = c(padjVals(fds, type=type)[idxrow, idxcol]),
+        zscore    = c(zScores(fds, type=type)[idxrow, idxcol]),
+        obsPsi    = c((k + pseudocount())/(n + 2*pseudocount())),
+        predPsi   = c(predictedMeans(fds, type)[idxrow, idxcol]),
         sampleID  = as.character(colnames(K(fds, type))[idxcol]),
         featureID = feature_names,
         type      = type)
@@ -495,8 +495,9 @@ getPlottingDT <- function(fds, axis=c("row", "col"), type=NULL,
         # correct by gene and take the smallest p value
         dt <- dt[, pval:=p.adjust(pval, method="holm"),
                     by="sampleID,featureID"]
-        dt <- dt[order(featureID, pval)][!duplicated(featureID)]
-        dt <- dt[, padj:=p.adjust(pval, method="BY"), by="sampleID,featureID"]
+        dt <- dt[order(sampleID, featureID, pval)][!duplicated(
+            data.table(sampleID,featureID))]
+        dt <- dt[, padj:=p.adjust(pval, method="BY"), by="sampleID"]
     }
 
     # add aberrant information to it

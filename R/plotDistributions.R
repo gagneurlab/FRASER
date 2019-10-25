@@ -454,30 +454,6 @@ plotSampleQQ <- function(fds, type=c("psi5", "psi3", "psiSite"), sample=TRUE,
     plotQQplot(data=list(pvalues=as.vector(unlist(pvals))), sample=sample, ...)
 }
 
-#'
-#' breaks ties in a qq plot to get a better distributed p-value plot
-#' @noRd
-breakTies <- function(x, logBase=10, decreasing=TRUE){
-    intervals <- sort(unique(c(0, x)))
-    idxintervals <- findInterval(x, intervals)
-    for(idx in as.integer(names(which(table(idxintervals) > 1)))){
-        if(is.numeric(logBase)){
-            minval <- logBase^-intervals[idx+1]
-            maxval <- logBase^-intervals[idx]
-            rand   <- runif(sum(idxintervals==idx), minval, maxval)
-            rand   <- -log(rand, logBase)
-        } else {
-            minval <- intervals[idx]
-            maxval <- intervals[idx+1]
-            rand   <- runif(sum(idxintervals==idx), minval, maxval)
-        }
-        x[idxintervals==idx] <- rand
-    }
-    if(!is.na(decreasing)){
-        x <- sort(x, decreasing=TRUE)
-    }
-}
-
 #' testing function
 #' @noRd
 testPlotting <- function(){
