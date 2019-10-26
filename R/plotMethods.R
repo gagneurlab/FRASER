@@ -126,6 +126,9 @@
 #' @aliases plotFunctions plotAberrantPerSample plotVolcano plotQQ plotExpression
 #'             plotCountCorHeatmap plotFilterExpression plotExpectedVsObservedPsi
 #'             plotEncDimSearch
+#' @examples
+#' # TODO
+#' TODO <- 1
 #'
 
 
@@ -138,12 +141,12 @@
 #'
 #' @rdname plotFunctions
 #' @export
-plotVolcano <- function(fds, sampleID, type, deltaPsiCutoff=0.3, padjCutoff=0.05,
-                        basePlot=TRUE, aggregate=FALSE,
-                        main=paste0("Volcano plot: ", sampleID)){
+plotVolcano <- function(fds, sampleID, type, deltaPsiCutoff=0.3,
+                    padjCutoff=0.05, basePlot=TRUE, aggregate=FALSE,
+                    main=paste0("Volcano plot: ", sampleID)){
 
     dt <- getPlottingDT(fds, axis="col", type=type, idx=sampleID,
-                        aggregate=aggregate)
+            aggregate=aggregate)
 
     padj_line <- dt[padj < 0.05, min(5.5, -log10(pval))]
     if(length(padj_line) == 0){
@@ -175,9 +178,8 @@ plotVolcano <- function(fds, sampleID, type, deltaPsiCutoff=0.3, padjCutoff=0.05
     if(isFALSE(basePlot)){
         g <- g + xlab("delta Psi") +
             ylab("-log[10](p value)")
-        return(ggplotly(g, tooltip="text"))
     }
-    g
+    plotBasePlot(g, basePlot)
 }
 
 #'

@@ -11,3 +11,8 @@ filterExpression(fds, minExpressionInOneSample = 20, quantile = 0.05,
 \description{
 Filtering FraseRDataSets
 }
+\examples{
+# TODO
+TODO <- 1
+
+}

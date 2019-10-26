@@ -15,3 +15,8 @@ plotCountCorHeatmap(fds, type = c("psi5", "psi3", "psiSite"),
 \description{
 Plot count correlation
 }
+\examples{
+# TODO
+TODO <- 1
+
+}

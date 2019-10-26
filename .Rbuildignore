@@ -27,3 +27,5 @@ vignettes/build
 .Rsubread_*
 kremer_ae_*
 ^tmp_libs/
+^.*\.Rproj$
+^\.Rproj\.user$

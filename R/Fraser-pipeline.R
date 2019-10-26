@@ -22,10 +22,15 @@
 #' @param ... Additional parameters passed on to the internal fit function
 #'
 #' @return FraseRDataSet
-#' @export
 #' @examples
+#'   # preprocessing
 #'   fds <- createTestFraseRSettings()
-#'   fds <- FraseR(fds)
+#'   fds <- countRNAData(fds)
+#'   fds <- calculatePSIValues(fds)
+#'   fds <- filterExpression(fds)
+#'
+#'   # Run analysis pipeline
+#'   fds <- FraseR(fds, iterations=2, correction='PCA')
 #'
 #'   # save the final FraseR object
 #'   saveFraseRDataSet(fds)
@@ -39,7 +44,12 @@ FraseR <- function(fds, q, correction="PCA-BB-Decoder", iterations=15,
                     BPPARAM=bpparam(), ...){
 
     # Check input
-    checkCountData(fds)
+    checkFraseRDataSet(fds)
+
+    # compute stats if needed
+    if(isFALSE(checkCountData(fds, FALSE))){
+        fds <- calculatePSIValues(fds)
+    }
 
     # fit autoencoder
     if(missing(q)){

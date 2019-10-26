@@ -4,15 +4,16 @@
 #' functionallity of the FraseR package.
 #'
 #' @return a FraseRSettings object which contains a test case
-#' @export
 #' @examples
-#'     createTestFraseRSettings()
+#' fds <- createTestFraseRSettings()
+#' fds
 #'
+#' @export
 createTestFraseRSettings <- function(){
 
     # get sample data table
     sampleTable <- fread(system.file(
-                "extdata", "sampleTable.tsv", package="FraseR", mustWork=TRUE
+            "extdata", "sampleTable.tsv", package="FraseR", mustWork=TRUE
     ))
 
     # convert it to a bamFile list
@@ -29,11 +30,15 @@ createTestFraseRSettings <- function(){
     # check that NHDF is NA group
     sampleTable[gene=='NHDF', condition:=NA]
 
+    # create FraseR object
+    fds <- FraseRDataSet(colData=sampleTable, parallel=bpparam(),
+            workingDir=file.path(Sys.getenv("HOME"), "FraseR"))
+
+    # dont use hdf5 for example data set
+    dontWriteHDF5(fds) <- TRUE
+
     # return a FraseRSettings object
-    return(FraseRDataSet(
-        colData=sampleTable,
-        workingDir=file.path(Sys.getenv("HOME"), "FraseR")
-    ))
+    fds
 }
 
 #'
@@ -42,30 +47,25 @@ createTestFraseRSettings <- function(){
 #' to explore the functionallity of the FraseR package.
 #'
 #' @return a FraseRDataSet object which contains a test case
-#' @export
 #' @examples
-#'     createTestFraseRDataSet()
+#' fds <-  createTestFraseRDataSet()
+#' fds
 #'
-createTestFraseRDataSet <- function(BPPARAM=NULL){
+#' @export
+#'
+createTestFraseRDataSet <- function(BPPARAM=bpparam()){
 
     # get test sample annotation
-    settings <- createTestFraseRSettings()
+    fds <- createTestFraseRSettings()
 
     # set paralelle settings if given
-    if(!is.null(BPPARAM)){
-        settings@parallel <- BPPARAM
-    }
+    parallel(fds) <- BPPARAM
 
     # count data
-    dataset <- countRNAData(settings)
+    fds <- countRNAData(fds)
 
-    # calculate PSI values
-    dataset <- calculatePSIValues(dataset)
-    dataset <- calculateZScores(dataset)
-
-    # calculate pvalues
-    dataset <- saveFraseRDataSet(dataset)
-    dataset <- calculatePValues(dataset)
+    # run FraseR pipeline
+    fds <- FraseR(fds, q=2)
 
     # annotate it
     dataset <- annotateRanges(dataset)

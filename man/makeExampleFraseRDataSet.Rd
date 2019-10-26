@@ -2,12 +2,17 @@
 % Please edit documentation in R/methods-makeExampleObj.R
 \name{makeExampleFraseRDataSet}
 \alias{makeExampleFraseRDataSet}
-\title{make an FraseR example data set
-using an subset of the Kremer paper (200 junctions)}
+\title{Create example data sets for FraseR}
 \usage{
 makeExampleFraseRDataSet()
 }
 \description{
-make an FraseR example data set
-using an subset of the Kremer paper (200 junctions)
+Creates an example data set from a file or simlates a data set based
+on  random split read counts following a beta-binomial distribution with
+injected outliers.
+}
+\examples{
+# TODO
+TODO <- 1
+
 }

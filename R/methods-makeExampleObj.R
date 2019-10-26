@@ -1,6 +1,13 @@
 #'
-#' make an FraseR example data set
-#' using an subset of the Kremer paper (200 junctions)
+#' Create example data sets for FraseR
+#'
+#' Creates an example data set from a file or simlates a data set based
+#' on  random split read counts following a beta-binomial distribution with
+#' injected outliers.
+#'
+#' @examples
+#' # TODO
+#' TODO <- 1
 #'
 #' @export
 makeExampleFraseRDataSet <- function(){

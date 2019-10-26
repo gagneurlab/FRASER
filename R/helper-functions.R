@@ -13,12 +13,14 @@ checkFraseRDataSet <- function(fds){
 }
 
 #' @rdname checkInputFunctions
-checkCountData <- function(fds){
+checkCountData <- function(fds, stop=TRUE){
     checkFraseRDataSet(fds)
     if(!all(c("rawCountsJ", "rawCountsSS") %in% assayNames(fds))){
+        if(isFALSE(stop)) return(invisible(FALSE))
         stop("No counts detected! Please provide counts first.")
     }
     if(!all(paste0("rawOtherCounts_", psiTypes) %in% assayNames(fds))){
+        if(isFALSE(stop)) return(invisible(FALSE))
         stop("Please compute first the total expression at each junction.")
     }
     return(invisible(TRUE))

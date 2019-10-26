@@ -10,32 +10,6 @@
 \alias{plotFilterExpression}
 \alias{plotExpectedVsObservedPsi}
 \alias{plotEncDimSearch}
-\alias{Volcano}
-\alias{plot}
-\alias{Plots}
-\alias{the}
-\alias{p}
-\alias{values}
-\alias{over}
-\alias{delta}
-\alias{psi}
-\alias{values,}
-\alias{known}
-\alias{as}
-\alias{volcano}
-\alias{plot.}
-\alias{Visualizes}
-\alias{per}
-\alias{sample}
-\alias{outliers.}
-\alias{By}
-\alias{type}
-\alias{and}
-\alias{aggregate}
-\alias{by}
-\alias{gene}
-\alias{if}
-\alias{requested.}
 \title{Visualization functions for FraseR}
 \usage{
 plotVolcano(fds, sampleID, type, deltaPsiCutoff = 0.3,
@@ -238,4 +212,16 @@ distributions for the expressed genes and for the filtered genes.
 It plots the encoding dimension against the achieved loss (area under the
 precision-recall curve). From this plot the optimum should be choosen for
 the \code{q} in fitting process.
+}
+\examples{
+# TODO
+TODO <- 1
+
+
+Volcano plot
+
+Plots the p values over the delta psi values, known as volcano plot.
+Visualizes per sample the outliers. By type and aggregate by
+gene if requested.
+
 }

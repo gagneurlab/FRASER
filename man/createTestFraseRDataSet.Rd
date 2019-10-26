@@ -6,7 +6,7 @@
 filled with counts to be used in the vignette and
 to explore the functionallity of the FraseR package.}
 \usage{
-createTestFraseRDataSet(BPPARAM = NULL)
+createTestFraseRDataSet(BPPARAM = bpparam())
 }
 \value{
 a FraseRDataSet object which contains a test case
@@ -17,6 +17,7 @@ filled with counts to be used in the vignette and
 to explore the functionallity of the FraseR package.
 }
 \examples{
-    createTestFraseRDataSet()
+fds <-  createTestFraseRDataSet()
+fds
 
 }

@@ -510,12 +510,19 @@ getPlottingDT <- function(fds, axis=c("row", "col"), type=NULL,
 
 
 #'
-#' Verbosity level of package
+#' Verbosity level of the FraseR package
 #'
 #' Dependend on the level of verbosity the algorithm reports more or less to
 #' the user. 0 means being quiet and 10 means everything.
 #'
 #' @rdname verbose
+#' @examples
+#' fds <- createTestFraseRSettings()
+#' verbose(fds)
+#'
+#' verbose(fds) <- 2
+#' verbose(fds)
+#'
 #' @export
 verbose <- function(fds){
     if("verbosity" %in% names(metadata(fds))){

@@ -28,3 +28,8 @@ returned}
 \description{
 Use cutoffs to define splicing outlier event.
 }
+\examples{
+# TODO
+TODO <- 1
+
+}

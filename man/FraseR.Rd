@@ -39,8 +39,14 @@ more control over each analysis step, one can call each function separately.
 * computeDeltaPsi to calculate the delta PSI values
 }
 \examples{
+  # preprocessing
   fds <- createTestFraseRSettings()
-  fds <- FraseR(fds)
+  fds <- countRNAData(fds)
+  fds <- calculatePSIValues(fds)
+  fds <- filterExpression(fds)
+
+  # Run analysis pipeline
+  fds <- FraseR(fds, iterations=2, correction='PCA')
 
   # save the final FraseR object
   saveFraseRDataSet(fds)

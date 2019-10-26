@@ -17,3 +17,8 @@ results(x, ...)
 The result function extracts the results from the given analysis object
 based on the given options and cutoffs.
 }
+\examples{
+# TODO
+TODO <- 1
+
+}

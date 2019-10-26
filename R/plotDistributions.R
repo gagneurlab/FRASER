@@ -508,6 +508,10 @@ qlogisWithCap <- function(x){
 #'
 #' Plot count correlation
 #'
+#' @examples
+#' # TODO
+#' TODO <- 1
+#'
 #' @export
 plotCountCorHeatmap <- function(fds, type=c("psi5", "psi3", "psiSite"),
             logit=FALSE, topN=50000, minMedian=1, main=NULL, normalized=FALSE,

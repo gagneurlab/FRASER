@@ -3,7 +3,7 @@
 \name{verbose}
 \alias{verbose}
 \alias{verbose<-}
-\title{Verbosity level of package}
+\title{Verbosity level of the FraseR package}
 \usage{
 verbose(fds)
 
@@ -12,4 +12,12 @@ verbose(fds) <- value
 \description{
 Dependend on the level of verbosity the algorithm reports more or less to
 the user. 0 means being quiet and 10 means everything.
+}
+\examples{
+fds <- createTestFraseRSettings()
+verbose(fds)
+
+verbose(fds) <- 2
+verbose(fds)
+
 }

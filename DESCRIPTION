@@ -29,6 +29,7 @@ Imports:
     GenomicRanges,
     IRanges,
     graphics,
+    grDevices,
     gplots,
     ggplot2,
     ggpubr,

@@ -7,7 +7,7 @@
 \usage{
 checkFraseRDataSet(fds)
 
-checkCountData(fds)
+checkCountData(fds, stop = TRUE)
 }
 \description{
 Checks all user input and returns corresponding messages

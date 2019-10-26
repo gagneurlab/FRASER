@@ -17,6 +17,7 @@ to be used in the vignette and to explore the
 functionallity of the FraseR package.
 }
 \examples{
-    createTestFraseRSettings()
+fds <- createTestFraseRSettings()
+fds
 
 }

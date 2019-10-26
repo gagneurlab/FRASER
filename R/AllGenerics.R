@@ -765,6 +765,10 @@ FraseR.results <- function(x, sampleIDs, fdrCutoff, zscoreCutoff, dPsiCutoff,
 #' based on the given options and cutoffs.
 #'
 #' @rdname results
+#' @examples
+#' # TODO
+#' TODO <- 1
+#'
 #' @export
 setMethod("results", "FraseRDataSet", function(x, sampleIDs=samples(x),
                     padjCutoff=0.05, zScoreCutoff=NA, deltaPsiCutoff=0.3,
@@ -857,6 +861,10 @@ mapSeqlevels <- function(fds, style="UCSC", ...){
 #'              or \code{feature} is specified the sum by sample or feature is
 #'              returned
 #' @param aggregate If TRUE the returned object is based on the grouped features
+#'
+#' @examples
+#' # TODO
+#' TODO <- 1
 #'
 #' @export
 #'

@@ -1,6 +1,10 @@
 #'
 #' Filtering FraseRDataSets
 #'
+#' @examples
+#' # TODO
+#' TODO <- 1
+#'
 #' @export
 filterExpression <- function(fds, minExpressionInOneSample=20, quantile=0.05,
                     quantileMinExpression=1, minDeltaPsi=0, filter=TRUE,
