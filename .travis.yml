@@ -1,6 +1,6 @@
 language: r
 sudo: required
-dist: xenial
+dist: bionic
 cache:
   - directories:
     - $HOME/R/Library
