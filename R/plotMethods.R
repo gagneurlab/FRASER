@@ -1,7 +1,6 @@
+#' Visualization functions for FraseR
 #'
-#' @title Visualization functions for FraseR
-#'
-#' @description The FraseR package provides mutliple functions to visualize
+#' The FraseR package provides mutliple functions to visualize
 #' the data and the results of a full data set analysis.
 #'
 #' This is the list of all plotting function provided by FraseR:
@@ -121,7 +120,7 @@
 #' @return If base R graphics are used nothing is returned else the plotly or
 #'             the gplot object is returned.
 #'
-#'
+#' @name plotFunctions
 #' @rdname plotFunctions
 #' @aliases plotFunctions plotAberrantPerSample plotVolcano plotQQ plotExpression
 #'             plotCountCorHeatmap plotFilterExpression plotExpectedVsObservedPsi
@@ -130,7 +129,7 @@
 #' # TODO
 #' TODO <- 1
 #'
-
+NULL
 
 #'
 #' Volcano plot
@@ -306,6 +305,7 @@ plotExpression <- function(fds, type=c("psi5", "psi3", "psiSite"),
     plotBasePlot(g, basePlot)
 }
 
+
 #'
 #' Expected over Overserved plot
 #'
@@ -361,6 +361,7 @@ plotExpectedVsObservedPsi <- function(fds, type=c("psi5", "psi3", "psiSite"),
 
     plotBasePlot(g, basePlot)
 }
+
 
 #'
 #' Q-Q plot
@@ -468,8 +469,9 @@ plotQQ <- function(fds, type, feature, aggregate=FALSE, global=FALSE,
     g
 }
 
-#'
+
 #' breaks ties in a qq plot to get a better distributed p-value plot
+#'
 #' @noRd
 breakTies <- function(x, logBase=10, decreasing=TRUE){
     intervals <- sort(unique(c(0, x)))
@@ -493,6 +495,7 @@ breakTies <- function(x, logBase=10, decreasing=TRUE){
         x <- sort(x, decreasing=TRUE)
     }
 }
+
 
 #'
 #' Plots the results from the hyperparamter optimization.
@@ -528,6 +531,7 @@ plotEncDimSearch <- function(fds, type=c("psi3", "psi5", "psiSite")){
     ggarrange(g1, g2, nrow=2)
 }
 
+
 #'
 #' Plot filter expression
 #'
@@ -556,8 +560,10 @@ plotFilterExpression <- function(fds, bins=200, legend.position=c(0.8, 0.8)){
         theme(legend.position=legend.position)
 }
 
-#'
+
 #' Plot count correlation
+#'
+#' Count correlation heatmap function
 #'
 #' @rdname plotFunctions
 #' @export
@@ -724,6 +730,7 @@ plotCountCorHeatmap <- function(fds, type=c("psi5", "psi3", "psiSite"),
     )
 }
 
+#' helper function to get the annotation as data frame from the col data object
 #'
 #' @noRd
 getColDataAsDFFactors <- function(fds, names){

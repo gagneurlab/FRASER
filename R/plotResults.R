@@ -9,7 +9,7 @@
 #'      plotSampleResults(fds, "sample1")
 #'      plotSampleResults(fds, "sample1", "result.html")
 plotSampleResults <- function(fds, sampleID=NULL, file=NULL,
-            dir=NULL, browseIt=FALSE){
+                    dir=NULL, browseIt=FALSE){
 
     # if sample is empty create all plots for all samples
     if(is.null(sampleID)){
@@ -54,7 +54,7 @@ plotSampleResults <- function(fds, sampleID=NULL, file=NULL,
 #'
 #' generate the main FraseR plot
 #' @noRd
-createMainPlotFraseR <- function(fds, sampleID, source=NULL){
+createMainPlotFraseR <- function(fds, sampleID, ...){
     ylim=c(0,30)
     xlim=c(-5,5)
     nxlim <- c(xlim[1]*1.05, xlim[2]*1.05)
@@ -62,7 +62,7 @@ createMainPlotFraseR <- function(fds, sampleID, source=NULL){
 
     # generate each sub plot
     plotls <- lapply(c("psi5", "psi3", "psiSite"), function(x){
-            plotVolcano(fds, sampleID, x, source=source, xlim=xlim, ylim=ylim)
+            plotVolcano(fds, sampleID, type=x, ...)
     })
 
     # combine plots

@@ -25,7 +25,7 @@ calculateZscore <- function(fds, type=currentType(fds), correction="FraseR"){
 # Function to calculate the p-values (both beta binomial and binomial)
 calculatePvalues <- function(fds, type=currentType(fds),
                     correction="FraseR", BPPARAM=parallel(fds),
-                    distributions="betabinomial"){
+                    distributions="betabinomial", capN=1e6){
     distributions <- match.arg(distributions, several.ok=TRUE,
             choices=c("betabinomial", "binomial"))
 
@@ -56,12 +56,25 @@ calculatePvalues <- function(fds, type=currentType(fds),
     k <- as.matrix(K(fds))
     n <- as.matrix(N(fds))
 
+    # betaBinomial functions get slowed down drastically if
+    # N is big (2 mio and bigger). Hence downsample if requested to 1mio max
+    if(isTRUE(capN)){
+        capN <- 1e6
+    }
+    if(isScalarNumeric(capN)){
+        bigN <- which(n > capN)
+        if(length(bigN) >= 1){
+            facN <- capN/n[bigN]
+            k[bigN] <- pmin(ceiling(k[bigN] * facN), capN)
+            n[bigN] <- capN
+        }
+    }
+
     if("betabinomial" %in% distributions){
         # beta binomial p-values
-        pval_list <- bplapply(seq_len(nrow(mu)), singlePvalueBetaBinomial,
+        pval_list <- bplapply(seq_row(mu), singlePvalueBetaBinomial,
                 k=k, n=n, mu=mu, rho=rho, BPPARAM=BPPARAM)
         pval <- do.call(rbind, pval_list)
-        # dval <- dbetabinom(k, n, mu, rho)
         dval <- matrix(dbbinom(k, n, alpha, beta), nrow=nrow(k), ncol=ncol(k))
         pvals <- 2 * pmin(pval, 1 - pval + dval, 0.5)
         fwer_pval <- bplapply(seq_len(ncol(pvals)), adjust_FWER_PValues,
@@ -101,8 +114,13 @@ singlePvalueBetaBinomial <- function(idx, k, n, mu, rho){
     alphai <- mui * (1 - rhoi)/rhoi
     betai <- (1 - mui) * (1 - rhoi)/rhoi
 
-    # pvals <- pmin(1, pbetabinom(ki, ni, mui, rhoi))
+    # try catch block to overcome long running times
     pvals <- pmin(1, pbbinom(ki, ni, alphai, betai))
+
+    if(any(is.na(pvals))){
+        message(date(), " : ", idx)
+    }
+
     return (pvals)
 }
 
