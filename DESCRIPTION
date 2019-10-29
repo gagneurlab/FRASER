@@ -18,6 +18,7 @@ Depends:
     SummarizedExperiment (>= 1.6.3)
 Imports:
     BBmisc,
+    Biobase,
     BiocGenerics,
     biomaRt,
     DelayedArray (>= 0.5.11),

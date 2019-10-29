@@ -52,7 +52,7 @@ more control over each analysis step, one can call each function separately.
   saveFraseRDataSet(fds)
 
   # finally visualize the results
-  plotSampleResults(fds, 'sample1')
+  plotVolcano(fds, 'sample1', 'psi5')
 
 }
 \author{

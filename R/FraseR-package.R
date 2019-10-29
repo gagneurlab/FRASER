@@ -125,7 +125,7 @@ NULL
 
 #' TODO: Should be removed in the end!
 #' @noRd
-globalVariables(c(".N", ".asDataFrame", "End", "FN", "HTML", "Start", "TP",
+globalVariables(c(".", "J", ".N", ".asDataFrame", "End", "FN", "HTML", "Start", "TP",
         "deltaPsi", "curgr", "gene", "lty", "hgnc_symbol", "id",
         "ldat", "p.adj", "pval", "pvalue", "shinyFds", "shinyFdsRes",
         "sampleID", "sampleGroup", "chr", "symbol", "type", "pseudocount",

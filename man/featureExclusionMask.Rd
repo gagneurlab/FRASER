@@ -28,7 +28,7 @@ encoding dimension we can set the \code{featureExclusion} vector to
 features which we do not want to model by the autoencoder.
 }
 \examples{
-ods <- makeExampleFraseRDataSet()
+fds <- makeExampleFraseRDataSet()
 featureExclusionMask(fds) <- sample(c(FALSE, TRUE), nrow(fds), replace=TRUE)
 
 featureExclusionMask(fds)

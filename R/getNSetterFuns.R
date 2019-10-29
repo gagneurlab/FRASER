@@ -12,18 +12,16 @@
 #'             from the encoding dimension fit.
 #' @return The exclusion vector
 #'
-#' @name featureExclusionMask
 #' @rdname featureExclusionMask
 #' @aliases featureExclusionMask, `featureExclusionMask<-`
 #'
 #' @examples
-#' ods <- makeExampleFraseRDataSet()
+#' fds <- makeExampleFraseRDataSet()
 #' featureExclusionMask(fds) <- sample(c(FALSE, TRUE), nrow(fds), replace=TRUE)
 #'
 #' featureExclusionMask(fds)
 #'
 #' @export featureExclusionMask
-#' @export "featureExclusionMask<-"
 featureExclusionMask <- function(fds, type=currentType(fds)){
     ans <- rep(TRUE, nrow(mcols(fds, type=type)))
     if(paste0('featureExclude_', type) %in% colnames(mcols(fds, type=type))){
@@ -471,6 +469,9 @@ getPlottingDT <- function(fds, axis=c("row", "col"), type=NULL,
     feature_names <- rownames(mcols(fds, type))[idxrow]
     if("hgnc_symbol" %in% colnames(mcols(fds, type=type))){
         feature_names <- mcols(fds, type)[idxrow,"hgnc_symbol"]
+    }
+    if(is.null(feature_names)){
+        feature_names <- as.character(seq_row(mcols(fds, type)))[idxrow]
     }
 
     dt <- data.table(

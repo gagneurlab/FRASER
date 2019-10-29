@@ -36,7 +36,7 @@
 #'   saveFraseRDataSet(fds)
 #'
 #'   # finally visualize the results
-#'   plotSampleResults(fds, 'sample1')
+#'   plotVolcano(fds, 'sample1', 'psi5')
 #'
 #' @author Christian Mertes \email{mertes@@in.tum.de}
 #' @export
