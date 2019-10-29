@@ -25,7 +25,20 @@
 #' @aliases loadFraseRDataSet saveFraseRDataSet
 #' @rdname loadFraseRDataSet
 #' @export
-loadFraseRDataSet <- function(dir, name=NULL, upgrade=FALSE){
+loadFraseRDataSet <- function(dir, name=NULL, file=NULL, upgrade=FALSE){
+    # check if file is provided
+    if(!is.null(file)){
+        if(!missing(dir) | !is.null(name)){
+            stop("You can only provide 'file' or 'dir' + 'name', ",
+                    "but not all together.")
+        }
+        if(!file.exists(file) | !grepl("\\.(RDS|h5)$", file, perl=TRUE)){
+            stop("Please provide the `fds-object.RDS` file.")
+        }
+        name <- basename(dirname(file))
+        dir  <- dirname(dirname(dirname(file)))
+    }
+
     # check dir
     if(is.null(dir)) stop("dir: can not be NULL")
     if(!isScalarCharacter(dir)) stop("dir: needs to be a character path name.")
