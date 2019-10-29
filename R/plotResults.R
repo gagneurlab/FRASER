@@ -5,9 +5,11 @@
 #'
 #' @export
 #' @examples
-#'      fds <- FraseR()
-#'      plotSampleResults(fds, "sample1")
-#'      plotSampleResults(fds, "sample1", "result.html")
+#' # TODO
+#' TODO <- 1
+#' #     fds <- FraseR()
+#' #     plotSampleResults(fds, "sample1")
+#' #     plotSampleResults(fds, "sample1", "result.html")
 plotSampleResults <- function(fds, sampleID=NULL, file=NULL,
                     dir=NULL, browseIt=FALSE){
 

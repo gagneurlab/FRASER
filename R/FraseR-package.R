@@ -9,9 +9,11 @@
 #'
 #' @import data.table
 #'
+#' @importFrom Biobase rowMax
+#'
 ### Parallel computing
 #'
-#' @importFrom parallel mclapply
+#' @importFrom parallel mclapply detectCores
 #' @import BiocParallel
 #' @importFrom pcaMethods pca loadings
 #'
@@ -19,7 +21,7 @@
 #' @importFrom BiocGenerics updateObject counts counts<- strand strand<-
 #' @importFrom GenomicAlignments junctions readGAlignments summarizeJunctions
 #' @importFrom SummarizedExperiment assay assay<- assays assays<- assayNames
-#'          colData rowData rowRanges rowRanges<- SummarizedExperiment
+#'          colData colData<- rowData rowRanges rowRanges<- SummarizedExperiment
 #' @importFrom GenomicRanges findOverlaps granges GRanges GRangesList
 #'          makeGRangesFromDataFrame
 #' @importFrom IRanges subsetByOverlaps from to IRanges ranges
@@ -109,7 +111,7 @@
 #'          compile constraint_minmaxnorm custom_metric keras_model k_exp k_mean
 #'          k_log k_set_value k_variable layer_input layer_lambda layer_dense
 #'          regularizer_l2 get_weights set_weights optimizer_adam use_python
-
+#'
 #' @importFrom tensorflow install_tensorflow evaluate
 #'
 #' @importFrom tibble as_tibble
@@ -126,8 +128,16 @@ NULL
 globalVariables(c(".N", ".asDataFrame", "End", "FN", "HTML", "Start", "TP",
         "deltaPsi", "curgr", "gene", "lty", "hgnc_symbol", "id",
         "ldat", "p.adj", "pval", "pvalue", "shinyFds", "shinyFdsRes",
-        "sampleID", "sampleGroup", "chr", "symbol", "type", "pseudocount"),
+        "sampleID", "sampleGroup", "chr", "symbol", "type", "pseudocount",
+        "..sum_cols", "acceptorGroupID", "acceptorGroupSize", "Aggregation",
+        "aroc", "donorGroupID", "donorGroupSize", "dpsi", "exMask", "fact",
+        "fdrByFeature", "fds_inputK", "fds_inputN", "fds_new", "fds_rhoIn",
+        "featureID", "features", "flog.debug", "flog.error", "flog.fatal",
+        "flog.info", "flog.namespace", "flog.trace", "flog.warn", "geneID",
+        "idx", "iteration", "Iteration", "IterSteps", "junctionID", "k", "Loss",
+        "model", "mu", "n", ",nsubset", "o3", "o5", "obsPsi", "os", "pa",
+        "padj", "passed", "pByFeature", "pointNr", "predPsi", "psi3", "psi5",
+        "psiType", "psiValue", "seqlength", "seqlevel", "Step", "traceNr",
+        "V1", "value", "zscore"),
         package="FraseR")
-
-
 options("FraseR.pseudoCount"=1)

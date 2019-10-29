@@ -2,7 +2,7 @@
 % Please edit documentation in R/find_encoding_dimensions.R
 \name{optimHyperParams}
 \alias{optimHyperParams}
-\title{remove non variable and low abundance junctions}
+\title{Find optimal encoding dimension}
 \usage{
 optimHyperParams(fds, type, correction, q_param = seq(2, min(40,
   ncol(fds)), by = 3), noise_param = c(0, 0.5, 1, 2, 5),
@@ -11,5 +11,11 @@ optimHyperParams(fds, type, correction, q_param = seq(2, min(40,
   internalThreads = 3)
 }
 \description{
-remove non variable and low abundance junctions
+Finds the optimal encoding dimension by injecting artificial splicing outlier
+ratios while maximizing the precision-recall curve.
+}
+\examples{
+# TODO
+TODO <- 1
+
 }

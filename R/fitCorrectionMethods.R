@@ -12,8 +12,10 @@ fit <- function(fds, correction=c("PCA-regression", "PCA-BB-Decoder", "FraseR",
 
     # make sure its only in-memory data for k and n
     currentType(fds) <- type
-    counts(fds, type=type, side="other", HDF5=FALSE) <- as.matrix(N(fds) - K(fds))
-    counts(fds, type=type, side="ofInterest", HDF5=FALSE) <- as.matrix(K(fds))
+    counts(fds, type=type, side="other", HDF5=FALSE) <- as.matrix(
+            counts(fds, type=type, side="other"))
+    counts(fds, type=type, side="ofInterest", HDF5=FALSE) <- as.matrix(
+            counts(fds, type=type, side="ofInterest"))
 
     message(date(), ": Running fit with correction method: ", correction)
     fds <- switch(method,

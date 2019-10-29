@@ -65,12 +65,12 @@ createTestFraseRDataSet <- function(BPPARAM=bpparam()){
     fds <- countRNAData(fds)
 
     # run FraseR pipeline
-    fds <- FraseR(fds, q=2)
+    fds <- FraseR(fds, q=2, iterations=2)
 
     # annotate it
-    dataset <- annotateRanges(dataset)
+    fds <- annotateRanges(fds)
 
     # return a FraseRDataSet object
-    return(dataset)
+    return(fds)
 }
 

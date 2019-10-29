@@ -25,7 +25,7 @@ calculateZscore <- function(fds, type=currentType(fds), correction="FraseR"){
 # Function to calculate the p-values (both beta binomial and binomial)
 calculatePvalues <- function(fds, type=currentType(fds),
                     correction="FraseR", BPPARAM=parallel(fds),
-                    distributions="betabinomial", capN=1e6){
+                    distributions="betabinomial", capN=5*1e5){
     distributions <- match.arg(distributions, several.ok=TRUE,
             choices=c("betabinomial", "binomial"))
 

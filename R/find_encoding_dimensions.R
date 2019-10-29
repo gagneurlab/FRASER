@@ -75,6 +75,17 @@ findEncodingDim <- function(i, fds, type, params, correction,
     return(list(q=q_guess, noiseRatio=noiseRatio, loss=res_fit$evaluation, aroc=evals))
 }
 
+#'
+#' Find optimal encoding dimension
+#'
+#' Finds the optimal encoding dimension by injecting artificial splicing outlier
+#' ratios while maximizing the precision-recall curve.
+#'
+#' @examples
+#' # TODO
+#' TODO <- 1
+#'
+#' @export
 optimHyperParams <- function(fds, type, correction,
                     q_param=seq(2, min(40, ncol(fds)), by=3),
                     noise_param=c(0, 0.5, 1, 2, 5), minDeltaPsi=0.1,
@@ -97,9 +108,9 @@ optimHyperParams <- function(fds, type, correction,
     counts(fds, type=type, side="ofInterest", HDF5=FALSE) <-
             as.matrix(counts(fds, type=type, side="ofInterest"))
 
-    #'
-    #' remove non variable and low abundance junctions
-    #'
+    #
+    # remove non variable and low abundance junctions
+    #
     j2keepVa <- variableJunctions(fds, type, minDeltaPsi)
     j2keepDP <- rowQuantiles(K(fds, type), probs=0.75) >= 10
     j2keep <- j2keepDP & j2keepVa
