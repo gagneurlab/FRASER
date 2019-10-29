@@ -14,27 +14,37 @@ getName <- function(){
     "test_that"
 }
 
-getFraseR <- function(clean=FALSE, count=TRUE){
+getFraseRTestFile <- function(useHome=FALSE){
+    file.path(getDir(useHome), getName(), "fds-object.RDS")
+}
+
+getFraseR <- function(clean=FALSE, useHome=FALSE){
     fds <- NULL
     try({
-        fds <- loadFraseRDataSet(getDir(), getName())
+        fds <- readRDS(getFraseRTestFile(useHome=useHome))
         if(clean == TRUE){
-            cleanCache(fds, all=TRUE)
-            fds <- getFraseR(count=count)
+            unlink(getFraseRTestFile(useHome=useHome))
+            fds <- getFraseR()
         }
     }, silent=TRUE)
     if(is.null(fds)) {
         fds <- createTestFraseRSettings()
         workingDir(fds) <- getDir()
         name(fds) <- getName()
-        parallel(fds) <- MulticoreParam(4)
+        verbose(fds) <- 0
+        dontWriteHDF5(fds) <- TRUE
 
-        if(count==TRUE){
-            fds <- FraseR(settings=fds)
-            fds <- saveFraseRDataSet(fds)
+        if(.Platform$OS.type != "windows"){
+            parallel(fds) <- MulticoreParam(4)
+            register(parallel(fds))
         }
+
+        fds <- countRNAData(fds)
+        fds <- calculatePSIValues(fds)
+        fds <- filterExpression(fds)
+        fds <- FraseR(fds, q=2, correction="PCA")
+        dir.create(dirname(getFraseRTestFile(useHome=useHome)), recursive=TRUE)
+        saveRDS(fds, getFraseRTestFile(useHome=useHome))
     }
     return(fds)
 }
-
-invisible(getFraseR(TRUE, FALSE))

@@ -2,10 +2,13 @@ context("testing getter/setter functions")
 
 test_that("counts", {
     fds <- getFraseR()
-    expect_is(counts(fds, type="psi3"),    "DelayedMatrix")
-    expect_is(counts(fds, type="psi5"),    "DelayedMatrix")
-    expect_is(counts(fds, type="psiSite"), "DelayedMatrix")
-    expect_is(counts(fds, type="psi3", side='other'),    "DelayedMatrix")
-    expect_is(counts(fds, type="psi5", side='other'),    "DelayedMatrix")
-    expect_is(counts(fds, type="psiSite", side='other'), "DelayedMatrix")
+    expect_equal(counts(fds, type="psi5"),    K(fds, "psi5"))
+    expect_equal(counts(fds, type="psi3"),    K(fds, "psi3"))
+    expect_equal(counts(fds, type="psiSite"), K(fds, "psiSite"))
+    expect_equal(counts(fds, type="psi5", side='other'),
+            N(fds, "psi5") - K(fds, "psi5"))
+    expect_equal(counts(fds, type="psi3", side='other'),
+            N(fds, "psi3") - K(fds, "psi3"))
+    expect_equal(counts(fds, type="psiSite", side='other'),
+            N(fds, "psiSite") - K(fds, "psiSite"))
 })
