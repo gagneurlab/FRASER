@@ -37,7 +37,7 @@ fds1
 fds1 <- injectOutliers(fds1, minDpsi=0.2, freq=1E-3)
 
 # A generic dataset with specificed sample size and injection method
-fds2 <- makeSimulatedFraserDataSet(m=100, j=500, inj='low')
+fds2 <- makeSimulatedFraserDataSet(m=100, j=500, q=5)
 fds2
 
 }
