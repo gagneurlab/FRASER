@@ -28,10 +28,11 @@ column it will take this column to highlight samples.}
 This can be used for quality control plots as well.
 }
 \examples{
+# TODO
+DEPRICATED <- 1
+# fds <- createTestFraseRDataSet()
 
-fds <- createTestFraseRDataSet()
-
-plotJunctionDistribution(fds, results(fds)[1])
-plotJunctionDistribution(fds, results(fds)[3])
+# plotJunctionDistribution(fds, results(fds)[1])
+# plotJunctionDistribution(fds, results(fds)[3])
 
 }

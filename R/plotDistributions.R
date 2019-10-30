@@ -15,11 +15,12 @@
 #'              the underlying plotting functions
 #'
 #' @examples
+#' # TODO
+#' DEPRICATED <- 1
+#' # fds <- createTestFraseRDataSet()
 #'
-#' fds <- createTestFraseRDataSet()
-#'
-#' plotJunctionDistribution(fds, results(fds)[1])
-#' plotJunctionDistribution(fds, results(fds)[3])
+#' # plotJunctionDistribution(fds, results(fds)[1])
+#' # plotJunctionDistribution(fds, results(fds)[3])
 #'
 #' @export
 plotJunctionDistribution <- function(fds, gr, type=gr$type, sampleIDs=NULL,
