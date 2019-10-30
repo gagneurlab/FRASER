@@ -18,6 +18,6 @@ Set and returns the pseudo count used within the FraseR fitting procedure.
 pseudocount(4L)
 
 # get
-psuedocount()
+pseudocount()
 
 }

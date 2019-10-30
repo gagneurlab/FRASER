@@ -256,7 +256,7 @@ currentType <- function(fds){
 #' pseudocount(4L)
 #'
 #' # get
-#' psuedocount()
+#' pseudocount()
 #'
 #' @export
 pseudocount <- function(value=NULL){
@@ -274,7 +274,8 @@ pseudocount <- function(value=NULL){
     stopifnot(value >= 0)
     value <- as.integer(value)
     options('FraseR.pseudoCount'=value)
-    setPseudoCount(value)
+    devNULL <- .setPseudoCount(value)
+    stopifnot(value == devNULL)
 
     invisible(value)
 }

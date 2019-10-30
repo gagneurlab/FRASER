@@ -6,6 +6,17 @@
 
 using namespace Rcpp;
 
+// setPseudoCount
+double setPseudoCount(double pseudoCount);
+RcppExport SEXP _FraseR_setPseudoCount(SEXP pseudoCountSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type pseudoCount(pseudoCountSEXP);
+    rcpp_result_gen = Rcpp::wrap(setPseudoCount(pseudoCount));
+    return rcpp_result_gen;
+END_RCPP
+}
 // predictYCpp
 arma::mat predictYCpp(arma::mat H, arma::mat D, arma::vec b);
 RcppExport SEXP _FraseR_predictYCpp(SEXP HSEXP, SEXP DSEXP, SEXP bSEXP) {
@@ -189,6 +200,7 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_FraseR_setPseudoCount", (DL_FUNC) &_FraseR_setPseudoCount, 1},
     {"_FraseR_predictYCpp", (DL_FUNC) &_FraseR_predictYCpp, 3},
     {"_FraseR_predictMuCpp", (DL_FUNC) &_FraseR_predictMuCpp, 1},
     {"_FraseR_estLgammaAlpha", (DL_FUNC) &_FraseR_estLgammaAlpha, 3},
