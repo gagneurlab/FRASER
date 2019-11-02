@@ -188,58 +188,45 @@ plotVolcano <- function(fds, sampleID, type, deltaPsiCutoff=0.3,
 #'
 #' @rdname plotFunctions
 #' @export
-plotAberrantPerSample <- function(fds, main, padjCutoff=0.05, zScoreCutoff=NA,
-                                  deltaPsiCutoff=0.1, col="#1B9E77",
-                                  type=c("psi3", "psi5", "psiSite"),
-                                  yadjust=c(1.2, 1.2), labLine=c(3.5, 3),
-                                  ymax=NULL, ylab="#Aberrantly spliced events",
-                                  labCex=par()$cex, ...){
+plotAberrantPerSample <- function(fds, main, type=c("psi3", "psi5", "psiSite"),
+                    padjCutoff=0.1, zScoreCutoff=NA, deltaPsiCutoff=0.3,
+                    aggregated=TRUE, BPPARAM=bpparam(), ...){
 
-    type <- match.arg(type)
+    type <- match.arg(type, several.ok=TRUE)
 
     if(missing(main)){
-        main <- paste('Aberrant events per sample (', type, ')')
+        main <- paste('Aberrant events per sample')
+        if(isTRUE(aggregated)){
+            main <- paste(main, "by gene")
+        }
     }
 
-    count_vector <- sort(aberrant(fds, by="sample", type=type,
-                                  padjCutoff=padjCutoff, zScoreCutoff=zScoreCutoff,
-                                  deltaPsiCutoff=deltaPsiCutoff, ...))
+    # extract outliers
+    outliers <- bplapply(types, aberrant, fds=fds, by="sample",
+            padjCutoff=padjCutoff, zScoreCutoff=zScoreCutoff,
+            deltaPsiCutoff=deltaPsiCutoff, ..., BPPARAM=BPPARAM)
+    dt2p <- rbindlist(lapply(seq_along(outliers), function(idx){
+        vals <- outliers[[idx]]
+        data.table(type=types[idx], value=sort(vals), median=median(vals),
+                rank=seq_along(vals))
+    }))
 
-    ylim <- c(0.4, max(1, count_vector)*1.1)
-    if(!is.null(ymax)){
-        ylim[2] <- ymax
-    }
-    replace_zero_unknown <- 0.5
-    ticks <- c(replace_zero_unknown, signif(10^seq(
-        from=0, to=round(log10(max(1, count_vector))), by=1/3), 1))
+    # plot them
+    g <- ggplot(dt2p, aes(x=rank, y=value, color=type)) +
+        geom_line() +
+        geom_hline(aes(yintercept=median, color=type, lty="Median")) +
+        scale_y_log10() +
+        theme_bw() +
+        theme_cowplot() +
+        ggtitle(main) +
+        xlab("Sample rank") +
+        ylab("Number of outliers") +
+        scale_color_discrete(name="Splice metric", labels=ggplotLabelPsi(types)) +
+        scale_linetype_manual(name="", values=2, labels="Median")
 
-    labels_for_ticks <- sub(replace_zero_unknown, '0', as.character(ticks))
-
-    bp <- barplot2(
-        replace(count_vector, count_vector==0, replace_zero_unknown),
-        log='y', ylim=ylim, names.arg='', xlab='', plot.grid=TRUE,
-        grid.col='lightgray', ylab='', yaxt='n', border=NA, xpd=TRUE,
-        col=col, main=main)
-
-    n_names <- floor(length(count_vector)/20)
-    xnames= seq_len(n_names*20)
-    axis(side=1, at= c(0,bp[xnames,]), labels= c(0,xnames))
-    axis(side=2, at=ticks, labels= labels_for_ticks, ylog=TRUE, las=2)
-
-    # labels
-    mtext('Sample rank', side=1, line=labLine[1], cex=labCex)
-    mtext(ylab, side=2, line=labLine[2], cex=labCex)
-
-    # legend and lines
-    hlines <- c(Median=max(replace_zero_unknown, median(count_vector)),
-                Quantile90=quantile(count_vector, 0.9, names=FALSE))
-    color_hline <- c('black','black')
-    abline(h=hlines, col=color_hline)
-    text(x=c(1,1), y=hlines*yadjust, col=color_hline, adj=0,
-         labels=c('Median', expression(90^th ~ 'percentile')))
-
-    box()
+    g
 }
+
 
 #'
 #' Junction expression plot
@@ -371,13 +358,17 @@ plotExpectedVsObservedPsi <- function(fds, type=c("psi5", "psi3", "psiSite"),
 #' @rdname plotFunctions
 #' @export
 plotQQ <- function(fds, type, feature, aggregate=FALSE, global=FALSE,
-                   main=paste0("QQ plot: ", feature, " (", type, ")"),
-                   conf.alpha=0.05, breakTies=TRUE, highlightOutliers=TRUE,
-                   samplePoints=FALSE, maxOutlier=2, cutYaxis=FALSE){
+            main=NULL, conf.alpha=0.05, highlightOutliers=TRUE,
+            samplePoints=30000, BPPARAM=bplapply()){
 
     # check parameters
-    if(!isTRUE(global)){
-
+    if(isTRUE(global)){
+        if(missing(type)){
+            type <- psiTypes
+        }
+        dt <- rbindlist(bplapply(type, getPlottingDT, fds=fds, axis="col",
+                idx=TRUE, aggregate=aggregate, BPPARAM=BPPARAM))
+    } else {
         stopifnot(!is.null(feature))
 
         # extract data
@@ -390,82 +381,66 @@ plotQQ <- function(fds, type, feature, aggregate=FALSE, global=FALSE,
         dt <- getPlottingDT(fds, axis="row", type=type, idx=feature_sites,
                             aggregate=aggregate)
     }
-    else{
 
-        idxcol <- TRUE
-
-        if(!is.null(feature)){
-            stopifnot(feature %in% colnames(fds))
-            idxcol <- feature
-        }
-
-        dt <- getPlottingDT(fds, axis="col", type=type, idx=idxcol,
-                            aggregate=aggregate)
-    }
-
-
-    pvals <- dt[,pval]
-    outlier <- FALSE
+    dt2p <- dt[order(type, pval)]
+    dt2p[,outlier:=FALSE]
     if(isTRUE(highlightOutliers)){
-        outlier <- dt[,aberrant]
+        dt2p[,outlier:=aberrant]
     }
 
     # points
-    obs <- -log10(sort(c(pvals)))
-    obs[is.na(obs)] <- 0
-    if(length(unique(obs)) < 2 | length(obs) < 2){
+    dt2p[,obs:=-log10(pval)]
+    dt2p[is.na(obs), obs:=0]
+    dt2p[is.infinite(obs), obs:=dt2p[is.finite(obs),max(obs)]]
+    if(dt2p[,length(unique(obs))] < 2 | nrow(dt2p) < 2){
         warning("There are no pvalues or all are NA!")
         return(FALSE)
     }
-    if(breakTies){
-        obs <- breakTies(obs, logBase=10, decreasing=TRUE)
-    }
-    exp <- -log10(ppoints(length(obs)))
-    len <- length(exp)
-
-    # limits for nice plotting
-    maxPoint <- max(c(exp, obs))
-    ylim <- range(0, min(exp[1]*maxOutlier, maxPoint))
+    dt2p[,exp:=-log10(ppoints(.N)),by=type]
 
     # confidence band
     # http://genome.sph.umich.edu/wiki/Code_Sample:_Generating_QQ_Plots_in_R
-    if(is.numeric(conf.alpha)){
-        getY <- function(x, exp){
-            x1 <- exp[2]
-            x2 <- exp[1]
-            y1 <- -log10(x[2])
-            y2 <- -log10(x[1])
-            m <- (y2-y1)/(x2-x1)
-            return(10^-(y1 + m*((x2+1)-x1)))
-        }
-        upper <- qbeta(conf.alpha/2,   1:len, rev(1:len))
-        lower <- qbeta(1-conf.alpha/2, 1:len, rev(1:len))
-    }
 
-    plotPoint <- TRUE
-    if(isTRUE(samplePoints)){
-        lo <- length(obs)
-        plotPoint <- 1:lo %in% unique(c(1:min(lo, 100), sort(samplePoints(1:lo,
-                                                                    size = min(lo, 30000), prob=log10(1+lo:1)/sum(log10(1+lo:1))))))
+    # down sample if requested
+    dt2p[,plotPoint:TRUE]
+    if(isTRUE(samplePoints) | isScalarNumeric(samplePoints)){
+        if(isScalarLogical(samplePoints)){
+            samplePoints <- 30000
+        }
+        dt2p[,plotPoint:=seq_len(.N) %in% c(seq_len(200),
+                sample(seq_len(.N), size=min(.N, samplePoints),
+                prob=log10(1+rev(seq_len(.N)))/sum(log10(1+rev(seq_len(.N)))))),
+            by=type]
+        plotPoint <- seq_len(len) %in% unique(c(1:min(lo, 100), )
     }
 
     # get plot data
-    dt_plot <- data.table( obs=obs, exp=exp, lower=-log10(lower), upper=-log10(upper),
-                           plotPoint=plotPoint, outlier=outlier)
-    if(isTRUE(cutYaxis)){
-        dt_plot[outlier,obs:=rep(max(ylim), sum(outlier))]
-    }
+    #dt_plot <- data.table( obs=obs, exp=exp, lower=-log10(lower), upper=-log10(upper),
+    #                       plotPoint=plotPoint, outlier=outlier)
 
     # create qq-plot
-    g <- ggplot(dt_plot[plotPoint,], aes(x=exp, y=obs)) + geom_point(aes(color=outlier),
-                                                                     show.legend=FALSE) +
-        scale_color_manual(values=c("black", "firebrick")) +
+    # [plotPoint,]
+    g <- ggplot(dt2p[plotPoint == TRUE,], aes(x=exp, y=obs, col=type)) +
         theme_bw() + labs(title=main,
-                          x=expression(-log[10] ~  "(exp. p value)"),
-                          y=expression(-log[10] ~ "(obs. p value)") ) +
-        geom_ribbon(alpha=0.2, col="gray", aes(x=exp, ymin = lower, ymax = upper)) +
-        geom_segment(aes(x=min(exp), y=min(exp), xend=max(exp), yend=max(exp)),
-                     col="firebrick")
+                x=expression(-log[10] ~  "(exp. p value)"),
+                y=expression(-log[10] ~ "(obs. p value)") ) +
+        geom_abline(intercept=0, slope=1, col="firebrick")
+    g
+
+    if(isFALSE(global)){
+        g <- g + geom_point(aes(color=outlier), show.legend=FALSE) +
+            scale_color_manual(values=c("black", "firebrick"))
+    }
+    # add confidence interval if requested
+    if(is.numeric(conf.alpha)){
+        dt2p[,upper:=-log10(
+            qbeta(conf.alpha/2,   seq_len(.N), rev(seq_len(.N)))), by=type]
+        dt2p[,lower:=-log10(
+            qbeta(1-conf.alpha/2, seq_len(.N), rev(seq_len(.N)))), by=type]
+        g <- g + geom_ribbon(data=dt2p, alpha=0.2, col="gray",
+                aes(x=exp, ymin=lower, ymax=upper))
+    }
+
     g
 }
 
@@ -561,6 +536,7 @@ plotFilterExpression <- function(fds, bins=200, legend.position=c(0.8, 0.8)){
 }
 
 
+#'
 #' Plot count correlation
 #'
 #' Count correlation heatmap function
@@ -568,14 +544,12 @@ plotFilterExpression <- function(fds, bins=200, legend.position=c(0.8, 0.8)){
 #' @rdname plotFunctions
 #' @export
 plotCountCorHeatmap <- function(fds, type=c("psi5", "psi3", "psiSite"),
-                                logit=FALSE, topN=50000, topJ=5000, minMedian=1,
-                                main=NULL, normalized=FALSE, show_rownames=FALSE,
-                                show_colnames=FALSE, minDeltaPsi=0.1,
-                                annotation_col=NA, annotation_row=NA,
-                                border_color=NA, plotType=c("sampleCorrelation",
-                                                            "junctionSample"),
-                                nClust=5, sampleClustering=NULL,
-                                plotMeanPsi=TRUE, plotCov=TRUE, ...){
+                    logit=FALSE, topN=50000, topJ=5000, minMedian=1,
+                    main=NULL, normalized=FALSE, show_rownames=FALSE,
+                    show_colnames=FALSE, minDeltaPsi=0.1, annotation_col=NA,
+                    annotation_row=NA, border_color=NA, nClust=5,
+                    plotType=c("sampleCorrelation", "junctionSample"),
+                    sampleClustering=NULL, plotMeanPsi=TRUE, plotCov=TRUE, ...){
 
     type <- match.arg(type)
     plotType <- match.arg(plotType)
@@ -730,6 +704,7 @@ plotCountCorHeatmap <- function(fds, type=c("psi5", "psi3", "psiSite"),
     )
 }
 
+#'
 #' helper function to get the annotation as data frame from the col data object
 #'
 #' @noRd
@@ -747,6 +722,19 @@ getColDataAsDFFactors <- function(fds, names){
     rownames(tmpDF) <- rownames(colData(fds))
     return(tmpDF)
 }
+
+#'
+#' Helper to get nice Splice metric labels in ggplot
+#'
+#' @noRd
+ggplotLabelPsi <- function(type){
+    sapply(type, function(x)
+        switch (x,
+                psi5 = bquote(psi[5]),
+                psi3 = bquote(psi[3]),
+                psiSite = bquote(SE)))
+}
+
 
 #
 # plotVolcanoPerGene <- function(fds, sampleID, type=c("psi5", "psi3", "psiSite"),
@@ -933,51 +921,6 @@ getColDataAsDFFactors <- function(fds, names){
 #
 # }
 
-
-# plotOutlierSampleRankPerGenePerType <- function(fds, type=c("psi5", "psi3", "psiSite"),
-#                                   main=paste0("Number outliers per sample (", type, ")"),
-#                                   alpha=0.05){
-#
-#     pvals <- getPvalsPerGene(fds, type, pvals=padjVals(fds, type))
-#
-#     nrOutliers <- apply(pvals, 2, function(x){sum(x < alpha)})
-#
-#     dt <- data.table(nrHits=nrOutliers)
-#     setorder(dt, nrHits)
-#     dt[,rank:=1:.N]
-#
-#     g <- ggplot(dt, aes(x=rank, y=nrHits)) + geom_line() + theme_bw() +
-#         scale_y_log10() +
-#         labs(title=main, x="Sample rank", y="Number of outliers")
-#
-#     g
-#
-# }
-#
-# plotOutlierSampleRankPerGene <- function(fds, alpha=0.05, types=psiTypes, main=paste0(
-#                                                 "Number outliers per sample"),
-#                                                 BPPARAM=MulticoreParam(
-#                                                     min(bpworkers(), length(types))) ){
-#
-#     dtls <- bplapply(types, function(type){
-#         pvals <- getPvalsPerGene(fds, type, pvals=padjVals(fds, type))
-#         nrOutliers <- apply(pvals, 2, function(x){sum(x < alpha)})
-#         dt <- data.table(type=type, nrHits=nrOutliers)
-#         setorder(dt, nrHits)
-#         dt[,rank:=1:.N]
-#         dt
-#     }, BPPARAM=BPPARAM)
-#
-#     dt2p <- rbindlist(dtls)
-#
-#     g <- ggplot(dt2p, aes(x=rank, y=nrHits, color=type)) + geom_line() +
-#         scale_y_log10() +
-#         labs(title=main, x="Sample rank", y="Number of outliers") +
-#         scale_color_discrete(name="", labels = c(bquote(Psi[3]), bquote(Psi[5]), "SE"))
-#
-#     g
-#
-# }
 
 # plotQQPerJunction <- function(fds, type=c("psi5", "psi3", "psiSite"), site,
 #                           maxOutlier=2, conf.alpha=0.05, breakTies=TRUE,
