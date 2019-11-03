@@ -446,8 +446,9 @@ getIndexFromResultTable <- function(fds, resultTable, padj.method="holm"){
     ov
 }
 
-getPlottingDT <- function(fds, axis=c("row", "col"), type=NULL,
-                    result=NULL, idx=NULL, aggregate=FALSE, ...){
+getPlottingDT <- function(fds, axis=c("row", "col"), type=NULL, result=NULL,
+                    idx=NULL, aggregate=FALSE, BPPARAM=SerialParam(),
+                    mc.cores=min(10, getDTthreads()), ...){
     if(!is.null(result)){
         type <- as.character(result$type)
         idx  <- getIndexFromResultTable(fds, result)
@@ -476,37 +477,43 @@ getPlottingDT <- function(fds, axis=c("row", "col"), type=NULL,
     }
 
     dt <- data.table(
-        idx       = idx,
-        k         = c(k),
-        n         = c(n),
-        pval      = c(pVals(fds, type=type)[idxrow, idxcol]),
-        padj      = c(padjVals(fds, type=type)[idxrow, idxcol]),
-        zscore    = c(zScores(fds, type=type)[idxrow, idxcol]),
-        obsPsi    = c((k + pseudocount())/(n + 2*pseudocount())),
-        predPsi   = c(predictedMeans(fds, type)[idxrow, idxcol]),
-        sampleID  = as.character(colnames(K(fds, type))[idxcol]),
-        featureID = feature_names,
-        type      = type)
-
-    dt[,deltaPsi:=obsPsi - predPsi]
+            idx       = idx,
+            sampleID  = factor(as.character(colnames(K(fds, type))[idxcol])),
+            featureID = factor(feature_names),
+            type      = factor(type),
+            k         = c(k),
+            n         = c(n),
+            pval      = c(pVals(fds, type=type)[idxrow, idxcol]),
+            padj      = c(padjVals(fds, type=type)[idxrow, idxcol]),
+            zscore    = c(zScores(fds, type=type)[idxrow, idxcol]),
+            obsPsi    = c((k + pseudocount())/(n + 2*pseudocount())),
+            predPsi   = c(predictedMeans(fds, type)[idxrow, idxcol]))
+    dt[, deltaPsi:=obsPsi - predPsi]
 
     # if requested return gene p values (correct for multiple testing again)
     if(isTRUE(aggregate)){
         dt <- dt[!is.na(featureID)]
 
         # correct by gene and take the smallest p value
-        dt <- dt[, pval:=p.adjust(pval, method="holm"),
-                    by="sampleID,featureID"]
-        dt <- dt[order(sampleID, featureID, pval)][!duplicated(
-            data.table(sampleID,featureID))]
-        dt <- dt[, padj:=p.adjust(pval, method="BY"), by="sampleID"]
+        dt <- rbindlist(mclapply(unique(dt[,sampleID]), mc.cores=mc.cores,
+            FUN=function(x){
+                    dttmp <- dt[sampleID == x]
+                    dttmp[, pval:=p.adjust(pval, method="holm"),
+                            by="sampleID,featureID,type"]
+                    dttmp <- dttmp[order(sampleID, featureID, type, pval)][
+                            !duplicated(data.table(sampleID, featureID, type))]
+                    dttmp <- dttmp[, padj:=p.adjust(pval, method="BY"),
+                            by="sampleID,type"]
+                    dttmp
+            }))
     }
 
     # add aberrant information to it
     aberrantVec <- aberrant(fds, ..., padjVals=dt[,.(padj)],
-            dPsi=dt[,.(deltaPsi)], zscores=dt[,.(zscore)])
+        dPsi=dt[,.(deltaPsi)], zscores=dt[,.(zscore)])
     dt[,aberrant:=aberrantVec]
 
+    # return object
     dt
 }
 

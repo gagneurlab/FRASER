@@ -488,6 +488,12 @@ plotBasePlot <- function(ggplot, basePlot=FALSE){
         if(!require(plotly)){
             stop("Please install plotly, if you use the option basePlot=FALSE!")
         }
+        ggplot$labels <- lapply(ggplot$labels, function(x){
+                if(typeof(x) == "expression"){
+                    warning("Found expression for plotly. Please adapt it!")
+                    return(as.character(x))
+                }
+                x})
         return(plotly::ggplotly(ggplot, tooltip="text"))
     }
     ggplot

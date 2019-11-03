@@ -357,38 +357,41 @@ plotExpectedVsObservedPsi <- function(fds, type=c("psi5", "psi3", "psiSite"),
 #'
 #' @rdname plotFunctions
 #' @export
-plotQQ <- function(fds, type, feature, aggregate=FALSE, global=FALSE,
-            main=NULL, conf.alpha=0.05, highlightOutliers=TRUE,
-            samplePoints=30000, BPPARAM=bplapply()){
+plotQQ <- function(fds, type=NULL, idx=NULL, result=NULL, aggregate=FALSE,
+                    global=FALSE, main=NULL, conf.alpha=0.05,
+                    samplePoints=30000, basePlot=TRUE,
+                    Ncpus=min(4, getDTTable()), ...){
 
     # check parameters
+    if(is.null(aggregate)){
+        aggregate <- isTRUE(global)
+    } else if(!(is.logical(aggregate) |
+                all(aggregate %in% colnames(mcols(fds))))){
+        stop("Please provide TRUE/FALSE or a ",
+             "charactor matching a column name in mcols.")
+    }
+
     if(isTRUE(global)){
-        if(missing(type)){
+        if(is.null(type)){
             type <- psiTypes
         }
-        dt <- rbindlist(bplapply(type, getPlottingDT, fds=fds, axis="col",
-                idx=TRUE, aggregate=aggregate, BPPARAM=BPPARAM))
+        dt <- rbindlist(lapply(type, getPlottingDT, fds=fds, axis="col",
+                idx=TRUE, aggregate=aggregate, mc.cores=Ncpus, ...))
     } else {
-        stopifnot(!is.null(feature))
-
-        # extract data
-        feature_sites <- feature
-        if(isTRUE(aggregate)){
-            stopifnot(is.character(feature)
-                      & "hgnc_symbol" %in% colnames(mcols(fds, type=type)))
-            feature_sites <- which(mcols(fds, type)[,"hgnc_symbol"] == feature)
+        dt <- getPlottingDT(fds, axis="row", type=type, idx=idx, result=result,
+                aggregate=aggregate)
+    }
+    if(is.null(main)){
+        if(isTRUE(global)){
+            main <- "Global QQ plot"
+        } else {
+            main <- paste("QQ plot:", unique(dt[,featureID]))
         }
-        dt <- getPlottingDT(fds, axis="row", type=type, idx=feature_sites,
-                            aggregate=aggregate)
     }
 
-    dt2p <- dt[order(type, pval)]
-    dt2p[,outlier:=FALSE]
-    if(isTRUE(highlightOutliers)){
-        dt2p[,outlier:=aberrant]
-    }
 
     # points
+    dt2p <- dt[order(type, pval)]
     dt2p[,obs:=-log10(pval)]
     dt2p[is.na(obs), obs:=0]
     dt2p[is.infinite(obs), obs:=dt2p[is.finite(obs),max(obs)]]
@@ -398,77 +401,61 @@ plotQQ <- function(fds, type, feature, aggregate=FALSE, global=FALSE,
     }
     dt2p[,exp:=-log10(ppoints(.N)),by=type]
 
-    # confidence band
-    # http://genome.sph.umich.edu/wiki/Code_Sample:_Generating_QQ_Plots_in_R
-
     # down sample if requested
-    dt2p[,plotPoint:TRUE]
+    dt2p[,plotPoint:=TRUE]
     if(isTRUE(samplePoints) | isScalarNumeric(samplePoints)){
         if(isScalarLogical(samplePoints)){
             samplePoints <- 30000
         }
-        dt2p[,plotPoint:=seq_len(.N) %in% c(seq_len(200),
-                sample(seq_len(.N), size=min(.N, samplePoints),
-                prob=log10(1+rev(seq_len(.N)))/sum(log10(1+rev(seq_len(.N)))))),
-            by=type]
-        plotPoint <- seq_len(len) %in% unique(c(1:min(lo, 100), )
+        getProb <- function(n){
+            rnl <- log10(rev(seq_len(n)) + 1)
+            rnl/sum(rnl)
+        }
+        dt2p[,plotPoint:=
+                rep(c(TRUE, FALSE), c(min(10000, .N), .N - min(10000, .N))) |
+                sample(c(TRUE, FALSE), size=.N, replace=TRUE,
+                        prob=c(samplePoints/.N, 1)), by=type]
     }
-
-    # get plot data
-    #dt_plot <- data.table( obs=obs, exp=exp, lower=-log10(lower), upper=-log10(upper),
-    #                       plotPoint=plotPoint, outlier=outlier)
 
     # create qq-plot
-    # [plotPoint,]
-    g <- ggplot(dt2p[plotPoint == TRUE,], aes(x=exp, y=obs, col=type)) +
-        theme_bw() + labs(title=main,
-                x=expression(-log[10] ~  "(exp. p value)"),
-                y=expression(-log[10] ~ "(obs. p value)") ) +
-        geom_abline(intercept=0, slope=1, col="firebrick")
-    g
+    g <- ggplot(dt2p[plotPoint == TRUE,], aes(x=exp, y=obs, col=aberrant,
+            text=paste(
+                "<br>SampleID: ", sampleID, "<br>K: ", k, "<br>N: ", n))) +
+        geom_point() +
+        theme_bw() +
+        ggtitle(main) +
+        xlab(expression(-log[10]~"(exp. p value)")) +
+        ylab(expression(-log[10]~"(obs. p value)"))
 
+    # Set color scale for global/local
     if(isFALSE(global)){
-        g <- g + geom_point(aes(color=outlier), show.legend=FALSE) +
-            scale_color_manual(values=c("black", "firebrick"))
+        g <- g + scale_color_manual(values=c("black", "firebrick"),
+                name="Aberrant")
+    } else {
+        g$mapping$colour <- quote(type)
+        g <- g + scale_color_brewer(palette="Dark2", name="Splicing metric",
+                labels=ggplotLabelPsi(unique(dt2p$type)))
     }
-    # add confidence interval if requested
+
+
+    # add confidence band if requesded
+    # http://genome.sph.umich.edu/wiki/Code_Sample:_Generating_QQ_Plots_in_R
     if(is.numeric(conf.alpha)){
         dt2p[,upper:=-log10(
-            qbeta(conf.alpha/2,   seq_len(.N), rev(seq_len(.N)))), by=type]
+                qbeta(conf.alpha/2,   seq_len(.N), rev(seq_len(.N)))), by=type]
         dt2p[,lower:=-log10(
-            qbeta(1-conf.alpha/2, seq_len(.N), rev(seq_len(.N)))), by=type]
-        g <- g + geom_ribbon(data=dt2p, alpha=0.2, col="gray",
-                aes(x=exp, ymin=lower, ymax=upper))
+                qbeta(1-conf.alpha/2, seq_len(.N), rev(seq_len(.N)))), by=type]
+        g <- g + geom_ribbon(data=dt2p[plotPoint == TRUE,],
+                aes(x=exp, ymin=lower, ymax=upper, text=NULL),
+                alpha=0.2, color="gray")
     }
 
+    # add abline in the end
+    g <- g + geom_abline(intercept=0, slope=1, col="firebrick")
+    if(isFALSE(global)){
+        return(plotBasePlot(g, basePlot))
+    }
     g
-}
-
-
-#' breaks ties in a qq plot to get a better distributed p-value plot
-#'
-#' @noRd
-breakTies <- function(x, logBase=10, decreasing=TRUE){
-    intervals <- sort(unique(c(0, x)))
-    idxintervals <- findInterval(x, intervals)
-    for(idx in as.integer(names(which(table(idxintervals) > 1)))){
-        if(is.numeric(logBase)){
-            minval <- ifelse( idx < length(intervals),
-                              logBase^-intervals[idx+1],
-                              logBase^-intervals[idx] )
-            maxval <- logBase^-intervals[idx]
-            rand   <- runif(sum(idxintervals==idx), minval, maxval)
-            rand   <- -log(rand, logBase)
-        } else {
-            minval <- intervals[idx]
-            maxval <- intervals[idx+1]
-            rand   <- runif(sum(idxintervals==idx), minval, maxval)
-        }
-        x[idxintervals==idx] <- rand
-    }
-    if(!is.na(decreasing)){
-        x <- sort(x, decreasing=TRUE)
-    }
 }
 
 
@@ -519,15 +506,15 @@ plotFilterExpression <- function(fds, bins=200, legend.position=c(0.8, 0.8)){
     rowlgm <- exp(rowMeans(log(cts + 1)))
 
     dt <- data.table(
-        value=rowlgm,
-        passed=mcols(fds, type="j")[['passed']])
+            value=rowlgm,
+            passed=mcols(fds, type="j")[['passed']])
     colors <- brewer.pal(3, "Dark2")[2:1]
     ggplot(dt, aes(value, fill=passed)) +
         geom_histogram(bins=bins) +
         scale_x_log10() +
         scale_y_log10() +
         scale_fill_manual(values=colors, name="Passed",
-                          labels=c("False", "True")) +
+                labels=c("False", "True")) +
         xlab("Mean Junction Expression") +
         ylab("Count") +
         ggtitle("Expression filtering") +
@@ -734,266 +721,3 @@ ggplotLabelPsi <- function(type){
                 psi3 = bquote(psi[3]),
                 psiSite = bquote(SE)))
 }
-
-
-#
-# plotVolcanoPerGene <- function(fds, sampleID, type=c("psi5", "psi3", "psiSite"),
-#                             labelGenes=NULL, xoffset=0.8){
-#     # extract data
-#     dt2p <- data.table(
-#         p=pVals(fds, type=type)[,sampleID],
-#         z=getAssayMatrix(fds, "delta", type=type)[,sampleID],
-#         geneID=mcols(fds, type=type)$hgnc_symbol)
-#
-#     # group by gene
-#     dt2p2 <- dt2p[, p:=p.adjust(p, method="holm"), by=geneID]
-#     dt2p2 <- dt2p2[order(geneID, p)]  [!duplicated(geneID) & !is.na(geneID)]
-#     dt2p2 <- dt2p2[, padj:=p.adjust(p, method="BY")]
-#     maxPByFDR <- dt2p2[padj < 0.1, max(p)]
-#
-#     # get x label
-#     xlab <- switch(type,
-#                    'psi3' = bquote(Delta * Psi[3]),
-#                    'psi5' = bquote(Delta * Psi[5]),
-#                    'psiSite' = bquote(Delta ~ "SE")
-#     )
-#
-#     # plot it
-#     g <- ggplot(dt2p2, aes(x=z, y=-log10(p))) + geom_point(col="gray70", alpha=0.4) +
-#         xlab(xlab) +
-#         ylab(bquote(-log[10]~"(p value)")) +
-#         geom_vline(xintercept=c(-0.3, 0.3), color="firebrick", linetype=2) +
-#         geom_hline(yintercept=-log10(maxPByFDR), color="firebrick", linetype=4) +
-#         ggtitle(paste("Volcano plot:", sampleID, " - ", type)) +
-#         geom_point(data=dt2p2[abs(z) > 0.3 & padj < 0.1], aes(x=z, y=-log10(p)), col="firebrick")
-#
-#     for(lg in labelGenes){
-#         g <- g + dt2p2[geneID == lg,
-#                        annotate("text", x=z*xoffset, y=-log10(p)*1.0, label=geneID)]
-#     }
-#     g
-# }
-
-# plotQQPerGene <- function(fds, type=c("psi5", "psi3", "psiSite"), gene=NULL,
-#                           sampleID=NULL, maxOutlier=2, conf.alpha=0.05,
-#                           breakTies=TRUE, sample=FALSE, highlightOutliers=TRUE,
-#                           mainName=paste0("QQ-Plot (", type, ")"), cutYaxis=FALSE){
-#
-#     # extract data
-#     pvals <- getPvalsPerGene(fds, type, sampleID=sampleID)
-#     if(!is.null(gene)){
-#         index <- which(getGeneIDs(fds, type) == gene)
-#         pvals <- pvals[index,]
-#     }
-#
-#     # points
-#     obs <- -log10(sort(c(pvals)))
-#     obs[is.na(obs)] <- 0
-#     if(length(unique(obs)) < 2 | length(obs) < 2){
-#         warning("There are no pvalues or all are NA!")
-#         return(FALSE)
-#     }
-#     if(breakTies){
-#         obs <- breakTies(obs, logBase=10, decreasing=TRUE)
-#     }
-#     exp <- -log10(ppoints(length(obs)))
-#     len <- length(exp)
-#
-#     # limits for nice plotting
-#     maxPoint <- max(c(exp, obs))
-#     ylim <- range(0, min(exp[1]*maxOutlier, maxPoint))
-#     outlier <- FALSE
-#     if(isTRUE(highlightOutliers) & (!is.null(gene) & !is.null(sampleID))){
-#         outlier <- obs > max(ylim)
-#     }
-#
-#
-#     # confidence band
-#     # http://genome.sph.umich.edu/wiki/Code_Sample:_Generating_QQ_Plots_in_R
-#     if(is.numeric(conf.alpha)){
-#         getY <- function(x, exp){
-#             x1 <- exp[2]
-#             x2 <- exp[1]
-#             y1 <- -log10(x[2])
-#             y2 <- -log10(x[1])
-#             m <- (y2-y1)/(x2-x1)
-#             return(10^-(y1 + m*((x2+1)-x1)))
-#         }
-#         upper <- qbeta(conf.alpha/2,   1:len, rev(1:len))
-#         lower <- qbeta(1-conf.alpha/2, 1:len, rev(1:len))
-#     }
-#
-#     plotPoint <- TRUE
-#     if(isTRUE(sample)){
-#         lo <- length(obs)
-#         plotPoint <- 1:lo %in% unique(c(1:min(lo, 100), sort(sample(1:lo,
-#                                                                     size = min(lo, 30000), prob=log10(1+lo:1)/sum(log10(1+lo:1))))))
-#     }
-#
-#     # get plot data
-#     dt <- data.table( obs=obs, exp=exp, lower=-log10(lower), upper=-log10(upper),
-#                       plotPoint=plotPoint, outlier=outlier)
-#     if(isTRUE(cutYaxis)){
-#         dt[outlier,obs:=rep(max(ylim), sum(outlier))]
-#     }
-#
-#     # create qq-plot
-#     g <- ggplot(dt[plotPoint,], aes(x=exp, y=obs)) + geom_point(aes(color=outlier),
-#                                                                 show.legend=FALSE) +
-#         scale_color_manual(values=c("black", "firebrick")) +
-#         theme_bw() + labs(title=mainName,
-#                           x=expression(-log[10] ~  "(exp. p value)"),
-#                           y=expression(-log[10] ~ "(obs. p value)") ) +
-#         geom_ribbon(alpha=0.2, col="gray", aes(x=exp, ymin = lower, ymax = upper)) +
-#         geom_segment(aes(x=min(exp), y=min(exp), xend=max(exp), yend=max(exp)),
-#                      col="firebrick")
-#     g
-#
-# }
-
-
-# plotGlobalQQPerGene <- function(fds, types=psiTypes, maxOutlier=2, conf.alpha=0.05,
-#                           breakTies=TRUE, sample=TRUE, mainName="QQ-Plot",
-#                           BPPARAM=MulticoreParam(min(bpworkers(), length(types))) ){
-#
-#     dtls <- bplapply(types, function(type){
-#         # extract data
-#         pvals <- getPvalsPerGene(fds, type, sampleID=NULL)
-#
-#         # points
-#         obs <- -log10(sort(c(pvals)))
-#         obs[is.na(obs)] <- 0
-#         if(length(unique(obs)) < 2 | length(obs) < 2){
-#             warning("There are no pvalues or all are NA!")
-#             return(FALSE)
-#         }
-#         if(breakTies){
-#             obs <- breakTies(obs, logBase=10, decreasing=TRUE)
-#         }
-#         exp <- -log10(ppoints(length(obs)))
-#         len <- length(exp)
-#
-#         # limits for nice plotting
-#         maxPoint <- max(c(exp, obs))
-#         ylim <- range(0, min(exp[1]*maxOutlier, maxPoint))
-#
-#         # confidence band
-#         # http://genome.sph.umich.edu/wiki/Code_Sample:_Generating_QQ_Plots_in_R
-#         if(is.numeric(conf.alpha)){
-#             getY <- function(x, exp){
-#                 x1 <- exp[2]
-#                 x2 <- exp[1]
-#                 y1 <- -log10(x[2])
-#                 y2 <- -log10(x[1])
-#                 m <- (y2-y1)/(x2-x1)
-#                 return(10^-(y1 + m*((x2+1)-x1)))
-#             }
-#             upper <- qbeta(conf.alpha/2,   1:len, rev(1:len))
-#             lower <- qbeta(1-conf.alpha/2, 1:len, rev(1:len))
-#         }
-#
-#         plotPoint <- TRUE
-#         if(isTRUE(sample)){
-#             lo <- length(obs)
-#             plotPoint <- 1:lo %in% unique(c(1:min(lo, 1000), sort(sample(1:lo,
-#                                                                          size = min(lo, 30000), prob=log10(1+lo:1)/sum(log10(1+lo:1))))))
-#         }
-#
-#         # get plot data
-#         dt <- data.table( obs=obs, exp=exp, lower=-log10(lower), upper=-log10(upper),
-#                           plotPoint=plotPoint, type=type)
-#         dt
-#     }, BPPARAM=BPPARAM)
-#
-#     dt2p <- rbindlist(dtls)
-#     dt2p <- dt2p[plotPoint == TRUE,]
-#
-#     # create qq-plot
-#     g <- ggplot(dt2p, aes(x=exp, y=obs, color=type)) + geom_point() +
-#         scale_color_discrete(name="", labels=c(bquote(Psi[3]), bquote(Psi[5]), "SE")) +
-#         labs(title=mainName,
-#                           x=expression(-log[10] ~  "(exp. p value)"),
-#                           y=expression(-log[10] ~ "(obs. p value)") ) +
-#         geom_ribbon(alpha=0.2, col="gray", aes(x=exp, ymin = lower, ymax = upper)) +
-#         geom_segment(aes(x=min(exp), y=min(exp), xend=max(exp), yend=max(exp)),
-#                      col="firebrick")
-#     g
-#
-# }
-
-
-# plotQQPerJunction <- function(fds, type=c("psi5", "psi3", "psiSite"), site,
-#                           maxOutlier=2, conf.alpha=0.05, breakTies=TRUE,
-#                           sample=FALSE, highlightOutliers=FALSE, cutYaxis=FALSE,
-#                           mainName=paste0("QQ-Plot (", type, ")")){
-#
-#     # extract data
-#     pvals <- pVals(fds, type, byGroup=FALSE)[site,]
-#     padj  <- padjVals(fds, type, byGroup=FALSE)[site,]
-#
-#     outlier <- logical(length(pvals))
-#     if(isTRUE(highlightOutliers)){
-#         outlier[padj < 0.1] <- TRUE
-#     }
-#
-#     # points
-#     sortOrder <- order(c(pvals))
-#     outlier <- outlier[sortOrder]
-#     obs <- -log10(sort(c(pvals)))
-#     obs[is.na(obs)] <- 0
-#     if(length(unique(obs)) < 2 | length(obs) < 2){
-#         warning("There are no pvalues or all are NA!")
-#         return(FALSE)
-#     }
-#     if(breakTies){
-#         obs <- breakTies(obs, logBase=10, decreasing=TRUE)
-#     }
-#     exp <- -log10(ppoints(length(obs)))
-#     len <- length(exp)
-#
-#     # limits for nice plotting
-#     maxPoint <- max(c(exp, obs))
-#     ylim <- range(0, min(exp[1]*maxOutlier, maxPoint))
-#
-#     # confidence band
-#     # http://genome.sph.umich.edu/wiki/Code_Sample:_Generating_QQ_Plots_in_R
-#     if(is.numeric(conf.alpha)){
-#         getY <- function(x, exp){
-#             x1 <- exp[2]
-#             x2 <- exp[1]
-#             y1 <- -log10(x[2])
-#             y2 <- -log10(x[1])
-#             m <- (y2-y1)/(x2-x1)
-#             return(10^-(y1 + m*((x2+1)-x1)))
-#         }
-#         upper <- qbeta(conf.alpha/2,   1:len, rev(1:len))
-#         lower <- qbeta(1-conf.alpha/2, 1:len, rev(1:len))
-#     }
-#
-#     plotPoint <- TRUE
-#     if(isTRUE(sample)){
-#         lo <- length(obs)
-#         plotPoint <- 1:lo %in% unique(c(1:min(lo, 100), sort(sample(1:lo,
-#                                                                     size = min(lo, 30000), prob=log10(1+lo:1)/sum(log10(1+lo:1))))))
-#     }
-#
-#     # get plot data
-#     dt <- data.table( obs=obs, exp=exp, lower=-log10(lower), upper=-log10(upper),
-#                       plotPoint=plotPoint, outlier=outlier)
-#     if(isTRUE(cutYaxis)){
-#         dt[outlier,obs:=rep(max(ylim), sum(outlier))]
-#     }
-#
-#     # create qq-plot
-#     g <- ggplot(dt[plotPoint,], aes(x=exp, y=obs, color=outlier)) +
-#         geom_point(show.legend=FALSE) +
-#         scale_color_manual(values=c("black", "firebrick")) +
-#         theme_bw() + labs(title=mainName,
-#                           x=expression(-log[10] ~  "(exp. p value)"),
-#                           y=expression(-log[10] ~ "(obs. p value)") ) +
-#         geom_ribbon(alpha=0.2, col="gray", aes(x=exp, ymin = lower, ymax = upper)) +
-#         geom_segment(aes(x=min(exp), y=min(exp), xend=max(exp), yend=max(exp)),
-#                      col="firebrick")
-#     g
-#
-# }
