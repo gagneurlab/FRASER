@@ -16,11 +16,9 @@ plotVolcano(fds, sampleID, type, deltaPsiCutoff = 0.3,
   padjCutoff = 0.05, basePlot = TRUE, aggregate = FALSE,
   main = paste0("Volcano plot: ", sampleID))
 
-plotAberrantPerSample(fds, main, padjCutoff = 0.05, zScoreCutoff = NA,
-  deltaPsiCutoff = 0.1, col = "#1B9E77", type = c("psi3", "psi5",
-  "psiSite"), yadjust = c(1.2, 1.2), labLine = c(3.5, 3),
-  ymax = NULL, ylab = "#Aberrantly spliced events",
-  labCex = par()$cex, ...)
+plotAberrantPerSample(fds, main, type = c("psi3", "psi5", "psiSite"),
+  padjCutoff = 0.1, zScoreCutoff = NA, deltaPsiCutoff = 0.3,
+  aggregated = TRUE, BPPARAM = bpparam(), ...)
 
 plotExpression(fds, type = c("psi5", "psi3", "psiSite"), site = NULL,
   result = NULL, colGroup = NULL, basePlot = TRUE,
@@ -30,10 +28,10 @@ plotExpectedVsObservedPsi(fds, type = c("psi5", "psi3", "psiSite"),
   idx = NULL, result = NULL, colGroup = NULL, main = NULL,
   basePlot = TRUE, padjCutoff = 0.05)
 
-plotQQ(fds, type, feature, aggregate = FALSE, global = FALSE,
-  main = paste0("QQ plot: ", feature, " (", type, ")"),
-  conf.alpha = 0.05, breakTies = TRUE, highlightOutliers = TRUE,
-  samplePoints = FALSE, maxOutlier = 2, cutYaxis = FALSE)
+plotQQ(fds, type = NULL, idx = NULL, result = NULL,
+  aggregate = FALSE, global = FALSE, main = NULL,
+  conf.alpha = 0.05, samplePoints = 30000, basePlot = TRUE,
+  Ncpus = min(4, getDTTable()), ...)
 
 plotEncDimSearch(fds, type = c("psi3", "psi5", "psiSite"))
 
@@ -43,8 +41,8 @@ plotCountCorHeatmap(fds, type = c("psi5", "psi3", "psiSite"),
   logit = FALSE, topN = 50000, topJ = 5000, minMedian = 1,
   main = NULL, normalized = FALSE, show_rownames = FALSE,
   show_colnames = FALSE, minDeltaPsi = 0.1, annotation_col = NA,
-  annotation_row = NA, border_color = NA,
-  plotType = c("sampleCorrelation", "junctionSample"), nClust = 5,
+  annotation_row = NA, border_color = NA, nClust = 5,
+  plotType = c("sampleCorrelation", "junctionSample"),
   sampleClustering = NULL, plotMeanPsi = TRUE, plotCov = TRUE, ...)
 }
 \arguments{
@@ -66,18 +64,6 @@ junction level pvalues are used (default).}
 
 \item{main}{Title for the plot, if missing a default title will be used.}
 
-\item{col}{Set color for the barplot.}
-
-\item{yadjust}{Option to adjust position of Median and 90 percentile labels.}
-
-\item{labLine}{Option to move axis labels}
-
-\item{ymax}{If set, ymax is the upper bound for the plot range on the y axis.}
-
-\item{ylab}{The y axis label}
-
-\item{labCex}{The label cex parameter}
-
 \item{...}{Additional parameters passed to plot() or plot_ly() if not stated
 otherwise in the details for each plot function}
 
@@ -93,15 +79,7 @@ as indices.}
 
 \item{conf.alpha}{If set, a confidence interval is plotted, defaults to 0.05}
 
-\item{breakTies}{If \code{TRUE},}
-
-\item{highlightOutliers}{If \code{TRUE}, then outliers are highlighted.}
-
 \item{samplePoints}{Sample points for Q-Q plot, defaults to max 30k points}
-
-\item{maxOutlier}{Used to define the y axis limit.}
-
-\item{cutYaxis}{If \code{TRUE}, cuts the y axis of the plot at some point.}
 
 \item{bins}{Set the number of bins to be used in the histogram.}
 
@@ -128,19 +106,39 @@ plotted on the heatmap.}
 
 \item{border_color}{Sets the border color of the heatmap}
 
+\item{nClust}{Number of clusters to show in the row and
+column dendrograms.}
+
 \item{plotType}{Character string indicating the type of correlation heatmap
 that should be plotted. Can be either 'sampleCorrelation' for a
 sample-sample correlation heatmap or 'junctionSample' for a
 junction-sample correlation heatmap.}
-
-\item{nClust}{Number of clusters to show in the row and
-column dendrograms.}
 
 \item{sampleClustering}{A clustering of the samples that should be used as an
 annotation of the heatmap.}
 
 \item{plotMeanPsi, plotCov}{If \code{TRUE}, then the heatmap is annotated with
 the mean psi values or the junction coverage.}
+
+\item{col}{Set color for the barplot.}
+
+\item{yadjust}{Option to adjust position of Median and 90 percentile labels.}
+
+\item{ylab}{The y axis label}
+
+\item{labCex}{The label cex parameter}
+
+\item{labLine}{Option to move axis labels}
+
+\item{breakTies}{If \code{TRUE},}
+
+\item{highlightOutliers}{If \code{TRUE}, then outliers are highlighted.}
+
+\item{maxOutlier}{Used to define the y axis limit.}
+
+\item{cutYaxis}{If \code{TRUE}, cuts the y axis of the plot at some point.}
+
+\item{ymax}{If set, ymax is the upper bound for the plot range on the y axis.}
 }
 \value{
 If base R graphics are used nothing is returned else the plotly or

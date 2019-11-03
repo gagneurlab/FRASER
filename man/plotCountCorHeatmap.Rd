@@ -8,8 +8,8 @@ plotCountCorHeatmap(fds, type = c("psi5", "psi3", "psiSite"),
   logit = FALSE, topN = 50000, topJ = 5000, minMedian = 1,
   main = NULL, normalized = FALSE, show_rownames = FALSE,
   show_colnames = FALSE, minDeltaPsi = 0.1, annotation_col = NA,
-  annotation_row = NA, border_color = NA,
-  plotType = c("sampleCorrelation", "junctionSample"), nClust = 5,
+  annotation_row = NA, border_color = NA, nClust = 5,
+  plotType = c("sampleCorrelation", "junctionSample"),
   sampleClustering = NULL, plotMeanPsi = TRUE, plotCov = TRUE, ...)
 }
 \description{

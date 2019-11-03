@@ -114,24 +114,27 @@ whichPSIType <- function(type){
 #' @noRd
 whichReadType <- function(fds, name){
     stopifnot(isScalarCharacter(name))
-    fdsNames <- assayNames(fds)
-    if(!name %in% fdsNames){
-        if(endsWith(name, "psiSite")){
-            return("ss")
-        }
-        if(endsWith(name, "psi5") | endsWith(name, "psi3")){
-            return("j")
-        }
-        return(NA)
-    }
-    nsrNamesL <- length(assayNames(nonSplicedReads(fds)))
-    fdsNamesL <- length(fdsNames)
 
-    return(ifelse(
-        which(fdsNames == name) <= fdsNamesL - nsrNamesL,
-        "j",
-        "ss"
-    ))
+    # check writing
+    if(name == "ss" | endsWith(name, "psiSite"))
+        return("ss")
+    if(name == "j"  | endsWith(name, "psi5") | endsWith(name, "psi3"))
+        return("j")
+
+    # check assay names
+    fdsNames <- assayNames(fds)
+    if(name %in% fdsNames){
+        nsrNamesL <- length(assayNames(nonSplicedReads(fds)))
+        fdsNamesL <- length(fdsNames)
+
+        return(ifelse(
+            which(fdsNames == name) <= fdsNamesL - nsrNamesL,
+            "j",
+            "ss"
+        ))
+    }
+
+    stop("Could not find read type: ", name)
 }
 
 #'

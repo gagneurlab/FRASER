@@ -349,7 +349,12 @@ setReplaceMethod("nonSplicedReads", "FraseRDataSet", function(object, value){
 #'     fds[1:10,by="ss"]
 #'
 #' @rdname subset
-subsetFraseR <- function(x, i, j, by){
+subset.FraseR <- function(x, i, j, by=c("j", "ss")){
+    if(length(by) == 1){
+        by <- whichReadType(x, by)
+    }
+    by <- match.arg(by)
+
     if(missing(i) && missing(j)){
         return(x)
     }
@@ -415,14 +420,7 @@ subsetFraseR <- function(x, i, j, by){
     validObject(newx)
     return(newx)
 }
-setMethod("[", c("FraseRDataSet", "ANY", "ANY"),
-    function(x, i, j, by=c("j", "ss")) {
-        if(length(by) == 1){
-            by <- whichReadType(x, by)
-        }
-        by <- match.arg(by)
-        subsetFraseR(x, i, j, by)}
-)
+setMethod("[", c("FraseRDataSet", "ANY", "ANY"), subset.FraseR)
 
 
 #'
