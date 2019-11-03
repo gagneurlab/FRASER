@@ -37,7 +37,7 @@ jobs:
     - stage: Setup Cache
       r: 3.6.0
       script: true
-     - stage: Setup Cache
+    - stage: Setup Cache
       r: 3.5.3
       script: true
     - stage: Setup Cache
