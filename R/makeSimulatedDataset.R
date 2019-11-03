@@ -382,7 +382,7 @@ makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=1000, q=10,
 # Inject artificial outliers in an existing fds
 #' @rdname makeSimulatedFraserDataSet
 #' @export
-injectOutliers <- function(fds, type=c("psi5", "psi5", "psiSite"),
+injectOutliers <- function(fds, type=c("psi5", "psi3", "psiSite"),
                     freq=1E-3, minDpsi=0.2, deltaDistr="uniformDistr",
                     verbose=FALSE,
                     method=c('meanPSI', 'samplePSI', 'simulatedPSI'),

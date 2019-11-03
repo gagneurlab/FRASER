@@ -89,7 +89,7 @@ getHyperOptimCorrectionMethod <- function(correction){
     switch(correction,
            "PCA-BB-full"            = "PCA",
            "PCA-reg-full"           = "PCA",
-           "PCA-BB-Decoder"         = "PCA",
+           "PCA-BB-Decoder"         = "PCA-BB-Decoder",
            correction
     )
 }
