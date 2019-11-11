@@ -16,7 +16,12 @@ fit <- function(fds, correction=c("PCA-regression", "PCA-BB-Decoder", "FraseR",
             counts(fds, type=type, side="other"))
     counts(fds, type=type, side="ofInterest", HDF5=FALSE) <- as.matrix(
             counts(fds, type=type, side="ofInterest"))
-
+    
+    # check q is set
+    if(correction != "BB" & (missing(q) | is.null(q))){
+        stop("Please provide a q to define the size of the latent space!")
+    }
+    
     message(date(), ": Running fit with correction method: ", correction)
     fds <- switch(method,
             FraseR      = fitFraserAE(fds=fds, q=q, type=type, noiseAlpha=noiseAlpha, rhoRange=rhoRange, lambda=lambda,
@@ -125,7 +130,8 @@ fitPCA <- function(fds, q, psiType, rhoRange=c(1e-5, 1-1e-5), noiseAlpha=NULL,
 
     # PCA on subset -> E matrix
     message(date(), " Computing PCA ...")
-    pca <- pca(x(fds_pca, noiseAlpha=noiseAlpha, center=TRUE), nPcs=q)
+    xin <- x(fds_pca, noiseAlpha=noiseAlpha, center=TRUE)
+    pca <- pca(xin, nPcs=q)
     pc <- pcaMethods::loadings(pca)
     E(fds) <- pc
 
