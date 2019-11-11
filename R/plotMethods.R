@@ -202,12 +202,12 @@ plotAberrantPerSample <- function(fds, main, type=c("psi3", "psi5", "psiSite"),
     }
 
     # extract outliers
-    outliers <- bplapply(types, aberrant, fds=fds, by="sample",
+    outliers <- bplapply(type, aberrant, fds=fds, by="sample",
             padjCutoff=padjCutoff, zScoreCutoff=zScoreCutoff,
             deltaPsiCutoff=deltaPsiCutoff, ..., BPPARAM=BPPARAM)
     dt2p <- rbindlist(lapply(seq_along(outliers), function(idx){
         vals <- outliers[[idx]]
-        data.table(type=types[idx], value=sort(vals), median=median(vals),
+        data.table(type=type[idx], value=sort(vals), median=median(vals),
                 rank=seq_along(vals))
     }))
 
@@ -221,7 +221,8 @@ plotAberrantPerSample <- function(fds, main, type=c("psi3", "psi5", "psiSite"),
         ggtitle(main) +
         xlab("Sample rank") +
         ylab("Number of outliers") +
-        scale_color_discrete(name="Splice metric", labels=ggplotLabelPsi(types)) +
+        scale_color_brewer(palette="Dark2", name="Splice metric",
+                labels=ggplotLabelPsi(dt2p[,unique(type)])) +
         scale_linetype_manual(name="", values=2, labels="Median")
 
     g
@@ -238,7 +239,7 @@ plotAberrantPerSample <- function(fds, main, type=c("psi3", "psi5", "psiSite"),
 #' @export
 plotExpression <- function(fds, type=c("psi5", "psi3", "psiSite"),
                            site=NULL, result=NULL, colGroup=NULL, basePlot=TRUE,
-                           main=paste0("Expression plot: ", site), ...){
+                           main=NULL, ...){
     if(!is.null(result)){
         type <- as.character(result$type)
         site <- getIndexFromResultTable(fds, result)
@@ -247,7 +248,7 @@ plotExpression <- function(fds, type=c("psi5", "psi3", "psiSite"),
     }
 
     dt <- getPlottingDT(fds, axis="row", type=type, idx=site, ...)
-
+    dt[,aberrant:=factor(aberrant, levels=c("TRUE", "FALSE"))]
     if(!is.null(colGroup)){
         if(all(colGroup %in% samples(fds))){
             colGroup <- samples(fds) %in% colGroup
@@ -255,39 +256,34 @@ plotExpression <- function(fds, type=c("psi5", "psi3", "psiSite"),
         dt[colGroup,aberrant:=TRUE]
     }
 
-    # # estimate point densities
-    # # adapted from http://auguga.blogspot.com/2015/10/r-heat-scatter-plot.html
-    # dens <- kde2d(dt$ni,dt$ki,
-    #               h = c(ifelse(bandwidth.nrd(dt$ni) == 0, 0.1, bandwidth.nrd(dt$ni)),
-    #                     ifelse(bandwidth.nrd(dt$ki) == 0, 0.1, bandwidth.nrd(dt$ki))))
-    # # create a new data frame of that 2d density grid
-    # gr <- data.frame(with(dens, expand.grid(x,y)), as.vector(dens$z))
-    # names(gr) <- c("xgr", "ygr", "zgr")
-    # # Fit a model
-    # mod <- loess(zgr~xgr*ygr, data=gr)
-    # # Apply the model to the original data to estimate density at that point
-    # dt[,pointdens:=predict(mod, newdata=data.frame(xgr=dt$ni, ygr=dt$ki))]
-    # g <- ggplot(dt, aes(x=ni, y=ki)) + geom_point(aes(color=pointdens),
-    #                                               show.legend=FALSE) +
-    #     scale_color_gradientn(colors = colorpalette('heat', 5)) +
+    if(is.null(main)){
+        main <- as.expression(bquote(bold(paste(
+                .(ggplotLabelPsi(type)[[1]]), " expression plot: ",
+                bolditalic(.(as.character(dt[,unique(featureID)]))),
+                " (site ", .(as.character(dt[,unique(idx)])), ")"))))
+    }
 
-    g <- ggplot(dt, aes(x=n, y=k, color=!aberrant, text=paste0(
-        "Sample: ", sampleID, "<br>",
-        "Counts (K): ", k, "<br>",
-        "Total counts (N): ", n, "<br>",
-        "p value: ", signif(pval, 5), "<br>",
-        "padjust: ", signif(padj, 5), "<br>",
-        "Observed Psi: ", round(obsPsi, 2), "<br>",
-        "Predicted mu: ", round(predPsi), "<br>"))) +
-        geom_point(alpha=ifelse(dt$aberrant, 1, 0.7)) +
+    g <- ggplot(dt, aes(x=n + 2, y=k + 1, color=aberrant, text=paste0(
+            "Sample: ", sampleID, "<br>",
+            "Counts (K): ", k, "<br>",
+            "Total counts (N): ", n, "<br>",
+            "p value: ", signif(pval, 5), "<br>",
+            "padjust: ", signif(padj, 5), "<br>",
+            "Observed Psi: ", round(obsPsi, 2), "<br>",
+            "Predicted mu: ", round(predPsi), "<br>"))) +
+        geom_point(alpha=ifelse(as.character(dt$aberrant) == "TRUE", 1, 0.7)) +
         scale_x_log10() +
         scale_y_log10() +
-        geom_abline(intercept=0, slope=1) +
         theme_bw() +
-        theme(legend.position="none") +
+        theme(legend.position="none", title=) +
         xlab("Total junction coverage + 2 (N)") +
         ylab("Junction count + 1 (K)") +
         ggtitle(main)
+
+    if(is.null(colGroup)){
+        g <- g + scale_colour_manual(
+                values=c("FALSE"="gray70", "TRUE"="firebrick"))
+    }
 
     plotBasePlot(g, basePlot)
 }
@@ -360,7 +356,7 @@ plotExpectedVsObservedPsi <- function(fds, type=c("psi5", "psi3", "psiSite"),
 plotQQ <- function(fds, type=NULL, idx=NULL, result=NULL, aggregate=FALSE,
                     global=FALSE, main=NULL, conf.alpha=0.05,
                     samplePoints=30000, basePlot=TRUE,
-                    Ncpus=min(4, getDTTable()), ...){
+                    Ncpus=min(4, getDTthreads()), ...){
 
     # check parameters
     if(is.null(aggregate)){
@@ -379,13 +375,18 @@ plotQQ <- function(fds, type=NULL, idx=NULL, result=NULL, aggregate=FALSE,
                 idx=TRUE, aggregate=aggregate, mc.cores=Ncpus, ...))
     } else {
         dt <- getPlottingDT(fds, axis="row", type=type, idx=idx, result=result,
-                aggregate=aggregate)
+                aggregate=aggregate, ...)
     }
     if(is.null(main)){
         if(isTRUE(global)){
             main <- "Global QQ plot"
         } else {
-            main <- paste("QQ plot:", unique(dt[,featureID]))
+            type <- as.character(dt[,unique(type)])
+            featureID <- as.character(dt[,unique(featureID)])
+            main <- as.expression(bquote(bold(paste(
+                    .(ggplotLabelPsi(type)[[1]]),
+                    " Q-Q plot: ", bolditalic(.(featureID)),
+                    " (site ", .(as.character(dt[,unique(idx)])), ")"))))
         }
     }
 
@@ -423,6 +424,7 @@ plotQQ <- function(fds, type=NULL, idx=NULL, result=NULL, aggregate=FALSE,
                 "<br>SampleID: ", sampleID, "<br>K: ", k, "<br>N: ", n))) +
         geom_point() +
         theme_bw() +
+        theme(legend.position="none") +
         ggtitle(main) +
         xlab(expression(-log[10]~"(exp. p value)")) +
         ylab(expression(-log[10]~"(obs. p value)"))
@@ -433,7 +435,7 @@ plotQQ <- function(fds, type=NULL, idx=NULL, result=NULL, aggregate=FALSE,
                 name="Aberrant")
     } else {
         g$mapping$colour <- quote(type)
-        g <- g + scale_color_brewer(palette="Dark2", name="Splicing metric",
+        g <- g + scale_color_brewer(palette="Dark2", name="Splice metric",
                 labels=ggplotLabelPsi(unique(dt2p$type)))
     }
 
@@ -719,5 +721,5 @@ ggplotLabelPsi <- function(type){
         switch (x,
                 psi5 = bquote(psi[5]),
                 psi3 = bquote(psi[3]),
-                psiSite = bquote(SE)))
+                psiSite = bquote(theta)))
 }
