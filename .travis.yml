@@ -6,7 +6,6 @@ cache:
     - $HOME/R/Library
 
 
-
 addons:
   apt:
     packages:
@@ -60,4 +59,5 @@ script:
 
 
 after_success:
-  - test $TRAVIS_BUILD_STAGE_NAME = "Test" && Rscript -e 'covr::codecov()'
+  - test $TRAVIS_BUILD_STAGE_NAME = "Test" && 
+      travis_wait 30 Rscript -e 'covr::codecov()'
