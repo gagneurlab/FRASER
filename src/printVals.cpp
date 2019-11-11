@@ -17,7 +17,7 @@ void prints(std::string s){
 void printmat(arma::mat x){
     printv(Rcpp::wrap(x.n_cols));
     printv(Rcpp::wrap(x.n_rows));
-    if(x.n_rows >= 1 & x.n_cols >= 1){
+    if((x.n_rows >= 1) & (x.n_cols >= 1)){
         int nCols = as<int>(wrap(x.n_cols));
         int nRows = as<int>(wrap(x.n_rows));
         nCols = std::min<int>(nCols, 5);
