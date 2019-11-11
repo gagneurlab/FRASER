@@ -301,6 +301,7 @@ noise <- function(fds, type=currentType(fds)){
     return(fds)
 }
 
+
 hyperParams <- function(fds, type=currentType(fds), all=FALSE){
     ans <- metadata(fds)[[paste0("hyperParams_", type)]]
     if(is.null(ans)){
