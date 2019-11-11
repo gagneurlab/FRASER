@@ -10,9 +10,8 @@ makeSimulatedFraserDataSet(m = 100, j = 500, q = 10,
   distribution = c("BB", "DM"), ...)
 
 injectOutliers(fds, type = c("psi5", "psi3", "psiSite"), freq = 0.001,
-  minDpsi = 0.2, deltaDistr = "uniformDistr", verbose = FALSE,
-  method = c("meanPSI", "samplePSI", "simulatedPSI"),
-  BPPARAM = bpparam())
+  minDpsi = 0.2, minCoverage = 2, deltaDistr = "uniformDistr",
+  verbose = FALSE, method = c("meanPSI", "samplePSI", "simulatedPSI"))
 }
 \arguments{
 \item{m}{Number of simulated samples}

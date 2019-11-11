@@ -103,7 +103,7 @@
 #'          scale_color_manual scale_x_log10 scale_y_log10 scale_color_gradientn
 #'          labs theme_bw scale_color_brewer scale_color_discrete
 #'          scale_linetype_manual annotate geom_histogram theme
-#'          scale_fill_manual xlim
+#'          scale_fill_manual xlim scale_colour_manual
 #' @importFrom ggpubr ggarrange
 #'
 #' @importFrom MASS kde2d bandwidth.nrd

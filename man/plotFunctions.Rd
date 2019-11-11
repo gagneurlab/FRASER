@@ -21,8 +21,8 @@ plotAberrantPerSample(fds, main, type = c("psi3", "psi5", "psiSite"),
   aggregated = TRUE, BPPARAM = bpparam(), ...)
 
 plotExpression(fds, type = c("psi5", "psi3", "psiSite"), site = NULL,
-  result = NULL, colGroup = NULL, basePlot = TRUE,
-  main = paste0("Expression plot: ", site), ...)
+  result = NULL, colGroup = NULL, basePlot = TRUE, main = NULL,
+  ...)
 
 plotExpectedVsObservedPsi(fds, type = c("psi5", "psi3", "psiSite"),
   idx = NULL, result = NULL, colGroup = NULL, main = NULL,
@@ -31,7 +31,7 @@ plotExpectedVsObservedPsi(fds, type = c("psi5", "psi3", "psiSite"),
 plotQQ(fds, type = NULL, idx = NULL, result = NULL,
   aggregate = FALSE, global = FALSE, main = NULL,
   conf.alpha = 0.05, samplePoints = 30000, basePlot = TRUE,
-  Ncpus = min(4, getDTTable()), ...)
+  Ncpus = min(4, getDTthreads()), ...)
 
 plotEncDimSearch(fds, type = c("psi3", "psi5", "psiSite"))
 
