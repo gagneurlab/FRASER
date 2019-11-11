@@ -14,7 +14,7 @@ addons:
       - libgit2-dev
 
 r:
-#  - bioc-devel
+  - bioc-devel
   - bioc-release
   - 3.6.0
   - 3.5.3
@@ -27,9 +27,9 @@ stages:
 # setup cache first
 jobs:
   include:
-#    - stage: Setup Cache
-#      r: bioc-devel
-#      script: true
+    - stage: Setup Cache
+      r: bioc-devel
+      script: true
     - stage: Setup Cache
       r: bioc-release
       script: true
