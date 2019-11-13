@@ -167,17 +167,26 @@ predictY <- function(fds, type=currentType(fds), noiseAlpha=NULL){
     fds
 }
 
-getAssayMatrix <- function(fds, name, type){
+getAssayMatrix <- function(fds, name, type, byGroup=FALSE){
     if(missing(name)){
         name <- type
     } else {
         name <- paste(name, type, sep="_")
     }
-    assay(fds, name)
+    ans <- assay(fds, name)
+    idx <- TRUE
+    if(isTRUE(byGroup)){
+        idx <- !duplicated(getSiteIndex(fds, type=type))
+    }
+    ans[idx,]
 }
 
-zScores <- function(fds, type=currentType(fds)){
-    return(getAssayMatrix(fds, name='zScores', type=type))
+zScores <- function(fds, type=currentType(fds), byGroup=FALSE){
+    ans <- getAssayMatrix(fds, name='zScores', type=type)
+    if(isTRUE(byGroup)){
+        ans <- getAbsMaxByGroup(fds, type, ans)
+    }
+    ans
 }
 
 `zScores<-` <- function(fds, type=currentType(fds), ..., value){
@@ -188,12 +197,7 @@ zScores <- function(fds, type=currentType(fds)){
 pVals <- function(fds, type=currentType(fds),
                     dist=c("BetaBinomial", "Binomial"), byGroup=FALSE){
     dist <- match.arg(dist)
-    if(isTRUE(byGroup)){
-        index <- getSiteIndex(fds, type=type)
-        idx   <- !duplicated(index)
-        return(getAssayMatrix(fds, paste0("pvalues", dist), type=type)[idx,])
-    }
-    return(getAssayMatrix(fds, paste0("pvalues", dist), type=type))
+    getAssayMatrix(fds, paste0("pvalues", dist), type=type, byGroup=byGroup)
 }
 
 `pVals<-` <- function(fds, type=currentType(fds),
@@ -206,12 +210,7 @@ pVals <- function(fds, type=currentType(fds),
 padjVals <- function(fds, type=currentType(fds),
                     dist=c("BetaBinomial", "Binomial"), byGroup=FALSE){
     dist <- match.arg(dist)
-    if(isTRUE(byGroup)){
-        index <- getSiteIndex(fds, type=type)
-        idx   <- !duplicated(index)
-        return(getAssayMatrix(fds, paste0("pajd", dist), type=type)[idx,])
-    }
-    return(getAssayMatrix(fds, paste0("pajd", dist), type=type))
+    getAssayMatrix(fds, paste0("pajd", dist), type=type, byGroup=byGroup)
 }
 
 `padjVals<-` <- function(fds, type=currentType(fds),
@@ -347,33 +346,35 @@ dontWriteHDF5 <- function(fds){
     return(fds)
 }
 
-getTrueOutlierByGroup <- function(fds, type, BPPARAM=parallel(fds)){
-    index <- getSiteIndex(fds, type)
-    idx   <- !duplicated(index)
+getTrueOutliers <- function(fds, type, BPPARAM=parallel(fds), byGroup=FALSE){
+    ans <- getAssayMatrix(fds, "trueOutliers", type)
+    if(isTRUE(byGroup)){
+        ans <- getAbsMaxByGroup(fds, type, ans, BPPARAM)
+    }
+    
+    # remove secondary injections -> -1/0/+1 instead of -2/-1/0/+1/+2
+    pmin(pmax(ans, -1), 1)
+}
 
-    dt <- cbind(data.table(id=index),
-            as.data.table(getAssayMatrix(fds, "trueOutliers", type)))
-    setkey(dt, id)
-    labels <- matrix(unlist(bplapply(samples(fds), BPPARAM=BPPARAM, function(i){
-            dttmp <- dt[,any(get(i) != 0),by=id]
-            setkey(dttmp, id)
-            dttmp[J(unique(index)), V1]})), ncol=length(samples(fds))) + 0
-    return(labels)
+getTrueDeltaPsi <- function(fds, type, BPPARAM=parallel(fds), byGroup=FALSE){
+    ans <- getAssayMatrix(fds, "trueDeltaPSI", type)
+    if(isTRUE(byGroup)){
+        ans <- getAbsMaxByGroup(fds, type, ans, BPPARAM)
+    }
+    ans
 }
 
 getAbsMaxByGroup <- function(fds, type, mat, BPPARAM=parallel(fds)){
     index <- getSiteIndex(fds, type)
-    idx   <- !duplicated(index)
 
     dt <- cbind(data.table(id=index), as.data.table(mat))
-    setkey(dt, id)
-    deltaPsi <- matrix(unlist(bplapply(samples(fds), BPPARAM=BPPARAM,
+    values <- matrix(unlist(bplapply(samples(fds), BPPARAM=BPPARAM,
         function(i){
-                dttmp <- dt[,.(dpsi=get(i), max=max(abs(get(i)))),by=id]
-                dttmp <- dttmp[abs(dpsi) == max, .SD[1], by=id]
-                setkey(dttmp, id)
-                dttmp[J(unique(index)), dpsi]})), ncol=length(samples(fds)))
-    return(deltaPsi)
+                dttmp <- dt[,.(.I, id, value=get(i), abs=abs(get(i)))]
+                dttmp[,maxVal:=value[abs == max(abs)][1], by=id]
+                dttmp[!duplicated(id)][order(I)][,value]
+        })), ncol=length(samples(fds)))
+    return(values)
 }
 
 getByGroup <- function(fds, type, value){
@@ -384,12 +385,12 @@ getByGroup <- function(fds, type, value){
 
 getDeltaPsi <- function(fds, type, byGroup=FALSE){
     mu <- predictedMeans(fds, type)
-    dataPsi <- (K(fds, type)+pseudocount()) /(N(fds, type)+2*pseudocount())
-    deltaPSI <- dataPsi-mu
+    dataPsi <- (K(fds, type) + pseudocount())/(N(fds, type) + 2*pseudocount())
+    deltaPSI <- dataPsi - mu
     if(isTRUE(byGroup)){
         deltaPSI <- getAbsMaxByGroup(fds, psiType, deltaPSI)
     }
-    return(deltaPSI)
+    deltaPSI
 }
 
 
@@ -469,12 +470,12 @@ getPlottingDT <- function(fds, axis=c("row", "col"), type=NULL, result=NULL,
     k <- K(fds, type)[idxrow, idxcol]
     n <- N(fds, type)[idxrow, idxcol]
 
-    feature_names <- rownames(mcols(fds, type))[idxrow]
+    feature_names <- rownames(mcols(fds, type=type))[idxrow]
     if("hgnc_symbol" %in% colnames(mcols(fds, type=type))){
-        feature_names <- mcols(fds, type)[idxrow,"hgnc_symbol"]
+        feature_names <- mcols(fds, type=type)[idxrow,"hgnc_symbol"]
     }
     if(is.null(feature_names)){
-        feature_names <- as.character(seq_row(mcols(fds, type)))[idxrow]
+        feature_names <- as.character(seq_row(mcols(fds, type=type)))[idxrow]
     }
 
     dt <- data.table(

@@ -158,12 +158,22 @@ calculatePadjValues <- function(fds, type=currentType(fds), method="BY"){
 }
 
 getSiteIndex <- function(fds, type){
-    ans <- switch(type,
-            psi5 = mcols(fds, type=type)[['startID']],
-            psi3 = mcols(fds, type=type)[['endID']],
-            psiSite = mcols(fds, type=type)[['spliceSiteID']]
-    )
-    return(ans)
+    if(type == "psiSite"){
+        return(mcols(fds, type=type)[['spliceSiteID']])
+    }
+    
+    startId <- mcols(fds, type=type)[,"startID"]
+    endId   <- mcols(fds, type=type)[,"endID"]
+    strand  <- strand(rowRanges(fds, type=type))
+    strand[strand == "*"] <- "+"
+    
+    selectionMat <- as.matrix(data.frame(row=seq_along(startId), 
+            col=1 + as.vector(
+                    type == "psi5" & strand == "-" | 
+                    type == "psi3" & strand == "+")))
+    
+    ans <- as.matrix(cbind(startId, endId))
+    ans[selectionMat]
 }
 
 getGeneIDs <- function(fds, type){
@@ -179,6 +189,7 @@ getPvalsPerGene <- function(fds, type, pvals=pVals(fds, type=type),
     dt <- data.table(
             geneID=mcols(fds, type=type)$hgnc_symbol,
             as.data.table(pvals))
+    dt <- dt[!is.na(geneID)]
     setkey(dt, geneID)
 
     samples <- samples(fds)

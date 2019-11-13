@@ -414,46 +414,21 @@ injectOutliers <- function(fds, type=c("psi5", "psi3", "psiSite"),
             samplePSI    = (k + pseudocount())/(n + 2*pseudocount()),
             meanPSI      = matrix(nrow=j, ncol=m,
                     rowMeans( (k + pseudocount())/(n + 2*pseudocount()) )),
-            simulatedPSI = getAssayMatrix(fds, "truePSI", type=type) )
+            simulatedPSI = getAssayMatrix(fds, "truePSI", type=type))
     
     # 
     # matrix of donor/acceptor for possible injection
     # 
-    if(type == "psiSite"){
-        dt <- as.data.table(rowRanges(fds, type))[,.(
-                chr=factor(seqnames), start, end, strand=factor(strand),
-                junctionID=spliceSiteID)]
-    }else{
-        getInjectionSite <- function(type, strand, startId, endId){
-            selectionMat <- as.matrix(data.frame(row=seq_along(startId), col=
-                    1 + as.vector(
-                            type == "psi5" & strand == "-" | 
-                            type == "psi3" & strand == "+")))
-            ans <- as.matrix(cbind(startId, endId, strand))
-            ans[selectionMat]
-        }
-        dt <- as.data.table(rowRanges(fds, type))
-        dt <- dt[,.(chr=factor(seqnames), start, end, strand=factor(strand),
-                junctionID=getInjectionSite(type, strand, startID, endID))]
-    }
+    tmpIndex <- getSiteIndex(fds, type)
+    dt <- as.data.table(rowRanges(fds, type=type))[,.(
+            chr=seqnames, start, end, strand, idxInCount=.I, 
+            junctionID=tmpIndex)]
+    dt[,nPerGroup:=.N,by=junctionID]
+    dt[,idxGroup:=.GRP, by=junctionID]
+    dt[,idxInGroup:=seq_len(.N),by=junctionID]
     
-    # Get groups where outlier can be injected
-    available_groups <- dt[,.(.I, junctionID)][,
-            .(nPerGroup=.N, idxGroup=.GRP, idxInGroup=seq_len(.N), 
-                    idxInCount=I),by=junctionID][order(idxInCount)]
-    
-    if(type %in% c("psi5", "psi3")){
-        if(nrow(available_groups[nPerGroup > 1]) > 0){
-            available_groups <- available_groups[nPerGroup > 1]
-            available_groups[,idxGroup:=.GRP,by=junctionID]
-        } else {
-            warning("No alternative splicing detected in the dataset. ",
-                    "Use full dataset to inject arteficial outliers.")
-        }
-    }
-    
-    if(max(available_groups$idxGroup) * m * freq < 10){
-        freq <- 10/(max(available_groups$idxGroup) * m)
+    if(max(dt$idxGroup) * m * freq < 10){
+        freq <- 10/(max(dt$idxGroup) * m)
         warning("Injection-frequency is to low. Increasing it to `",
                 signif(freq, 2), "` so we can inject at least 10 events ",
                 "into the data set!")
@@ -461,7 +436,7 @@ injectOutliers <- function(fds, type=c("psi5", "psi3", "psiSite"),
     
     # where do we inject and how
     indexOut_groups <- matrix(ncol=m, sample(c(0,1,-1),
-            max(available_groups$idxGroup)*m, replace=TRUE, 
+            max(dt$idxGroup)*m, replace=TRUE, 
             prob=c(1-freq, freq/2, freq/2)))
         
     # positions where outliers will be injected
@@ -469,10 +444,11 @@ injectOutliers <- function(fds, type=c("psi5", "psi3", "psiSite"),
     
     
     # sample primary injection
-    primaryInjection <- merge(as.data.table(list_index), available_groups,
+    primaryInjection <- merge(as.data.table(list_index), dt,
             sort=FALSE, by.x="row", by.y="idxGroup", allow.cartesian=TRUE)
     primaryInjection[,primary:=idxInGroup==sample(idxInGroup,1),by="row,col"]
     primaryInjection[,n:=n[cbind(idxInCount, col)]]
+    primaryInjection[,k:=k[cbind(idxInCount, col)]]
     primaryInjection[,nOk:=length(unique(n)) == 1, by="row,col"]
     if(nrow(primaryInjection[nOk == FALSE]) / nrow(primaryInjection) > 0.05){
         # this can happen in the lower range if the prediction of the direction
@@ -588,16 +564,16 @@ injectOutliers <- function(fds, type=c("psi5", "psi3", "psiSite"),
     # set injection status (direction, primary, secondary)
     indexOut <- matrix(0, nrow=nrow(k), ncol=ncol(k))
     indexOut[primaryIndexInReal[goodInjections,]] <- 
-        injDirection[goodInjections]
+            injDirection[goodInjections]
     indexOut[secondaryIndexInReal[goodSecondary,]] <- 
-        2 * injDirection[secondaryPrimaryIndex[,"I"][goodSecondary]]
+            2 * injDirection[secondaryPrimaryIndex[,"I"][goodSecondary]]
     
     # set injected delta psi
     indexDeltaPsi <- matrix(0, nrow=nrow(k), ncol=ncol(k))
     indexDeltaPsi[primaryIndexInReal[goodInjections,]] <- 
-        injDpsi[goodInjections]
+            injDpsi[goodInjections]
     indexDeltaPsi[secondaryIndexInReal[goodSecondary,]] <- 
-        second_delta_psi[secondaryPrimaryIndex[,"I"][goodSecondary]]
+            second_delta_psi[goodSecondary]
     
     # 
     # do the injection and save the additional informations in the object
