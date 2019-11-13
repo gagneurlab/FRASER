@@ -5,7 +5,8 @@
 \title{This function calculates the PSI values for each junction and splice site
 based on the FraseRDataSet object}
 \usage{
-calculatePSIValues(fds, types = psiTypes, overwriteCts = FALSE)
+calculatePSIValues(fds, types = psiTypes, overwriteCts = FALSE,
+  BPPARAM = bpparam())
 }
 \arguments{
 \item{overwriteCts}{FALSE or TRUE (the default) the total counts (aka N) will

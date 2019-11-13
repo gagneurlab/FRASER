@@ -108,7 +108,7 @@ getHyperOptimCorrectionMethod <- function(correction){
 }
 
 fitPCA <- function(fds, q, psiType, rhoRange=c(1e-5, 1-1e-5), noiseAlpha=NULL,
-                    BPPARAM=parallel(fds), subset=FALSE, minDeltaPsi,
+                    BPPARAM=bpparam(), subset=FALSE, minDeltaPsi,
                     nSubset=15000, useLM=FALSE){
     counts(fds, type=psiType, side="other", HDF5=FALSE) <- as.matrix(
             counts(fds, type=psiType, side="other"))
@@ -168,11 +168,13 @@ fitPCA <- function(fds, q, psiType, rhoRange=c(1e-5, 1-1e-5), noiseAlpha=NULL,
     return(fds)
 }
 
-fitPEER <-function(fds, q, psiType, recomendedQ=TRUE, rhoRange=c(1e-5, 1-1e-5), BPPARAM=parallel(fds)){
+fitPEER <-function(fds, q, psiType, recomendedQ=TRUE, rhoRange=c(1e-5, 1-1e-5), 
+                    BPPARAM=bpparam()){
 
     # set featureExclusionMask of all junctions to TRUE for peer
     currentType(fds) <- psiType
-    featureExclusionMask(fds, type=psiType) <- rep(TRUE, nrow(mcols(fds, type=psiType)))
+    featureExclusionMask(fds, type=psiType) <- rep(TRUE, 
+            nrow(mcols(fds, type=psiType)))
 
     #+ PEER
     require(peer)
@@ -220,7 +222,9 @@ fitPEER <-function(fds, q, psiType, recomendedQ=TRUE, rhoRange=c(1e-5, 1-1e-5), 
 
 }
 
-fitPEERDecoder <-function(fds, q, psiType, recomendedQ=TRUE, rhoRange=c(1e-5, 1-1e-5), nrDecoderBatches=1, BPPARAM=parallel(fds)){
+fitPEERDecoder <-function(fds, q, psiType, recomendedQ=TRUE, 
+                    rhoRange=c(1e-5, 1-1e-5), nrDecoderBatches=1, 
+                    BPPARAM=bpparam()){
 
     # set featureExclusionMask of all junctions to TRUE for peer
     currentType(fds) <- psiType
@@ -247,7 +251,9 @@ fitPEERDecoder <-function(fds, q, psiType, recomendedQ=TRUE, rhoRange=c(1e-5, 1-
 
     #+ extract PEER data
     peerResiduals <- PEER_getResiduals(model)
-    peerLogitMu <- t(as.matrix(x(fds, all=TRUE, noiseAlpha=NULL, center=FALSE)) - peerResiduals)
+    peerLogitMu <- t(
+            as.matrix(x(fds, all=TRUE, noiseAlpha=NULL, center=FALSE)) - 
+                    peerResiduals)
 
     #+ save peer model in fds object
     setAssayMatrix(fds, "peerLogitMu", type=psiType) <- peerLogitMu
@@ -262,9 +268,8 @@ fitPEERDecoder <-function(fds, q, psiType, recomendedQ=TRUE, rhoRange=c(1e-5, 1-
     k <- as.matrix(K(fds, psiType))
     n <- as.matrix(N(fds, psiType))
     y <- peerLogitMu
-    fitparameters <- bplapply(seq_len(nrow(k)), estRho,
-                              k=k, n=n, y=y, rhoRange=rhoRange,
-                              BPPARAM=BPPARAM, nll=truncNLL_rho)
+    fitparameters <- bplapply(seq_len(nrow(k)), estRho, k=k, n=n, y=y, 
+            rhoRange=rhoRange, BPPARAM=BPPARAM, nll=truncNLL_rho)
     rho(fds) <- vapply(fitparameters, "[[", double(1), "minimum")
     print(summary(rho(fds)))
 
@@ -277,8 +282,8 @@ fitPEERDecoder <-function(fds, q, psiType, recomendedQ=TRUE, rhoRange=c(1e-5, 1-
 
     # run fits
     fitls <- bplapply(seq_len(nrow(k)), singleDFit, D=D, b=b, k=k, n=n, H=H,
-                      rho=rho, lambda=0, control=list(), BPPARAM=parallel(fds),
-                      nSamples=ncol(fds), nrBatches=nrDecoderBatches)
+            rho=rho, lambda=0, control=list(), BPPARAM=BPPARAM,
+            nSamples=ncol(fds), nrBatches=nrDecoderBatches)
 
     # extract infos
     parMat <- vapply(fitls, '[[', double(ncol(D) + 1), 'par')
@@ -334,8 +339,9 @@ fitFraserAE <- function(fds, q, type, noiseAlpha, rhoRange, lambda, convergence,
 }
 
 
-fitKerasDAE <-function(fds, q, psiType, rhoRange=c(1e-5, 1-1e-5), noiseAlpha=1, BPPARAM=parallel(fds),
-                       pypath="/opt/modules/i12g/anaconda/3-5.0.1/envs/omicsOUTRIDER/bin/python"){
+fitKerasDAE <-function(fds, q, psiType, rhoRange=c(1e-5, 1-1e-5), 
+                    noiseAlpha=1, BPPARAM=bpparam(),
+                    pypath="/opt/modules/i12g/anaconda/3-5.0.1/envs/omicsOUTRIDER/bin/python"){
 
     # set needed default values
     message(date(), "set params for kerasDAE ...")

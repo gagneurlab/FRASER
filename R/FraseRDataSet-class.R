@@ -13,7 +13,6 @@ setClass("FraseRDataSet",
     contains="RangedSummarizedExperiment",
     slots = list(
         name            = "character",
-        parallel        = "BiocParallelParam",
         bamParam        = "ScanBamParam",
         strandSpecific  = "logical",
         workingDir      = "character",
@@ -21,7 +20,6 @@ setClass("FraseRDataSet",
     ),
     prototype = list(
         name            = "Data Analysis",
-        parallel        = SerialParam(),
         bamParam        = ScanBamParam(mapqFilter=0),
         strandSpecific  = FALSE,
         workingDir      = file.path(Sys.getenv("HOME"), "FraseR"),
@@ -43,9 +41,6 @@ validateSampleAnnotation <- function(object) {
     if(any(duplicated(sampleData$sampleID))){
         return("The 'sampleID' column needs to be unique.")
     }
-    if(!any("bamFile" %in% colnames(sampleData))){
-        return("Please provide a 'bamFile' column.")
-    }
     if(any(samples(object) != rownames(colData(object)))){
         return("Please set the rownames of your colData to the sampleIDs")
     }
@@ -63,13 +58,6 @@ validateName <- function(object){
         return(paste("For readabilty the name of the experiment should only ",
                 "contain the following characters: 'a-zA-Z0-9 ._-'"
         ))
-    }
-    NULL
-}
-
-validateParallel <- function(object) {
-    if(!is(object@parallel, "BiocParallelParam")) {
-        return("The 'parallel' option must be a BiocParallelParam object.")
     }
     NULL
 }
@@ -143,7 +131,6 @@ validateFraseRDataSet <- function(object) {
     c(
         validateSampleAnnotation(object),
         validateName(object),
-        validateParallel(object),
         validateBamParam(object),
         validateStrandSpecific(object),
         validateWorkingDir(object),
@@ -173,7 +160,8 @@ showFraseRDataSet <- function(object) {
     }
     cat("-------------------- Sample data table -----------------\n")
     sampleData <- as.data.table(colData(object))
-    if(all(sapply(sampleData$bamFile, isScalarCharacter))){
+    if("bamFile" %in% sampleData & all(
+                sapply(sampleData$bamFile, isScalarCharacter))){
         sampleData$bamFile <- gsub("... [^/]+/", ".../",
             sapply(sampleData$bamFile, function(str){
                 if(nchar(str) <= 29) return(str)
@@ -183,10 +171,12 @@ showFraseRDataSet <- function(object) {
     }
     show(as_tibble(sampleData))
     cat("\n")
+    
     if(length(object) > 0){
         cat(paste0("Number of samples:      ", dim(object)[2]), "\n")
         cat(paste0("Number of junctions:    ", length(object)), "\n")
-        cat(paste0("Number of splice sites: ", length(nonSplicedReads(object))), "\n")
+        cat(paste0("Number of splice sites: ", 
+                length(nonSplicedReads(object))), "\n")
         scat("assays(%d):    %s\n", assayNames(object))
         cat("\n")
     }
@@ -196,15 +186,7 @@ showFraseRDataSet <- function(object) {
     cat(paste0("Analysis is strand specific: ", strandSpecific(object)), "\n")
     cat(paste0("Working directory:           '", workingDir(object), "'"), "\n")
     cat("\n")
-
-    cat("-------------------- Parallel backend ------------------\n")
-    # show(parallel(object))
-    cat(paste0("Type: ", as.character(class(parallel(object))),
-            "\tWorkers: ", bpworkers(parallel(object)),
-            "\tTasks: ", bptasks(parallel(object))
-    ))
-    cat("\n\n")
-
+    
     cat("-------------------- BAM parameters --------------------\n")
     if(identical(scanBamParam(FraseRDataSet()), scanBamParam(object))){
         cat(paste0("Default used with: ",

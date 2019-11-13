@@ -5,7 +5,7 @@
 \title{Count RNA-seq data}
 \usage{
 countRNAData(fds, NcpuPerSample = 1, junctionMap = NULL,
-  minAnchor = 5, recount = FALSE, BPPARAM = parallel(fds),
+  minAnchor = 5, recount = FALSE, BPPARAM = bpparam(),
   genome = NULL)
 }
 \arguments{

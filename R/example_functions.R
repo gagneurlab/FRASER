@@ -31,7 +31,7 @@ createTestFraseRSettings <- function(){
     sampleTable[gene=='NHDF', condition:=NA]
 
     # create FraseR object
-    fds <- FraseRDataSet(colData=sampleTable, parallel=bpparam(),
+    fds <- FraseRDataSet(colData=sampleTable, 
             workingDir=file.path(Sys.getenv("HOME"), "FraseR"))
 
     # dont use hdf5 for example data set
@@ -53,14 +53,11 @@ createTestFraseRSettings <- function(){
 #'
 #' @export
 #'
-createTestFraseRDataSet <- function(BPPARAM=bpparam()){
+createTestFraseRDataSet <- function(){
 
     # get test sample annotation
     fds <- createTestFraseRSettings()
-
-    # set paralelle settings if given
-    parallel(fds) <- BPPARAM
-
+    
     # count data
     fds <- countRNAData(fds)
 

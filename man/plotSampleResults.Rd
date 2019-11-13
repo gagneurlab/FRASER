@@ -7,7 +7,7 @@ All three types are plotted into one HTML file
 based on plotly.}
 \usage{
 plotSampleResults(fds, sampleID = NULL, file = NULL, dir = NULL,
-  browseIt = FALSE)
+  browseIt = FALSE, BPPARAM = bpparam())
 }
 \description{
 Plot the results of the FraseR analysis pipeline

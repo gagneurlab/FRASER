@@ -28,7 +28,7 @@
 #'   countRNAData(createTestFraseRSettings())
 #'   countRNAData(createTestFraseRSettings(), 5)
 countRNAData <- function(fds, NcpuPerSample=1, junctionMap=NULL, minAnchor=5,
-                    recount=FALSE, BPPARAM=parallel(fds), genome=NULL){
+                    recount=FALSE, BPPARAM=bpparam(), genome=NULL){
 
     # Check input TODO
     stopifnot(class(fds) == "FraseRDataSet")
@@ -124,7 +124,6 @@ countRNAData <- function(fds, NcpuPerSample=1, junctionMap=NULL, minAnchor=5,
     fds <- new("FraseRDataSet",
         splitCounts,
         name            = name(fds),
-        parallel        = parallel(fds),
         bamParam        = scanBamParam(fds),
         strandSpecific  = strandSpecific(fds),
         workingDir      = workingDir(fds),

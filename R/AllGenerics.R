@@ -52,12 +52,6 @@ setGeneric("scanBamParam",      function(object) standardGeneric("scanBamParam")
 setGeneric("scanBamParam<-",    signature = "object", function(object, value) standardGeneric("scanBamParam<-"))
 
 #' @export
-setGeneric("parallel",          function(object) standardGeneric("parallel"))
-
-#' @export
-setGeneric("parallel<-",        signature = "object", function(object, value) standardGeneric("parallel<-"))
-
-#' @export
 setGeneric("nonSplicedReads",   function(object) standardGeneric("nonSplicedReads"))
 
 #' @export
@@ -148,31 +142,6 @@ setMethod("bamFile", "FraseRDataSet", function(object) {
 #' @rdname bamFile
 setReplaceMethod("bamFile", "FraseRDataSet", function(object, value) {
     colData(object)[,"bamFile"] <- value
-    validObject(object)
-    return(object)
-})
-
-
-#'
-#'  Get/Set the parallel param object from the FraseRDataSet object
-#'
-#' @param object A FraseRDataSet object.
-#' @return A parallel param object
-#' @examples
-#' settings <- createTestFraseRSettings()
-#' parallel(settings)
-#' parallel(settings) <- SerialParam()
-#' @author Christian Mertes \email{mertes@@in.tum.de}
-#' @export
-#' @rdname parallel
-setMethod("parallel", "FraseRDataSet", function(object) {
-    return(slot(object, "parallel"))
-})
-
-#' @export
-#' @rdname parallel
-setReplaceMethod("parallel", "FraseRDataSet", function(object, value) {
-    slot(object, "parallel") <- value
     validObject(object)
     return(object)
 })
@@ -377,7 +346,6 @@ subset.FraseR <- function(x, i, j, by=c("j", "ss")){
     newx <- new("FraseRDataSet",
             subX,
             name            = name(x),
-            parallel        = parallel(x),
             bamParam        = scanBamParam(x),
             strandSpecific  = strandSpecific(x),
             workingDir      = workingDir(x),

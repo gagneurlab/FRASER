@@ -11,7 +11,7 @@
 #' #     plotSampleResults(fds, "sample1")
 #' #     plotSampleResults(fds, "sample1", "result.html")
 plotSampleResults <- function(fds, sampleID=NULL, file=NULL,
-                    dir=NULL, browseIt=FALSE){
+                    dir=NULL, browseIt=FALSE, BPPARAM=bpparam()){
 
     # if sample is empty create all plots for all samples
     if(is.null(sampleID)){
@@ -20,7 +20,7 @@ plotSampleResults <- function(fds, sampleID=NULL, file=NULL,
 
         samples2plot <- !is.na(condition(fds))
         sampleIDs2plot <- samples(fds)[samples2plot]
-        return(bplapply(sampleIDs2plot, fds=fds, dir=dir, BPPARAM=parallel(fds),
+        return(bplapply(sampleIDs2plot, fds=fds, dir=dir, BPPARAM=BPPARAM,
             FUN=function(sID, fds, dir) {
                 require(FraseR)
                 plotSampleResults(fds, sID, dir=dir, browseIt=FALSE)

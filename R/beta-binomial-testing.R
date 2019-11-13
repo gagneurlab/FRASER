@@ -5,7 +5,6 @@
 #' @examples
 #' fds <- countRNAData(createTestFraseRSettings())
 #' fds <- calculatePSIValues(fds)
-#' parallel(fds) <- SerialParam()
 #' debug(FraseR:::betabinVglmTest)
 #' fds <- pvalueByBetaBinomialPerType(fds, "testPval", "psi5",
 #'         FraseR:::betabinVglmTest)
@@ -13,7 +12,7 @@
 #' @noRd
 pvalueByBetaBinomialPerType <- function(fds, aname, psiType, pvalFun,
             minCov=5, alternative="two.sided", timeout=300,
-            BPPARAM=parallel(fds), returnFit=FALSE){
+            BPPARAM=bpparam(), returnFit=FALSE){
 
     message(date(), ": Calculate P-values for the ",
             psiType, " splice type ...")

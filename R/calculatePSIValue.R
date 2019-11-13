@@ -16,14 +16,15 @@
 #' @examples
 #'   fds <- countRNAData(createTestFraseRSettings())
 #'   fds <- calculatePSIValues(fds)
-calculatePSIValues <- function(fds, types=psiTypes, overwriteCts=FALSE){
+calculatePSIValues <- function(fds, types=psiTypes, overwriteCts=FALSE, 
+                    BPPARAM=bpparam()){
     # check input
     stopifnot(class(fds) == "FraseRDataSet")
 
     # calculate PSI value for each sample
     for(psiType in unique(sapply(types, whichReadType, fds=fds))){
         fds <- calculatePSIValuePrimeSite(fds, psiType=psiType,
-                overwriteCts=overwriteCts)
+                overwriteCts=overwriteCts, BPPARAM=BPPARAM)
     }
 
     # calculate the delta psi value
@@ -44,13 +45,13 @@ calculatePSIValues <- function(fds, types=psiTypes, overwriteCts=FALSE){
 #' calculates the PSI value for the given prime site of the junction
 #'
 #' @noRd
-calculatePSIValuePrimeSite <- function(fds, psiType, overwriteCts){
+calculatePSIValuePrimeSite <- function(fds, psiType, overwriteCts, BPPARAM){
     stopifnot(class(fds) == "FraseRDataSet")
     stopifnot(isScalarCharacter(psiType))
     stopifnot(psiType %in% c("j", "ss"))
 
     if(psiType=="ss"){
-        return(calculateSitePSIValue(fds, overwriteCts))
+        return(calculateSitePSIValue(fds, overwriteCts, BPPARAM=BPPARAM))
     }
 
     message(date(), ": Calculate the PSI 5 and 3 values ...")
@@ -65,7 +66,7 @@ calculatePSIValuePrimeSite <- function(fds, psiType, overwriteCts){
 
     # calculate psi value
     psiValues <- bplapply(samples(fds), countData=countData,
-                overwriteCts=overwriteCts, BPPARAM=parallel(fds),
+                overwriteCts=overwriteCts, BPPARAM=BPPARAM,
         FUN=function(sample, countData, overwriteCts){
 
             # add sample specific counts to the data.table (K)
@@ -123,7 +124,7 @@ calculatePSIValuePrimeSite <- function(fds, psiType, overwriteCts){
 #' based on the FraseRDataSet object
 #'
 #' @noRd
-calculateSitePSIValue <- function(fds, overwriteCts){
+calculateSitePSIValue <- function(fds, overwriteCts, BPPARAM){
 
     # check input
     stopifnot(class(fds) == "FraseRDataSet")
@@ -150,7 +151,7 @@ calculateSitePSIValue <- function(fds, overwriteCts){
     )
 
     psiSiteValues <- bplapply(samples(fds), countData=countData, fds=fds,
-        BPPARAM=parallel(fds), FUN=function(sample, countData, fds){
+        BPPARAM=BPPARAM, FUN=function(sample, countData, fds){
             if(verbose(fds) > 3){
                 message("sample: ", sample)
             }

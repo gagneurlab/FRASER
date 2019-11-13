@@ -346,7 +346,7 @@ dontWriteHDF5 <- function(fds){
     return(fds)
 }
 
-getTrueOutliers <- function(fds, type, BPPARAM=parallel(fds), byGroup=FALSE){
+getTrueOutliers <- function(fds, type, BPPARAM=bpparam(), byGroup=FALSE){
     ans <- getAssayMatrix(fds, "trueOutliers", type)
     if(isTRUE(byGroup)){
         ans <- getAbsMaxByGroup(fds, type, ans, BPPARAM)
@@ -356,7 +356,7 @@ getTrueOutliers <- function(fds, type, BPPARAM=parallel(fds), byGroup=FALSE){
     pmin(pmax(ans, -1), 1)
 }
 
-getTrueDeltaPsi <- function(fds, type, BPPARAM=parallel(fds), byGroup=FALSE){
+getTrueDeltaPsi <- function(fds, type, BPPARAM=bpparam(), byGroup=FALSE){
     ans <- getAssayMatrix(fds, "trueDeltaPSI", type)
     if(isTRUE(byGroup)){
         ans <- getAbsMaxByGroup(fds, type, ans, BPPARAM)
@@ -364,7 +364,7 @@ getTrueDeltaPsi <- function(fds, type, BPPARAM=parallel(fds), byGroup=FALSE){
     ans
 }
 
-getAbsMaxByGroup <- function(fds, type, mat, BPPARAM=parallel(fds)){
+getAbsMaxByGroup <- function(fds, type, mat, BPPARAM=bpparam()){
     index <- getSiteIndex(fds, type)
 
     dt <- cbind(data.table(id=index), as.data.table(mat))
