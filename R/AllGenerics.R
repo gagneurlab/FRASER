@@ -34,12 +34,6 @@ setGeneric("name",              function(object) standardGeneric("name"))
 setGeneric("name<-",            signature = "object", function(object, value) standardGeneric("name<-"))
 
 #' @export
-setGeneric("method",            function(object) standardGeneric("method"))
-
-#' @export
-setGeneric("method<-",          signature = "object", function(object, value) standardGeneric("method<-"))
-
-#' @export
 setGeneric("strandSpecific",    function(object) standardGeneric("strandSpecific"))
 
 #' @export
@@ -204,33 +198,6 @@ setMethod("name", "FraseRDataSet", function(object) {
 #' @rdname name
 setReplaceMethod("name", "FraseRDataSet", function(object, value) {
     slot(object, "name") <- value
-    validObject(object)
-    return(object)
-})
-
-
-
-#'
-#'  Get/Set the statistical method to use for P-value calculation
-#'  from the FraseRDataSet object
-#'
-#' @param object A FraseRDataSet object.
-#' @return A character string representing the statistical method
-#' @examples
-#' settings <- createTestFraseRSettings()
-#' method(settings)
-#' method(settings) <- "betaBin"
-#' @author Christian Mertes \email{mertes@@in.tum.de}
-#' @export
-#' @rdname method
-setMethod("method", "FraseRDataSet", function(object) {
-    return(slot(object, "method"))
-})
-
-#' @export
-#' @rdname method
-setReplaceMethod("method", "FraseRDataSet", function(object, value) {
-    slot(object, "method") <- value
     validObject(object)
     return(object)
 })
@@ -410,7 +377,6 @@ subset.FraseR <- function(x, i, j, by=c("j", "ss")){
     newx <- new("FraseRDataSet",
             subX,
             name            = name(x),
-            method          = method(x),
             parallel        = parallel(x),
             bamParam        = scanBamParam(x),
             strandSpecific  = strandSpecific(x),
@@ -503,16 +469,18 @@ setMethod("length", "FraseRDataSet", function(x) callNextMethod())
 #'
 FraseR.mcols.get <- function(x, type=NULL, ...){
     type <- checkReadType(x, type)
-    if(type=="j")  return(mcols(rowRanges(x, type=type), ...))
-    return(mcols(nonSplicedReads(x), ...))
+    if(type=="j"){
+        return(mcols(asSE(x), ...))
+    }
+    mcols(nonSplicedReads(x), ...)
 }
 FraseR.mcols.replace <- function(x, type=NULL, ..., value){
     type <- checkReadType(x, type)
     if(type=="j") {
-        rr <- rowRanges(asSE(x))
-        mcols(rr, ...) <- value
-        rowRanges(x) <- rr
-        return(x)
+        return(callNextMethod())
+        # se <- asSE(x)
+        # mcols(se, ...) <- value
+        # return(asFDS(x))
     }
     mcols(nonSplicedReads(x), ...) <- value
     return(x)
@@ -525,8 +493,8 @@ setReplaceMethod("mcols", "FraseRDataSet", FraseR.mcols.replace)
 #'
 FraseR.rowRanges.get <- function(x, type=NULL, ...){
     type <- checkReadType(x, type)
-    if(type=="j")  return(rowRanges(asSE(x), ...))
-    if(type=="ss") return(rowRanges(nonSplicedReads(x), type=type, ...))
+    if(type=="j")  return(callNextMethod())
+    if(type=="ss") return(rowRanges(nonSplicedReads(x), ...))
 }
 FraseR.rowRanges.replace <- function(x, type=NULL, ..., value){
     type <- checkReadType(x, type)
@@ -537,7 +505,7 @@ FraseR.rowRanges.replace <- function(x, type=NULL, ..., value){
 
         #return(callNextMethod())
     }
-    rowRanges(nonSplicedReads(x), type=type, ...) <- value
+    rowRanges(nonSplicedReads(x), ...) <- value
     return(x)
 }
 

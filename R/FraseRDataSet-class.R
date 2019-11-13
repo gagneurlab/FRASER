@@ -13,7 +13,6 @@ setClass("FraseRDataSet",
     contains="RangedSummarizedExperiment",
     slots = list(
         name            = "character",
-        method          = "character",
         parallel        = "BiocParallelParam",
         bamParam        = "ScanBamParam",
         strandSpecific  = "logical",
@@ -22,7 +21,6 @@ setClass("FraseRDataSet",
     ),
     prototype = list(
         name            = "Data Analysis",
-        method          = "betaBin",
         parallel        = SerialParam(),
         bamParam        = ScanBamParam(mapqFilter=0),
         strandSpecific  = FALSE,
@@ -64,16 +62,6 @@ validateName <- function(object){
     if(!grep("^[a-zA-Z0-9 ._-]+$", object@name, perl=TRUE)){
         return(paste("For readabilty the name of the experiment should only ",
                 "contain the following characters: 'a-zA-Z0-9 ._-'"
-        ))
-    }
-    NULL
-}
-
-validateMethod <- function(object) {
-    validMethods <- c("Fisher", "betaBin", "DESeq2", "Martin")
-    if(!isScalarCharacter(object@method) || !object@method %in% validMethods) {
-        return(paste0("The selected method must be one of the following: ",
-                paste(validMethods, collapse=", "), "."
         ))
     }
     NULL
@@ -155,7 +143,6 @@ validateFraseRDataSet <- function(object) {
     c(
         validateSampleAnnotation(object),
         validateName(object),
-        validateMethod(object),
         validateParallel(object),
         validateBamParam(object),
         validateStrandSpecific(object),
@@ -206,7 +193,6 @@ showFraseRDataSet <- function(object) {
 
     cat("----------------------- Settings -----------------------\n")
     cat(paste0("Analysis name:               ", name(object)), "\n")
-    cat(paste0("Statistical method:          ", method(object)), "\n")
     cat(paste0("Analysis is strand specific: ", strandSpecific(object)), "\n")
     cat(paste0("Working directory:           '", workingDir(object), "'"), "\n")
     cat("\n")

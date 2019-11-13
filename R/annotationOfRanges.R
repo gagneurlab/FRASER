@@ -13,7 +13,7 @@
 #' fds <- countRNAData(createTestFraseRSettings())
 #' fds <- annotateRanges(fds)
 #'
-#' rowRanges(fds)[,"hgnc_symbol"]
+#' rowRanges(fds, type="psi5")[,"hgnc_symbol"]
 #'
 #' @export
 annotateRanges <- function(fds, feature="hgnc_symbol", featureName=feature,

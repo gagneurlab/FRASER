@@ -56,7 +56,7 @@ calculatePSIValuePrimeSite <- function(fds, psiType, overwriteCts){
     message(date(), ": Calculate the PSI 5 and 3 values ...")
 
     # generate a data.table from granges
-    countData <- as.data.table(granges(rowRanges(fds)))
+    countData <- as.data.table(granges(rowRanges(fds, type=psiType)))
 
     # check if we have to compute N
     if(!all(paste0("rawOtherCounts_psi", c(5, 3)) %in% assayNames(fds))){
