@@ -15,6 +15,6 @@ Annotates the given FraseRDataSet with the HGNC symbol with biomaRt
 fds <- countRNAData(createTestFraseRSettings())
 fds <- annotateRanges(fds)
 
-rowRanges(fds)[,"hgnc_symbol"]
+rowRanges(fds, type="psi5")[,"hgnc_symbol"]
 
 }
