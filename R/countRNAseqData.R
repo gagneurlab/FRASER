@@ -33,10 +33,6 @@
 #' single count object, where the counts for junctions that are not present in 
 #' a sample are set to zero. 
 #' 
-#' \code{\link{annotateSpliceSites}} and 
-#' \code{\link{extractSpliceSiteCoordinates}} are used to create the splice site
-#' map of all splice sites present in the given dataset.
-#'          
 #' @param fds A FraseRDataSet object with all the information
 #'             how and what to count
 #' @param NcpuPerSample A BiocParallel param object or a positive integer

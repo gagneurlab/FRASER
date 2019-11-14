@@ -121,11 +121,7 @@ overlapping with splice sites for a single sample.
 
 \code{\link{mergeCounts}} merges the counts from different samples into a 
 single count object, where the counts for junctions that are not present in 
-a sample are set to zero. 
-
-\code{\link{annotateSpliceSites}} and 
-\code{\link{extractSpliceSiteCoordinates}} are used to create the splice site
-map of all splice sites present in the given dataset.
+a sample are set to zero.
 }
 \section{Functions}{
 \itemize{
