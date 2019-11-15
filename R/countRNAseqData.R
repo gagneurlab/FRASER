@@ -198,6 +198,9 @@ getSplitReadCountsForAllSamples <- function(fds, NcpuPerSample=1,
     rm(countList)
     gc()
     
+    # splice site map
+    counts <- annotateSpliceSite(counts)
+    
     return(counts)
 }
 
@@ -212,9 +215,12 @@ getNonSplitReadCountsForAllSamples <- function(fds, splitCounts,
                                                NcpuPerSample=1, minAnchor=5,
                                                recount=FALSE, 
                                                BPPARAM=bpparam() ){
+    if(!("startID" %in% colnames(mcols(splitCounts))) | 
+        !("endID" %in% colnames(mcols(splitCounts)))){
+        # splice site map
+        splitCounts <- annotateSpliceSite(splitCounts)
+    }
     
-    # splice site map
-    splitCounts <- annotateSpliceSite(splitCounts)
     
     # count the retained reads
     message(date(), ": Start counting the non spliced reads ...")
