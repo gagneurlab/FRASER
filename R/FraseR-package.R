@@ -74,7 +74,8 @@
 ### Miscelenious functions
 #'
 #' @importFrom BBmisc isScalarCharacter isScalarLogical chunk %nin% seq_row
-#'          isScalarInteger isFALSE is.error isScalarValue isScalarNumeric
+#'          seq_col isScalarInteger isFALSE is.error isScalarValue 
+#'          isScalarNumeric
 #' @importFrom R.utils renameFile withTimeout
 #' @importFrom tools file_path_as_absolute
 #' @importFrom methods as callNextMethod is new show slot slot<- validObject

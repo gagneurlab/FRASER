@@ -139,7 +139,7 @@ optimHyperParams <- function(fds, type, correction,
 
         # inject outliers
         fds_copy <- injectOutliers(fds_copy, type=type, freq=injectFreq,
-                minDpsi=minDeltaPsi, method="samplePSI", BPPARAM=BPPARAM)
+                minDpsi=minDeltaPsi, method="samplePSI")
 
         # remove unneeded blocks to save memory
         a2rm <- paste(sep="_", c("originalCounts", "originalOtherCounts"),

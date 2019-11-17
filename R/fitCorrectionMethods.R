@@ -77,6 +77,7 @@ needsHyperOpt <- function(method){
         "PCA-reg-full"           = TRUE,
         FraseR                   = TRUE,
         "PCA-BB-Decoder"         = TRUE,
+        "PCA-BB-Decoder-no-weights" = TRUE,
         "FraseR-5DecoderBatches" = TRUE,
         "FraseR-1DecoderBatches" = TRUE,
         "FraseR-weighted"        = TRUE,

@@ -364,16 +364,22 @@ getTrueDeltaPsi <- function(fds, type, BPPARAM=bpparam(), byGroup=FALSE){
     ans
 }
 
-getAbsMaxByGroup <- function(fds, type, mat, BPPARAM=bpparam()){
-    index <- getSiteIndex(fds, type)
+getAbsMaxByGroup <- function(fds, type, mat, index=NULL, BPPARAM=bpparam()){
+    if(is.null(index)){
+        index <- getSiteIndex(fds, type)
+    }
 
     dt <- cbind(data.table(id=index), as.data.table(mat))
-    values <- matrix(unlist(bplapply(samples(fds), BPPARAM=BPPARAM,
-        function(i){
-                dttmp <- dt[,.(.I, id, value=get(i), abs=abs(get(i)))]
-                dttmp[,maxVal:=value[abs == max(abs)][1], by=id]
-                dttmp[!duplicated(id)][order(I)][,value]
-        })), ncol=length(samples(fds)))
+    values <- matrix(ncol=ncol(mat), unlist(bplapply(colnames(mat), 
+            BPPARAM=BPPARAM,
+            function(i){
+                    dttmp <- dt[,.(.I, id, value=get(i), abs=abs(get(i)))]
+                    dttmp[,maxVal:=value[abs == max(abs)][1], by=id]
+                    dttmp[!duplicated(id)][order(I)][,value]
+            })))
+    
+    colnames(values) <- colnames(mat)
+    rownames(values) <- index[!duplicated(index)]
     return(values)
 }
 

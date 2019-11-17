@@ -24,7 +24,7 @@ getFraseR <- function(clean=FALSE, useHome=FALSE){
         fds <- readRDS(getFraseRTestFile(useHome=useHome))
         if(clean == TRUE){
             unlink(getFraseRTestFile(useHome=useHome))
-            fds <- getFraseR()
+            fds <- NULL
         }
     }, silent=TRUE)
     if(is.null(fds)) {
@@ -33,17 +33,18 @@ getFraseR <- function(clean=FALSE, useHome=FALSE){
         name(fds) <- getName()
         verbose(fds) <- 0
         dontWriteHDF5(fds) <- TRUE
-
+        dir.create(dirname(getFraseRTestFile(useHome=useHome)), recursive=TRUE)
+        
         if(.Platform$OS.type != "windows"){
-            parallel(fds) <- MulticoreParam(4)
-            register(parallel(fds))
+            register(MulticoreParam(min(4, bpworkers())))
+        } else {
+            register(SerialParam())
         }
 
         fds <- countRNAData(fds)
         fds <- calculatePSIValues(fds)
         fds <- filterExpression(fds)
         fds <- FraseR(fds, q=2, correction="PCA")
-        dir.create(dirname(getFraseRTestFile(useHome=useHome)), recursive=TRUE)
         saveRDS(fds, getFraseRTestFile(useHome=useHome))
     }
     return(fds)

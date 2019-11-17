@@ -39,7 +39,7 @@ calculatePvalues <- function(fds, type=currentType(fds),
     if(correction %in% c("BB")){
         index <- getSiteIndex(fds, type)
         pvals <- getAssayMatrix(fds, "pvalues_BB", type)
-        fwer_pval  <- bplapply(seq_len(ncol(pvals)), adjust_FWER_PValues,
+        fwer_pval  <- bplapply(seq_col(pvals), adjust_FWER_PValues,
                 pvals=pvals, index, BPPARAM=BPPARAM)
         fwer_pvals <- do.call(cbind, fwer_pval)
         pVals(fds, type=type, dist="BetaBinomial") <- fwer_pvals
@@ -77,7 +77,7 @@ calculatePvalues <- function(fds, type=currentType(fds),
         pval <- do.call(rbind, pval_list)
         dval <- matrix(dbbinom(k, n, alpha, beta), nrow=nrow(k), ncol=ncol(k))
         pvals <- 2 * pmin(pval, 1 - pval + dval, 0.5)
-        fwer_pval <- bplapply(seq_len(ncol(pvals)), adjust_FWER_PValues,
+        fwer_pval <- bplapply(seq_col(pvals), adjust_FWER_PValues,
                 pvals=pvals, index, BPPARAM=BPPARAM)
         fwer_pvals <- do.call(cbind, fwer_pval)
         pVals(fds, dist="BetaBinomial") <- fwer_pvals
@@ -85,12 +85,12 @@ calculatePvalues <- function(fds, type=currentType(fds),
 
     if("binomial" %in% distributions){
         # binomial p-values
-        pval_list <- bplapply(seq_len(nrow(mu)), singlePvalueBinomial, k=k, n=n,
+        pval_list <- bplapply(seq_row(mu), singlePvalueBinomial, k=k, n=n,
                 mu=mu, BPPARAM=BPPARAM)
         pval <- do.call(rbind, pval_list)
         dval <- dbinom(k, n , mu)
         pvals <- 2 * pmin(pval, 1 - pval + dval, 0.5)
-        fwer_pval <- bplapply(seq_len(ncol(pvals)), adjust_FWER_PValues,
+        fwer_pval <- bplapply(seq_col(pvals), adjust_FWER_PValues,
                 pvals=pvals, index, BPPARAM=BPPARAM)
         fwer_pvals <- do.call(cbind, fwer_pval)
         pVals(fds, dist="Binomial") <- fwer_pvals

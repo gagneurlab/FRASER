@@ -148,7 +148,7 @@ saveAsHDF5 <- function(fds, name, object=NULL, rewrite=FALSE){
         min(ncol(object), options()[['FraseR-hdf5-chunk-ncol']]))
 
     if(isTRUE(dontWriteHDF5(fds))){
-        if(verbose(fds) > 0){
+        if(verbose(fds) > 3){
             message(date(), ": Dont save HDF5 for assay: ", name)
         }
         return(object)
@@ -163,10 +163,14 @@ saveAsHDF5 <- function(fds, name, object=NULL, rewrite=FALSE){
     }
 
     # write new HDF5 data
-    message(date(), ": Preparing data for HDF5 conversion: ", name)
+    if(verbose(fds) > 2) {
+        message(date(), ": Preparing data for HDF5 conversion: ", name)
+    }
     aMat <- as(object, "matrix")
-    message(date(), ": Writing data: ", name, " to file: ", h5File)
-    h5 <- writeHDF5Array(aMat, h5FileTmp, name, verbose=FALSE, level=0,
+    if(verbose(fds) > 1) {
+        message(date(), ": Writing data: ", name, " to file: ", h5File)
+    }
+    h5 <- writeHDF5Array(aMat, h5FileTmp, name, verbose=FALSE, 
             chunkdim=chunkDims)
 
     # override old h5 file if present and move tmp to correct place
