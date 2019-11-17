@@ -664,6 +664,13 @@ FraseR.results <- function(x, sampleIDs, fdrCutoff, zscoreCutoff, dPsiCutoff,
             muPsi        <- as.matrix(predictedMeans(tmp_x))
             deltaPsiVals <- psivals - muPsi
 
+            if(length(sc) == 1){
+                colnames(pvals) <- sc
+                colnames(padjs) <- sc
+                colnames(zscores) <- sc
+                colnames(deltaPsiVals) <- sc
+            }
+            
             # create reult table
             sampleRes <- sapply(sc,
                     resultsSingleSample, gr=gr, pvals=pvals, padjs=padjs,
