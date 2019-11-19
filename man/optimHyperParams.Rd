@@ -10,6 +10,21 @@ optimHyperParams(fds, type, correction, q_param = seq(2, min(40,
   injectFreq = 0.01, nrDecoderBatches = 1, BPPARAM = bpparam(),
   internalThreads = 3)
 }
+\arguments{
+\item{fds}{A FraseRDataSet object}
+
+\item{type}{The type of PSI (psi5, psi3 or psiSite for theta/splicing 
+efficiency)}
+
+\item{correction}{The method that should be used to correct for confounders.}
+
+\item{minDeltaPsi}{}
+
+\item{iterations}{The maximal number of iterations. When the autoencoder has 
+not yet converged after these number of iterations, the fit stops anyway.}
+
+\item{BPPARAM}{the BiocParallel parameters for the parallelization}
+}
 \description{
 Finds the optimal encoding dimension by injecting artificial splicing outlier
 ratios while maximizing the precision-recall curve.

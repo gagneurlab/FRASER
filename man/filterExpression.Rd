@@ -8,11 +8,38 @@ filterExpression(fds, minExpressionInOneSample = 20, quantile = 0.05,
   quantileMinExpression = 1, minDeltaPsi = 0, filter = TRUE,
   BPPARAM = bpparam(), delayed = FALSE)
 }
+\arguments{
+\item{fds}{A FraseRDataSet object}
+
+\item{minExpressionInOneSample}{The minimal read count in at least one sample 
+that is required for an intron to pass the filter.}
+
+\item{quantile}{Defines which quantile should be considered for the filter.}
+
+\item{quantileMinExpression}{The minimum read count an intron needs to have 
+at the specified quantile to pass the filter.}
+
+\item{minDeltaPsi}{Only introns for which the maximal difference in the psi 
+value of a sample to the mean psi of the intron is larger than this value 
+pass the filter.}
+
+\item{filter}{If TRUE, a subsetted fds containing only the introns that 
+passed all filters is returned. If FALSE, no subsetting is done and the 
+information of whether an intron passed the filters is only stored in the 
+mcols.}
+
+\item{BPPARAM}{the BiocParallel parameters for the parallelization}
+
+\item{delayed}{If FALSE, count matrices will be loaded into memory, otherwise 
+the function works on the delayedMatrix representations.}
+}
 \description{
-Filtering FraseRDataSets
+This method can be used to filter out introns that are not reliably detected 
+and to remove introns with no variablity between samples.
 }
 \examples{
-# TODO
-TODO <- 1
+fds <- countRNAData(createTestFraseRSettings())
+fds <- calculatePSIValues(fds)
+fds <- filterExpression(fds)
 
 }

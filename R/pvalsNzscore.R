@@ -1,6 +1,46 @@
 
+#' 
+#' @title Calculate P-values and Z-scores
+#'  
+#' @description The FraseR package provides functions to calculate nominal and 
+#' and adjusted p-values as well as z-scores after fitting the beta-binomial 
+#' parameters. See Detail and Functions for more information.
+#'  
+#' @details See Functions.
+#' 
+#' @inheritParams fit 
+#' 
+#' @return FraseRDataSet
+#' 
+#' @name pvalZscore
+#' @rdname pvalZscore
+#' 
+#' @examples
+#'   # preprocessing
+#'   fds <- createTestFraseRSettings()
+#'   fds <- countRNAData(fds)
+#'   fds <- calculatePSIValues(fds)
+#'   fds <- fit(fds, q=5, correction="PCA", type="psi5")
+#'   
+#'   # nomial p values
+#'   fds <- calculatePvalues(fds, type="psi5")
+#'   head(pVals(fds, type="psi5"))
+#'   
+#'   # donor site adjusted p values
+#'   fds <- calculatePadjValues(fds, type="psi5", method="BY")
+#'   head(padjVals(fds, type="psi5"))
+#'   
+#'   # z scores
+#'   fds <- calculateZscore(fds, type="psi5")
+#'   head(zScores(fds, type="psi5")) 
+#'
+NULL
 
-# Function to calculate the z-scores
+#' @describeIn pvalZscore This function calculates z-scores based on the 
+#' observed and expected logit 
+#' psi.
+#' 
+#' @export
 calculateZscore <- function(fds, type=currentType(fds), correction="FraseR"){
     currentType(fds) <- type
 
@@ -22,7 +62,15 @@ calculateZscore <- function(fds, type=currentType(fds), correction="FraseR"){
     return(fds)
 }
 
-# Function to calculate the p-values (both beta binomial and binomial)
+#' @describeIn pvalZscore This function calculates two-sided p-values based on 
+#' the beta-binomial distribution (or binomial or normal if desired).
+#' 
+#' @param distributions The distribution based on which the p-values are 
+#' calculated. Possible are beta-binomial, binomial and normal.
+#' @param capN Counts are capped at this value to speed up the p-value 
+#' calculation
+#' 
+#' @export
 calculatePvalues <- function(fds, type=currentType(fds),
                     correction="FraseR", BPPARAM=bpparam(),
                     distributions="betabinomial", capN=5*1e5){
@@ -134,6 +182,12 @@ singlePvalueBinomial <- function(idx, k, n, mu){
     return (pvals)
 }
 
+#' @describeIn pvalZscore This function adjusts the previously calculated 
+#' p-values per donor/acceptor site for multiple testing.
+#' 
+#' @param method The p.adjust method that should be used. 
+#' 
+#' @export
 calculatePadjValues <- function(fds, type=currentType(fds), method="BY"){
     currentType(fds) <- type
     index <- getSiteIndex(fds, type=type)

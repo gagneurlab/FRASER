@@ -45,6 +45,7 @@
 #' @importFrom LSD heatscatter colorpalette
 #' @importFrom pheatmap pheatmap
 #' @importFrom RColorBrewer brewer.pal
+#' @importFrom cowplot theme_cowplot
 #'
 ### Shiny App
 #'
@@ -108,13 +109,6 @@
 #' @importFrom ggpubr ggarrange
 #'
 #' @importFrom MASS kde2d bandwidth.nrd
-#'
-#' @importFrom keras callback_terminate_on_naan callback_early_stopping
-#'          compile constraint_minmaxnorm custom_metric keras_model k_exp k_mean
-#'          k_log k_set_value k_variable layer_input layer_lambda layer_dense
-#'          regularizer_l2 get_weights set_weights optimizer_adam use_python
-#'
-#' @importFrom tensorflow install_tensorflow evaluate
 #'
 #' @importFrom tibble as_tibble
 #'

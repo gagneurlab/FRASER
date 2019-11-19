@@ -1,54 +1,49 @@
-%\VignetteIndexEntry{FraseR: Find RAre Splicing Evens in RNA-seq Data}
+%\VignetteIndexEntry{FRASER: Find RAre Splicing Evens in RNA-seq Data}
 %\VignettePackage{FraseR}
 %\VignetteEngine{knitr::knitr}
 %\VignetteEncoding{UTF-8}
 
-% To compile this document
-\if12
-    devtools::document()
-    devtools::install()
-    # Sweave2knitr(file.path(srcDir, "FraseR/vignettes/FraseR.Rnw"))
-    knit("./vignettes/FraseR.Rnw", "./vignettes/FraseR.tex")
-    system("cd vignettes; pdflatex FraseR; pdflatex FraseR")
-\fi
-
 \documentclass[11pt]{article}
-\usepackage{amsmath}
-\usepackage{verbatim}
-\newcommand{\fraser}{\textit{FraseR}}
 
-<<style, eval=TRUE, echo=FALSE, results="asis">>=
+<<style-knitr, eval=TRUE, echo=FALSE, results="asis">>=
 BiocStyle::latex()
 @
 
 <<knitr, echo=FALSE, cache=FALSE, results="hide">>=
-library("knitr")
+library(knitr)
 opts_chunk$set(
-  tidy=FALSE,
-  dev="png",
-  #fig.show="hide",
-  fig.width=4, fig.height=4.5,
-  dpi = 300,
-  cache=TRUE
-  #message=FALSE,
-  #warning=FALSE
+    tidy=FALSE,
+    dev="png",
+    fig.width=7, 
+    fig.height=7,
+    dpi=300,
+    message=FALSE,
+    warning=FALSE,
+    cache=TRUE
 )
 @
 
-<<loadFraseR, echo=FALSE>>=
-suppressPackageStartupMessages({
-    library(FraseR)
-    library(data.table)
-})
-@
+\usepackage{amsmath}
+\usepackage{verbatim}
+\usepackage[nottoc]{tocbibind}
 
-\author{Christian Mertes$^{1}$, Julien Gagneur$^{1}$ \\[1em]
-\small{$^{1}$ Technische Universit\"at M\"unchen, Department of Informatics, Garching, Germany}
+\newcommand{\fraser}{\Biocpkg{FraseR}}
+\newcommand{\fds}{\Rclass{FraseRDataSet}}
+
+\title{FRASER: Find RAre Splicing Events in RNA-seq data}
+
+\author{
+    Christian Mertes$^{1}$, Ines Scheller$^{1}$, Julien Gagneur$^{1}$ \\
+    \small{$^{1}$ Technische Universit\"at M\"unchen, Department of 
+        Informatics, Garching, Germany}
 }
 
-\title{FraseR: Find RAre Splicing Events in RNA-seq data}
 
 \begin{document}
+
+<<include=FALSE>>=
+opts_chunk$set(concordance=TRUE)
+@
 
 % \SweaveOpts{concordance=TRUE}
 
@@ -56,7 +51,22 @@ suppressPackageStartupMessages({
 
 \begin{abstract}
 
-Whole exome sequencing and whole genome Sequencing is already a standard in the field of diagnostics of rare disorders. But due to the lack of biological knowledge and interpretation of the vast of variants RNA-seq is an important complementary tool to assess outliers and detect potentially disease causing splice variants.
+Genetic variants affecting splicing are a major cause of rare diseases yet their 
+identification remains challenging. Recently, detecting splicing defects by 
+RNA sequencing (RNA-seq) has proven to be an effective complementary avenue to 
+genomic variant interpretation. However, no specialized method exists for the 
+detection of aberrant splicing events in RNA-seq data. Here, we addressed this 
+issue by developing the statistical method \fraser{} (Find RAre Splicing Events 
+in RNA-seq). \fraser{} detects splice sites de novo, assesses both alternative 
+splicing and intron retention, automatically controls for latent confounders 
+using a denoising autoencoder, and provides significance estimates using an 
+over-dispersed count fraction distribution. \fraser{} outperforms 
+state-of-the-art approaches on simulated data and on enrichments for rare 
+near-splice site variants in 48 tissues of the GTEx dataset. Application to a 
+previously analysed rare disease dataset led to a new diagnostic by 
+reprioritizing an aberrant exon truncation in the TAZ gene. Altogether, we 
+foresee \fraser{} as an important tool for RNA-seq based diagnostics of rare 
+diseases.
 
 \vspace{1em}
 
@@ -66,7 +76,8 @@ Whole exome sequencing and whole genome Sequencing is already a standard in the 
 If you use \fraser{} in published research, please cite:  \\
 \\
 Mertes C, Gagneur J, \emph{et al.}
-\textbf{FraseR: Find RAre Splicing Events in RNA-seq data} \\
+\textbf{FRASER: A statistical method to detect aberrant } \\
+\textbf{splicing events in RNA-Seq data} \\
 \emph{bioRxiv}\\
 \hline
 \end{tabular}
@@ -74,185 +85,597 @@ Mertes C, Gagneur J, \emph{et al.}
 
 \end{abstract}
 
+\packageVersion{\Sexpr{BiocStyle::pkg_ver("FraseR")}}
+
 \newpage
 
 \tableofcontents
 
 \newpage
 
-\section{Quick guide to \fraser{}}
 
-<<quick faser guide all, echo=TRUE, eval=FALSE>>=
-if(!requireNamespace("FraseR", quietly=TRUE)){
-    devtools::install("../FraseR")
+<<loadFraseR, echo=FALSE>>=
+suppressPackageStartupMessages({
+    library(FraseR)
+    # devtools::load_all("../")
+})
+@
+
+\section{Introduction}
+
+\fraser{} (Find RAre Splicing Evens in RNA-seq Data) is a tool for finding 
+aberrant splicing events in RNA-seq samples. It works on the splice metrics 
+$\Psi_5$, $\Psi_3$ and $\theta$ to be able to detect any type of aberrant 
+splicing event. To detect these aberrant events, \fraser{} uses a similar 
+approach as the \Biocpkg{OUTRIDER} package which aims to find aberrantly 
+expressed genes and makes use of an autoencoder to automatically control for 
+confounders within the data. 
+\fraser{} also uses this autoencoder approach and models the read count ratios 
+in the $\Psi$ values by fitting a beta binomial model to the $\Psi$ values 
+obtained from RNA-seq read counts and correcting for apparent co-variations 
+across samples. Similarly as in \Biocpkg{OUTRIDER}, read counts that 
+significantly deviate from the distribution are detected as outliers. A scheme 
+of this approach is given in Figure \ref{FraseR_sketch}.
+
+\incfig{FraseR_sketch}{1\textwidth}{The \fraser{} splicing outlier detection 
+workflow.}{
+The workflow starts with RNA-seq aligned reads and performs splicing outlier 
+detection in three steps. First (left column), a splice site map is generated 
+in an annotation-free fashion based on RNA-seq split reads. Split reads 
+supporting exon-exon junctions as well as non-split reads overlapping splice 
+sites are counted. Splicing metrics quantifying alternative acceptors (5), 
+alternative donors (3) and splicing efficiencies at donors (5) and acceptors  
+(3) are computed. Second (middle column), a statistical model is fitted for 
+each splicing metric that controls for sample covariations (latent space 
+fitting using a denoising autoencoder) and overdispersed count ratios 
+(beta-binomial distribution). Third (right column), outliers are detected as 
+data points significantly deviating from the fitted models. Candidates are 
+then visualized with a genome browser.
 }
+
+\fraser{} uses the follwing splicing metrics as described by 
+Pervouchin et al\cite{Pervouchin}: we compute for each sample, 
+for donor D (5' splice site) and acceptor A (3' splice site) the $\Psi_5$ and 
+$\Psi_3$ values, respectively, as:
+
+\begin{equation}
+    \Psi_5(D,A) = \frac{n(D,A)}{\sum_{A'} n(D,A')}\label{eq:psi5}
+\end{equation}
+and
+\begin{equation}
+    \Psi_3(D,A) = \frac{n(D,A)}{\sum_{D'} n(D',A)}\label{eq:psi3},
+\end{equation}
+
+where $n(D,A)$ denotes the number of split reads spanning the intron between 
+donor D and acceptor A and the summands in the denominators are computed over 
+all acceptors found to splice with the donor of interest (Equation 
+\eqref{eq:psi5}), and all donors found to splice with the acceptor of interest 
+(Equation \eqref{eq:psi3}).
+To not only detect alternative splicing but also partial or full intron 
+retention, we also consider $\theta$ as a splicing efficiency metric.
+
+\begin{equation}
+  \theta_5(D) = \frac{\sum_{A'}n(D,A')}{n(D) + \sum_{A'}n(D,A')}
+  \label{eq:theta5}
+\end{equation}
+and
+\begin{equation}
+  \theta_3(A) = \frac{\sum_{D'}n(D',A)}{n(A) + \sum_{D'}n(D',A)}
+  \label{eq:theta3},
+\end{equation}
+
+where $n(D)$ is the number of non-split reads spanning exon-intron boundary of 
+donor D, and $n(A)$ is defined as the number of non-split reads spanning 
+intron-exon boundary of acceptor A.  While we calculate $\theta$ for the 5' and 
+3' splice site separately, we do not distinguish later in the modeling step 
+between $\theta_5$ and $\theta_3$ and hence call it jointly $\theta$ in the 
+following.
+
+\section{Installation}
+
+To install and load \fraser{}, run the follwing:
+
+<<installation, echo=TRUE, eval=FALSE>>=
+TODO
 
 library(FraseR)
+@
 
-# load data
-colData <- fread(system.file(
-    "extdata", "sampleTable.tsv", package="FraseR", mustWork=TRUE
-))
-if(FALSE){
-    colData[,bamFile:=paste0("inst/", bamFile)]
-}
+\section{Quick guide to \fraser{}}
+
+Here we quickly show how to do an analysis with \fraser{}, starting from a 
+sample annotation table and the corresponding bam files. First, we create an 
+\fds{} from the sample annotation and count the relevant reads in the bam files 
+or a Summarized Experiment object. Then, we compute the $\Psi$ values and 
+filter out introns that are just noise. Secondly, we run the full 
+pipeline using the command \Rfunction{FraseR}. In the last step, we extract the 
+results table from the \fds{} using the \Rfunction{results} function. 
+Additionally, the user can create several analysis plots directly from the 
+fitted \fds{} object. These plotting functions are described in section 
+\ref{sec:result-vis}.
+
+<<quick faser guide, echo=TRUE>>=
+# parallelization
+register(MulticoreParam(workers=6))
 
 # count data
-fds <- FraseRDataSet(colData=colData, parallel=bpparam())
-dontWriteHDF5(fds) <- TRUE
+fds <- createTestFraseRSettings()
+# dontWriteHDF5(fds) <- TRUE
 
-fds <- countRNAData(fds, recount=TRUE)
+fds <- countRNAData(fds)
 fds
 
 # compute stats
 fds <- calculatePSIValues(fds)
 
-fds <- filterExpression(fds, minExpressionInOneSample=20,
-        minDeltaPsi=0.0, filter=FALSE)
+# skipped here because not meaningful on the small example dataset
+# fds <- filterExpression(fds, minExpressionInOneSample=20,
+#         minDeltaPsi=0.0, filter=TRUE)
 
-plotFilterExpression(fds, bins=100)
-
-fds <- fds[mcols(fds, type="j")[,"passed"],]
-fds
 
 # use PCA to speed up the tutorial
 fds <- FraseR(fds, q=2, correction="PCA")
 
 fds <- annotateRanges(fds)
 
-plotCountCorHeatmap(fds, "psi5", normalized=FALSE, logit=TRUE)
-plotCountCorHeatmap(fds, "psi5", normalized=TRUE, logit=TRUE)
-
-res <- results(fds, zScoreCutoff=2, padjCutoff=NA, deltaPsiCutoff=0.01)
-res <- res[names(res) %in% c("sample1", "sample2", "sample3") &
-    res$counts >= 10 & !is.na(res$zScore)]
+# get results
+# res <- results(fds, zScoreCutoff=NA, padjCutoff=0.05, deltaPsiCutoff=0.1)
+res <- results(fds, zScoreCutoff=2, padjCutoff=NA, deltaPsiCutoff=0.1)
 res
 
+# result visualization
 plotVolcano(fds, sampleID="sample1", type="psi5", aggregate=TRUE)
 
-plotExpectedVsObservedPsi(fds, result=res[1])
-plotExpression(fds, result=res[1])
-
-# plotMu
-res
-
-
-# plotSampleRank()
-# plotSampleResults(fds)
-
 @
 
-To start quickly with \fraser{} just call this 4 functions to get a standard analysis on an example data set from the following publication \cite{FraseR}.
+\section{A detailed \fraser{} analysis}
 
-<<quick fraser guide, echo=TRUE>>=
-# load FraseR package
-library(FraseR)
-
-# create sample annotation and settings
-# fds <- makeSimulatedFraserDataSet_BetaBinomial(m=60, j=500)
-# fds <- injectOutliers(fds)
-
-# run full standard analysis (with specified
-# dimensions q and iterations to speed it up)
-# fds <- FraseR(fds, q=5, iterations=4)
-
-# annotate junctions and splice sites
-# fds <- annotateRanges(fds)
-
-# visualize results
-# plotOutlierSampleRankPerGene(fds)
-@
-
-The result html will be discussed in the corresponding section \ref{sec:Results}
-
-\section{Standard workflow}
-The standard workflow for detecting rare abarrent splicing events in RNA-seq data can be divided into five steps.
+The analysis workflow of \fraser{} for detecting rare aberrant splicing events 
+in RNA-seq data can be divided into the following steps:
 \begin{enumerate}
-    \item Data preparation \ref{sec:DataPreparation}
-    \item Counting reads \ref{sec:CountingReads}
-    \item Calculate PSI- and Zscore-values \ref{sec:PSI-Zscore-calculation}
+    \item Data import or Counting reads \ref{sec:dataPreparation}
+    \item Data preprocessing and QC \ref{sec:DataPreprocessing}
+    \item Correcting for confounders \ref{sec:correction}
     \item Calculate P-values \ref{sec:P-value-calculation}
-    \item Visualize results \ref{sec:result-vis}
+    \item Calculate Z-scores \ref{sec:Z-score-calculation}
+    \item Visualize the results \ref{sec:result-vis}
 \end{enumerate}
 
-Step 2-5 is wrapped up in one function \Rfunction{FraseR}, but each step can be called individually and parametrizied. A detailed explanaition of each step is given in the following subsections.
+Step 3-5 are wrapped up in one function \Rfunction{FraseR}, but each step can 
+be called individually and parametrizied. Either way, data preprocessing should 
+be done before starting the analysis, so that samples failing quality 
+measurements or introns stemming from background noise are discarded. 
 
+Detailed explanations of each step are given in the following subsections.
+
+For this tutorial we will use the a small example dataset that is contained 
+in the package. 
 
 \subsection{Data preparation}
-\label{sec:DataPreparation}
-To start a RNA-seq data analysis with \fraser{} some preparation steps are needed.
-First of all we need a table with basic informations which then can be transformed into a \Rclass{FraseRSettings} object. The minimum of information per sample is an unique sample name, the path to the aligned bam file. Additionally groups can be specified for the P-value calculations later. If a \textbf{NA} is asigned no P-values will be calculated. An example sample table is given within the package:
+\label{sec:dataPreparation}
+
+\subsubsection{Creating a \fds{} and Counting reads}
+\label{sec:CountingReads}
+
+To start a RNA-seq data analysis with \fraser{} some preparation steps are 
+needed. The first step is the creation of a \fds{} which derives from a 
+RangedSummarizedExperiment object. To create the \fds, sample annotation and 
+two count matrices are needed: one containing counts for the splice junctions, 
+i.e. the split read counts, and one containing the splice site counts, i.e. the 
+counts of non split reads overlapping with the splice sites present in the 
+splice junctions.
+
+You can first create the \fds{} with only the sample annotation and 
+subsequently count the reads as described in \ref{sec:CountingReads}. For this, 
+we need a table with basic informations which then can be transformed into a 
+\Rclass{FraseRSettings} object. The minimum of information per sample is an 
+unique sample name, the path to the aligned bam file. 
+Additionally groups can be specified for the P-value calculations later. 
+If a \textbf{NA} is assigned no P-values will be calculated. An example sample 
+table is given within the package:
 
 <<sampleData Table, echo=TRUE>>=
-library(data.table)
-head(fread(system.file(
+sampleTable <- fread(system.file(
     "extdata", "sampleTable.tsv", package="FraseR", mustWork=TRUE
-)))
+))
+head(sampleTable)
 @
 
-The RNA-seq data should be aligned with a splice-aware aligner like STAR\cite{STAR} or GEM\cite{GEM}. To gain better results the samples should be processed with the same protocol and origin from the same tissue.
-
-To gain better results at least 20 samples should be sequenced.
-
-To create a settings object for \fraser{} the constructor \Rfunction{FraseRSettings} should be called with at least a sampleData table. For an example have a look into the \Rfunction{createTestFraseRSettings}. In addition to the sampleData you can specify further parameters.
+To create a settings object for \fraser{} the constructor 
+\Rfunction{FraseRSettings} should be called with at least a sampleData table. 
+For an example have a look into the \Rfunction{createTestFraseRSettings}. 
+In addition to the sampleData you can specify further parameters.
 
 \begin{enumerate}
     \item The parallel backend (a \Rclass{BiocParallelParam} object)
     \item The read filtering (a \Rclass{ScanBamParam} object)
-    \item The name of the statistical method to be used
     \item An output folder for the resulting figures and the cache
-    \item If the data is strand specific or not. (Not implemented yet)
+    \item If the data is strand specific or not
 \end{enumerate}
 
-The following shows how to create a test setting object. This object will be used throughout the whole vignette.
+The following shows how to create a example \fds{} with only the settings 
+options from the sample annotation above:
 
-<<FraseR setting example, echo=TRUE>>=
-library(FraseR)
+<<FraseR setting example1, echo=TRUE>>=
+# convert it to a bamFile list
+bamFiles <- system.file(
+    sampleTable[,bamFile], package="FraseR", mustWork=TRUE
+)
+sampleTable[,bamFile:=bamFiles]
+
+# create FraseR object
+settings <- FraseRDataSet(colData=sampleTable, 
+        workingDir=file.path(Sys.getenv("HOME"), "FraseR"))
+
+# show the FraseRSettings object
+settings
+@
+
+The \fds{} for this example data can also be generated through the function 
+\Rfunction{createTestFraseRSettings}:
+
+<<FraseR setting example2, echo=TRUE>>=
 settings <- createTestFraseRSettings()
 settings
 @
 
-\subsection{Counting reads}
-\label{sec:CountingReads}
-
-Counting of the reads are straight forward and is done through the \Rfunction{countRNAData} function. The only required parameter is the FraseRSettings object. First all split reads are extracted from each individuel sample and cached if enabled. Then a dataset wide junction map is created (all visible junctions over all samples). After that for each sample the non-spliced reads at each given donor and acceptor site is counted. The resulting \Rclass{FraseRDataSet} object contains two \Rclass{SummarizedExperiment} objects for each the junctions and the splice sites.
+Counting of the reads are straight forward and is done through the 
+\Rfunction{countRNAData} function. The only required parameter is the 
+FraseRSettings object. First all split reads are extracted from each individual 
+sample and cached if enabled. Then a dataset wide junction map is created 
+(all visible junctions over all samples). After that for each sample the 
+non-spliced reads at each given donor and acceptor site is counted. The 
+resulting \Rclass{FraseRDataSet} object contains two 
+\Rclass{SummarizedExperiment} objects for each the junctions and the splice 
+sites.
 
 <<counting reads, echo=TRUE>>=
+# parallelization parameters
+register(MulticoreParam(workers=6))
+
+# count reads
 fds <- countRNAData(settings)
 fds
 @
 
-To understand the parallelizing option will be discussed in the parallel section \ref{sec:parallel}.
+\subsection{Creating a \fds{} from existing count matrices}
 
-\subsection{PSI- and Zscore-value calculation}
-\label{sec:PSI-Zscore-calculation}
+If the count matrices already exist, you can use these matrices directly 
+together with the sample annotation from above to create the \fds:
 
-After counting the user needs to compute the PSI-values and Z-scores for each site. Since this is just a
+<<create fds with counts, echo=TRUE, eval=FALSE>>=
+
+# get raw counts 
+junctionCts   <- fread(system.file(
+    "extdata", "raw_junction_counts.tsv.gz", package="FraseR", 
+    mustWork=TRUE
+))
+head(junctionCts)
+
+spliceSiteCts <- fread(system.file(
+    "extdata", "raw_site_counts.tsv.gz", package="FraseR", 
+    mustWork=TRUE
+))
+head(spliceSiteCts)
+
+# create FraseR object
+fds2 <- FraseRDataSet(colData=sampleTable, junctions=junctionCts,
+        spliceSites=spliceSiteCts)
+fds2
+@
+
+\subsection{Data preprocessing and QC}
+\label{sec:DataPreprocessing}
+
+As with gene expression analysis, a good quality control of the raw data is 
+crucial. For some hints please refere to the gene expression slides.
+
+At the time of writing this vignette, we recommend that the RNA-seq data should 
+be aligned with a splice-aware aligner like STAR\cite{STAR} or GEM\cite{GEM}. 
+To gain better results, at least 20 samples should be sequenced and they should 
+be processed with the same protocol and origin from the same tissue.
+
+\subsubsection{Filtering}
+\label{sec:filtering}
+
+Before we can filter the data, we have to compute the main splicing metric: 
+the $\Psi$-value (Percent Spliced In). 
 
 <<calculate psi/zscore values, echo=TRUE>>=
 fds <- calculatePSIValues(fds)
-fds <- calculateZScores(fds)
 fds
 @
+
+Now we can have some cut-offs to filter down the number of junctions we want to 
+test later on.
+
+Currently, we keep only junctions which support the following:
+
+\begin{itemize}
+  \item At least one sample has 20 reads
+  \item 5\% of the samples have at least 1 read
+\end{itemize}
+
+Furthemore one could filter for:
+
+\begin{itemize}
+  \item At least one sample has a  $\Delta\Psi$  of 0.1
+\end{itemize}
+
+
+<<filter junctions, echo=TRUE>>=
+fds <- filterExpression(fds, minDeltaPsi=0.0, filter=FALSE)
+
+plotFilterExpression(fds, bins=100)
+@
+
+After looking at the expression distribution between filtered and unfiltered 
+junctions, we can now subset the dataset:
+
+<<subset to filtered junctions, echo=TRUE, eval=FALSE>>=
+# skipped for this tutorial because the example dataset is otherwise too small
+fds <- fds[mcols(fds, type="j")[,"passed"],]
+fds
+@
+
+\section{Sample co-variation}
+
+Since $\Psi$ values are ratios within a sample, one might think that there 
+should not be as much correlation structure as observed in gene expression data 
+within the splicing data.
+
+This is not true as we do see strong sample co-variation across different 
+tissues and cohorts. Let's have a look into our data to see if we do have 
+correlation structure or not. To have a better estimate, we use the logit 
+transformed $\Psi$ values to compute the correlation.
+
+<<sample covariation, echo=TRUE>>=
+# Heatmap of the sample correlation
+plotCountCorHeatmap(fds, type="psi5", logit=TRUE, normalized=FALSE)
+@
+
+It is also possible to visualize the correlation structure of the logit 
+transformed $\Psi$ values of the $topJ$ most variable introns for all samples:
+
+<<intron sample correlation, echo=TRUE, eval=FALSE>>=
+# Heatmap of the intron/sample expression
+plotCountCorHeatmap(fds, type="psi5", logit=TRUE, normalized=FALSE, 
+                    plotType="junctionSample", topJ=100, minDeltaPsi = 0.01)
+@
+
+\subsection{Detection of aberrant splicing events}
+
+After preprocessing the raw data and visualizing it, we can start our analysis. 
+Let's start with the first step in the aberrant splicing detection: the model 
+fitting.
+
+\subsubsection{Fitting the splicing model}
+
+During the fitting procedure, we will normalize the data and correct for 
+confounding effects by using a denoising autoencoder. Here we use a predefined 
+latent space with a dimension $q=10$ . Using the correct dimension is crucial 
+to have the best performance (see \ref{sec:encDim}). Alternatively, one can 
+also use a PCA to correct the data.
+The wrapper function \Rfunction{FraseR} both fits the model and calculates the 
+p-values and z-scores for all $\Psi$ types. For more details see section 
+\ref{sec:details}.
+
+<<model fitting, echo=TRUE>>=
+fds <- FraseR(fds, q=10,
+        correction="PCA") # we use the PCA approach here to speed up the tutorial
+                         # Should take around 3 min
+@
+
+To check whether the correction worked, we can have a look at the correlation 
+heatmap using the normalized $\Psi$ values from the fit.
+
+<<covariation after fitting, echo=TRUE>>=
+plotCountCorHeatmap(fds, type="psi5", normalized=TRUE, logit=TRUE)
+@
+
+\subsubsection{Calling splicing outliers}
+
+Before we extract the results let's add the interpretable HGNC symbols. 
+FraseR comes already with an annotation function. The function uses 
+\Biocpkg{biomaRt} in the background to overlap the genomic ranges with the known 
+HGNC symbols.
+
+Here we assume a beta binomial distribution and call outliers based on the 
+significance level. The user can choose between a p value cutoff, a Z score 
+cutoff or a cutoff on the $\Delta\Psi$ values between the observed and expected 
+$\Psi$ values or both.
+
+<<result table, echo=TRUE>>=
+# annotate
+fds <- annotateRanges(fds)
+
+# retrive results
+res <- results(fds, padjCutoff=0.05, zScoreCutoff=NA, deltaPsiCutoff=0.3)
+res
+
+# to show result visualization functions for this tuturial, zScore cutoff used
+res <- results(fds, zScoreCutoff=2, padjCutoff=NA, deltaPsiCutoff=0.1)
+res
+@
+
+\subsection{Finding splicing candidates in patients}
+
+Let's hava a look at sample 10 and check if we got some splicing 
+candidates for this sample.
+
+<<finding candidates, echo=TRUE>>=
+plotVolcano(fds, type="psi5", "sample10")
+@
+
+Which are the splicing events in detail? 
+
+<<sample result, echo=TRUE>>=
+sampleRes <- res[res$sampleID == "sample10"]
+sampleRes
+@
+
+To have a closer look at the junction level, use the following functions:
+
+<<plot expression, echo=TRUE, eval=FALSE>>=
+plotExpression(fds, type="psi5", result=sampleRes[1])
+plotExpectedVsObservedPsi(fds, result=sampleRes[1])
+@
+
+\section{More details on \fraser{}}
+\label{sec:details}
+
+The function \Rfunction{FraseR} is a convenient wrapper function that takes 
+care of correcting for confounders, fitting the beta binomial distribution and 
+calculating p-values and z-scores for all $\Psi$ types. To have more control 
+over the individual steps, the different functions can also be called 
+separately. The following sections give a short explanation of these steps.
+
+\subsection{Correction for confounders}
+\label{sec:correction}
+
+The wrapper function \Rfunction{FraseR} and the underlying function 
+\Rfunction{fit} method offer different methods to automatically control for 
+confounders in the data. Currently the following methods are implemented: 
+
+\begin{itemize}
+  \item AE: uses a beta-binomial AE
+  \item PCA-BB-Decoder: uses a beta-binomial AE where PCA is used to find the 
+  latent space (encoder) due to speed reasons 
+  \item PCA: uses PCA for both the encoder and the decoder
+  \item BB: no correction for confounders, fits a beta binomial distribution 
+  directly on the raw counts
+\end{itemize}
+
+<<control confounders, echo=TRUE>>=
+fds <- fit(fds, type="psi5", correction="PCA-BB-Decoder", q=5, 
+           iteration=2, # here: only 2 iteration to speed the calculation up
+                       # for the vignette, the default is 15 iterations
+           )
+@
+
+\subsubsection{Finding the dimension of the latent space}
+
+For the previous call, the dimension $q$ of the latent space has been fixed to 
+$q=10$. Since working with the correct $q$ is very important, the \fraser{} 
+package also provides the function \Rfunction{optimHyperParams} that can be 
+used to estimate the dimension $q$ of the latent space of the data. It works by 
+artificially injecting outliers into the data and then comparing the AUC of 
+recalling these outliers for different values of $q$. Since this hyperparameter 
+optimization step can take some time for the full dataset, we only show it here 
+for a subset of the dataset:
+
+<<findBestQ, echo=TRUE>>=
+# hyperparameter opimization 
+fds <- optimHyperParams(fds, "psi5", 
+                             correction="PCA", # PCA used to speed it up
+                             setSubset=50 # for this tutorial: only consider 
+                                          # 50 most variable junctions for the 
+                                          # hyper param optimization
+                                          # default is 15000
+                             )
+# retrieve the estimated optimal dimension of the latent space
+bestQ(fds, type="psi5")
+@
+
+The results from this hyper parameter optimization can be visualized with the 
+function \Rfunction{plotEncDimSearch}.
+
+<<figure findBestQ, echo=TRUE>>=
+plotEncDimSearch(fds, type="psi5")
+@
+
 \subsection{P-value calculation}
 \label{sec:P-value-calculation}
 
+After determining the fit parameters, two-sided beta binomial P-values are 
+computed using the following equation:
 
-\subsection{Result visualisation}
+\begin{equation}
+    p_{ij} = 2 \cdot min \left\{\frac{1}{2}, \sum_{0}^{k_{ij}} 
+        BB(k_{ij}, n_{ij}, \mu_{ij} ,\rho_i), 1 - \sum_{0}^{k_{ij-1}} 
+        BB(k_{ij}, n_{ij}, \mu_{ij} ,\rho_i) \right\},
+\end{equation}
+
+where the $\frac{1}{2}$ term handles the case of both terms exceeding 0.5, 
+which can happen due to the discrete nature of counts. Here $\mu_{ij}$ are 
+computed as the product of the fitted correction values from the autoencoder and
+the fitted mean adjustements. 
+
+<<p-value calculation, echo=TRUE>>=
+fds <- calculatePvalues(fds, type="psi5")
+head(pVals(fds, type="psi5"))
+@
+
+Afterwards, adjusted p-values can be calculated. Multiple testing correction is 
+done across all junctions in a per-sample fashion using Benjamini-Yekutieli's 
+false discovery rate method\cite{Benjamini2001}. Alternatively, all adjustment 
+methods supported by \Rfunction{p.adjust} can be used via the \Robject{method} 
+argument.
+
+<<p-adj calculation, echo=TRUE>>=
+fds <- calculatePadjValues(fds, type="psi5", method="BY")
+head(padjVals(fds,type="psi5"))
+@
+
+\subsection{Z-score calculation}
+\label{sec:Z-score-calculation}
+
+To calculate z-scores on the logit transformed $\Delta\Psi$ values and to store 
+them in the \fds{} object, the function \Rfunction{calculateZScores} can be 
+called. The Z-scores can be used for visualization, filtering, and ranking of 
+samples. The Z-scores are calculated as follows:
+
+\begin{equation}
+    z_{ij} = \frac{\delta_{ij} - \bar{\delta_j}}{sd(\delta_j)}
+\end{equation}
+\begin{equation*}
+    \delta_{ij} = logit{(\frac{k_{ij} + 1}{n_{ij} + 2})} - logit{(\mu_{ij})},
+\end{equation*}
+
+where $\delta_{ij}$ is the difference on the logit scale between the measured 
+counts and the counts after correction for confounders and $\bar{\delta_j}$ is 
+the mean of intron $j$.
+
+<<z-score calculation, echo=TRUE>>=
+fds <- calculateZscore(fds, type="psi5")
+head(zScores(fds, type="psi5"))
+@
+
+\subsection{Result visualization}
 \label{sec:result-vis}
+
+In addition to the plotting methods \Rfunction{plotVolcano}, 
+\Rfunction{plotExpression}, \Rfunction{plotExpectedVsObservedPsi}, 
+\Rfunction{plotFilterExpression} and \Rfunction{plotEncDimSearch} used above, 
+the \fraser{} package provides two additional functions to visualize the 
+results: 
+
+\Rfunction{plotAberrantPerSample} displays the number of aberrant events per 
+sample and \Rfunction{plotQQ} gives a quantile-quantile plot either for a single 
+junction/splice site or globally.
+
+<<result visualization, echo=TRUE>>=
+plotAberrantPerSample(fds)
+
+# qq-plot for single junction
+plotQQ(fds, result=res[1])
+
+# global qq-plot (on gene level since aggregate=TRUE)
+plotQQ(fds, type="psi5", aggregate=TRUE, global=TRUE)
+@
 
 \section{Acknowledgments}
 
-We thank Daniel Bader and Martin Morgan for input in the development of \fraser{}.
+We thank Daniel Bader and Martin Morgan for input in the development of 
+\fraser{}.
 
 \section{Session Info}
 
-<<sessInfo, eval=TRUE, echo=FALSE, results="asis">>=
-toLatex(sessionInfo())
-@
+Here is the output of \Rfunction{sessionInfo()} on the system on which 
+this document was compiled:
 
-<<resetOptions, results="hide", echo=FALSE>>=
-options(prompt="> ", continue="+ ")
+<<sessionInfo, echo=FALSE>>=
+sessionInfo()
 @
 
 \end{document}

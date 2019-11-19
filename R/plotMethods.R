@@ -215,7 +215,6 @@ plotAberrantPerSample <- function(fds, main, type=c("psi3", "psi5", "psiSite"),
     g <- ggplot(dt2p, aes(x=rank, y=value, color=type)) +
         geom_line() +
         geom_hline(aes(yintercept=median, color=type, lty="Median")) +
-        scale_y_log10() +
         theme_bw() +
         theme_cowplot() +
         ggtitle(main) +
@@ -225,6 +224,10 @@ plotAberrantPerSample <- function(fds, main, type=c("psi3", "psi5", "psiSite"),
                 labels=ggplotLabelPsi(dt2p[,unique(type)])) +
         scale_linetype_manual(name="", values=2, labels="Median")
 
+    if(!all(dt2p[,value] == 0)){
+        g <- g + scale_y_log10()
+    }
+    
     g
 }
 
@@ -248,13 +251,13 @@ plotExpression <- function(fds, type=c("psi5", "psi3", "psiSite"),
     }
 
     dt <- getPlottingDT(fds, axis="row", type=type, idx=site, ...)
-    dt[,aberrant:=factor(aberrant, levels=c("TRUE", "FALSE"))]
     if(!is.null(colGroup)){
         if(all(colGroup %in% samples(fds))){
             colGroup <- samples(fds) %in% colGroup
         }
         dt[colGroup,aberrant:=TRUE]
     }
+    dt[,aberrant:=factor(aberrant, levels=c("TRUE", "FALSE"))]
 
     if(is.null(main)){
         main <- as.expression(bquote(bold(paste(
@@ -397,7 +400,7 @@ plotQQ <- function(fds, type=NULL, idx=NULL, result=NULL, aggregate=FALSE,
     dt2p[is.na(obs), obs:=0]
     dt2p[is.infinite(obs), obs:=dt2p[is.finite(obs),max(obs)]]
     if(dt2p[,length(unique(obs))] < 2 | nrow(dt2p) < 2){
-        warning("There are no pvalues or all are NA!")
+        warning("There are no pvalues or all are NA or 1!")
         return(FALSE)
     }
     dt2p[,exp:=-log10(ppoints(.N)),by=type]

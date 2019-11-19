@@ -33,8 +33,7 @@
 #' single count object, where the counts for junctions that are not present in 
 #' a sample are set to zero. 
 #' 
-#' @param fds A FraseRDataSet object with all the information
-#'             how and what to count
+#' @param fds A FraseRDataSet object
 #' @param NcpuPerSample A BiocParallel param object or a positive integer
 #'             to configure the parallel backend
 #'             of the internal loop per sample
@@ -44,7 +43,7 @@
 #'             non spliced reads. Default to 5
 #' @param recount if TRUE the cache is ignored and the bam file is recounted.
 #' @param genome the genome
-#' @param BPPARAM the BiocParallel param for parallelizing
+#' @param BPPARAM the BiocParallel parameters for the parallelization
 #' @param countDir The directory in which the tsv containing the position and 
 #'                 counts of the junctions should be placed.
 #' @param countFiles If specified, the split read counts for all samples are 

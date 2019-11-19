@@ -81,6 +81,8 @@ findEncodingDim <- function(i, fds, type, params, correction,
 #' Finds the optimal encoding dimension by injecting artificial splicing outlier
 #' ratios while maximizing the precision-recall curve.
 #'
+#' @inheritParams fit
+#'
 #' @examples
 #' # TODO
 #' TODO <- 1
