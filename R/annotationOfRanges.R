@@ -50,6 +50,9 @@ annotateRanges <- function(fds, feature="hgnc_symbol", featureName=feature,
     # annotate split reads
     for(i in c("psi3", "psiSite")){
         gr <- rowRanges(fds, type=i)
+        if(any(strand(gr) == "*")){
+            strand(annotation) <- "*"
+        }
         annos <- getAnnotationFeature(data=gr, featureName, annotation)
         mcols(fds, type=i)[[featureName]] <- annos
     }
@@ -66,28 +69,23 @@ getFeatureAsGRange <- function(ensembl, feature, featureName,
                     biotype, useUSCS=TRUE){
 
     # contact biomaRt to retrive hgnc symbols
-    ensemblResults <- getBM(
-        attributes=c(feature, "chromosome_name",
-                "start_position", "end_position"
-        ),
-        filters=c("biotype"),
-        values=list(biotype=biotype),
-        mart=ensembl
-    )
+    ensemblResults <- getBM(attributes=c(feature, "chromosome_name",
+                    "start_position", "end_position", "strand"),
+            filters=c("biotype"), values=list(biotype=biotype), mart=ensembl)
     setnames(ensemblResults, feature, featureName)
 
     # remove emtpy symbols or non standard chromosomes
     ensemblResults <- ensemblResults[!is.na(ensemblResults[[featureName]]),]
     ensemblResults <- ensemblResults[ensemblResults[[featureName]] != "",]
     ensemblResults <- ensemblResults[
-            !grepl("_|\\.", ensemblResults$chromosome_name),
-    ]
-
+            !grepl("_|\\.", ensemblResults$chromosome_name),]
+    ensemblResults[,"strand"]  <- ifelse(
+            ensemblResults[,"strand"] < 0, "-", "+")
+    
     # create a grange object
-    results <- makeGRangesFromDataFrame(
-            ensemblResults, start.field="start_position",
-            end.field="end_position", keep.extra.columns = TRUE
-    )
+    results <- makeGRangesFromDataFrame(ensemblResults,
+            start.field="start_position", end.field="end_position", 
+            strand.field="strand", keep.extra.columns=TRUE)
 
     if(useUSCS){
         seqlevels(results) <- paste0("chr", seqlevels(results))
