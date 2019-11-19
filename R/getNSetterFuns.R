@@ -57,9 +57,9 @@ x <- function(fds, type=currentType(fds), all=FALSE,
     N <- N(fds, type=type)
 
     # compute logit ratio with pseudocounts
-    x <- t((K + pseudocount())/(N + (2*pseudocount())))
+    x <- as.matrix(t((K + pseudocount())/(N + (2*pseudocount()))))
     x <- qlogis(x)
-
+    
     if(any(is.infinite(x))){
         x[is.infinite(x) & x > 0] <- NA
         x[is.na(x)] <- max(x, na.rm=TRUE) + 1
@@ -194,28 +194,28 @@ zScores <- function(fds, type=currentType(fds), byGroup=FALSE){
     return(fds)
 }
 
-pVals <- function(fds, type=currentType(fds),
-                    dist=c("BetaBinomial", "Binomial"), byGroup=FALSE){
-    dist <- match.arg(dist)
+pVals <- function(fds, type=currentType(fds), 
+                    dist="BetaBinomial", byGroup=FALSE){
+    dist <- match.arg(dist, choices=c("BetaBinomial", "Binomial", "Normal"))
     getAssayMatrix(fds, paste0("pvalues", dist), type=type, byGroup=byGroup)
 }
 
 `pVals<-` <- function(fds, type=currentType(fds),
-                    dist=c("BetaBinomial", "Binomial"), ..., value){
-    dist <- match.arg(dist)
+                    dist="BetaBinomial", ..., value){
+    dist <- match.arg(dist, choices=c("BetaBinomial", "Binomial", "Normal"))
     setAssayMatrix(fds, name=paste0("pvalues", dist), type=type, ...) <- value
     return(fds)
 }
 
 padjVals <- function(fds, type=currentType(fds),
-                    dist=c("BetaBinomial", "Binomial"), byGroup=FALSE){
-    dist <- match.arg(dist)
+                    dist=c("BetaBinomial"), byGroup=FALSE){
+    dist <- match.arg(dist, choices=c("BetaBinomial", "Binomial", "Normal"))
     getAssayMatrix(fds, paste0("pajd", dist), type=type, byGroup=byGroup)
 }
 
 `padjVals<-` <- function(fds, type=currentType(fds),
-                    dist=c("BetaBinomial", "Binomial"), ..., value){
-    dist <- match.arg(dist)
+                    dist="BetaBinomial", ..., value){
+    dist <- match.arg(dist, choices=c("BetaBinomial", "Binomial", "Normal"))
     setAssayMatrix(fds, name=paste0("pajd", dist), type=type, ...) <- value
     return(fds)
 }
