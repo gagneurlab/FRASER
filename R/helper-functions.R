@@ -485,6 +485,14 @@ checkNaAndRange <- function(x, min=-Inf, max=Inf, scalar=TRUE, na.ok=FALSE){
     invisible(TRUE)
 }
 
+putCounts2Memory <- function(fds, type=currentType(fds)){
+    counts(fds, type=type, side="other", HDF5=FALSE) <-
+            as.matrix(counts(fds, type=type, side="other"))
+    counts(fds, type=type, side="ofInterest", HDF5=FALSE) <- 
+            as.matrix(counts(fds, type=type, side="ofInterest"))
+    fds
+}
+
 
 plotBasePlot <- function(ggplot, basePlot=FALSE){
     if(isFALSE(basePlot)){
