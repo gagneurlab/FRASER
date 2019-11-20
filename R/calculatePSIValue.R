@@ -7,9 +7,12 @@
 ##
 
 #'
+#' PSI value calculation
+#' 
 #' This function calculates the PSI values for each junction and splice site
 #' based on the FraseRDataSet object
 #'
+#' @inheritParams countRNA
 #' @param overwriteCts FALSE or TRUE (the default) the total counts (aka N) will
 #'              be recalculated based on the existing junction counts (aka K)
 #' @export

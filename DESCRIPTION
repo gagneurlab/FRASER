@@ -21,6 +21,7 @@ Imports:
     Biobase,
     BiocGenerics,
     biomaRt,
+    cowplot,
     DelayedArray (>= 0.5.11),
     DelayedMatrixStats,
     DT,
@@ -37,7 +38,6 @@ Imports:
     ggpubr,
     htmlwidgets,
     HDF5Array,
-    keras,
     LSD,
     MASS,
     matrixStats,
@@ -54,7 +54,6 @@ Imports:
     S4Vectors,
     shiny,
     stats,
-    tensorflow,
     tibble,
     tidyr,
     tools,
@@ -107,8 +106,6 @@ Collate:
     updateE.R
     updateRho.R
     gradient_loss_R.R
-    keras_autoencoder.r
-    keras_combined_autoencoder.r
     methods-makeExampleObj.R
     plotAutoencoderResults.R
     pvalsNzscore.R

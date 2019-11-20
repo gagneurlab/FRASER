@@ -1,9 +1,29 @@
 #'
 #' Filtering FraseRDataSets
+#' 
+#' This method can be used to filter out introns that are not reliably detected 
+#' and to remove introns with no variablity between samples.
+#' 
+#' @inheritParams countRNA
+#' @param minExpressionInOneSample The minimal read count in at least one sample 
+#' that is required for an intron to pass the filter.
+#' @param quantile Defines which quantile should be considered for the filter.
+#' @param quantileMinExpression The minimum read count an intron needs to have 
+#' at the specified quantile to pass the filter.
+#' @param minDeltaPsi Only introns for which the maximal difference in the psi 
+#' value of a sample to the mean psi of the intron is larger than this value 
+#' pass the filter. 
+#' @param filter If TRUE, a subsetted fds containing only the introns that 
+#' passed all filters is returned. If FALSE, no subsetting is done and the 
+#' information of whether an intron passed the filters is only stored in the 
+#' mcols.
+#' @param delayed If FALSE, count matrices will be loaded into memory, otherwise 
+#' the function works on the delayedMatrix representations.
 #'
 #' @examples
-#' # TODO
-#' TODO <- 1
+#' fds <- countRNAData(createTestFraseRSettings())
+#' fds <- calculatePSIValues(fds)
+#' fds <- filterExpression(fds)
 #'
 #' @export
 filterExpression <- function(fds, minExpressionInOneSample=20, quantile=0.05,

@@ -15,6 +15,11 @@ vignettes/*.pdf
 vignettes/*.tex
 vignettes/*.txt
 vignettes/*.log
+vignettes/*.aux
+vignettes/*.toc
+vignettes/*.out
+vignettes/*.R
+vignettes/figure/*
 
 # ignore cpp files
 *.o

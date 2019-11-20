@@ -77,7 +77,7 @@ FraseR <- function(fds, q, correction="PCA-BB-Decoder", iterations=15,
         fds <- calculatePadjValues(fds, type=i)
 
         #message("\n", date(), ": Compute Z scores for: '", i, "'.\n")
-        fds <- calculateZScores(fds, type=i)
+        fds <- calculateZscore(fds, type=i)
     }
 
     # return final analysis

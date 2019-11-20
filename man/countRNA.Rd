@@ -35,8 +35,7 @@ countNonSplicedReads(sampleID, splitCounts, fds, NcpuPerSample = 1,
   minAnchor = 5, recount = FALSE)
 }
 \arguments{
-\item{fds}{A FraseRDataSet object with all the information
-how and what to count}
+\item{fds}{A FraseRDataSet object}
 
 \item{NcpuPerSample}{A BiocParallel param object or a positive integer
 to configure the parallel backend
@@ -50,7 +49,7 @@ non spliced reads. Default to 5}
 
 \item{recount}{if TRUE the cache is ignored and the bam file is recounted.}
 
-\item{BPPARAM}{the BiocParallel param for parallelizing}
+\item{BPPARAM}{the BiocParallel parameters for the parallelization}
 
 \item{genome}{the genome}
 

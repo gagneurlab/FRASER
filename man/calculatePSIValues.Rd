@@ -2,15 +2,18 @@
 % Please edit documentation in R/calculatePSIValue.R
 \name{calculatePSIValues}
 \alias{calculatePSIValues}
-\title{This function calculates the PSI values for each junction and splice site
-based on the FraseRDataSet object}
+\title{PSI value calculation}
 \usage{
 calculatePSIValues(fds, types = psiTypes, overwriteCts = FALSE,
   BPPARAM = bpparam())
 }
 \arguments{
+\item{fds}{A FraseRDataSet object}
+
 \item{overwriteCts}{FALSE or TRUE (the default) the total counts (aka N) will
 be recalculated based on the existing junction counts (aka K)}
+
+\item{BPPARAM}{the BiocParallel parameters for the parallelization}
 }
 \description{
 This function calculates the PSI values for each junction and splice site
