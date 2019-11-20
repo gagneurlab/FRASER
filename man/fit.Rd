@@ -60,5 +60,10 @@ is fit using the BB loss ("PCA-BB-Decoder"). Although not recommended, it is
 also possbile to directly fit the BB distrbution to the raw counts ("BB").
 }
 \examples{
-TODO <- 1
+  # generate toy data
+  fds <- makeExampleFraseRDataSet()
+  
+  # fit
+  fds <- fit(fds, correction="PCA", q=3, type="psi5")
+  
 }

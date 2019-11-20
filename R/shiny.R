@@ -127,7 +127,7 @@ serverMain <- function(input, output) {
 
     # main results
     filteredResDT <- reactive({
-        browser()
+        # browser()
 
         # convert to data.table
         tmpRes <- as.data.table(shinyFdsRes)

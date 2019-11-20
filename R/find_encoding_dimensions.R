@@ -84,8 +84,17 @@ findEncodingDim <- function(i, fds, type, params, correction,
 #' @inheritParams fit
 #'
 #' @examples
-#' # TODO
-#' TODO <- 1
+#'   # generate data
+#'   fds <- makeSimulatedFraserDataSet(j=500, m=20, q=4)
+#'   
+#'   # run hyperparameter optimization
+#'   fds <- optimHyperParams(fds, type="psi5", correction="PCA")
+#'   
+#'   # get estimated optimal dimension of the latent space
+#'   bestQ(fds, type="psi5)
+#'   
+#'   # plot the AUC for the different encoding dimensions tested
+#'   plotEncDimSearch(fds, type="psi5")
 #'
 #' @export
 optimHyperParams <- function(fds, type, correction,
@@ -119,9 +128,11 @@ optimHyperParams <- function(fds, type, correction,
     message("dPsi filter:", pasteTable(j2keep))
     # TODO fds <- fds[j2keep,,by=type]
 
+    # ensure that subset size is not larger that number of introns/splice sites
+    setSubset <- pmin(setSubset, nrow(K(fds, type)))
+    
     optData <- data.table()
     for(nsub in setSubset){
-        #
         # subset for finding encoding dimensions
         # most variable functions + random subset for decoder
         exMask <- subsetKMostVariableJunctions(fds[j2keep,,by=type], type, nsub)

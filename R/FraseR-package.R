@@ -69,7 +69,7 @@
 #'
 #' @importFrom stats sd rbinom fisher.test na.omit p.adjust ppoints qbeta rnorm
 #'          predict cor cutree dbinom dist hclust lm optim optimize pbinom
-#'          plogis qlogis rlnorm rnbinom
+#'          plogis qlogis rlnorm rnbinom pnorm
 #' @importFrom VGAM rbetabinom vglm Coef pbetabinom pbetabinom.ab betabinomial
 #'          dbetabinom.ab dbetabinom
 #'

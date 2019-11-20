@@ -1,3 +1,34 @@
+#' Getter/Setter functions
+#' 
+#' This is a collection of small accessor/setter functions for easy access to
+#' the values within the FraseR model.
+#' 
+#' @param fds,object An FraseRDataSet object.
+#' @param type The type of psi (psi5, psi3 or psiSite)
+#' @return A (delayed) matrix or vector dependent on the type of data retrieved.
+#' 
+#' @name getter_setter_functions
+#' @rdname getter_setter_functions
+#' @aliases zScore, pVals, padjVals, rho, bestQ
+#' 
+#' @examples 
+#' fds <- createTestFraseRDataSet()
+#' currentType(fds) <- "psi5"
+#' 
+#' # get counts
+#' K(fds)
+#' N(fds)
+#' 
+#' 
+#' bestQ(fds)
+#' rho(fds)
+#' # get statistics
+#' pVals(fds)
+#' padjVals(fds)
+#' zScore(fds)
+#' 
+NULL
+
 #'
 #' Feature exclusion
 #'
@@ -127,6 +158,9 @@ b <- function(fds, type=currentType(fds)){
     return(fds)
 }
 
+#' @describeIn getter_setter_functions Returns the fitted rho values for the 
+#' beta-binomial distribution
+#' @export
 rho <- function(fds, type=currentType(fds)){
     return(mcols(fds, type=type)[[paste0('rho_', type)]])
 }
@@ -181,6 +215,8 @@ getAssayMatrix <- function(fds, name, type, byGroup=FALSE){
     ans[idx,]
 }
 
+#' @describeIn getter_setter_functions This returns the calculated z-scores.
+#' @export
 zScores <- function(fds, type=currentType(fds), byGroup=FALSE){
     ans <- getAssayMatrix(fds, name='zScores', type=type)
     if(isTRUE(byGroup)){
@@ -193,7 +229,8 @@ zScores <- function(fds, type=currentType(fds), byGroup=FALSE){
     setAssayMatrix(fds, name="zScores", type=type, ...) <- value
     return(fds)
 }
-
+#' @describeIn getter_setter_functions This returns the calculated p-values.
+#' @export
 pVals <- function(fds, type=currentType(fds), 
                     dist="BetaBinomial", byGroup=FALSE){
     dist <- match.arg(dist, choices=c("BetaBinomial", "Binomial", "Normal"))
@@ -207,6 +244,8 @@ pVals <- function(fds, type=currentType(fds),
     return(fds)
 }
 
+#' @describeIn getter_setter_functions This returns the adjusted p-values.
+#' @export
 padjVals <- function(fds, type=currentType(fds),
                     dist=c("BetaBinomial"), byGroup=FALSE){
     dist <- match.arg(dist, choices=c("BetaBinomial", "Binomial", "Normal"))
@@ -220,6 +259,9 @@ padjVals <- function(fds, type=currentType(fds),
     return(fds)
 }
 
+#' @describeIn getter_setter_functions This returns the fitted mu (i.e. psi) 
+#' values.
+#' @export
 predictedMeans <- function(fds, type=currentType(fds)){
     return(getAssayMatrix(fds, name="predictedMeans", type=type))
 }
@@ -229,6 +271,9 @@ predictedMeans <- function(fds, type=currentType(fds)){
     return(fds)
 }
 
+#' @describeIn getter_setter_functions Returns the difference between the 
+#' observed and the fitted psi values.
+#' @export
 deltaPsiValue <- function(fds, type=currentType(fds)){
     return(assay(fds, type) - predictedMeans(fds, type=type))
 }
@@ -317,6 +362,11 @@ hyperParams <- function(fds, type=currentType(fds), all=FALSE){
     return(fds)
 }
 
+#' @describeIn getter_setter_functions This returns the optimal size of the 
+#' latent space according to the hyperparameter optimization or a simple 
+#' estimate of about a tenth of the number of samples if the hyperparameter 
+#' opimization was not run yet.
+#' @export
 bestQ <- function(fds, type=currentType(fds)){
     ans <- hyperParams(fds, type=type)[1,q]
     if(is.null(ans)){

@@ -29,8 +29,3 @@ not yet converged after these number of iterations, the fit stops anyway.}
 Finds the optimal encoding dimension by injecting artificial splicing outlier
 ratios while maximizing the precision-recall curve.
 }
-\examples{
-# TODO
-TODO <- 1
-
-}

@@ -29,8 +29,14 @@
 #' not yet converged after these number of iterations, the fit stops anyway.
 #' @param verbose Controls the level of information printed during the fit.
 #' @param minDeltaPsi 
+#' 
 #' @examples 
-#' TODO <- 1
+#'   # generate toy data
+#'   fds <- makeExampleFraseRDataSet()
+#'   
+#'   # fit
+#'   fds <- fit(fds, correction="PCA", q=3, type="psi5")
+#'   
 #' @export
 fit <- function(fds, correction=c("PCA-regression", "PCA-BB-Decoder", "FraseR",
                         "FraseR-weighted", "PCA-BB-full", "PCA-reg-full",

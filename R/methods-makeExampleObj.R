@@ -1,13 +1,13 @@
 #'
 #' Create example data sets for FraseR
 #'
-#' Creates an example data set from a file or simlates a data set based
+#' Creates an example data set from a file or simulates a data set based
 #' on  random split read counts following a beta-binomial distribution with
 #' injected outliers.
 #'
 #' @examples
-#' # TODO
-#' TODO <- 1
+#'   fds <- makeExampleFraseRDataSet()
+#'   fds
 #'
 #' @export
 makeExampleFraseRDataSet <- function(){
