@@ -94,7 +94,7 @@ calculatePvalues <- function(fds, type=currentType(fds),
     
     if("normal" %in% distributions){
         yin <- t(x(fds, all=TRUE, noiseAlpha=NULL, center=FALSE))
-        yout <- predictY(fds, type)
+        yout <- predictY(fds, type, noiseAlpha=NULL)
         epsilon <- yin - yout
         rsd <- rowSds(epsilon)
         pval <- pnorm(epsilon, sd=rsd)

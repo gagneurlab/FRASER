@@ -130,3 +130,76 @@ getAnnotationFeature <- function(data, feature, annotation){
 }
 
 
+#'
+#' Find annotated junctions
+#' 
+#' Annotate the object with a given annotation. 
+#' 
+#' @export
+findAnnotatedJunction <- function(fds, annotation, annotateNames=TRUE,
+                    seqLevelStyle=seqlevelsStyle(fds)[1],
+                    stranded=strandSpecific(fds), ...){
+    
+    # import annotation if given as file
+    if(isScalarCharacter(annotation)){
+        txdb <- makeTxDbFromGFF(annotation, ...)
+    }
+    
+    # extract introns
+    intronsBT <- intronsByTranscript(txdb, use.names=TRUE)
+    introns <- unlist(intronsBT)
+    
+    # check if strandspecific data is used
+    gr <- rowRanges(fds, type="psi5")
+    
+    if(isFALSE(stranded)){
+        strand(gr) <- "*"
+    }
+    
+    # set correct seq level names
+    seqlevelsStyle(introns) <- seqLevelStyle
+    seqlevelsStyle(gr) <- seqLevelStyle
+    
+    # find overlaps with introns
+    ov <- findOverlaps(gr, introns, type="equal")
+    newAnno <- data.table(idx=seq_row(fds), known_intron=FALSE, 
+            known_start=FALSE, known_end=FALSE, TranscriptNames=NA_character_)
+    newAnno[idx %in% from(ov), known_intron:=TRUE]
+    
+    if(isTRUE(annotateNames)){
+        ovanno <- as.data.table(ov)
+        ovanno[,name:=names(introns)[subjectHits]]
+        ovanno <- ovanno[,.(
+                TranscriptNames=paste(unique(name), collapse=",")),
+                by=queryHits]
+        newAnno <- merge(newAnno, ovanno, by.x="idx", 
+                by.y="queryHits", all.x=TRUE)
+    }
+    
+    # overlap start/stop
+    ov <- findOverlaps(gr, introns, type="start")
+    ovdt <- data.table(from=from(ov), to=to(ov), 
+            strand=as.vector(strand(introns)[to(ov)]))[,
+                    .(strand=strand[1]),by=from]
+    newAnno[ovdt$from, known_start:=known_start | ovdt$strand %in% c("+", "*")]
+    newAnno[ovdt$from, known_end  :=known_end   | ovdt$strand %in% c("-")]
+    
+    ov <- findOverlaps(gr, introns, type="end")
+    ovdt <- data.table(from=from(ov), to=to(ov), 
+            strand=as.vector(strand(introns)[to(ov)]))[,
+                    .(strand=strand[1]),by=from]
+    newAnno[ovdt$from, known_start:=known_start | ovdt$strand %in% c("-")]
+    newAnno[ovdt$from, known_end  :=known_end   | ovdt$strand %in% c("+", "*")]
+    
+    # update fds object
+    columns2Write <- c("known_intron", "known_start", "known_end", 
+            "TranscriptNames")
+    col2Take <- !colnames(mcols(fds, type="psi5")) %in% columns2Write
+    mcols(fds, type="psi5") <- cbind(
+            mcols(fds, type="psi5")[,col2Take], newAnno[,..columns2Write])
+    
+    # return annotated object
+    fds
+}
+
+
