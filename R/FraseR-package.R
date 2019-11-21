@@ -92,7 +92,8 @@
 #' @importFrom grDevices dev.off adjustcolor pdf colorRampPalette
 #' @importFrom plotly event_data
 #' @importFrom GenomeInfoDb keepStandardChromosomes seqlevels<- seqlevels
-#'          seqlengths seqlengths<- seqlevelsStyle<- seqnames seqinfo
+#'          seqlengths seqlengths<- seqlevelsStyle<- seqlevelsStyle seqnames 
+#'          seqinfo
 #' @importFrom shiny renderUI reactive renderPrint renderPlot
 #' @importFrom DelayedArray rowMaxs rowMeans path<-
 #' @importFrom DelayedMatrixStats colSds rowMedians rowSds colMeans2 rowMeans2

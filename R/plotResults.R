@@ -3,6 +3,7 @@
 #' All three types are plotted into one HTML file
 #' based on plotly.
 #'
+#' @return The html file with the plots.
 #' @export
 #' @examples
 #' # TODO
@@ -16,7 +17,8 @@ plotSampleResults <- function(fds, sampleID=NULL, file=NULL,
     # if sample is empty create all plots for all samples
     if(is.null(sampleID)){
         if(!is.null(file))
-            stop("Can't do multiple samples yet with file. File would be overriden!")
+            stop(paste0("Can't do multiple samples yet with file. File would ", 
+                        "be overriden!"))
 
         samples2plot <- !is.na(condition(fds))
         sampleIDs2plot <- samples(fds)[samples2plot]
@@ -92,7 +94,7 @@ createMainPlotFraseR <- function(fds, sampleID, ...){
 
 #'
 #' plot count distribution
-#'
+#' @noRd
 plotCountsAtSite <- function(gr, fds, type, sample=NULL, plotLog=TRUE){
     se <- as(fds, "RangedSummarizedExperiment")
     if(type %in% "psiSite") {
@@ -100,7 +102,8 @@ plotCountsAtSite <- function(gr, fds, type, sample=NULL, plotLog=TRUE){
     }
     rcname <- paste0("rawCounts", toupper(checkReadType(fds, type)))
     rocname <- paste0("rawOtherCounts_",
-                      unlist(regmatches(type, gregexpr("psi(3|5|Site)", type, perl=TRUE)))
+                      unlist(regmatches(type, gregexpr("psi(3|5|Site)", type, 
+                                                       perl=TRUE)))
     )
 
     se2plot <- se[from(findOverlaps(granges(se), gr, type="equal"))]

@@ -474,8 +474,15 @@ setMethod("mcols", "FraseRDataSet", FraseR.mcols.get)
 setReplaceMethod("mcols", "FraseRDataSet", FraseR.mcols.replace)
 
 #'
-#' getter and setter for rowRanges
-#'
+#' Getter and setter for rowRanges
+#' 
+#' @param x FraseRDataSet
+#' @param type The psi type.
+#' 
+#' @examples 
+#'   TODO <- 1
+#' 
+#' @return FraseRDataSet
 FraseR.rowRanges.get <- function(x, type=NULL, ...){
     type <- checkReadType(x, type)
     if(type=="j")  return(callNextMethod())
@@ -498,8 +505,21 @@ setMethod("rowRanges", "FraseRDataSet", FraseR.rowRanges.get)
 setReplaceMethod("rowRanges", "FraseRDataSet", FraseR.rowRanges.replace)
 
 #'
-#' getter for count data
+#' Getter/setter for count data
 #'
+#' @param object FraseRDataSet
+#' @param type The psi type.
+#' @param side "ofInterest" for junction counts, "other" for sum of counts of 
+#' all other junctions at the same donor site (psi5) or acceptor site (psi3), 
+#' respectively. 
+#' 
+#' @return FraseRDataSet
+#' @examples 
+#'  fds <- makeExampleFraseRDataSet()
+#'  counts(fds, type="psi5", side="ofInterest")
+#'  counts(fds, type="psi5", side="other")
+#'  
+#'  @rdname count_getter_setter
 setMethod("counts", "FraseRDataSet", function(object, type=NULL,
             side=c("ofInterest", "otherSide"), normalized=FALSE){
     side <- match.arg(side)
@@ -529,7 +549,8 @@ setMethod("counts", "FraseRDataSet", function(object, type=NULL,
 
 #'
 #' setter for count data
-#'
+#' 
+#' @rdname count_getter_setter
 setReplaceMethod("counts", "FraseRDataSet", function(object, type=NULL,
                     side=c("ofInterest", "otherSide"), ..., value){
     side <- match.arg(side)
@@ -722,6 +743,8 @@ FraseR.results <- function(x, sampleIDs, fdrCutoff, zscoreCutoff, dPsiCutoff,
 #' The result function extracts the results from the given analysis object
 #' based on the given options and cutoffs.
 #'
+#' @return GRanges object containing significant results.
+#' 
 #' @rdname results
 #' @examples
 #' # TODO
@@ -777,6 +800,7 @@ resultsByGenes <- function(res, geneColumn="hgncSymbol", method="BY"){
 #'
 #' Mapping of chromosome names
 #'
+#' @return FraseRDataSet
 #' @examples
 #'
 #' fds <- countRNAData(createTestFraseRSettings())
@@ -819,7 +843,10 @@ mapSeqlevels <- function(fds, style="UCSC", ...){
 #'              or \code{feature} is specified the sum by sample or feature is
 #'              returned
 #' @param aggregate If TRUE the returned object is based on the grouped features
-#'
+#' @return Either a of logical values of size introns/genes x samples if "by" is  
+#' NA or a vector with the number of aberrant events per sample or feature 
+#' depending on the vaule of "by"
+#' 
 #' @examples
 #' # TODO
 #' TODO <- 1

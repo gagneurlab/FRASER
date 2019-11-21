@@ -337,7 +337,7 @@ logger <- function(type="INFO", name=flog.namespace(), ...){
 
 #'
 #' check if the given assay already exists within the object
-#'
+#' @noRd
 assayExists <- function(fds, assayName){
     stopifnot(isScalarCharacter(assayName))
     stopifnot(is(fds, "FraseRDataSet"))

@@ -290,7 +290,7 @@ getDisttributionPlot <- function(fds, psiType, dist, idx, sampleID=NULL, ...){
     opar <- par(cex=1.6)
     on.exit(par(opar))
 
-    plot(1:length(data), data, col = col, pch=20,
+    plot(seq_along(data), data, col = col, pch=20,
         xlab="sample rank", ylab=dist, las=1,
         main=paste("Distribution of:", dist)
     )

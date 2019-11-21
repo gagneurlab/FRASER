@@ -190,7 +190,7 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, minDeltaPsi=0.1,
             # check
             curLossDiff <- rowMax(abs(
                     matrix(currentLoss, ncol=2, nrow=length(currentLoss))
-                    - lossList[,ncol(lossList) - 1:0]))
+                    - lossList[,ncol(lossList) - c(1,0)]))
             if(all(curLossDiff < convergence)){
                 message(date(), ': the final AE correction converged with:',
                         mean(lossList[,ncol(lossList)]))
