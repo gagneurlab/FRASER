@@ -18,6 +18,9 @@ na2zero(x)
 
 null2na(x)
 }
+\value{
+vector
+}
 \description{
 Convert all NA's of a input vector or of a
 single dimension matrix/data.table to FALSE

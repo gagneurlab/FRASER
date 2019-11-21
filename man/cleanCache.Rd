@@ -7,11 +7,13 @@
 cleanCache(fds, all = FALSE, cache = TRUE, assays = FALSE,
   results = FALSE)
 }
+\value{
+nothing
+}
 \description{
 clear the files in the cache to start fresh
 }
 \examples{
     fds <- createTestFraseRSettings()
     cleanCache(fds)
-
 }

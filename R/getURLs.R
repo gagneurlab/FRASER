@@ -1,7 +1,7 @@
 #'
 #' get links
 #'
-#'
+#' @noRd
 createFullLinkTable <- function(data, addHRef=TRUE){
     if(is.null(data) | nrow(data) < 1)
         return(data.table())

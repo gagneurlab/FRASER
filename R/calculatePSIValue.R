@@ -26,7 +26,7 @@ calculatePSIValues <- function(fds, types=psiTypes, overwriteCts=FALSE,
     stopifnot(is(fds, "FraseRDataSet"))
 
     # calculate PSI value for each sample
-    for(psiType in unique(sapply(types, whichReadType, fds=fds))){
+    for(psiType in unique(vapply(types, whichReadType, fds=fds, ""))){
         fds <- calculatePSIValuePrimeSite(fds, psiType=psiType,
                 overwriteCts=overwriteCts, BPPARAM=BPPARAM)
     }

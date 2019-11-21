@@ -21,7 +21,8 @@
 #' fdsLoaded
 #'
 #' testthat::expect_equivalent(fdsSaved, fdsLoaded)
-#'
+#' 
+#' @return FraseRDataSet
 #' @aliases loadFraseRDataSet saveFraseRDataSet
 #' @rdname loadFraseRDataSet
 #' @export

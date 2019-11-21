@@ -723,11 +723,12 @@ getColDataAsDFFactors <- function(fds, names){
 #'
 #' @noRd
 ggplotLabelPsi <- function(type){
-    sapply(type, function(x)
+    vapply(type, FUN=function(x)
         switch (x,
-                psi5 = bquote(psi[5]),
-                psi3 = bquote(psi[3]),
-                psiSite = bquote(theta)))
+                psi5 = c(bquote(psi[5])),
+                psi3 = c(bquote(psi[3])),
+                psiSite = c(bquote(theta))),
+        FUN.VALUE=c(bquote(psi[3])))
 }
 
 #' @noRd

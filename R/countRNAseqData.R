@@ -48,22 +48,22 @@
 #'                 counts of the junctions should be placed.
 #' @param countFiles If specified, the split read counts for all samples are 
 #'                  read from the specified files. Should be a vector of paths 
-#'                  to files containing the split read counts for the individual 
-#'                  samples. Reading from files is only supported for tsv(.gz) 
-#'                  or RDS files containing GRranges objects. The order of the 
-#'                  individual sample files should correspond to the order of 
-#'                  the samples in the fds.
+#'                  to files containing the split read counts for the 
+#'                  individual samples. Reading from files is only supported 
+#'                  for tsv(.gz) or RDS files containing GRranges objects. The 
+#'                  order of the individual sample files should correspond to 
+#'                  the order of the samples in the fds.
 #' @param splitCounts The merged GRanges object containing the position and 
 #'              counts of all the introns in the dataset for all samples.
 #' @param nonSplitCounts The merged GRanges object containing the position and 
-#'              non split read counts of all splice sites present in the dataset 
-#'              for all samples.
+#'              non split read counts of all splice sites present in the 
+#'              dataset for all samples.
 #' @param sampleID The ID of the sample to be counted.
 #' @param countList A list of GRanges objects containing the counts that should
 #'     be merged into one object.
-#' @param assumeEqual Logical indicating whether all objects in \code{countList} 
-#'     can be assumed to contain counts for the same ranges. If FALSE, merging 
-#'     of the ranges is performed.
+#' @param assumeEqual Logical indicating whether all objects in 
+#'     \code{countList} can be assumed to contain counts for the same ranges. 
+#'     If FALSE, merging of the ranges is performed.
 #' 
 #' @name countRNA
 #' @rdname countRNA
@@ -115,11 +115,11 @@ countRNAData <- function(fds, NcpuPerSample=1, junctionMap=NULL, minAnchor=5,
     
     # count non spliced reads for every samples
     nonSplicedCounts <- getNonSplitReadCountsForAllSamples(fds=fds, 
-                                                    splitCounts=splitCounts, 
-                                                    NcpuPerSample=NcpuPerSample, 
-                                                    minAnchor=minAnchor,
-                                                    recount=recount, 
-                                                    BPPARAM=BPPARAM )
+                                                splitCounts=splitCounts, 
+                                                NcpuPerSample=NcpuPerSample, 
+                                                minAnchor=minAnchor,
+                                                recount=recount, 
+                                                BPPARAM=BPPARAM )
     writeCountsToTsv(nonSplicedCounts, 
                      file=file.path(countDir, "nonSplitCounts.tsv.gz"))
     
@@ -181,8 +181,8 @@ getSplitReadCountsForAllSamples <- function(fds, NcpuPerSample=1,
                                  FUN.VALUE = logical(1))))
                 
         } else{
-            stop("Reading from files is only supported for tsv(.gz) or RDS files
-                containing GRranges objects.")
+            stop(paste0("Reading from files is only supported for tsv(.gz) or ",
+                        "RDS files containing GRranges objects."))
         }
         
     }

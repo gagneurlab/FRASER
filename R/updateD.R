@@ -63,7 +63,7 @@ singleDFit <- function(i, D, b, k, n, H, rho, lambda, control, fraction,
     fraction <- 1
   }
 
-  fitls <- sapply(seq_len(nrBatches), function(subset){
+  fitls <- lapply(seq_len(nrBatches), function(subset){
       subset <- sample(seq_len(nrow(H)), ceiling(nrow(H)*fraction))
       ksub <- ki[subset]
       nsub <- ni[subset]
@@ -75,16 +75,19 @@ singleDFit <- function(i, D, b, k, n, H, rho, lambda, control, fraction,
                    H=Hsub, k=ksub, n=nsub, rho=r, lambda=lambda, w=wsub,
                    method="L-BFGS-B", control=control)
       })
-      fit[[which.min(sapply(fit, "[[", "value"))]]
+      fit[[which.min(vapply(fit, "[[", "value", FUN.VALUE=numeric(1)))]]
   })
 
-  pars <- colMedians(do.call(rbind, fitls['par',]))
+  # pars <- colMedians(do.call(rbind, fitls['par',]))
+  pars <- rowMedians(vapply(fitls, "[[", "par", FUN.VALUE=pari))
 
-  fit <- fitls[,1]
+  fit <- fitls[[1]]
   fit$par         <- pars
-  fit$value       <- mean(unlist(fitls['value',]))
-  fit$counts      <- round(colMedians(do.call(rbind, fitls['counts',])))
-  fit$convergence <- sum(unlist(fitls['convergence',]))
+  fit$value       <- mean(vapply(fitls, "[[", 'value', FUN.VALUE=numeric(1)))
+  fit$counts      <- round(rowMedians(vapply(fitls, "[[", 'counts', 
+                                             FUN.VALUE=numeric(2))))
+  fit$convergence <- sum(vapply(fitls, "[[", 'convergence', 
+                                FUN.VALUE=numeric(1)))
 
   return(fit)
 }

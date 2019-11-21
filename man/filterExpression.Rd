@@ -11,8 +11,8 @@ filterExpression(fds, minExpressionInOneSample = 20, quantile = 0.05,
 \arguments{
 \item{fds}{A FraseRDataSet object}
 
-\item{minExpressionInOneSample}{The minimal read count in at least one sample 
-that is required for an intron to pass the filter.}
+\item{minExpressionInOneSample}{The minimal read count in at least one 
+sample that is required for an intron to pass the filter.}
 
 \item{quantile}{Defines which quantile should be considered for the filter.}
 
@@ -30,8 +30,8 @@ mcols.}
 
 \item{BPPARAM}{the BiocParallel parameters for the parallelization}
 
-\item{delayed}{If FALSE, count matrices will be loaded into memory, otherwise 
-the function works on the delayedMatrix representations.}
+\item{delayed}{If FALSE, count matrices will be loaded into memory, 
+otherwise the function works on the delayedMatrix representations.}
 }
 \value{
 FraseRDataSet

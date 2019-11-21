@@ -11,67 +11,67 @@ asFDS <- function(x){
 
 #' @export
 setGeneric("samples",           
-           function(object) standardGeneric("samples"))
+            function(object) standardGeneric("samples"))
 
 #' @export
 setGeneric("samples<-",         signature = "object", 
-           function(object, value) standardGeneric("samples<-"))
+            function(object, value) standardGeneric("samples<-"))
 
 #' @export
 setGeneric("condition",         
-           function(object) standardGeneric("condition"))
+            function(object) standardGeneric("condition"))
 
 #' @export
 setGeneric("condition<-",       signature = "object", 
-           function(object, value) standardGeneric("condition<-"))
+            function(object, value) standardGeneric("condition<-"))
 
 #' @export
 setGeneric("bamFile",           
-           function(object) standardGeneric("bamFile"))
+            function(object) standardGeneric("bamFile"))
 
 #' @export
 setGeneric("bamFile<-",         signature = "object", 
-           function(object, value) standardGeneric("bamFile<-"))
+            function(object, value) standardGeneric("bamFile<-"))
 
 #' @export
 setGeneric("name",              
-           function(object) standardGeneric("name"))
+            function(object) standardGeneric("name"))
 
 #' @export
 setGeneric("name<-",            signature = "object", 
-           function(object, value) standardGeneric("name<-"))
+            function(object, value) standardGeneric("name<-"))
 
 #' @export
 setGeneric("strandSpecific",    
-           function(object) standardGeneric("strandSpecific"))
+            function(object) standardGeneric("strandSpecific"))
 
 #' @export
 setGeneric("strandSpecific<-",  signature = "object", 
-           function(object, value) standardGeneric("strandSpecific<-"))
+            function(object, value) standardGeneric("strandSpecific<-"))
 
 #' @export
 setGeneric("workingDir",        
-           function(object) standardGeneric("workingDir"))
+            function(object) standardGeneric("workingDir"))
 
 #' @export
 setGeneric("workingDir<-",      signature = "object", 
-           function(object, value) standardGeneric("workingDir<-"))
+            function(object, value) standardGeneric("workingDir<-"))
 
 #' @export
 setGeneric("scanBamParam",      
-           function(object) standardGeneric("scanBamParam"))
+            function(object) standardGeneric("scanBamParam"))
 
 #' @export
 setGeneric("scanBamParam<-",    signature = "object", 
-           function(object, value) standardGeneric("scanBamParam<-"))
+            function(object, value) standardGeneric("scanBamParam<-"))
 
 #' @export
 setGeneric("nonSplicedReads",   
-           function(object) standardGeneric("nonSplicedReads"))
+            function(object) standardGeneric("nonSplicedReads"))
 
 #' @export
 setGeneric("nonSplicedReads<-", signature = "object", 
-           function(object, value) standardGeneric("nonSplicedReads<-"))
+            function(object, value) standardGeneric("nonSplicedReads<-"))
 
 #' @rdname results
 #' @return GRanges object
@@ -149,8 +149,8 @@ setReplaceMethod("condition", "FraseRDataSet", function(object, value) {
 #' @rdname bamFile
 setMethod("bamFile", "FraseRDataSet", function(object) {
     bamFile <- colData(object)[,"bamFile"]
-    if(all(sapply(bamFile, class) == "BamFile")){
-        bamFile <- sapply(bamFile, path)
+    if(all(vapply(bamFile, is, class2="BamFile", FUN.VALUE=logical(1)))){
+        bamFile <- vapply(bamFile, path, "")
     }
     return(bamFile)
 })
@@ -426,7 +426,7 @@ FraseRDataSet.assays.replace <-
 
     # add new slots if there are some
     if(sum(!(nj | ns)) > 0){
-        type <- sapply(type, checkReadType, fds=x)
+        type <- vapply(type, checkReadType, fds=x, FUN.VALUE="")
         jslots <- c(jslots, value[!(nj | ns) & type=="j"])
         sslots <- c(sslots, value[!(nj | ns) & type=="ss"])
     }
@@ -461,6 +461,9 @@ setMethod("length", "FraseRDataSet", function(x) callNextMethod())
 #' getter and setter for mcols
 #' 
 #' @return mcols
+#' @examples 
+#'   fds <- makeExampleFraseRDataSet()
+#'   mcols(fds, type="psi5")
 #' @export
 FraseR.mcols.get <- function(x, type=NULL, ...){
     type <- checkReadType(x, type)
@@ -491,7 +494,8 @@ setReplaceMethod("mcols", "FraseRDataSet", FraseR.mcols.replace)
 #' 
 #' @return GRanges object
 #' @examples 
-#'   TODO <- 1
+#'   fds <- makeExampleFraseRDataSet()
+#'   rowRanges(fds)
 #' 
 #' @return FraseRDataSet
 FraseR.rowRanges.get <- function(x, type=NULL, ...){
@@ -525,12 +529,12 @@ setReplaceMethod("rowRanges", "FraseRDataSet", FraseR.rowRanges.replace)
 #' respectively. 
 #' 
 #' @return FraseRDataSet
+#' @rdname counts
 #' @examples 
 #'  fds <- makeExampleFraseRDataSet()
 #'  counts(fds, type="psi5", side="ofInterest")
 #'  counts(fds, type="psi5", side="other")
 #'  
-#'  @rdname count_getter_setter
 setMethod("counts", "FraseRDataSet", function(object, type=NULL,
             side=c("ofInterest", "otherSide"), normalized=FALSE){
     side <- match.arg(side)
@@ -561,7 +565,7 @@ setMethod("counts", "FraseRDataSet", function(object, type=NULL,
 #'
 #' setter for count data
 #' 
-#' @rdname count_getter_setter
+#' @rdname counts
 setReplaceMethod("counts", "FraseRDataSet", function(object, type=NULL,
                     side=c("ofInterest", "otherSide"), ..., value){
     side <- match.arg(side)
@@ -596,7 +600,7 @@ setAs("DelayedMatrix", "data.table", function(from){
         ans <- lapply(chunks, fun, from=from)
     } else {
         ans <- mclapply(chunks, fun, from=from, mc.cores=mc.cores)
-        isDT <- sapply(ans, is.data.table)
+        isDT <- vapply(ans, is.data.table, FUN.VALUE=logical(1))
         if(sum(isDT) != length(chunks)){
             # error happend during extractions, redo
             ans[!isDT] <- lapply(chunks[!isDT], fun, from=from)
@@ -721,13 +725,14 @@ FraseR.results <- function(x, sampleIDs, fdrCutoff, zscoreCutoff, dPsiCutoff,
             }
             
             # create reult table
-            sampleRes <- sapply(sc,
+            sampleRes <- lapply(sc,
                     resultsSingleSample, gr=gr, pvals=pvals, padjs=padjs,
                     zscores=zscores, psiType=type, psivals=psivals,
                     deltaPsiVals=deltaPsiVals, muPsi=muPsi, rawCts=rawCts,
                     rawTotalCts=rawTotalCts, fdrCut=fdrCutoff,
                     zscoreCut=zscoreCutoff, dPsiCut=dPsiCutoff,
-                    rowMeansK=rowMeansK, rowMeansN=rowMeansN, minCount=minCount)
+                    rowMeansK=rowMeansK, rowMeansN=rowMeansN, 
+                    minCount=minCount)
 
             # return combined result
             return(unlist(GRangesList(sampleRes)))
@@ -853,9 +858,10 @@ mapSeqlevels <- function(fds, style="UCSC", ...){
 #' @param by By default NA which means no grouping. But if \code{sample}
 #'              or \code{feature} is specified the sum by sample or feature is
 #'              returned
-#' @param aggregate If TRUE the returned object is based on the grouped features
-#' @return Either a of logical values of size introns/genes x samples if "by" is  
-#' NA or a vector with the number of aberrant events per sample or feature 
+#' @param aggregate If TRUE the returned object is based on the grouped 
+#' features
+#' @return Either a of logical values of size introns/genes x samples if "by" 
+#' is NA or a vector with the number of aberrant events per sample or feature 
 #' depending on the vaule of "by"
 #' 
 #' @examples

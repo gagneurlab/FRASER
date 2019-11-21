@@ -14,6 +14,7 @@
 #' @param ... Additional paramerters which are pased on to
 #'              the underlying plotting functions
 #'
+#' @return nothing
 #' @examples
 #' # TODO
 #' DEPRICATED <- 1

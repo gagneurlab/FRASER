@@ -21,13 +21,14 @@ aberrant(fds, type = currentType(fds), padjCutoff = 0.05,
 or \code{feature} is specified the sum by sample or feature is
 returned}
 
-\item{aggregate}{If TRUE the returned object is based on the grouped features}
+\item{aggregate}{If TRUE the returned object is based on the grouped 
+features}
 
 \item{zSCoreCutoff}{Z score cutoff to be used or NA if not requested}
 }
 \value{
-Either a of logical values of size introns/genes x samples if "by" is  
-NA or a vector with the number of aberrant events per sample or feature 
+Either a of logical values of size introns/genes x samples if "by" 
+is NA or a vector with the number of aberrant events per sample or feature 
 depending on the vaule of "by"
 }
 \description{

@@ -58,27 +58,27 @@ counts of the junctions should be placed.}
 
 \item{countFiles}{If specified, the split read counts for all samples are 
 read from the specified files. Should be a vector of paths 
-to files containing the split read counts for the individual 
-samples. Reading from files is only supported for tsv(.gz) 
-or RDS files containing GRranges objects. The order of the 
-individual sample files should correspond to the order of 
-the samples in the fds.}
+to files containing the split read counts for the 
+individual samples. Reading from files is only supported 
+for tsv(.gz) or RDS files containing GRranges objects. The 
+order of the individual sample files should correspond to 
+the order of the samples in the fds.}
 
 \item{splitCounts}{The merged GRanges object containing the position and 
 counts of all the introns in the dataset for all samples.}
 
 \item{nonSplitCounts}{The merged GRanges object containing the position and 
-non split read counts of all splice sites present in the dataset 
-for all samples.}
+non split read counts of all splice sites present in the 
+dataset for all samples.}
 
 \item{sampleID}{The ID of the sample to be counted.}
 
 \item{countList}{A list of GRanges objects containing the counts that should
 be merged into one object.}
 
-\item{assumeEqual}{Logical indicating whether all objects in \code{countList} 
-can be assumed to contain counts for the same ranges. If FALSE, merging 
-of the ranges is performed.}
+\item{assumeEqual}{Logical indicating whether all objects in 
+\code{countList} can be assumed to contain counts for the same ranges. 
+If FALSE, merging of the ranges is performed.}
 }
 \value{
 \code{\link{countRNAData}} returns a FraseRDataSet.

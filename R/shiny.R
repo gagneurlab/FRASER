@@ -305,6 +305,7 @@ getDisttributionPlot <- function(fds, psiType, dist, idx, sampleID=NULL, ...){
 #'
 #' Present the FraseR results as shiny app
 #'
+#' @return shiny application
 #' @examples
 #'     fds <- createTestFraseRDataSet()
 #'

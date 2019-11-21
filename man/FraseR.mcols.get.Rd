@@ -12,3 +12,7 @@ mcols
 \description{
 getter and setter for mcols
 }
+\examples{
+  fds <- makeExampleFraseRDataSet()
+  mcols(fds, type="psi5")
+}

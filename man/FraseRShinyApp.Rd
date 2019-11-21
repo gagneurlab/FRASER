@@ -6,6 +6,9 @@
 \usage{
 FraseRShinyApp(fds, fdsres = NULL, server = !interactive(), ...)
 }
+\value{
+shiny application
+}
 \description{
 Present the FraseR results as shiny app
 }

@@ -38,11 +38,11 @@ eval_prot <- function(fds, type){
     dt <- cbind(data.table(id=index),
             as.data.table(assay(fds, paste0("trueOutliers_", type))))
     setkey(dt, id)
-    labels <- as.vector(sapply(samples(fds), function(i){
+    labels <- as.vector(vapply(samples(fds), function(i){
         dttmp <- dt[,any(get(i) != 0),by=id]
         setkey(dttmp, id)
         dttmp[J(unique(index)), V1]
-    })) + 0
+    }, FUN.VALUE=logical(length(unique(index))) ) ) + 0
 
     if(any(is.na(scores))){
         warning(sum(is.na(scores)), " P-values where NAs.")
@@ -183,11 +183,11 @@ optimHyperParams <- function(fds, type, correction,
                         internalBPPARAM=internalThreads)
 
         data <- data.table(
-            q=sapply(res, "[[", "q"),
-            noise=sapply(res, "[[", "noiseRatio"),
+            q=vapply(res, "[[", "q", FUN.VALUE=numeric(1)),
+            noise=vapply(res, "[[", "noiseRatio", FUN.VALUE=numeric(1)),
             nsubset=nsub,
-            eval=sapply(res, "[[", "loss"),
-            aroc=sapply(res, "[[", "aroc"))
+            eval=vapply(res, "[[", "loss", FUN.VALUE=numeric(1)),
+            aroc=vapply(res, "[[", "aroc", FUN.VALUE=numeric(1)))
 
         optData <- rbind(optData, data)
     }

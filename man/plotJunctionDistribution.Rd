@@ -24,6 +24,9 @@ the underlying plotting functions}
 If this value is not set but the gr object contains a sampleID
 column it will take this column to highlight samples.}
 }
+\value{
+nothing
+}
 \description{
 This can be used for quality control plots as well.
 }

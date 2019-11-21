@@ -20,6 +20,9 @@ saveFraseRDataSet(fds, dir = NULL, name = NULL, rewrite = FALSE)
 you have filtered or subsetted the object and want to save only
 the subsetted version}
 }
+\value{
+FraseRDataSet
+}
 \description{
 This is a convinient function to load and save a FraseRDataSet object.
 It looks and saves the FraseRDataSet objects and HDF5 files on disk under

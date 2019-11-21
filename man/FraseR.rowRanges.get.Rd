@@ -20,6 +20,7 @@ FraseRDataSet
 Getter and setter for rowRanges
 }
 \examples{
-  TODO <- 1
+  fds <- makeExampleFraseRDataSet()
+  rowRanges(fds)
 
 }

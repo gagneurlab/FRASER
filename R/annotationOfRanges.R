@@ -138,7 +138,8 @@ getAnnotationFeature <- function(data, feature, annotation){
 #' Annotate the object with a given annotation. 
 #' 
 #' @return FraseRDataSet
-#' 
+#' @examples 
+#'     TODO <- 1
 #' @export
 findAnnotatedJunction <- function(fds, annotation, annotateNames=TRUE,
                     seqLevelStyle=seqlevelsStyle(fds)[1],

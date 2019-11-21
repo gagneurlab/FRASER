@@ -9,6 +9,9 @@ checkFraseRDataSet(fds)
 
 checkCountData(fds, stop = TRUE)
 }
+\value{
+logical(1)
+}
 \description{
 Checks all user input and returns corresponding messages
 checkFraseRDataSet

@@ -3,10 +3,14 @@
 \docType{methods}
 \name{counts,FraseRDataSet-method}
 \alias{counts,FraseRDataSet-method}
+\alias{counts<-,FraseRDataSet-method}
 \title{Getter/setter for count data}
 \usage{
 \S4method{counts}{FraseRDataSet}(object, type = NULL,
   side = c("ofInterest", "otherSide"), normalized = FALSE)
+
+\S4method{counts}{FraseRDataSet}(object, type = NULL,
+  side = c("ofInterest", "otherSide"), ...) <- value
 }
 \arguments{
 \item{object}{FraseRDataSet}
@@ -22,11 +26,12 @@ FraseRDataSet
 }
 \description{
 Getter/setter for count data
+
+setter for count data
 }
 \examples{
  fds <- makeExampleFraseRDataSet()
  counts(fds, type="psi5", side="ofInterest")
  counts(fds, type="psi5", side="other")
  
- @rdname count_getter_setter
 }

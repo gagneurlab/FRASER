@@ -3,7 +3,8 @@
 #'
 #' Checks all user input and returns corresponding messages
 #' checkFraseRDataSet
-#'
+#' 
+#' @return logical(1)
 #' @rdname checkInputFunctions
 checkFraseRDataSet <- function(fds){
     if(!is(fds, "FraseRDataSet")){
@@ -29,10 +30,10 @@ checkCountData <- function(fds, stop=TRUE){
 #'
 #' clear the files in the cache to start fresh
 #'
+#' @return nothing
 #' @examples
 #'     fds <- createTestFraseRSettings()
 #'     cleanCache(fds)
-#'
 #' @export
 cleanCache <- function(fds, all=FALSE, cache=TRUE, assays=FALSE, results=FALSE){
     stopifnot(is(fds, "FraseRDataSet"))
@@ -89,7 +90,8 @@ checkReadType <- function(fds, type){
     if(!is.na(atype)) return(atype)
 
     # regex on the psi type
-    atype <- correctTypes[sapply(names(correctTypes), grepl, type)]
+    atype <- correctTypes[vapply(names(correctTypes), FUN=grepl, type, 
+                                 FUN.VALUE=logical(1))]
     if(length(atype) == 1){
         return(atype)
     }
@@ -154,6 +156,7 @@ nameNoSpace <- function(name){
 #'
 #' Convert NULL to NA or to another default value
 #'
+#' @return vector
 #' @examples
 #'   a <- c(TRUE, FALSE, NA, TRUE, NA)
 #'   na2false(a)
@@ -318,7 +321,7 @@ fraserQQplotPlotly <- function(pvalues, ci=TRUE, reducePoints=FALSE,
 
 #'
 #' logger function for internal use only
-#'
+#' @noRd
 logger <- function(type="INFO", name=flog.namespace(), ...){
     stopifnot(isScalarCharacter(type))
     type <- toupper(type)
@@ -394,7 +397,7 @@ pasteTable <- function(x, ...){
 #'
 #' Map between individual seq level style and dataset common one
 #' for counting and aggregating the reads
-#'
+#' @noRd
 checkSeqLevelStyle <- function(gr, fds, sampleID, sampleSpecific=FALSE){
     if(!"SeqLevelStyle" %in% colnames(colData(fds))){
         return(gr)
@@ -460,7 +463,7 @@ getSamplesByChunk <- function(fds, sampleIDs, chunkSize){
     ans <- lapply(0:max(chunks), function(x){
         intersect(sampleIDs, samples(fds)[chunks == x])
     })
-    ans[sapply(ans, length) >0]
+    ans[vapply(ans, length, integer(1)) >0]
 }
 
 checkNaAndRange <- function(x, min=-Inf, max=Inf, scalar=TRUE, na.ok=FALSE){

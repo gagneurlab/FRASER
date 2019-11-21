@@ -289,8 +289,9 @@ makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=1000, q=10,
         psi_alpha <- group_alpha[-1,]
         psi_rho   <- group_rho[-1]
         psi_mu <- group_mu[-1,]
-        if(is.null(nrow(psi_mu))){  # only one junction in the group, convert to 
-                                    # matrix with one row so that colSums works
+        if(is.null(nrow(psi_mu))){  # only one junction in the group, convert 
+                                    # to matrix with one row so that colSums 
+                                    # works
             psi_mu <- matrix(psi_mu, nrow=1)
         }
         # scale mu's so that they sum up to 1 again (after mu for SE is removed)
