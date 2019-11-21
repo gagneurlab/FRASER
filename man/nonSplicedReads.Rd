@@ -4,14 +4,20 @@
 \name{nonSplicedReads,FraseRDataSet-method}
 \alias{nonSplicedReads,FraseRDataSet-method}
 \alias{nonSplicedReads<-,FraseRDataSet-method}
-\title{accessor for the non spliced reads object within the FraseRDataSet object}
+\title{Getter/setter for the non spliced reads object within the FraseRDataSet 
+object}
 \usage{
 \S4method{nonSplicedReads}{FraseRDataSet}(object)
 
 \S4method{nonSplicedReads}{FraseRDataSet}(object) <- value
 }
+\arguments{
+\item{object}{A FraseRDataSet object.}
+}
+\value{
+RangedSummarizedExperiment (getter) or FraseRDataSet (setter)
+}
 \description{
-accessor for the non spliced reads object within the FraseRDataSet object
-
-setter for the non spliced reads object within the FraseRDataSet object
+Getter/setter for the non spliced reads object within the FraseRDataSet 
+object
 }

@@ -15,6 +15,8 @@ results(x, ...)
 }
 \value{
 GRanges object
+
+GRanges object containing significant results.
 }
 \description{
 The result function extracts the results from the given analysis object

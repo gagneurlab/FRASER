@@ -88,7 +88,7 @@
 ### To be added into the functions above
 #
 #' @importFrom S4Vectors DataFrame metadata Rle SimpleList mcols mcols<-
-#'          start end metadata metadata<-
+#'          start end metadata metadata<- subjectHits queryHits
 #' @importFrom grDevices dev.off adjustcolor pdf colorRampPalette
 #' @importFrom plotly event_data
 #' @importFrom GenomeInfoDb keepStandardChromosomes seqlevels<- seqlevels

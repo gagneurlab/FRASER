@@ -6,6 +6,9 @@
 \usage{
 FraseR.mcols.get(x, type = NULL, ...)
 }
+\value{
+mcols
+}
 \description{
 getter and setter for mcols
 }

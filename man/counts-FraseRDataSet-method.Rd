@@ -3,11 +3,30 @@
 \docType{methods}
 \name{counts,FraseRDataSet-method}
 \alias{counts,FraseRDataSet-method}
-\title{getter for count data}
+\title{Getter/setter for count data}
 \usage{
 \S4method{counts}{FraseRDataSet}(object, type = NULL,
   side = c("ofInterest", "otherSide"), normalized = FALSE)
 }
+\arguments{
+\item{object}{FraseRDataSet}
+
+\item{type}{The psi type.}
+
+\item{side}{"ofInterest" for junction counts, "other" for sum of counts of 
+all other junctions at the same donor site (psi5) or acceptor site (psi3), 
+respectively.}
+}
+\value{
+FraseRDataSet
+}
 \description{
-getter for count data
+Getter/setter for count data
+}
+\examples{
+ fds <- makeExampleFraseRDataSet()
+ counts(fds, type="psi5", side="ofInterest")
+ counts(fds, type="psi5", side="other")
+ 
+ @rdname count_getter_setter
 }

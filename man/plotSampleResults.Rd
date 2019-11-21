@@ -9,6 +9,9 @@ based on plotly.}
 plotSampleResults(fds, sampleID = NULL, file = NULL, dir = NULL,
   browseIt = FALSE, BPPARAM = bpparam())
 }
+\value{
+The html file with the plots.
+}
 \description{
 Plot the results of the FraseR analysis pipeline
 All three types are plotted into one HTML file

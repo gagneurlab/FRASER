@@ -23,10 +23,13 @@ Set and returns the psi type that is to be used within several methods in
 the FraseR package.
 }
 \examples{
-# set
-currentType(fds) <- "psi5"
+  # get data
+  fds <- makeSimulatedFraserDataSet(m=50, j=1000)
 
-# get
-currentType(fds)
+  # set
+  currentType(fds) <- "psi5"
+
+  # get
+  currentType(fds)
 
 }

@@ -7,6 +7,9 @@
 \usage{
 \S4method{assayNames}{FraseRDataSet}(x)
 }
+\value{
+Character vector
+}
 \description{
 Returns the assayNames of FraseR
 }

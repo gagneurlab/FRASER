@@ -7,6 +7,9 @@
 \usage{
 \S4method{assays}{FraseRDataSet}(x, ..., withDimnames = TRUE)
 }
+\value{
+(Delayed) matrix.
+}
 \description{
 Returns the assay corrensonding to the given name/index of the FraseRDataSet
 }

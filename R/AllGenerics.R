@@ -266,8 +266,6 @@ setReplaceMethod("scanBamParam", "FraseRDataSet", function(object, value) {
 })
 
 
-#'
-#' accessor for the non spliced reads object within the FraseRDataSet object
 #' @export
 #' @rdname nonSplicedReads
 setMethod("nonSplicedReads", "FraseRDataSet", function(object){
@@ -275,7 +273,11 @@ setMethod("nonSplicedReads", "FraseRDataSet", function(object){
 })
 
 #'
-#' setter for the non spliced reads object within the FraseRDataSet object
+#' Getter/setter for the non spliced reads object within the FraseRDataSet 
+#' object
+#' 
+#' @param object A FraseRDataSet object.
+#' @return RangedSummarizedExperiment (getter) or FraseRDataSet (setter)
 #' @export
 #' @rdname nonSplicedReads
 setReplaceMethod("nonSplicedReads", "FraseRDataSet", function(object, value){
@@ -376,7 +378,9 @@ setMethod("[", c("FraseRDataSet", "ANY", "ANY"), subset.FraseR)
 
 #'
 #' Returns the assayNames of FraseR
-#'
+#' 
+#' @return Character vector
+#' @export
 setMethod("assayNames", "FraseRDataSet", function(x) {
     return(c(
         assayNames(asSE(x)),
@@ -388,6 +392,8 @@ setMethod("assayNames", "FraseRDataSet", function(x) {
 #'
 #' Returns the assay corrensonding to the given name/index of the FraseRDataSet
 #'
+#' @return (Delayed) matrix.
+#' @export
 setMethod("assays", "FraseRDataSet", function(x, ..., withDimnames=TRUE){
     return(c(
         assays(asSE(x), ..., withDimnames=withDimnames),
@@ -447,11 +453,15 @@ setReplaceMethod("assays", c("FraseRDataSet", "DelayedMatrix"),
 #'
 #' retrive the length of the object (aka number of junctions)
 #'
+#' @return Length of the object.
+#' @export
 setMethod("length", "FraseRDataSet", function(x) callNextMethod())
 
 #'
 #' getter and setter for mcols
-#'
+#' 
+#' @return mcols
+#' @export
 FraseR.mcols.get <- function(x, type=NULL, ...){
     type <- checkReadType(x, type)
     if(type=="j"){
@@ -479,6 +489,7 @@ setReplaceMethod("mcols", "FraseRDataSet", FraseR.mcols.replace)
 #' @param x FraseRDataSet
 #' @param type The psi type.
 #' 
+#' @return GRanges object
 #' @examples 
 #'   TODO <- 1
 #' 

@@ -25,6 +25,11 @@ returned}
 
 \item{zSCoreCutoff}{Z score cutoff to be used or NA if not requested}
 }
+\value{
+Either a of logical values of size introns/genes x samples if "by" is  
+NA or a vector with the number of aberrant events per sample or feature 
+depending on the vaule of "by"
+}
 \description{
 Use cutoffs to define splicing outlier event.
 }

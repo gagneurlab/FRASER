@@ -6,6 +6,9 @@
 \usage{
 mapSeqlevels(fds, style = "UCSC", ...)
 }
+\value{
+FraseRDataSet
+}
 \description{
 Mapping of chromosome names
 }

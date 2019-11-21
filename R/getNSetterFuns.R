@@ -290,11 +290,14 @@ deltaPsiValue <- function(fds, type=currentType(fds)){
 #' character.
 #' @return character() (getter) or FraseRDataSet(setter)
 #' @examples
-#' # set
-#' currentType(fds) <- "psi5"
+#'   # get data
+#'   fds <- makeSimulatedFraserDataSet(m=50, j=1000)
+#' 
+#'   # set
+#'   currentType(fds) <- "psi5"
 #'
-#' # get
-#' currentType(fds)
+#'   # get
+#'   currentType(fds)
 #'
 #' @export
 currentType <- function(fds){
