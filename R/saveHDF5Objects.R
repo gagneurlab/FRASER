@@ -106,7 +106,7 @@ saveFraseRDataSet <- function(fds, dir=NULL, name=NULL, rewrite=FALSE) {
     }
 
     # check input
-    stopifnot(class(fds) == "FraseRDataSet")
+    stopifnot(is(fds, "FraseRDataSet"))
     if(is.null(dir)) dir <- workingDir(fds)
     stopifnot(isScalarCharacter(dir))
     if(is.null(name)) name <- name(fds)

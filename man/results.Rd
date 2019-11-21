@@ -13,6 +13,9 @@ results(x, ...)
   minCount = 5, psiType = c("psi3", "psi5", "psiSite"),
   BPPARAM = bpparam())
 }
+\value{
+GRanges object
+}
 \description{
 The result function extracts the results from the given analysis object
 based on the given options and cutoffs.

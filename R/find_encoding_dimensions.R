@@ -1,6 +1,7 @@
 #'
 #' ### MODEL
 #'
+#' @noRd
 fit_autoenc <- function(fds, type=currentType(fds), q_guess=round(ncol(fds)/4),
                     correction, noiseRatio=0.5, BPPARAM=bpparam(),
                     iterations=3, nrDecoderBatches=1, verbose=FALSE){
@@ -72,7 +73,8 @@ findEncodingDim <- function(i, fds, type, params, correction,
             type=type, BPPARAM=iBPPARAM)
     evals <- eval_prot(res_pvals, type=type)
 
-    return(list(q=q_guess, noiseRatio=noiseRatio, loss=res_fit$evaluation, aroc=evals))
+    return(list(q=q_guess, noiseRatio=noiseRatio, loss=res_fit$evaluation, 
+                aroc=evals))
 }
 
 #'
@@ -82,6 +84,8 @@ findEncodingDim <- function(i, fds, type, params, correction,
 #' ratios while maximizing the precision-recall curve.
 #'
 #' @inheritParams fit
+#' 
+#' @return FraseRDataSet
 #'
 #' @examples
 #'   # generate data
@@ -91,7 +95,7 @@ findEncodingDim <- function(i, fds, type, params, correction,
 #'   fds <- optimHyperParams(fds, type="psi5", correction="PCA")
 #'   
 #'   # get estimated optimal dimension of the latent space
-#'   bestQ(fds, type="psi5)
+#'   bestQ(fds, type="psi5")
 #'   
 #'   # plot the AUC for the different encoding dimensions tested
 #'   plotEncDimSearch(fds, type="psi5")
@@ -169,9 +173,12 @@ optimHyperParams <- function(fds, type, correction,
 
         # run hyper parameter optimization
         params <- expand.grid(q=q_param, noise=noise_param)
-        message(date(), ": Run hyper optimization with ", nrow(params), " options.")
-        res <- bplapply(seq_len(nrow(params)), findEncodingDim, fds=fds_copy, type=type,
-                        iterations=iterations, params=params, correction=correction,
+        message(date(), ": Run hyper optimization with ", nrow(params), 
+                " options.")
+        res <- bplapply(seq_len(nrow(params)), findEncodingDim, fds=fds_copy, 
+                        type=type,
+                        iterations=iterations, params=params, 
+                        correction=correction,
                         BPPARAM=BPPARAM, nrDecoderBatches=nrDecoderBatches,
                         internalBPPARAM=internalThreads)
 

@@ -20,6 +20,8 @@
 #' @param delayed If FALSE, count matrices will be loaded into memory, otherwise 
 #' the function works on the delayedMatrix representations.
 #'
+#' @return FraseRDataSet
+#' 
 #' @examples
 #' fds <- countRNAData(createTestFraseRSettings())
 #' fds <- calculatePSIValues(fds)

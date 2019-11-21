@@ -27,7 +27,8 @@ estRho <- function(idx, k, n, y, rhoRange, nll, control=list()){
   ni <- n[idx,]
   yi <- y[idx,]
 
-  est <- optimize(f=nll, interval=rhoRange, yi=yi, ki=ki, ni=ni, maximum=FALSE, tol=0.0000001)
+  est <- optimize(f=nll, interval=rhoRange, yi=yi, ki=ki, ni=ni, maximum=FALSE, 
+                  tol=0.0000001)
   est
 }
 
@@ -42,7 +43,8 @@ negLogLikelihoodRho <- function(rho, ki, ni, mui){
   betaNK <- lgamma((mui-1)*(-r) + (ni - ki + eps))
 
   #mean negative log likelihood with pseudocounts
-  mean(alpha + beta - alphaK - betaNK - lgamma(ni+1+2*eps) + lgamma(ki+1+eps) + lgamma(ni-ki+1+eps) + lgamma(r + ni + 2*eps) - lgamma(r))
+  mean(alpha + beta - alphaK - betaNK - lgamma(ni+1+2*eps) + lgamma(ki+1+eps) + 
+         lgamma(ni-ki+1+eps) + lgamma(r + ni + 2*eps) - lgamma(r))
 }
 
 trunc_negLogLikelihoodRho <- function(rho, ki, ni, mui){
@@ -61,13 +63,15 @@ trunc_negLogLikelihoodRho <- function(rho, ki, ni, mui){
 
 
 methodOfMomentsRho <- function(k, n, rhoRange=c(1e-5, 1 - 1e-5)){
-  # taken from wiki: https://en.wikipedia.org/wiki/Beta-binomial_distribution#Method_of_moments
+  # taken from wiki: 
+  # https://en.wikipedia.org/wiki/Beta-binomial_distribution#Method_of_moments
   k <- as.matrix(k) + pseudocount()
   mode(k) <- "double"
   n <- as.matrix(n) + 2*pseudocount()
   mode(n) <- "double"
   
-  # normalizing counts with respect to mean(n) because for each junction an equal n for all samples is needed
+  # normalizing counts with respect to mean(n) because for each junction an 
+  # equal n for all samples is needed
   nM <- round(rowMeans(n))
   kNorm <- round(nM/n * k)
   

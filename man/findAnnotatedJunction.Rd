@@ -8,6 +8,9 @@ findAnnotatedJunction(fds, annotation, annotateNames = TRUE,
   seqLevelStyle = seqlevelsStyle(fds)[1],
   stranded = strandSpecific(fds), ...)
 }
+\value{
+FraseRDataSet
+}
 \description{
 Annotate the object with a given annotation.
 }

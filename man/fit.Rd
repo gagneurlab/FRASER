@@ -12,8 +12,7 @@ fit(fds, correction = c("PCA-regression", "PCA-BB-Decoder", "FraseR",
   weighted = FALSE, noiseAlpha = 1, lambda = 0,
   convergence = 1e-05, iterations = 15, initialize = TRUE,
   control = list(), BPPARAM = bpparam(), nSubset = 15000,
-  verbose = FALSE, recommendedPEERq = TRUE, lr = 5e-05,
-  epochs = 20, minDeltaPsi = 0.1)
+  verbose = FALSE, minDeltaPsi = 0.1)
 }
 \arguments{
 \item{fds}{A FraseRDataSet object}
@@ -47,6 +46,9 @@ not yet converged after these number of iterations, the fit stops anyway.}
 \item{verbose}{Controls the level of information printed during the fit.}
 
 \item{minDeltaPsi}{}
+}
+\value{
+FraseRDataSet
 }
 \description{
 This method correct for confounders in the data and fits a beta-binomial 

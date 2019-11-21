@@ -83,7 +83,8 @@ of the ranges is performed.}
 \value{
 \code{\link{countRNAData}} returns a FraseRDataSet.
 
-\code{\link{getSplitReadCountsForAllSamples}} returns a GRanges object.
+\code{\link{getSplitReadCountsForAllSamples}} returns a GRanges 
+object.
 
 \code{\link{getNonSplitReadCountsForAllSamples}} returns a 
          GRanges object.

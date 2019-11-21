@@ -10,7 +10,8 @@ getX <- function(K, N){
 
 #' @export
 numericLossGrad <- function(fn, epsilon, w, ..., BPPARAM=bpparam()){
-    grad <- unlist(bplapply(seq_along(w), fn=fn, w=w, epsilon=epsilon, ..., BPPARAM=BPPARAM, function(i, fn, epsilon, w, ...){
+    grad <- unlist(bplapply(seq_along(w), fn=fn, w=w, epsilon=epsilon, ..., 
+                            BPPARAM=BPPARAM, function(i, fn, epsilon, w, ...){
         eps <- integer(length(w))
         eps[i] <- epsilon
         (fn(w + eps, ...) - fn(w - eps, ...))/(2*epsilon)
@@ -51,11 +52,13 @@ register(MulticoreParam(10))
 #
 # Gradient and loss for D and b (is calculated per gene)
 #
-mybprange <- 1:j
-res <- bplapply(mybprange, K=K, N=N, wd=wd, we=we, b=b, rho=rho, function(idx, K, N, rho, b, wd, we){
+mybprange <- seq_len(j)
+res <- bplapply(mybprange, K=K, N=N, wd=wd, we=we, b=b, rho=rho, 
+                function(idx, K, N, rho, b, wd, we){
     message(idx)
     library(BiocParallel)
-    # the functinos are inside to go around the windows parallelization problem (snowparam does not export globelenv :(
+    # the functinos are inside to go around the windows parallelization problem 
+    # (snowparam does not export globelenv :(
 
     maxY <- 700
     minU <- 0 #1e-20
@@ -117,8 +120,10 @@ res <- bplapply(mybprange, K=K, N=N, wd=wd, we=we, b=b, rho=rho, function(idx, K
         # est <- abs(yi)
         # alpha[is.infinite(alpha)] <- est[is.infinite(alpha)]
         # beta[is.infinite(beta)] <- est[is.infinite(beta)]
-        alpha[is.infinite(alpha)] <- estimateLgamma_alpha(yi,ar)[is.infinite(alpha)]
-        beta[is.infinite(beta)] <- estimateLgamma_beta(yi,ar)[is.infinite(beta)]
+        alpha[is.infinite(alpha)] <- 
+          estimateLgamma_alpha(yi,ar)[is.infinite(alpha)]
+        beta[is.infinite(beta)] <- 
+          estimateLgamma_beta(yi,ar)[is.infinite(beta)]
 
         mean(alpha + beta - alphaK - betaNK)
     }
@@ -177,7 +182,8 @@ res <- bplapply(mybprange, K=K, N=N, wd=wd, we=we, b=b, rho=rho, function(idx, K
         # H[idx2replace,] <- 0
 
         grad_b <- mean(alpha + beta - alphaK - betaNK)
-        grad_d_mat <- matrix((alpha + beta - alphaK - betaNK), nrow(H), ncol(H)) * H
+        grad_d_mat <- matrix((alpha + beta - alphaK - betaNK), nrow(H), 
+                             ncol(H)) * H
         #grad_d_mat[ph == 0 | ph == 1] <- vapply(yi[ph == 0 | ph == 1],
         #                                function(y){
         #                                  if(y < 0) {1} else { -1 } },
@@ -185,7 +191,7 @@ res <- bplapply(mybprange, K=K, N=N, wd=wd, we=we, b=b, rho=rho, function(idx, K
 
         grad_d <- colMeans(grad_d_mat)
 
-        grad_d_replace <- sapply(1:length(grad_d), function(j){
+        grad_d_replace <- sapply(seq_along(grad_d), function(j){
           badIdx = which(ph[j] == 0 | ph[j] == 1)
           if(sum(yi[badIdx] < 0) < length(badIdx)){
             -1
@@ -200,10 +206,13 @@ res <- bplapply(mybprange, K=K, N=N, wd=wd, we=we, b=b, rho=rho, function(idx, K
         c(grad_b, grad_d)
     }
 
-    nlgv <- numericLossGrad(loosDb, 1e-8, par, ki=ki, ni=ni, H=H, rhoi=rhoi, BPPARAM=SerialParam())
+    nlgv <- numericLossGrad(loosDb, 1e-8, par, ki=ki, ni=ni, H=H, rhoi=rhoi, 
+                            BPPARAM=SerialParam())
     grv <- gradDb(par, ki, ni, H, rhoi)
-    cppnlgv <- numericLossGrad(truncNLL_db, 1e-8, par, k=ki, n=ni, H=H, rho=rhoi, lambda = 0, BPPARAM=SerialParam())
-    cppgrv  <- as.vector(truncGrad_db(par=par, H=H, k=ki, n=ni, rho=rhoi, lambda = 0))
+    cppnlgv <- numericLossGrad(truncNLL_db, 1e-8, par, k=ki, n=ni, H=H, 
+                               rho=rhoi, lambda = 0, BPPARAM=SerialParam())
+    cppgrv  <- as.vector(truncGrad_db(par=par, H=H, k=ki, n=ni, rho=rhoi, 
+                                      lambda = 0))
 
     list(nlgv=nlgv, grv=grv, cppnlgv=cppnlgv, cppgrv=cppgrv)
 })
@@ -248,12 +257,19 @@ plotInaccuracy <- function(idx, col, range=1e-7, xlegend=NULL, ylegend=NULL){
     xlegend <- -range
   }
 
-  plot(seq(-range, range, length.out = 1000), vapply(seq(-range, range, length.out = 1000),
-                                                   function(x){eps <- rep(0, q+1); eps[col] <- x; loosDb(par + eps, ki, ni, H, rhoi)}, double(1)),
-       type = "l", xlab = "epsilon", ylab = "loss(D[q] + epsilon)", main=paste("idx:", idx, "q:", col)); grid();
+  plot(seq(-range, range, length.out = 1000), 
+       vapply(seq(-range, range, length.out = 1000),
+              function(x){
+                eps <- rep(0, q+1); eps[col] <- x; 
+                loosDb(par + eps, ki, ni, H, rhoi)}, 
+              double(1)),
+       type = "l", xlab = "epsilon", ylab = "loss(D[q] + epsilon)", 
+       main=paste("idx:", idx, "q:", col)); grid();
   abline(v=c(-1e-8, 1e-8), col = c("grey", "grey"), lty=c(2,2));
-  abline(loosDb(par, ki, ni, H, rhoi), nlgv[col,idx], col = "green", lty=2); abline(loosDb(par, ki, ni, H, rhoi), grv[col,idx], col = "red", lty = 2);
-  legend(xlegend, ylegend, legend=c("loss", "gradient", "finite difference"), col=c("black", "red", "green"), lty=c(1,2,2))
+  abline(loosDb(par, ki, ni, H, rhoi), nlgv[col,idx], col = "green", lty=2); 
+  abline(loosDb(par, ki, ni, H, rhoi), grv[col,idx], col = "red", lty = 2);
+  legend(xlegend, ylegend, legend=c("loss", "gradient", "finite difference"), 
+         col=c("black", "red", "green"), lty=c(1,2,2))
 }
 
 
@@ -262,7 +278,8 @@ nll <- function(y, rho=0.9){
 }
 
 gr <- function(y, rho=0.9){
-    -digamma((exp(y)/(exp(y) + 1)) * ((1-rho)/rho)) * ((1-rho)/rho) * (exp(y)/(exp(y) + 1)^2)
+    -digamma((exp(y)/(exp(y) + 1)) * ((1-rho)/rho)) * ((1-rho)/rho) * 
+      (exp(y)/(exp(y) + 1)^2)
 }
 
 
@@ -271,7 +288,8 @@ nll <- function(y, rho=0.9){
 }
 
 gr <- function(y, rho=0.9){
-    -digamma((-1/(exp(y) + 1)) * ((rho-1)/rho)) * ((rho-1)/rho) * (exp(y)/(exp(y) + 1)^2)
+    -digamma((-1/(exp(y) + 1)) * ((rho-1)/rho)) * ((rho-1)/rho) * 
+      (exp(y)/(exp(y) + 1)^2)
 }
 
 
@@ -361,10 +379,14 @@ gradE <- function(par, x, wd, K, N, b, rho){
 }
 
 x <- getX(K, N)
-nlgv <- numericLossGrad(lossE, 1e-8, as.vector(we), x=x, wd=wd, K=K, N=N, b=b, rho=rho, BPPARAM=MulticoreParam(10))
+nlgv <- numericLossGrad(lossE, 1e-8, as.vector(we), x=x, wd=wd, K=K, N=N, b=b, 
+                        rho=rho, BPPARAM=MulticoreParam(10))
 grv  <- gradE(par=as.vector(we), x=x, wd=wd, K=K, N=N, b=b, rho=rho)
-cppnlgv <- numericLossGrad(fn=truncNLL_e, epsilon=1e-8, w=as.vector(we), x=x, D=wd, k=K, n=N, b=b, rho=rho[,1], BPPARAM=SerialParam())
-cppgrv  <- as.vector(truncGrad_e(par=as.vector(we), x=x, D=wd, k=K, n=N, b=b, rho=rho[,1]))
+cppnlgv <- numericLossGrad(fn=truncNLL_e, epsilon=1e-8, w=as.vector(we), x=x, 
+                           D=wd, k=K, n=N, b=b, rho=rho[,1], 
+                           BPPARAM=SerialParam())
+cppgrv  <- as.vector(truncGrad_e(par=as.vector(we), x=x, D=wd, k=K, n=N, b=b, 
+                                 rho=rho[,1]))
 
 
 plot(cppnlgv, log10(abs(cppnlgv - nlgv))); grid(); abline(0,1,col="red")

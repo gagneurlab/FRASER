@@ -6,6 +6,9 @@
 \usage{
 calculateZScores(fds, type = psiTypes)
 }
+\value{
+FraseRDataSet
+}
 \description{
 Calculate the zscore for each PSI value.
 }

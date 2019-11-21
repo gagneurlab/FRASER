@@ -132,8 +132,10 @@ makeSimulatedFraserDataSet_BetaBinomial <- function(m=200, j=10000, q=10,
         mcols(fds, type=type)[,"trueRho"]                       <- rho_psi
 
         # needed so that subsetting the fds works later
-        mcols(fds, type=type)[["startID"]] <- 1:nrow(mcols(fds, type=type))
-        mcols(fds, type=type)[["endID"]]   <- 1:nrow(mcols(fds, type=type))
+        mcols(fds, type=type)[["startID"]] <- 
+            seq_len(nrow(mcols(fds, type=type)))
+        mcols(fds, type=type)[["endID"]]   <- 
+            seq_len(nrow(mcols(fds, type=type)))
     }
 
     # store info for SE
@@ -164,9 +166,11 @@ makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=1000, q=10,
     #
     d <- groups                  # nr of donors/acceptors
     donorGroups <- seq_len(d)    # ids of the groups (1,2,...,d)
-    junctionGroups <- sort(sample(x = donorGroups, size=j, replace = TRUE))   # assign junction to donor/acceptor groups
+    # assign junction to donor/acceptor groups
+    junctionGroups <- sort(sample(x = donorGroups, size=j, replace = TRUE))   
 
-    # Set d to the actual number of groups (some might not have been assigned any junction at all)
+    # Set d to the actual number of groups (some might not have been assigned 
+    # any junction at all)
     donorGroups <- donorGroups[donorGroups %in% unique(junctionGroups)]
     d <- length(donorGroups)
 
@@ -189,14 +193,16 @@ makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=1000, q=10,
         double(m)))
     # n <- matrix(rnbinom(j*m, mu=nMean, size=theta), nrow=j, ncol=m)
 
-    # Sum up the values of n within one donor/acceptor group to get the n value of the group
+    # Sum up the values of n within one donor/acceptor group to get the n value 
+    # of the group
     dt_n <- as.data.table(n)
     sum_n <- cbind(dt_n, junctionGroups)
     res <- sapply(colnames(dt_n),function(x){
         sum_n[,c(paste0(x, "_sum")):=sum(get(x)),by=junctionGroups]
     })
 
-    # Extract final n matrix (all junctions within a group have the same n value)
+    # Extract final n matrix (all junctions within a group have the same n 
+    # value)
     sum_cols <- paste0(colnames(dt_n), "_sum")
     n <- as.matrix(sum_n[,..sum_cols])
     colnames(n) <- NULL
@@ -205,14 +211,15 @@ makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=1000, q=10,
 
 
     #
-    # Simulate betaBin dispersion for every donor/acceptor group, same dispersion for all junctions within a group
+    # Simulate betaBin dispersion for every donor/acceptor group, same 
+    # dispersion for all junctions within a group
     #
-    group_rho <- rlnorm(d, meanlog=rhoMeanlog, sdlog=rhoSdlog)  # group dispersion
+    group_rho <- rlnorm(d, meanlog=rhoMeanlog, sdlog=rhoSdlog)# group dispersion
     # group_rho <- abs(rnorm(d, mean=0.0001, sd=0.05))     # group dispersion
     dt1 <- data.table(group=donorGroups, rho=group_rho)
     dt2 <- data.table(group=junctionGroups)
     rhoFull <- merge(dt1, dt2, by="group")
-    rho <- rhoFull[,rho]                           # set dispersion for every junction
+    rho <- rhoFull[,rho]                    # set dispersion for every junction
 
 
 
@@ -253,17 +260,21 @@ makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=1000, q=10,
         group_alpha <- alpha[pos,]
         group_n   <- n[pos,]
 
-        # draw counts from a dirichlet multinomial distribution (jointly for PSi and SE)
+        # draw counts from a dirichlet multinomial distribution 
+        # (jointly for PSi and SE)
         counts <- t(rdirmnom(m, group_n[1,], t(group_alpha)))
 
-        # First row of resulting counts represents non split reads for SE, the other rows are the counts for the "real" junctions
+        # First row of resulting counts represents non split reads for SE, 
+        # the other rows are the counts for the "real" junctions
         nonSplit <- counts[1,]
         k <- counts[-1,]
 
         # Substract nonSplit reads from total N to get n for PSI (=other for SE)
-        group_n   <- group_n - matrix(nonSplit, nrow=nrow(group_n), ncol=ncol(group_n), byrow = TRUE)
+        group_n   <- group_n - matrix(nonSplit, nrow=nrow(group_n), 
+                                      ncol=ncol(group_n), byrow = TRUE)
 
-        # Also get mu and rho for this group (to split it into PSI and SE part for storing later)
+        # Also get mu and rho for this group (to split it into PSI and SE part 
+        # for storing later)
         group_mu  <- mu[pos,]
         group_rho <- rho[pos]
 
@@ -278,15 +289,19 @@ makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=1000, q=10,
         psi_alpha <- group_alpha[-1,]
         psi_rho   <- group_rho[-1]
         psi_mu <- group_mu[-1,]
-        if(is.null(nrow(psi_mu))){ # only one junction in the group, convert to matrix with one row so that colSums works
+        if(is.null(nrow(psi_mu))){  # only one junction in the group, convert to 
+                                    # matrix with one row so that colSums works
             psi_mu <- matrix(psi_mu, nrow=1)
         }
         # scale mu's so that they sum up to 1 again (after mu for SE is removed)
-        psi_mu    <- psi_mu /  matrix(colSums(psi_mu), nrow=nrow(psi_mu), ncol=ncol(psi_mu), byrow = TRUE)
+        psi_mu    <- psi_mu /  matrix(colSums(psi_mu), nrow=nrow(psi_mu), 
+                                      ncol=ncol(psi_mu), byrow = TRUE)
 
-        # return everyting relevant for storing counts, n, alpha, mu, rho split into the parts for PSI and SE
-        return(list(k=k, nonSplit=nonSplit, n=psi_n, group_n=se_n, psi_mu=psi_mu, se_mu=se_mu,
-                    psi_alpha=psi_alpha, se_alpha=se_alpha, psi_rho=psi_rho, se_rho=se_rho))
+        # return everyting relevant for storing counts, n, alpha, mu, 
+        # rho split into the parts for PSI and SE
+        return(list(k=k, nonSplit=nonSplit, n=psi_n, group_n=se_n, 
+                    psi_mu=psi_mu, se_mu=se_mu, psi_alpha=psi_alpha, 
+                    se_alpha=se_alpha, psi_rho=psi_rho, se_rho=se_rho))
     })
 
     # Extract k and nonSplit reads
@@ -324,12 +339,14 @@ makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=1000, q=10,
     junctionData <- SummarizedExperiment(
         colData=colData(fds),
         assays=list(rawCountsJ=k),
-        rowRanges=GRanges(seqnames=rep("chr1", nrJunctions), ranges=IRanges(start=psiJunctionGroups, width=1))
+        rowRanges=GRanges(seqnames=rep("chr1", nrJunctions), 
+                          ranges=IRanges(start=psiJunctionGroups, width=1))
     )
     nonSplitData <- SummarizedExperiment(
         colData=colData(fds),
         assays=list(rawCountsSS=nonSplit),
-        rowRanges=GRanges(seqnames=rep("chr1", d), ranges=IRanges(start=donorGroups, width=1))
+        rowRanges=GRanges(seqnames=rep("chr1", d), 
+                          ranges=IRanges(start=donorGroups, width=1))
     )
     fds <- new("FraseRDataSet",
                junctionData,
@@ -348,27 +365,35 @@ makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=1000, q=10,
     counts(fds, type="psiSite", side="other") <- se_n
 
     for(type in c("psi3", "psi5")){
-        # store information about the simulation in the fds (same values for psi3 and psi5)
+        # store information about the simulation in the fds 
+        # (same values for psi3 and psi5)
         setAssayMatrix(fds=fds, name="truePSI", type=type)      <- psi_mu
-        setAssayMatrix(fds=fds, name="trueLogitPSI", type=type) <- qlogis(psi_mu)
+        setAssayMatrix(fds=fds, name="trueLogitPSI", type=type) <- 
+            qlogis(psi_mu)
         setAssayMatrix(fds=fds, name="trueAlpha", type=type)    <- psi_alpha
         mcols(fds, type=type)[,"trueRho"]                       <- psi_rho
 
         # needed so that subsetting the fds works later
-        mcols(fds, type=type)[["startID"]] <- psiJunctionGroups # 1:nrow(mcols(fds, type=type))
-        mcols(fds, type=type)[["endID"]]   <- psiJunctionGroups # 1:nrow(mcols(fds, type=type))
+        mcols(fds, type=type)[["startID"]] <- 
+            psiJunctionGroups # 1:nrow(mcols(fds, type=type))
+        mcols(fds, type=type)[["endID"]]   <- 
+            psiJunctionGroups # 1:nrow(mcols(fds, type=type))
     }
 
     # store info for SE
     setAssayMatrix(fds=fds, name="truePSI", type="psiSite")      <- se_mu
-    setAssayMatrix(fds=fds, name="trueLogitPSI", type="psiSite") <- qlogis(se_mu)
+    setAssayMatrix(fds=fds, name="trueLogitPSI", type="psiSite") <- 
+        qlogis(se_mu)
     setAssayMatrix(fds=fds, name="trueAlpha", type="psiSite")    <- se_alpha
     mcols(fds, type="psiSite")[,"trueRho"]                       <- se_rho
 
     # needed so that subsetting the fds works later
-    mcols(fds, type="psiSite")[["startID"]]      <- donorGroups # 1:nrow(mcols(fds, type="psiSite"))
-    mcols(fds, type="psiSite")[["endID"]]        <- 1:nrow(mcols(fds, type="psiSite"))
-    mcols(fds, type="psiSite")[["spliceSiteID"]] <- donorGroups # 1:nrow(mcols(fds, type="psiSite"))
+    mcols(fds, type="psiSite")[["startID"]]      <- 
+        donorGroups # 1:nrow(mcols(fds, type="psiSite"))
+    mcols(fds, type="psiSite")[["endID"]]        <- 
+        seq_len(nrow(mcols(fds, type="psiSite")))
+    mcols(fds, type="psiSite")[["spliceSiteID"]] <- 
+        donorGroups # 1:nrow(mcols(fds, type="psiSite"))
 
     return(fds)
 
@@ -693,7 +718,7 @@ injectOutliersBySwapping <- function(fds, type=type, nrOutliers=500, deltaPSI=pm
                     # check if junction can be swapped with other junction from same donor/acceptor
                     #
                     dt <- data.table(
-                        junctionID = 1:j,
+                        junctionID = seq_len(j),
                         chr = as.factor(seqnames(fds)),
                         start = start(fds),
                         end = end(fds),
@@ -836,27 +861,37 @@ removeInjectedOutliers <- function(fds, type){
 
     # copy injected k and o counts
     if(type == "psiSite"){
-        setAssayMatrix(fds, type="psiSite", "outlierCounts") <- counts(fds, type="psiSite", side="ofInterest")
-        setAssayMatrix(fds, type="psiSite", "outlierOtherCounts") <- counts(fds, type="psiSite", side="other")
+        setAssayMatrix(fds, type="psiSite", "outlierCounts") <- 
+            counts(fds, type="psiSite", side="ofInterest")
+        setAssayMatrix(fds, type="psiSite", "outlierOtherCounts") <- 
+            counts(fds, type="psiSite", side="other")
     }
     else{
-        setAssayMatrix(fds, type="psi5", "outlierCounts") <- counts(fds, type="psi5", side="ofInterest")
-        setAssayMatrix(fds, type="psi5", "outlierOtherCounts") <- counts(fds, type="psi5", side="other")
-        setAssayMatrix(fds, type="psi3", "outlierOtherCounts") <- counts(fds, type="psi3", side="other")
+        setAssayMatrix(fds, type="psi5", "outlierCounts") <- 
+            counts(fds, type="psi5", side="ofInterest")
+        setAssayMatrix(fds, type="psi5", "outlierOtherCounts") <- 
+            counts(fds, type="psi5", side="other")
+        setAssayMatrix(fds, type="psi3", "outlierOtherCounts") <- 
+            counts(fds, type="psi3", side="other")
     }
 
     # assign original k and o to rawCountsJ and rawOtherCounts
     if(type == "psiSite"){
-        counts(fds, type="psiSite", side="ofInterest") <- getAssayMatrix(fds, type="psiSite", "originalCounts")
-        counts(fds, type="psiSite", side="other") <- getAssayMatrix(fds, type="psiSite", "originalOtherCounts")
+        counts(fds, type="psiSite", side="ofInterest") <- 
+            getAssayMatrix(fds, type="psiSite", "originalCounts")
+        counts(fds, type="psiSite", side="other") <- 
+            getAssayMatrix(fds, type="psiSite", "originalOtherCounts")
 
         assays(fds)[['originalCounts_psiSite']] <- NULL
         assays(fds)[['originalOtherCounts_psiSite']] <- NULL
     }
     else{
-        counts(fds, type="psi5", side="ofInterest") <- getAssayMatrix(fds, type="psi5", "originalCounts")
-        counts(fds, type="psi5", side="other") <- getAssayMatrix(fds, type="psi5", "originalOtherCounts")
-        counts(fds, type="psi3", side="other") <-getAssayMatrix(fds, type="psi3", "originalOtherCounts")
+        counts(fds, type="psi5", side="ofInterest") <- 
+            getAssayMatrix(fds, type="psi5", "originalCounts")
+        counts(fds, type="psi5", side="other") <- 
+            getAssayMatrix(fds, type="psi5", "originalOtherCounts")
+        counts(fds, type="psi3", side="other") <-
+            getAssayMatrix(fds, type="psi3", "originalOtherCounts")
 
         assays(fds)[['originalCounts_psi5']] <- NULL
         assays(fds)[['originalOtherCounts_psi5']] <- NULL
@@ -871,27 +906,37 @@ restoreInjectedOutliers <- function(fds, type){
 
     # copy original k and o counts
     if(type == "psiSite"){
-        setAssayMatrix(fds, type="psiSite", "originalCounts") <- counts(fds, type="psiSite", side="ofInterest")
-        setAssayMatrix(fds, type="psiSite", "originalOtherCounts") <- counts(fds, type="psiSite", side="other")
+        setAssayMatrix(fds, type="psiSite", "originalCounts") <- 
+            counts(fds, type="psiSite", side="ofInterest")
+        setAssayMatrix(fds, type="psiSite", "originalOtherCounts") <- 
+            counts(fds, type="psiSite", side="other")
     }
     else{
-        setAssayMatrix(fds, type="psi5", "originalCounts") <- counts(fds, type="psi5", side="ofInterest")
-        setAssayMatrix(fds, type="psi5", "originalOtherCounts") <- counts(fds, type="psi5", side="other")
-        setAssayMatrix(fds, type="psi3", "originalOtherCounts") <- counts(fds, type="psi3", side="other")
+        setAssayMatrix(fds, type="psi5", "originalCounts") <- 
+            counts(fds, type="psi5", side="ofInterest")
+        setAssayMatrix(fds, type="psi5", "originalOtherCounts") <- 
+            counts(fds, type="psi5", side="other")
+        setAssayMatrix(fds, type="psi3", "originalOtherCounts") <- 
+            counts(fds, type="psi3", side="other")
     }
 
     # assign injected k and o to rawCountsJ and rawOtherCounts
     if(type == "psiSite"){
-        counts(fds, type="psiSite", side="ofInterest") <- getAssayMatrix(fds, type="psiSite", "outlierCounts")
-        counts(fds, type="psiSite", side="other") <- getAssayMatrix(fds, type="psiSite", "outlierOtherCounts")
+        counts(fds, type="psiSite", side="ofInterest") <- 
+            getAssayMatrix(fds, type="psiSite", "outlierCounts")
+        counts(fds, type="psiSite", side="other") <- 
+            getAssayMatrix(fds, type="psiSite", "outlierOtherCounts")
 
         assays(fds)[['outlierCounts_psiSite']] <- NULL
         assays(fds)[['outlierOtherCounts_psiSite']] <- NULL
     }
     else{
-        counts(fds, type="psi5", side="ofInterest") <- getAssayMatrix(fds, type="psi5", "outlierCounts")
-        counts(fds, type="psi5", side="other") <- getAssayMatrix(fds, type="psi5", "outlierOtherCounts")
-        counts(fds, type="psi3", side="other") <-getAssayMatrix(fds, type="psi3", "outlierOtherCounts")
+        counts(fds, type="psi5", side="ofInterest") <- 
+            getAssayMatrix(fds, type="psi5", "outlierCounts")
+        counts(fds, type="psi5", side="other") <- 
+            getAssayMatrix(fds, type="psi5", "outlierOtherCounts")
+        counts(fds, type="psi3", side="other") <-
+            getAssayMatrix(fds, type="psi3", "outlierOtherCounts")
 
         assays(fds)[['outlierCounts_psi5']] <- NULL
         assays(fds)[['outlierOtherCounts_psi5']] <- NULL

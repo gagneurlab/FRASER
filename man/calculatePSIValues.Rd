@@ -15,6 +15,9 @@ be recalculated based on the existing junction counts (aka K)}
 
 \item{BPPARAM}{the BiocParallel parameters for the parallelization}
 }
+\value{
+FraseRDataSet
+}
 \description{
 This function calculates the PSI values for each junction and splice site
 based on the FraseRDataSet object

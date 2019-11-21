@@ -302,7 +302,8 @@ plotExpression <- function(fds, type=c("psi5", "psi3", "psiSite"),
 #' @export
 plotExpectedVsObservedPsi <- function(fds, type=c("psi5", "psi3", "psiSite"),
                                       idx=NULL, result=NULL, colGroup=NULL,
-                                      main=NULL, basePlot=TRUE, padjCutoff=0.05){
+                                      main=NULL, basePlot=TRUE, 
+                                      padjCutoff=0.05){
     type <- match.arg(type)
 
     # get plotting data
@@ -673,7 +674,8 @@ plotCountCorHeatmap <- function(fds, type=c("psi5", "psi3", "psiSite"),
     }
 
     if(is.null(main)){
-        main <- ifelse(normalized, "Normalized row-centered ", "Raw row-centered ")
+        main <- ifelse(normalized, "Normalized row-centered ", 
+                       "Raw row-centered ")
         if(plotType == "sampleCorrelation"){
             if(isTRUE(logit)){
                 main <- paste0(main, "Logit(PSI) correlation (", type, ")")
@@ -682,7 +684,8 @@ plotCountCorHeatmap <- function(fds, type=c("psi5", "psi3", "psiSite"),
             }
         } else {
             if(isTRUE(logit)){
-                main <- paste0(main, "Logit(PSI) data (", type, ", top ", topJ, ")")
+                main <- paste0(main, "Logit(PSI) data (", type, ", top ", topJ, 
+                               ")")
             } else {
                 main <- paste0(main, "PSI data (", type, ", top ", topJ, ")")
             }

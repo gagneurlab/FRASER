@@ -25,7 +25,8 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, minDeltaPsi=0.1,
 
     # make sure its only in-memory data for k and n
     currentType(fds) <- type
-    counts(fds, type=type, side="other", HDF5=FALSE) <- as.matrix(N(fds) - K(fds))
+    counts(fds, type=type, side="other", HDF5=FALSE) <- 
+        as.matrix(N(fds) - K(fds))
     counts(fds, type=type, side="ofInterest", HDF5=FALSE) <- as.matrix(K(fds))
 
     # copy fds object to save original input object
@@ -66,13 +67,17 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, minDeltaPsi=0.1,
 
         # initialize D
         fds <- updateD(fds, type=type, lambda=lambda, control=control,
-                       BPPARAM=BPPARAM, verbose=verbose, nrDecoderBatches=batches4EFit,
+                       BPPARAM=BPPARAM, verbose=verbose, 
+                       nrDecoderBatches=batches4EFit,
                        multiRho=multiRho, weighted=FALSE)
-        lossList <- updateLossList(fds, lossList, 'init', 'D', lambda, verbose=verbose)
+        lossList <- updateLossList(fds, lossList, 'init', 'D', lambda, 
+                                   verbose=verbose)
 
         # initialize rho step
-        fds <- updateRho(fds, type=type, rhoRange, BPPARAM=BPPARAM, verbose=verbose)
-        lossList <- updateLossList(fds, lossList, 'init', 'Rho', lambda, verbose=verbose)
+        fds <- updateRho(fds, type=type, rhoRange, BPPARAM=BPPARAM, 
+                         verbose=verbose)
+        lossList <- updateLossList(fds, lossList, 'init', 'Rho', lambda, 
+                                   verbose=verbose)
 
         # optimize log likelihood
         t1 <- Sys.time()
@@ -81,18 +86,24 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, minDeltaPsi=0.1,
             t2 <- Sys.time()
 
             # update E step
-            fds <- updateE(fds, control=control, BPPARAM=BPPARAM, verbose=verbose)
-            lossList <- updateLossList(fds, lossList, i, 'E', lambda, verbose=verbose)
+            fds <- updateE(fds, control=control, BPPARAM=BPPARAM, 
+                           verbose=verbose)
+            lossList <- updateLossList(fds, lossList, i, 'E', lambda, 
+                                       verbose=verbose)
 
             # update D step
             fds <- updateD(fds, type=type, lambda=lambda, control=control,
-                           BPPARAM=BPPARAM, verbose=verbose, nrDecoderBatches=batches4EFit,
+                           BPPARAM=BPPARAM, verbose=verbose, 
+                           nrDecoderBatches=batches4EFit,
                            multiRho=multiRho, weighted=FALSE)
-            lossList <- updateLossList(fds, lossList, i, 'D', lambda, verbose=verbose)
+            lossList <- updateLossList(fds, lossList, i, 'D', lambda, 
+                                       verbose=verbose)
 
             # update rho step
-            fds <- updateRho(fds, type=type, rhoRange, BPPARAM=BPPARAM, verbose=verbose)
-            lossList <- updateLossList(fds, lossList, i, 'Rho', lambda, verbose=verbose)
+            fds <- updateRho(fds, type=type, rhoRange, BPPARAM=BPPARAM, 
+                             verbose=verbose)
+            lossList <- updateLossList(fds, lossList, i, 'Rho', lambda, 
+                                       verbose=verbose)
 
             if(isTRUE(verbose)){
                 print(paste('Time for one autoencoder loop:', Sys.time() - t2))
@@ -112,9 +123,10 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, minDeltaPsi=0.1,
             } else {
                 if(isTRUE(verbose)){
                     message(date(), ": Current max diff is: ", max(curLossDiff))
-                    message(date(), ": Summary: ", paste(collapse=", ", sep=": ",
-                                                         names(summary(curLossDiff)),
-                                                         signif(summary(curLossDiff), 2)))
+                    message(date(), ": Summary: ", 
+                            paste(collapse=", ", sep=": ",
+                                  names(summary(curLossDiff)),
+                                  signif(summary(curLossDiff), 2)))
                 }
             }
             currentLoss <- lossList[,ncol(lossList)]
@@ -123,17 +135,23 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, minDeltaPsi=0.1,
         print(Sys.time() - t1)
     }
 
-    if(nrow(fds) == nrow(copy_fds) & !isTRUE(weighted)){    # TODO when using all features (!=nrow(fds)) in fitting for SE: also stop here and set copy_fds to fitted fds but with all junctions
-                                        # (at the moment: fds contains only a subset of all junctions, so copy_fds <- fds doesn't work for SE)
+    # TODO when using all features (!=nrow(fds)) in fitting for SE: also stop 
+    # here and set copy_fds to fitted fds but with all junctions
+    # (at the moment: fds contains only a subset of all junctions, 
+    # so copy_fds <- fds doesn't work for SE)
+    if(nrow(fds) == nrow(copy_fds) & !isTRUE(weighted)){    
         copy_fds <- fds
     } else {
         # update the D matrix and theta
-        print("Finished with fitting the E matrix. Starting now with the D fit. ...")
+        print(paste0("Finished with fitting the E matrix. Starting now with ",
+                     "the D fit. ..."))
 
-        # set noiseAlpha to 0 or NULL to NOT use noise now (latent space already fitted)
+        # set noiseAlpha to 0 or NULL to NOT use noise now 
+        # (latent space already fitted)
         currentNoiseAlpha(fds) <- NULL
 
-        copy_fds <- initAutoencoder(copy_fds, q, rhoRange, type=type, BPPARAM=BPPARAM)
+        copy_fds <- initAutoencoder(copy_fds, q, rhoRange, type=type, 
+                                    BPPARAM=BPPARAM)
         E(copy_fds) <- E(fds)
         currentLoss <- lossED(copy_fds, lambda, byRows=TRUE)
 
@@ -147,14 +165,19 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, minDeltaPsi=0.1,
             t2 <- Sys.time()
 
             # update D step
-            copy_fds <- updateD(copy_fds, type=type, lambda=lambda, control=control,
-                    BPPARAM=BPPARAM, verbose=verbose, nrDecoderBatches=nrDecoderBatches,
-                    multiRho=multiRho, weighted=weighted)
-            lossList <- updateLossList(copy_fds, lossList, paste0("final_", i), 'D', lambda, verbose=verbose)
+            copy_fds <- updateD(copy_fds, type=type, lambda=lambda, 
+                                control=control, BPPARAM=BPPARAM, 
+                                verbose=verbose, 
+                                nrDecoderBatches=nrDecoderBatches, 
+                                multiRho=multiRho, weighted=weighted)
+            lossList <- updateLossList(copy_fds, lossList, paste0("final_", i), 
+                                       'D', lambda, verbose=verbose)
 
             # update rho step
-            copy_fds <- updateRho(copy_fds, type=type, rhoRange, BPPARAM=BPPARAM, verbose=verbose)
-            lossList <- updateLossList(copy_fds, lossList, paste0("final_", i), 'Rho', lambda, verbose=verbose)
+            copy_fds <- updateRho(copy_fds, type=type, rhoRange, 
+                                  BPPARAM=BPPARAM, verbose=verbose)
+            lossList <- updateLossList(copy_fds, lossList, paste0("final_", i), 
+                                       'Rho', lambda, verbose=verbose)
 
             if(isTRUE(verbose)){
                 print(paste('Time for one D & Rho loop:', Sys.time() - t2))
@@ -181,7 +204,8 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, minDeltaPsi=0.1,
         }
     }
 
-    print(paste0(i, ' Final betabin-AE loss: ', mean(lossList[, ncol(lossList)])))
+    print(paste0(i, ' Final betabin-AE loss: ', 
+                 mean(lossList[, ncol(lossList)])))
     bpstop(BPPARAM)
 
     # add additional values for the user to the object
@@ -266,5 +290,6 @@ lossED <- function(fds, lambda=0, byRows=FALSE,
 #   betaNK <- lgamma((mu-1)*(-r) + (N - K + eps))
 #
 #   #mean negative log likelihood with pseudocounts
-#   mean(alpha + beta - alphaK - betaNK - lgamma(N+1+2*eps) + lgamma(K+1+eps) + lgamma(N-K+1+eps) + lgamma(r + N + 2*eps) - lgamma(r))
+#   mean(alpha + beta - alphaK - betaNK - lgamma(N+1+2*eps) + lgamma(K+1+eps) + 
+#          lgamma(N-K+1+eps) + lgamma(r + N + 2*eps) - lgamma(r))
 # }

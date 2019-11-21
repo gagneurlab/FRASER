@@ -15,6 +15,7 @@
 #' @inheritParams countRNA
 #' @param overwriteCts FALSE or TRUE (the default) the total counts (aka N) will
 #'              be recalculated based on the existing junction counts (aka K)
+#' @return FraseRDataSet
 #' @export
 #' @examples
 #'   fds <- countRNAData(createTestFraseRSettings())
@@ -22,7 +23,7 @@
 calculatePSIValues <- function(fds, types=psiTypes, overwriteCts=FALSE, 
                     BPPARAM=bpparam()){
     # check input
-    stopifnot(class(fds) == "FraseRDataSet")
+    stopifnot(is(fds, "FraseRDataSet"))
 
     # calculate PSI value for each sample
     for(psiType in unique(sapply(types, whichReadType, fds=fds))){
@@ -49,7 +50,7 @@ calculatePSIValues <- function(fds, types=psiTypes, overwriteCts=FALSE,
 #'
 #' @noRd
 calculatePSIValuePrimeSite <- function(fds, psiType, overwriteCts, BPPARAM){
-    stopifnot(class(fds) == "FraseRDataSet")
+    stopifnot(is(fds, "FraseRDataSet"))
     stopifnot(isScalarCharacter(psiType))
     stopifnot(psiType %in% c("j", "ss"))
 
@@ -130,7 +131,7 @@ calculatePSIValuePrimeSite <- function(fds, psiType, overwriteCts, BPPARAM){
 calculateSitePSIValue <- function(fds, overwriteCts, BPPARAM){
 
     # check input
-    stopifnot(class(fds) == "FraseRDataSet")
+    stopifnot(is(fds, "FraseRDataSet"))
 
     message(date(), ": Calculate the PSI site values ...")
 
@@ -195,7 +196,7 @@ calculateSitePSIValue <- function(fds, overwriteCts, BPPARAM){
 
 #'
 #' calculates the delta psi value and stores it as an assay
-#'
+#' @noRd
 calculateDeltaPsiValue <- function(fds, psiType, assayName){
 
     message(date(), ": Calculate the delta for ", psiType, " values ...")

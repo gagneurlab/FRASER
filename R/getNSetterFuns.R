@@ -278,10 +278,31 @@ deltaPsiValue <- function(fds, type=currentType(fds)){
     return(assay(fds, type) - predictedMeans(fds, type=type))
 }
 
+
+#'
+#' Set/get psi type
+#'
+#' Set and returns the psi type that is to be used within several methods in 
+#' the FraseR package.
+#'
+#' @param fds FraseRDataSet
+#' @param value If given, is sets the psi type. It is required to be a scalar 
+#' character.
+#' @return character() (getter) or FraseRDataSet(setter)
+#' @examples
+#' # set
+#' currentType(fds) <- "psi5"
+#'
+#' # get
+#' currentType(fds)
+#'
+#' @export
 currentType <- function(fds){
     return(metadata(fds)[['currentType']])
 }
 
+#' @rdname currentType
+#' @export 
 `currentType<-` <- function(fds, value){
     stopifnot(isScalarCharacter(whichPSIType(value)))
     metadata(fds)[['currentType']] <- whichPSIType(value)
@@ -295,6 +316,7 @@ currentType <- function(fds){
 #'
 #' @param value If given, is sets the psuedocount. It requires a positive
 #'                number and rounds it to the next integer.
+#' @return numeric scalar
 #' @examples
 #' # set
 #' pseudocount(4L)
@@ -582,7 +604,12 @@ getPlottingDT <- function(fds, axis=c("row", "col"), type=NULL, result=NULL,
 #' Dependend on the level of verbosity the algorithm reports more or less to
 #' the user. 0 means being quiet and 10 means everything.
 #'
+#' @param fds FraseRDataSet
+#' @param value The level of verbosity, between 0 and 10. TRUE/FALSE are also 
+#' accepted.
+#'
 #' @rdname verbose
+#' @return numeric(1) (getter) or FraseRDataSet (setter)
 #' @examples
 #' fds <- createTestFraseRSettings()
 #' verbose(fds)

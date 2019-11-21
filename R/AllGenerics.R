@@ -10,54 +10,71 @@ asFDS <- function(x){
 }
 
 #' @export
-setGeneric("samples",           function(object) standardGeneric("samples"))
+setGeneric("samples",           
+           function(object) standardGeneric("samples"))
 
 #' @export
-setGeneric("samples<-",         signature = "object", function(object, value) standardGeneric("samples<-"))
+setGeneric("samples<-",         signature = "object", 
+           function(object, value) standardGeneric("samples<-"))
 
 #' @export
-setGeneric("condition",         function(object) standardGeneric("condition"))
+setGeneric("condition",         
+           function(object) standardGeneric("condition"))
 
 #' @export
-setGeneric("condition<-",       signature = "object", function(object, value) standardGeneric("condition<-"))
+setGeneric("condition<-",       signature = "object", 
+           function(object, value) standardGeneric("condition<-"))
 
 #' @export
-setGeneric("bamFile",           function(object) standardGeneric("bamFile"))
+setGeneric("bamFile",           
+           function(object) standardGeneric("bamFile"))
 
 #' @export
-setGeneric("bamFile<-",         signature = "object", function(object, value) standardGeneric("bamFile<-"))
+setGeneric("bamFile<-",         signature = "object", 
+           function(object, value) standardGeneric("bamFile<-"))
 
 #' @export
-setGeneric("name",              function(object) standardGeneric("name"))
+setGeneric("name",              
+           function(object) standardGeneric("name"))
 
 #' @export
-setGeneric("name<-",            signature = "object", function(object, value) standardGeneric("name<-"))
+setGeneric("name<-",            signature = "object", 
+           function(object, value) standardGeneric("name<-"))
 
 #' @export
-setGeneric("strandSpecific",    function(object) standardGeneric("strandSpecific"))
+setGeneric("strandSpecific",    
+           function(object) standardGeneric("strandSpecific"))
 
 #' @export
-setGeneric("strandSpecific<-",  signature = "object", function(object, value) standardGeneric("strandSpecific<-"))
+setGeneric("strandSpecific<-",  signature = "object", 
+           function(object, value) standardGeneric("strandSpecific<-"))
 
 #' @export
-setGeneric("workingDir",        function(object) standardGeneric("workingDir"))
+setGeneric("workingDir",        
+           function(object) standardGeneric("workingDir"))
 
 #' @export
-setGeneric("workingDir<-",      signature = "object", function(object, value) standardGeneric("workingDir<-"))
+setGeneric("workingDir<-",      signature = "object", 
+           function(object, value) standardGeneric("workingDir<-"))
 
 #' @export
-setGeneric("scanBamParam",      function(object) standardGeneric("scanBamParam"))
+setGeneric("scanBamParam",      
+           function(object) standardGeneric("scanBamParam"))
 
 #' @export
-setGeneric("scanBamParam<-",    signature = "object", function(object, value) standardGeneric("scanBamParam<-"))
+setGeneric("scanBamParam<-",    signature = "object", 
+           function(object, value) standardGeneric("scanBamParam<-"))
 
 #' @export
-setGeneric("nonSplicedReads",   function(object) standardGeneric("nonSplicedReads"))
+setGeneric("nonSplicedReads",   
+           function(object) standardGeneric("nonSplicedReads"))
 
 #' @export
-setGeneric("nonSplicedReads<-", signature = "object", function(object, value) standardGeneric("nonSplicedReads<-"))
+setGeneric("nonSplicedReads<-", signature = "object", 
+           function(object, value) standardGeneric("nonSplicedReads<-"))
 
 #' @rdname results
+#' @return GRanges object
 #' @export
 setGeneric("results", function(x, ...) standardGeneric("results"))
 
@@ -106,7 +123,7 @@ setMethod("condition", "FraseRDataSet", function(object) {
     if("condition" %in% colnames(colData(object))){
         return(colData(object)[,"condition"])
     }
-    return(1:dim(object)[2])
+    return(seq_len(dim(object)[2]))
 })
 
 #' @export
@@ -499,8 +516,8 @@ setMethod("counts", "FraseRDataSet", function(object, type=NULL,
     # extract psi value from type
     type <- unlist(regmatches(type, gregexpr("psi(3|5|Site)", type, perl=TRUE)))
     if(length(type) == 0){
-        stop(paste0("Please provide a correct psi type: psi5, psi3, and psiSite.",
-                "Not the given one: '", type, "'."))
+        stop(paste0("Please provide a correct psi type: psi5, psi3, and ",
+                    "psiSite. Not the given one: '", type, "'."))
     }
     aname <- paste0("rawOtherCounts_", type)
     if(!aname %in% assayNames(object)){
@@ -539,7 +556,7 @@ setAs("DelayedMatrix", "data.table", function(from){
     num.chunks <- max(6,    options()[['FraseR-hdf5-num-chunks']])
 
     mc.cores <- min(mc.cores, max(1, detectCores() - 1))
-    chunks <- chunk(1:dim(from)[1], chunk.size)
+    chunks <- chunk(seq_len(dim(from)[1]), chunk.size)
     fun <- function(x, from) as.data.table(from[x,])
     if(mc.cores == 1){
         return(as.data.table(x))

@@ -282,7 +282,8 @@ getDisttributionPlot <- function(fds, psiType, dist, idx, sampleID=NULL, ...){
     names(data) <- samples(fds)
     data <- sort(data)
     if(!is.null(sampleID) && any(sampleID %in% names(data))){
-        message("color sample: ", sampleID, " on idx: ", which(sampleID %in% names(data)))
+        message("color sample: ", sampleID, " on idx: ", which(sampleID %in% 
+                                                                   names(data)))
         col[which(sampleID %in% names(data))] <- "firebrick"
     }
 

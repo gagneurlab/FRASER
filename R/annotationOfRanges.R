@@ -7,7 +7,9 @@
 
 #'
 #' Annotates the given FraseRDataSet with the HGNC symbol with biomaRt
-#'
+#' 
+#' @return FraseRDataSet
+#' 
 #' @examples
 #'
 #' fds <- countRNAData(createTestFraseRSettings())
@@ -71,7 +73,7 @@ getFeatureAsGRange <- function(ensembl, feature, featureName,
     # contact biomaRt to retrive hgnc symbols
     ensemblResults <- getBM(attributes=c(feature, "chromosome_name",
                     "start_position", "end_position", "strand"),
-            filters=c("biotype"), values=list(biotype=biotype), mart=ensembl)
+            filters=c("biotype"), values=c(biotype), mart=ensembl)
     setnames(ensemblResults, feature, featureName)
 
     # remove emtpy symbols or non standard chromosomes
@@ -111,7 +113,7 @@ getAnnotationFeature <- function(data, feature, annotation){
             from=from(hits),
             feature=mcols(annotation[to(hits)])[[feature]]
     )
-    missingValues <- setdiff(1:length(data), unique(from(hits)))
+    missingValues <- setdiff(seq_along(data), unique(from(hits)))
     if(length(missingValues) > 0){
         featureDT <- rbind(
                 featureDT, data.table(from=missingValues, feature=NA)
@@ -134,6 +136,8 @@ getAnnotationFeature <- function(data, feature, annotation){
 #' Find annotated junctions
 #' 
 #' Annotate the object with a given annotation. 
+#' 
+#' @return FraseRDataSet
 #' 
 #' @export
 findAnnotatedJunction <- function(fds, annotation, annotateNames=TRUE,

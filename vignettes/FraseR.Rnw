@@ -197,7 +197,7 @@ fitted \fds{} object. These plotting functions are described in section
 # if(!requireNamespace("FraseR", quietly=TRUE)){
 #     devtools::install("../FraseR")
 # }
-# library(FraseR)
+library(FraseR)
 
 # example of how to use parallelization: use 10 cores or the maximal number of 
 # available cores if fewer than 10 are available
@@ -419,10 +419,11 @@ plotFilterExpression(fds, bins=100)
 After looking at the expression distribution between filtered and unfiltered 
 junctions, we can now subset the dataset:
 
-<<subset to filtered junctions, echo=TRUE, eval=FALSE>>=
-# skipped for this tutorial because the example dataset is otherwise too small
-fds <- fds[mcols(fds, type="j")[,"passed"],]
-fds
+<<subset to filtered junctions, echo=TRUE>>=
+fds_filtered <- fds[mcols(fds, type="j")[,"passed"],]
+fds_filtered
+# filtered_fds not further used for this tutorial because the example dataset 
+# is otherwise too small
 @
 
 \section{Sample co-variation}

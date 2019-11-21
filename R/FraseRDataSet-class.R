@@ -63,7 +63,7 @@ validateName <- function(object){
 }
 
 validateBamParam <- function(object) {
-    if(class(scanBamParam(object)) != "ScanBamParam") {
+    if(!is(scanBamParam(object), "ScanBamParam")) {
         return("The 'bamParam' option must be a ScanBamParam object.")
     }
     NULL
@@ -101,7 +101,7 @@ validateWorkingDir <- function(object) {
 }
 
 validateNonSplicedReadsType <- function(object) {
-    if(class(object@nonSplicedReads) != "RangedSummarizedExperiment") {
+    if(!is(object@nonSplicedReads, "RangedSummarizedExperiment")) {
         return("'nonSplicedReads' must be a RangedSummarizedExperiment object")
     }
     if(length(object) != 0 && dim(object@nonSplicedReads)[2] != dim(object)[2]){
@@ -161,7 +161,7 @@ showFraseRDataSet <- function(object) {
     cat("-------------------- Sample data table -----------------\n")
     sampleData <- as.data.table(colData(object))
     if("bamFile" %in% sampleData & all(
-                sapply(sampleData$bamFile, isScalarCharacter))){
+                vapply(sampleData$bamFile, isScalarCharacter, logical(1)))){
         sampleData$bamFile <- gsub("... [^/]+/", ".../",
             sapply(sampleData$bamFile, function(str){
                 if(nchar(str) <= 29) return(str)

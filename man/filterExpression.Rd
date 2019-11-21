@@ -33,6 +33,9 @@ mcols.}
 \item{delayed}{If FALSE, count matrices will be loaded into memory, otherwise 
 the function works on the delayedMatrix representations.}
 }
+\value{
+FraseRDataSet
+}
 \description{
 This method can be used to filter out introns that are not reliably detected 
 and to remove introns with no variablity between samples.

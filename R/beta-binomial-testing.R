@@ -244,7 +244,7 @@ vglmInfos2character <- function(res, type){
 #'
 #' @noRd
 table2character <- function(table){
-    sapply(1:length(table), function(idx) paste(
+    sapply(seq_along(table), function(idx) paste(
         "\t", table[idx], "x", names(table)[idx]
     ))
 }
@@ -266,7 +266,7 @@ testing <- function(){
     y <- cMat[,1]
     N <- rowSums(cMat)
 
-    plot(-log10((1:length(pval))/length(pval)), -log10(sort(pval)))
+    plot(-log10((seq_along(pval))/length(pval)), -log10(sort(pval)))
     abline(0,1)
     grid()
 }

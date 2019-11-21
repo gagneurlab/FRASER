@@ -6,7 +6,7 @@
 #'
 #' @rdname checkInputFunctions
 checkFraseRDataSet <- function(fds){
-    if(class(fds) != "FraseRDataSet"){
+    if(!is(fds, "FraseRDataSet")){
         stop("Please provide a FraseRDataSet object.")
     }
     return(invisible(TRUE))
@@ -35,7 +35,7 @@ checkCountData <- function(fds, stop=TRUE){
 #'
 #' @export
 cleanCache <- function(fds, all=FALSE, cache=TRUE, assays=FALSE, results=FALSE){
-    stopifnot(class(fds) == "FraseRDataSet")
+    stopifnot(is(fds, "FraseRDataSet"))
 
     dirs2delete <- c()
     fdsDirName <- nameNoSpace(fds)
@@ -141,7 +141,7 @@ whichReadType <- function(fds, name){
 #' Removes the white spaces to have a cleaner file path
 #'@noRd
 nameNoSpace <- function(name){
-    if(class(name) == "FraseRDataSet") name <- name(name)
+    if(is(name, "FraseRDataSet")) name <- name(name)
     stopifnot(isScalarCharacter(name))
     gsub("\\s+", "_", name, perl=TRUE)
 }
@@ -213,7 +213,7 @@ fraserQQplotPlotly <- function(pvalues, ci=TRUE, reducePoints=FALSE,
     }
 
     # convert it to matrix if its a vector
-    if(any(class(pvalues) == "numeric")){
+    if(any(is(pvalues, "numeric"))){
         pvalues <- matrix(pvalues)
         colnames(pvalues) <- "observed pvalues"
     } else if(!sampleWise){
@@ -231,7 +231,7 @@ fraserQQplotPlotly <- function(pvalues, ci=TRUE, reducePoints=FALSE,
 
     # check colnames
     if(is.null(colnames(pvalues))){
-        colnames(pvalues) <- 1:dim(pvalues)[2]
+        colnames(pvalues) <- seq_len(dim(pvalues)[2])
     }
 
     # my observerd and expected values
@@ -275,7 +275,7 @@ fraserQQplotPlotly <- function(pvalues, ci=TRUE, reducePoints=FALSE,
             }
         } else {
             # confidence qbeta based from GWASTools::qqPlot
-            a <- 1:length(expect)
+            a <- seq_along(expect)
             upper <- -log10(qbeta(0.025, rev(a), a))
             lower <- -log10(qbeta(0.975, rev(a), a))
         }
@@ -287,7 +287,7 @@ fraserQQplotPlotly <- function(pvalues, ci=TRUE, reducePoints=FALSE,
         )))
     }
 
-    for(idx in 1:dim(pvalues)[2]){
+    for(idx in seq_len(dim(pvalues)[2])){
         dat <- data.table(
             expect=expect,
             observ=sort(observ[,idx], decreasing=TRUE, na.last=TRUE)
@@ -304,7 +304,7 @@ fraserQQplotPlotly <- function(pvalues, ci=TRUE, reducePoints=FALSE,
                 }
             }
             dat <- dat[sort(unique(c(
-                1:nEdge, -(nEdge-1):0+ldat, seq(1, ldat, nBy)
+                seq_len(nEdge), -(nEdge-1):0+ldat, seq(1, ldat, nBy)
             )))]
         }
         p <- add_trace(p, data=dat, mode="markers",
@@ -364,7 +364,8 @@ variableJunctions <- function(fds, type, minDeltaPsi=0.1){
 }
 
 subsetKMostVariableJunctions <- function(fds, type, n){
-    curX <- as.matrix(x(fds, type=type, all=TRUE, center=FALSE, noiseAlpha=NULL))
+    curX <- as.matrix(x(fds, type=type, all=TRUE, center=FALSE, 
+                        noiseAlpha=NULL))
     xsd <- colSds(curX)
     nMostVarJuncs <- which(xsd >= sort(xsd, TRUE)[min(length(xsd), n*2)])
     ans <- logical(length(xsd))

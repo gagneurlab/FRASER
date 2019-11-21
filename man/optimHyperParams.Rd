@@ -25,7 +25,24 @@ not yet converged after these number of iterations, the fit stops anyway.}
 
 \item{BPPARAM}{the BiocParallel parameters for the parallelization}
 }
+\value{
+FraseRDataSet
+}
 \description{
 Finds the optimal encoding dimension by injecting artificial splicing outlier
 ratios while maximizing the precision-recall curve.
+}
+\examples{
+  # generate data
+  fds <- makeSimulatedFraserDataSet(j=500, m=20, q=4)
+  
+  # run hyperparameter optimization
+  fds <- optimHyperParams(fds, type="psi5", correction="PCA")
+  
+  # get estimated optimal dimension of the latent space
+  bestQ(fds, type="psi5")
+  
+  # plot the AUC for the different encoding dimensions tested
+  plotEncDimSearch(fds, type="psi5")
+
 }

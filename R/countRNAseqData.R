@@ -84,7 +84,7 @@ countRNAData <- function(fds, NcpuPerSample=1, junctionMap=NULL, minAnchor=5,
                                             nameNoSpace(name(fds)))){
     
     # Check input TODO
-    stopifnot(class(fds) == "FraseRDataSet")
+    stopifnot(is(fds, "FraseRDataSet"))
     stopifnot(is.numeric(NcpuPerSample) && NcpuPerSample > 0)
     stopifnot(is.numeric(minAnchor) & minAnchor >= 1)
     minAnchor <- as.integer(minAnchor)
@@ -133,7 +133,8 @@ countRNAData <- function(fds, NcpuPerSample=1, junctionMap=NULL, minAnchor=5,
 
 #' @describeIn countRNA This method creates a GRanges object containing the 
 #'             split read counts from all specified samples.  
-#' @return \code{\link{getSplitReadCountsForAllSamples}} returns a GRanges object.
+#' @return \code{\link{getSplitReadCountsForAllSamples}} returns a GRanges 
+#' object.
 #' @export
 getSplitReadCountsForAllSamples <- function(fds, NcpuPerSample=1, 
                                             junctionMap=NULL, recount=FALSE, 
@@ -158,7 +159,7 @@ getSplitReadCountsForAllSamples <- function(fds, NcpuPerSample=1,
         
         # check that all given files exist and that there is a file for every
         # sample
-        stopifnot(all(sapply(countFiles, file.exists)))
+        stopifnot(all(vapply(countFiles, file.exists, FUN.VALUE = logical(1))))
         stopifnot(length(samples(fds)) == length(countFiles))
         
         message(date(), ": Reading in the files with the split reads ...")
@@ -176,8 +177,8 @@ getSplitReadCountsForAllSamples <- function(fds, NcpuPerSample=1,
                 
             # read in rds files with GRanges objects
             countList <- lapply(countFiles, readRDS)
-            stopifnot(all(sapply(countList, 
-                                 function(x){ class(x) == "GRanges" })))
+            stopifnot(all(vapply(countList, FUN=is, class2="GRanges", 
+                                 FUN.VALUE = logical(1))))
                 
         } else{
             stop("Reading from files is only supported for tsv(.gz) or RDS files
@@ -476,7 +477,7 @@ mergeCounts <- function(countList, junctionMap=NULL, assumeEqual=FALSE,
         countList <- uniformSeqInfo(countList)
         countgr <- GRangesList(countList)
         if(!is.null(junctionMap)){
-            stopifnot(class(junctionMap) == "GRanges")
+            stopifnot(is(junctionMap, "GRanges"))
             countgr <- c(countgr, GRangesList(junctionMap))
         }
         ranges <- sort(unique(unlist(countgr)))
@@ -486,21 +487,21 @@ mergeCounts <- function(countList, junctionMap=NULL, assumeEqual=FALSE,
         message(paste(date(), ": count ranges need to be merged ..."))
         # merge each sample counts into the combined range object
         sample_counts <- bplapply(countList, ranges = ranges, BPPARAM=BPPARAM,
-                            FUN = function(gr, ranges){
-                                  suppressPackageStartupMessages(require(FraseR))
+                        FUN = function(gr, ranges){
+                              suppressPackageStartupMessages(require(FraseR))
                                       
-                                  # init with 0 since we did not find any read
-                                  # for this sample supporting a given site
-                                  sample_count <- integer(length(ranges))
+                              # init with 0 since we did not find any read
+                              # for this sample supporting a given site
+                              sample_count <- integer(length(ranges))
                                       
-                                  # get overlap and add counts to the 
-                                  # corresponding ranges
-                                  overlaps <- findOverlaps(gr, ranges, 
+                              # get overlap and add counts to the 
+                              # corresponding ranges
+                              overlaps <- findOverlaps(gr, ranges, 
                                                            type = "equal")
-                                  sample_count[overlaps@to] <- mcols(gr)$count
+                              sample_count[overlaps@to] <- mcols(gr)$count
                                       
-                                  return(sample_count)
-                            }
+                              return(sample_count)
+                        }
         )
     }
     
@@ -568,7 +569,7 @@ countNonSplicedReads <- function(sampleID, splitCounts, fds,
     if(isFALSE(recount) & !is.null(cacheFile) && file.exists(cacheFile)){
         # check if needs to be recalculated
         cache <- try(readRDS(cacheFile), silent=TRUE)
-        if(class(cache) == "try-error"){
+        if(is(cache, "try-error")){
             message(date(), ":Cache is currupt for sample:",
                     sampleID, ". Will recount it."
             )
@@ -578,7 +579,7 @@ countNonSplicedReads <- function(sampleID, splitCounts, fds,
         ov    <- findOverlaps(cache, spliceSiteCoords, type="equal")
         
         # we have all sites of interest cached
-        if(all(1:length(spliceSiteCoords) %in% to(ov))){
+        if(all(seq_along(spliceSiteCoords) %in% to(ov))){
             cache2return <- cache[from(ov)]
             cache2return$spliceSiteID <- spliceSiteCoords[to(ov)]$spliceSiteID
             cache2return$type <- spliceSiteCoords[to(ov)]$type
@@ -595,10 +596,12 @@ countNonSplicedReads <- function(sampleID, splitCounts, fds,
     tmp_ssc <- checkSeqLevelStyle(spliceSiteCoords, fds, sampleID, TRUE)
     anno <- GRanges2SAF(tmp_ssc, minAnchor=minAnchor)
     rsubreadCounts <- featureCounts(files=bamFile, annot.ext=anno,
-                                    minOverlap=minAnchor*2, allowMultiOverlap=TRUE,
+                                    minOverlap=minAnchor*2, 
+                                    allowMultiOverlap=TRUE,
                                     checkFragLength=FALSE,
                                     minMQS=bamMapqFilter(scanBamParam(fds)),
-                                    strandSpecific=as.integer(strandSpecific(fds)),
+                                    strandSpecific=as.integer(
+                                        strandSpecific(fds)),
                                     
                                     # activating long read mode
                                     isLongRead=TRUE,
@@ -606,10 +609,12 @@ countNonSplicedReads <- function(sampleID, splitCounts, fds,
                                     # multi-mapping reads
                                     countMultiMappingReads=TRUE,
                                     
-                                    # for counting only non spliced reads we skip this information
+                                    # for counting only non spliced reads we 
+                                    # skip this information
                                     isPairedEnd=FALSE,
                                     
-                                    # this is important, otherwise it will sort it by name
+                                    # this is important, otherwise it will sort 
+                                    # it by name
                                     autosort=FALSE,
                                     nthreads=NcpuPerSample,
                                     tmpDir=file.path(workingDir(fds), "cache")
@@ -622,7 +627,7 @@ countNonSplicedReads <- function(sampleID, splitCounts, fds,
     
     # cache it if enabled
     if(!is.null(cacheFile)){
-        if(exists("cache") && class(cache) == "GRanges"){
+        if(exists("cache") && is(cache, "GRanges")){
             message("Adding splice sites to cache ...")
             cache <- unique(unlist(GRangesList(spliceSiteCoords, cache)))
         } else {
@@ -653,14 +658,14 @@ readJunctionMap <- function(junctionMap){
         stopifnot(file.exists(junctionMap))
         if(endsWith(junctionMap, ".RDS")){
             map <- readRDS(junctionMap)
-            stopifnot(class(map) == "GRanges")
+            stopifnot(is(map, "GRanges"))
             return(map)
         }
         message(date(), ": currently not supported.")
         message(date(), ": will only use the provided junctions")
         return(NULL)
     }
-    if(class(junctionMap) == "GRanges"){
+    if(is(junctionMap, "GRanges")){
         return(junctionMap)
     }
     stop("Objecttype (class) for junction map currently not supported:",
@@ -750,7 +755,7 @@ annotateSpliceSite <- function(gr){
     
     # annotate and enumerate donor/acceptor
     annotadedDT <- rbind(startSideDT, endSideDT)
-    annotadedDT[,id:=1:nrow(annotadedDT)]
+    annotadedDT[,id:=seq_len(nrow(annotadedDT))]
     
     # convert back to granges
     annogr <- makeGRangesFromDataFrame(annotadedDT, keep.extra.columns=TRUE)
@@ -788,9 +793,7 @@ setMaxThreads <- function(BPPARAM, maxWorkers=bpworkers(BPPARAM),
 
 #' writes a GRanges object with the counts as a tsv (or tsv.gz) file.
 #' @noRd
-writeCountsToTsv <- function(counts, 
-                             file=file.path(workingDir(fds), 
-                                            "counts.tsv.gz")){
+writeCountsToTsv <- function(counts, file="counts.tsv.gz"){
     if(!dir.exists(dirname(file))){
         dir.create(dirname(file), recursive=TRUE)
     }
