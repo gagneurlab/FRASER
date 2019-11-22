@@ -522,7 +522,7 @@ setReplaceMethod("rowRanges", "FraseRDataSet", FraseR.rowRanges.replace)
 #'
 #' Getter/setter for count data
 #'
-#' @param object FraseRDataSet
+#' @param fds,object FraseRDataSet
 #' @param type The psi type.
 #' @param side "ofInterest" for junction counts, "other" for sum of counts of 
 #' all other junctions at the same donor site (psi5) or acceptor site (psi3), 

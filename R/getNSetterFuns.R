@@ -72,11 +72,15 @@ featureExclusionMask <- function(fds, type=currentType(fds)){
     return(fds)
 }
 
+#' @rdname counts
+#' @export
 K <- function(fds, type=currentType(fds)){
     K <- counts(fds, type=type, side="ofInterest")
     return(K);
 }
 
+#' @rdname counts
+#' @export
 N <- function(fds, type=currentType(fds)){
     N <- K(fds, type=type) + counts(fds, type=type, side="other")
     return(N);
