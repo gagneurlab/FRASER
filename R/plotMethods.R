@@ -19,11 +19,11 @@
 #' Most of the functions share the same parameters.
 #'
 #### Data specific parameters
-#' @param fds,object An FraseRDataSet object.
+#' @param fds An FraseRDataSet object.
 #' @param type The psi type: either psi5, psi3 or psiSite (for SE).
 #' @param sampleID A sample ID which should be plotted. Can also be a vector.
 #'             Integers are treated as indices.
-#' @param idx,site,feature A junction site ID or gene ID or one of both, which
+#' @param idx,site A junction site ID or gene ID or one of both, which
 #'             should be plotted. Can also be a vector. Integers are treated
 #'             as indices.
 #' @param padjCutoff,zScoreCutoff,deltaPsiCutoff Significance, Z-score or delta
@@ -31,26 +31,18 @@
 #' @param global Flag to plot a global Q-Q plot, default FALSE
 #' @param normalized If TRUE, the normalized psi values are used, the default,
 #'             otherwise the raw psi values
-#' @param aggregate If TRUE, the pvalues are aggregated by gene, otherwise
-#'             junction level pvalues are used (default).
+#' @param aggregate,aggregated If TRUE, the pvalues are aggregated by gene, 
+#'             otherwise junction level pvalues are used (default).
 #' @param result The result table to be used by the method.
+#' @param BPPARAM BiocParallel parameter to use.
+#' @param Ncpus Number of cores to use.
 #### Graphical parameters
 #' @param main Title for the plot, if missing a default title will be used.
-#' @param col Set color for the barplot.
 #' @param colGroup Group of samples that should be colored.
-#' @param yadjust Option to adjust position of Median and 90 percentile labels.
-#' @param ylab The y axis label
-#' @param labCex The label cex parameter
-#' @param labLine Option to move axis labels
 #' @param basePlot if \code{TRUE} (default), use the R base plot version, else
 #'             use the plotly framework.
 #' @param conf.alpha If set, a confidence interval is plotted, defaults to 0.05
 #' @param samplePoints Sample points for Q-Q plot, defaults to max 30k points
-#' @param breakTies If \code{TRUE},
-#' @param highlightOutliers If \code{TRUE}, then outliers are highlighted.
-#' @param maxOutlier Used to define the y axis limit.
-#' @param cutYaxis If \code{TRUE}, cuts the y axis of the plot at some point.
-#' @param ymax If set, ymax is the upper bound for the plot range on the y axis.
 #' @param logit If TRUE, the default, psi values are plotted in logit space.
 #' @param nClust Number of clusters to show in the row and
 #'             column dendrograms.

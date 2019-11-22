@@ -6,6 +6,7 @@
 #' 
 #' @return logical(1)
 #' @rdname checkInputFunctions
+#' @noRd
 checkFraseRDataSet <- function(fds){
     if(!is(fds, "FraseRDataSet")){
         stop("Please provide a FraseRDataSet object.")
@@ -14,6 +15,7 @@ checkFraseRDataSet <- function(fds){
 }
 
 #' @rdname checkInputFunctions
+#' @noRd
 checkCountData <- function(fds, stop=TRUE){
     checkFraseRDataSet(fds)
     if(!all(c("rawCountsJ", "rawCountsSS") %in% assayNames(fds))){
@@ -34,7 +36,7 @@ checkCountData <- function(fds, stop=TRUE){
 #' @examples
 #'     fds <- createTestFraseRSettings()
 #'     cleanCache(fds)
-#' @export
+#' @noRd
 cleanCache <- function(fds, all=FALSE, cache=TRUE, assays=FALSE, results=FALSE){
     stopifnot(is(fds, "FraseRDataSet"))
 
@@ -91,7 +93,7 @@ checkReadType <- function(fds, type){
 
     # regex on the psi type
     atype <- correctTypes[vapply(names(correctTypes), FUN=grepl, type, 
-                                 FUN.VALUE=logical(1))]
+                                FUN.VALUE=logical(1))]
     if(length(atype) == 1){
         return(atype)
     }
@@ -169,7 +171,7 @@ nameNoSpace <- function(name){
 #'
 #' @rdname na2default
 #' @aliases na2false na2zero null2na null2default
-#' @export
+#' @noRd
 na2default <- function(x, default=FALSE){
     if(any(class(x) %in% c("DataFrame", "matrix", "data.frame"))){
         stopifnot(dim(x)[2] == 1)
@@ -180,7 +182,7 @@ na2default <- function(x, default=FALSE){
 }
 
 #' @rdname na2default
-#' @export
+#' @noRd
 null2default <- function(x, default=NA){
     if(is.null(x)){
         return(default)
@@ -189,19 +191,19 @@ null2default <- function(x, default=NA){
 }
 
 #' @rdname na2default
-#' @export
+#' @noRd
 na2false <- function(x){
     na2default(x, FALSE)
 }
 
 #' @rdname na2default
-#' @export
+#' @noRd
 na2zero <- function(x){
     na2default(x, 0)
 }
 
 #' @rdname na2default
-#' @export
+#' @noRd
 null2na <- function(x){
     null2default(x, NA)
 }

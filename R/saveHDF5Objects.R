@@ -11,6 +11,7 @@
 #' @param rewrite logical if the object should be rewritten. This makes sense if
 #'             you have filtered or subsetted the object and want to save only
 #'             the subsetted version
+#' @param upgrade Should the version of the loaded object be updated?
 #'
 #' @examples
 #' fds <- countRNAData(createTestFraseRSettings())

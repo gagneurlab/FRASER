@@ -13,6 +13,8 @@
 #' based on the FraseRDataSet object
 #'
 #' @inheritParams countRNA
+#' @param type A vector with the psi types which should be calculated. Default 
+#' is all of psi5, psi3 and psiSite.
 #' @param overwriteCts FALSE or TRUE (the default) the total counts (aka N) will
 #'              be recalculated based on the existing junction counts (aka K)
 #' @return FraseRDataSet

@@ -4,7 +4,7 @@
 #' based on plotly.
 #'
 #' @return The html file with the plots.
-#' @export
+#' @noRd
 #' @examples
 #' # TODO
 #' TODO <- 1
@@ -24,7 +24,6 @@ plotSampleResults <- function(fds, sampleID=NULL, file=NULL,
         sampleIDs2plot <- samples(fds)[samples2plot]
         return(bplapply(sampleIDs2plot, fds=fds, dir=dir, BPPARAM=BPPARAM,
             FUN=function(sID, fds, dir) {
-                require(FraseR)
                 plotSampleResults(fds, sID, dir=dir, browseIt=FALSE)
             }
         ))

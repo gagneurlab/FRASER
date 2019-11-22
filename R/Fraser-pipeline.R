@@ -13,11 +13,11 @@
 #' * computeZscores to calculate the Z scores
 #' * computeDeltaPsi to calculate the delta PSI values
 #'
+#' @inheritParams fit
 #' @param fds A FraseRDataSet object
 #' @param q The encoding dimensions to be used during the fitting proceadure.
 #'         If a named vector is provided it is used for the different
 #'         splicing types.
-#' @param implementation the correction method to use
 #' @param BPPARAM A BiocParallel object to run the computation in parallel
 #' @param ... Additional parameters passed on to the internal fit function
 #'

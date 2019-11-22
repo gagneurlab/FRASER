@@ -13,6 +13,26 @@ results(x, ...)
   minCount = 5, psiType = c("psi3", "psi5", "psiSite"),
   BPPARAM = bpparam())
 }
+\arguments{
+\item{x}{FraseRDataSet}
+
+\item{sampleIDs}{A vector of sample IDs for which results should be 
+retrieved}
+
+\item{padjCutoff}{The FDR cutoff to be applied.}
+
+\item{zScoreCutoff}{The z-score cutoff to be applied.}
+
+\item{deltaPsiCutoff}{The cutoff on delta psi.}
+
+\item{minCount}{The minimum count value of the total coverage of an intron 
+to be considered as significant.
+result}
+
+\item{psiType}{The psi types for which the results should be retrieved.}
+
+\item{BPPARAM}{The BiocParallel parameter.}
+}
 \value{
 GRanges object
 

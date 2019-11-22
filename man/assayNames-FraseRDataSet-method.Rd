@@ -7,6 +7,9 @@
 \usage{
 \S4method{assayNames}{FraseRDataSet}(x)
 }
+\arguments{
+\item{x}{FraseRDataSet}
+}
 \value{
 Character vector
 }

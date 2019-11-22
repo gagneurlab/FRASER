@@ -8,7 +8,7 @@
 #'              Needs to match a junction or splice site within the FraseR obj.
 #'              Also it needs to have a type column specifying
 #'              the site of interest ("psi3", "psi5", "psiSite").
-#' @param sample A vector of sampleIDs which should be highlighted.
+#' @param sampleIDs A vector of sampleIDs which should be highlighted.
 #'              If this value is not set but the gr object contains a sampleID
 #'              column it will take this column to highlight samples.
 #' @param ... Additional paramerters which are pased on to
@@ -23,7 +23,7 @@
 #' # plotJunctionDistribution(fds, results(fds)[1])
 #' # plotJunctionDistribution(fds, results(fds)[3])
 #'
-#' @export
+#' @noRd
 plotJunctionDistribution <- function(fds, gr, type=gr$type, sampleIDs=NULL,
             rmZeroCts=FALSE, plotRank=paste0(c("", "delta_", "zScores_"), type),
             plotCounts=TRUE, plotValVsCounts=type, qqplot=TRUE,

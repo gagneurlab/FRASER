@@ -10,6 +10,8 @@ FraseR.rowRanges.get(x, type = NULL, ...)
 \item{x}{FraseRDataSet}
 
 \item{type}{The psi type.}
+
+\item{...}{Parameters passed on to rowRanges()}
 }
 \value{
 GRanges object

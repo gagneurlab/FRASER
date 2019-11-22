@@ -3,8 +3,10 @@
 #' This is a collection of small accessor/setter functions for easy access to
 #' the values within the FraseR model.
 #' 
-#' @param fds,object An FraseRDataSet object.
+#' @param fds An FraseRDataSet object.
 #' @param type The type of psi (psi5, psi3 or psiSite)
+#' @param byGroup If TRUE, aggregation by donor/acceptor site will be done.
+#' @param dist Distribution for which the p-values should be extracted.
 #' @return A (delayed) matrix or vector dependent on the type of data retrieved.
 #' 
 #' @name getter_setter_functions
@@ -15,17 +17,12 @@
 #' fds <- createTestFraseRDataSet()
 #' currentType(fds) <- "psi5"
 #' 
-#' # get counts
-#' K(fds)
-#' N(fds)
-#' 
-#' 
 #' bestQ(fds)
 #' rho(fds)
 #' # get statistics
 #' pVals(fds)
 #' padjVals(fds)
-#' zScore(fds)
+#' zScores(fds)
 #' 
 NULL
 
@@ -37,7 +34,7 @@ NULL
 #' \code{FALSE}. This can be helpfull if we have local linkage between
 #' features which we do not want to model by the autoencoder.
 #'
-#' @param ods An OutriderDataSet object
+#' @param fds A FraseRDataSet object
 #' @param value A logical vector of the length of the features. If
 #'             \code{TRUE}, the corresponding feature will be excluded
 #'             from the encoding dimension fit.

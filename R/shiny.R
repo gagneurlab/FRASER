@@ -103,7 +103,7 @@ uiAbout <- function(){
 #' main sample results
 #' @noRd
 getMainPsiTypePanel <- function(sampleID, psiType, fds){
-    plotdata <- plotVolcano(fds, sampleID, psiType, source=psiType)
+    plotdata <- plotVolcano(fds, sampleID, psiType)
     shinyPlotDF[[psiType]] <<- plotdata[["plotDF"]]
     plotdata[["plot"]] %>% layout(dragmode="select", showlegend=TRUE,
             legend = list(x = 1, y = 0.0, title = "&#936; filter")
@@ -315,7 +315,7 @@ getDisttributionPlot <- function(fds, psiType, dist, idx, sampleID=NULL, ...){
 #'     # for running a shiny application as server
 #'     myShinyAppObj <- FraseRShinyApp(fds, server=TRUE)
 #'
-#' @export
+#' @noRd
 FraseRShinyApp <- function(fds, fdsres=NULL, server=!interactive(), ...){
     if(is.null(fdsres)){
         fdsres <- results(fds)

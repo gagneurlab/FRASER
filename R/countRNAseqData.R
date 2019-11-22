@@ -26,7 +26,7 @@
 #' \code{\link{addCountsToFraseRDataSet}} adds these counts to an existing fds.
 #' 
 #' \code{\link{countSplitReads}} calculates the split read counts for a single
-#' sample. \code{\link{countNonSplitReads}} counts the non split reads 
+#' sample. \code{\link{countNonSplicedReads}} counts the non split reads 
 #' overlapping with splice sites for a single sample.
 #' 
 #' \code{\link{mergeCounts}} merges the counts from different samples into a 
@@ -488,7 +488,6 @@ mergeCounts <- function(countList, junctionMap=NULL, assumeEqual=FALSE,
         # merge each sample counts into the combined range object
         sample_counts <- bplapply(countList, ranges = ranges, BPPARAM=BPPARAM,
                         FUN = function(gr, ranges){
-                                suppressPackageStartupMessages(require(FraseR))
                                 
                                 # init with 0 since we did not find any read
                                 # for this sample supporting a given site

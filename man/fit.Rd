@@ -8,8 +8,7 @@ fit(fds, correction = c("PCA-regression", "PCA-BB-Decoder", "FraseR",
   "FraseR-weighted", "PCA-BB-full", "PCA-reg-full",
   "FraseR-5DecoderBatches", "FraseR-1DecoderBatches", "fullFraseR", "PCA",
   "PCA-BB-Decoder-no-weights", "BB"), q, type = "psi3",
-  rhoRange = c(1e-08, 1 - 1e-08), nrDecoderBatches = 5,
-  weighted = FALSE, noiseAlpha = 1, lambda = 0,
+  rhoRange = c(1e-08, 1 - 1e-08), weighted = FALSE, noiseAlpha = 1,
   convergence = 1e-05, iterations = 15, initialize = TRUE,
   control = list(), BPPARAM = bpparam(), nSubset = 15000,
   verbose = FALSE, minDeltaPsi = 0.1)
@@ -41,11 +40,21 @@ between the previous and the current loss is smaller than this threshold.}
 \item{iterations}{The maximal number of iterations. When the autoencoder has 
 not yet converged after these number of iterations, the fit stops anyway.}
 
+\item{initialize}{If FALSE and a fit has been previoulsy run, the values 
+from the previous fit will be used as initial values. If TRUE, 
+(re-)initialization will be done.}
+
+\item{control}{List of control parameters passed on to optim().}
+
 \item{BPPARAM}{the BiocParallel parameters for the parallelization}
+
+\item{nSubset}{The size of the subset to be used in fitting if subsetting is
+used.}
 
 \item{verbose}{Controls the level of information printed during the fit.}
 
-\item{minDeltaPsi}{}
+\item{minDeltaPsi}{Minimal delta psi of an intron to be be considered a 
+variable intron.}
 }
 \value{
 FraseRDataSet

@@ -84,6 +84,13 @@ findEncodingDim <- function(i, fds, type, params, correction,
 #' ratios while maximizing the precision-recall curve.
 #'
 #' @inheritParams fit
+#' @param q_param Vector specifying which values of q should be tested
+#' @param noise_param Vector specifying which noise levels should be tested.
+#' @param setSubset The size of the subset of the most variable introns that 
+#' should be used for the hyperparameter optimization.
+#' @param internalThreads The number of threads used internally.
+#' @param injectFreq The frequency with which outliers are injected into the 
+#' data.
 #' 
 #' @return FraseRDataSet
 #'
@@ -105,7 +112,7 @@ optimHyperParams <- function(fds, type, correction,
                     q_param=seq(2, min(40, ncol(fds)), by=3),
                     noise_param=c(0, 0.5, 1, 2, 5), minDeltaPsi=0.1,
                     iterations=5, setSubset=15000, injectFreq=1e-2,
-                    nrDecoderBatches=1, BPPARAM=bpparam(), internalThreads=3){
+                    BPPARAM=bpparam(), internalThreads=3){
     if(isFALSE(needsHyperOpt(correction))){
         message(date(), ": For correction '", correction, "' no hyper paramter",
                 "optimization is needed.")
@@ -179,7 +186,7 @@ optimHyperParams <- function(fds, type, correction,
                         type=type,
                         iterations=iterations, params=params, 
                         correction=correction,
-                        BPPARAM=BPPARAM, nrDecoderBatches=nrDecoderBatches,
+                        BPPARAM=BPPARAM, nrDecoderBatches=1,
                         internalBPPARAM=internalThreads)
 
         data <- data.table(

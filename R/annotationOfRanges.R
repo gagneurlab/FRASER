@@ -8,6 +8,14 @@
 #'
 #' Annotates the given FraseRDataSet with the HGNC symbol with biomaRt
 #' 
+#' @param fds FraseRDataSet
+#' @param feature Defines which feature (default is HGNC symbol) should be 
+#' annotated.
+#' @param featureName Name of the feature in the FraseRDataSet mcols.
+#' @param biotype The biotype.
+#' @param ensembl The ensembl that should be used. If NULL, the default one is 
+#' used (hsapiens_gene_ensembl, GRCh37).
+#' 
 #' @return FraseRDataSet
 #' 
 #' @examples
@@ -137,10 +145,15 @@ getAnnotationFeature <- function(data, feature, annotation){
 #' 
 #' Annotate the object with a given annotation. 
 #' 
+#' @param fds FraseRDataSet
+#' @param annotation
+#' @param annotateNames
+#' @param seqLevelStyle
+#' 
 #' @return FraseRDataSet
 #' @examples 
 #'     TODO <- 1
-#' @export
+#' @noRd
 findAnnotatedJunction <- function(fds, annotation, annotateNames=TRUE,
                     seqLevelStyle=seqlevelsStyle(fds)[1],
                     stranded=strandSpecific(fds), ...){

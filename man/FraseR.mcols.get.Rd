@@ -6,6 +6,11 @@
 \usage{
 FraseR.mcols.get(x, type = NULL, ...)
 }
+\arguments{
+\item{x}{FraseRDataSet}
+
+\item{type}{The psi type.}
+}
 \value{
 mcols
 }

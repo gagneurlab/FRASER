@@ -32,9 +32,13 @@ deltaPsiValue(fds, type = currentType(fds))
 bestQ(fds, type = currentType(fds))
 }
 \arguments{
-\item{fds, object}{An FraseRDataSet object.}
+\item{fds}{An FraseRDataSet object.}
 
 \item{type}{The type of psi (psi5, psi3 or psiSite)}
+
+\item{byGroup}{If TRUE, aggregation by donor/acceptor site will be done.}
+
+\item{dist}{Distribution for which the p-values should be extracted.}
 }
 \value{
 A (delayed) matrix or vector dependent on the type of data retrieved.
@@ -70,16 +74,11 @@ opimization was not run yet.
 fds <- createTestFraseRDataSet()
 currentType(fds) <- "psi5"
 
-# get counts
-K(fds)
-N(fds)
-
-
 bestQ(fds)
 rho(fds)
 # get statistics
 pVals(fds)
 padjVals(fds)
-zScore(fds)
+zScores(fds)
 
 }

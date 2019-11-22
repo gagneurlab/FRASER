@@ -116,7 +116,7 @@ split reads overlapping splice sites for all samples.
 \code{\link{addCountsToFraseRDataSet}} adds these counts to an existing fds.
 
 \code{\link{countSplitReads}} calculates the split read counts for a single
-sample. \code{\link{countNonSplitReads}} counts the non split reads 
+sample. \code{\link{countNonSplicedReads}} counts the non split reads 
 overlapping with splice sites for a single sample.
 
 \code{\link{mergeCounts}} merges the counts from different samples into a 

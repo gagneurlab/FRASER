@@ -28,7 +28,14 @@
 #' @param iterations The maximal number of iterations. When the autoencoder has 
 #' not yet converged after these number of iterations, the fit stops anyway.
 #' @param verbose Controls the level of information printed during the fit.
-#' @param minDeltaPsi 
+#' @param minDeltaPsi Minimal delta psi of an intron to be be considered a 
+#' variable intron. 
+#' @param initialize If FALSE and a fit has been previoulsy run, the values 
+#' from the previous fit will be used as initial values. If TRUE, 
+#' (re-)initialization will be done. 
+#' @param control List of control parameters passed on to optim().
+#' @param nSubset The size of the subset to be used in fitting if subsetting is
+#' used.
 #' 
 #' @return FraseRDataSet
 #' 
@@ -45,8 +52,8 @@ fit <- function(fds, correction=c("PCA-regression", "PCA-BB-Decoder", "FraseR",
                         "FraseR-5DecoderBatches", "FraseR-1DecoderBatches",
                         "fullFraseR", "PCA", "PCA-BB-Decoder-no-weights",
                         "BB"),
-                q, type="psi3", rhoRange=c(1e-8, 1-1e-8), nrDecoderBatches=5,
-                weighted=FALSE, noiseAlpha=1, lambda=0, convergence=1e-5, 
+                q, type="psi3", rhoRange=c(1e-8, 1-1e-8), 
+                weighted=FALSE, noiseAlpha=1, convergence=1e-5, 
                 iterations=15, initialize=TRUE, control=list(), 
                 BPPARAM=bpparam(), nSubset=15000, verbose=FALSE, 
                 minDeltaPsi=0.1){
@@ -68,12 +75,12 @@ fit <- function(fds, correction=c("PCA-regression", "PCA-BB-Decoder", "FraseR",
     fds <- switch(
         method,
         FraseR      = fitFraserAE(
-            fds = fds,
+            fds = fds, 
             q = q,
             type = type,
             noiseAlpha = noiseAlpha,
             rhoRange = rhoRange,
-            lambda = lambda,
+            lambda = 0,
             convergence = convergence,
             iterations = iterations,
             initialize = initialize,
@@ -82,7 +89,7 @@ fit <- function(fds, correction=c("PCA-regression", "PCA-BB-Decoder", "FraseR",
             BPPARAM = BPPARAM,
             verbose = verbose,
             subset = TRUE,
-            nrDecoderBatches = nrDecoderBatches
+            nrDecoderBatches = 1
         ),
         "FraseR-5DecoderBatches" = fitFraserAE(
             fds = fds,
@@ -90,7 +97,7 @@ fit <- function(fds, correction=c("PCA-regression", "PCA-BB-Decoder", "FraseR",
             type = type,
             noiseAlpha = noiseAlpha,
             rhoRange = rhoRange,
-            lambda = lambda,
+            lambda = 0,
             convergence = convergence,
             iterations = iterations,
             initialize = initialize,
@@ -108,7 +115,7 @@ fit <- function(fds, correction=c("PCA-regression", "PCA-BB-Decoder", "FraseR",
             type = type,
             noiseAlpha = noiseAlpha,
             rhoRange = rhoRange,
-            lambda = lambda,
+            lambda = 0,
             convergence = convergence,
             iterations = iterations,
             initialize = initialize,
@@ -127,7 +134,7 @@ fit <- function(fds, correction=c("PCA-regression", "PCA-BB-Decoder", "FraseR",
             noiseAlpha = noiseAlpha,
             nSubset = nSubset,
             rhoRange = rhoRange,
-            lambda = lambda,
+            lambda = 0,
             convergence = convergence,
             iterations = iterations,
             initialize = initialize,
@@ -145,7 +152,7 @@ fit <- function(fds, correction=c("PCA-regression", "PCA-BB-Decoder", "FraseR",
             noiseAlpha = noiseAlpha,
             nSubset = nSubset,
             rhoRange = rhoRange,
-            lambda = lambda,
+            lambda = 0,
             convergence = convergence,
             iterations = iterations,
             initialize = initialize,
@@ -164,7 +171,7 @@ fit <- function(fds, correction=c("PCA-regression", "PCA-BB-Decoder", "FraseR",
             noiseAlpha = noiseAlpha,
             nSubset = nSubset,
             rhoRange = rhoRange,
-            lambda = lambda,
+            lambda = 0,
             convergence = convergence,
             latentSpace = 'PCA',
             iterations = iterations,
@@ -182,7 +189,7 @@ fit <- function(fds, correction=c("PCA-regression", "PCA-BB-Decoder", "FraseR",
             type = type,
             noiseAlpha = noiseAlpha,
             rhoRange = rhoRange,
-            lambda = lambda,
+            lambda = 0,
             convergence = convergence,
             iterations = iterations,
             initialize = initialize,
@@ -210,7 +217,7 @@ fit <- function(fds, correction=c("PCA-regression", "PCA-BB-Decoder", "FraseR",
             type = type,
             noiseAlpha = noiseAlpha,
             rhoRange = rhoRange,
-            lambda = lambda,
+            lambda = 0,
             convergence = convergence,
             iterations = iterations,
             initialize = initialize,
@@ -220,7 +227,7 @@ fit <- function(fds, correction=c("PCA-regression", "PCA-BB-Decoder", "FraseR",
             BPPARAM = BPPARAM,
             verbose = verbose,
             subset = FALSE,
-            nrDecoderBatches = nrDecoderBatches
+            nrDecoderBatches = 1
         ),
         PCA         = fitPCA(
             fds = fds,
@@ -379,8 +386,9 @@ fitFraserAE <- function(fds, q, type, noiseAlpha, rhoRange, lambda, convergence,
                             rhoRange=rhoRange, lambda=lambda, 
                             convergence=convergence, iterations=iterations, 
                             initialize=initialize, nSubset=nSubset,
-                            weighted=weighted, control=control, BPPARAM=BPPARAM, 
-                            verbose=verbose, nrDecoderBatches=nrDecoderBatches, 
+                            weighted=weighted, control=control, 
+                            BPPARAM=BPPARAM, verbose=verbose, 
+                            nrDecoderBatches=nrDecoderBatches, 
                             latentSpace=latentSpace )
     return(fds)
 

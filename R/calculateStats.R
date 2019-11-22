@@ -10,7 +10,7 @@
 #'
 #' Calculate the zscore for each PSI value.
 #'
-#' @export
+#' @noRd
 #' @return FraseRDataSet
 #' @examples
 #'   fds <- countRNAData(createTestFraseRSettings())

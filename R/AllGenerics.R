@@ -9,66 +9,89 @@ asFDS <- function(x){
     return(as(x, "FraseRDataSet"))
 }
 
+#' 
+#' Getters/Setters for FraseRDataSet values
+#' 
+#' @param object FraseRDataSet
+#' @param value The new value.
+#' 
+#' @return The value assigned to the FraseRDataSet object.
+#' @rdname fds_getters_setters
 #' @export
 setGeneric("samples",           
             function(object) standardGeneric("samples"))
 
+#' @rdname fds_getters_setters
 #' @export
 setGeneric("samples<-",         signature = "object", 
             function(object, value) standardGeneric("samples<-"))
 
+#' @rdname fds_getters_setters
 #' @export
 setGeneric("condition",         
             function(object) standardGeneric("condition"))
 
+#' @rdname fds_getters_setters
 #' @export
 setGeneric("condition<-",       signature = "object", 
             function(object, value) standardGeneric("condition<-"))
 
+#' @rdname fds_getters_setters
 #' @export
 setGeneric("bamFile",           
             function(object) standardGeneric("bamFile"))
 
+#' @rdname fds_getters_setters
 #' @export
 setGeneric("bamFile<-",         signature = "object", 
             function(object, value) standardGeneric("bamFile<-"))
 
+#' @rdname fds_getters_setters
 #' @export
 setGeneric("name",              
             function(object) standardGeneric("name"))
 
+#' @rdname fds_getters_setters
 #' @export
 setGeneric("name<-",            signature = "object", 
             function(object, value) standardGeneric("name<-"))
 
+#' @rdname fds_getters_setters
 #' @export
 setGeneric("strandSpecific",    
             function(object) standardGeneric("strandSpecific"))
 
+#' @rdname fds_getters_setters
 #' @export
 setGeneric("strandSpecific<-",  signature = "object", 
             function(object, value) standardGeneric("strandSpecific<-"))
 
+#' @rdname fds_getters_setters
 #' @export
 setGeneric("workingDir",        
             function(object) standardGeneric("workingDir"))
 
+#' @rdname fds_getters_setters
 #' @export
 setGeneric("workingDir<-",      signature = "object", 
             function(object, value) standardGeneric("workingDir<-"))
 
+#' @rdname fds_getters_setters
 #' @export
 setGeneric("scanBamParam",      
             function(object) standardGeneric("scanBamParam"))
 
+#' @rdname fds_getters_setters
 #' @export
 setGeneric("scanBamParam<-",    signature = "object", 
             function(object, value) standardGeneric("scanBamParam<-"))
 
+#' @rdname fds_getters_setters
 #' @export
 setGeneric("nonSplicedReads",   
             function(object) standardGeneric("nonSplicedReads"))
 
+#' @rdname fds_getters_setters
 #' @export
 setGeneric("nonSplicedReads<-", signature = "object", 
             function(object, value) standardGeneric("nonSplicedReads<-"))
@@ -379,6 +402,8 @@ setMethod("[", c("FraseRDataSet", "ANY", "ANY"), subset.FraseR)
 #'
 #' Returns the assayNames of FraseR
 #' 
+#' @param x FraseRDataSet
+#' 
 #' @return Character vector
 #' @export
 setMethod("assayNames", "FraseRDataSet", function(x) {
@@ -391,6 +416,10 @@ setMethod("assayNames", "FraseRDataSet", function(x) {
 
 #'
 #' Returns the assay corrensonding to the given name/index of the FraseRDataSet
+#'
+#' @param x FraseRDataSet
+#' @param ... Parameters passed on to SummarizedExperiment::assays() 
+#' @param withDimnames Passed on to SummarizedExperiment::assays() 
 #'
 #' @return (Delayed) matrix.
 #' @export
@@ -452,6 +481,8 @@ setReplaceMethod("assays", c("FraseRDataSet", "DelayedMatrix"),
 
 #'
 #' retrive the length of the object (aka number of junctions)
+#' 
+#' @param x FraseRDataSet
 #'
 #' @return Length of the object.
 #' @export
@@ -459,6 +490,9 @@ setMethod("length", "FraseRDataSet", function(x) callNextMethod())
 
 #'
 #' getter and setter for mcols
+#' 
+#' @param x FraseRDataSet
+#' @param type The psi type.
 #' 
 #' @return mcols
 #' @examples 
@@ -491,6 +525,7 @@ setReplaceMethod("mcols", "FraseRDataSet", FraseR.mcols.replace)
 #' 
 #' @param x FraseRDataSet
 #' @param type The psi type.
+#' @param ... Parameters passed on to rowRanges()
 #' 
 #' @return GRanges object
 #' @examples 
@@ -527,6 +562,7 @@ setReplaceMethod("rowRanges", "FraseRDataSet", FraseR.rowRanges.replace)
 #' @param side "ofInterest" for junction counts, "other" for sum of counts of 
 #' all other junctions at the same donor site (psi5) or acceptor site (psi3), 
 #' respectively. 
+#' @param value An integer matrix containing the counts.
 #' 
 #' @return FraseRDataSet
 #' @rdname counts
@@ -534,9 +570,11 @@ setReplaceMethod("rowRanges", "FraseRDataSet", FraseR.rowRanges.replace)
 #'  fds <- makeExampleFraseRDataSet()
 #'  counts(fds, type="psi5", side="ofInterest")
 #'  counts(fds, type="psi5", side="other")
+#'  head(K(fds))
+#'  head(N(fds))
 #'  
 setMethod("counts", "FraseRDataSet", function(object, type=NULL,
-            side=c("ofInterest", "otherSide"), normalized=FALSE){
+            side=c("ofInterest", "otherSide")){
     side <- match.arg(side)
     if(side=="ofInterest"){
         type <- checkReadType(object, type)
@@ -759,6 +797,18 @@ FraseR.results <- function(x, sampleIDs, fdrCutoff, zscoreCutoff, dPsiCutoff,
 #' The result function extracts the results from the given analysis object
 #' based on the given options and cutoffs.
 #'
+#' @param x FraseRDataSet
+#' @param sampleIDs A vector of sample IDs for which results should be 
+#' retrieved
+#' @param padjCutoff The FDR cutoff to be applied.
+#' @param zScoreCutoff The z-score cutoff to be applied.
+#' @param deltaPsiCutoff The cutoff on delta psi.
+#' @param minCount The minimum count value of the total coverage of an intron 
+#' to be considered as significant.
+#' result
+#' @param psiType The psi types for which the results should be retrieved.
+#' @param BPPARAM The BiocParallel parameter.
+#'
 #' @return GRanges object containing significant results.
 #' 
 #' @rdname results
@@ -854,7 +904,7 @@ mapSeqlevels <- function(fds, style="UCSC", ...){
 #' @param type Splicing type
 #' @param padjCutoff Adjusted p value cutoff to be used or NA if not requested
 #' @param deltaPsiCutoff Delta PSI cutoff to be used or NA if not requested
-#' @param zSCoreCutoff Z score cutoff to be used or NA if not requested
+#' @param zScoreCutoff Z score cutoff to be used or NA if not requested
 #' @param by By default NA which means no grouping. But if \code{sample}
 #'              or \code{feature} is specified the sum by sample or feature is
 #'              returned

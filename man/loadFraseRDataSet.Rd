@@ -14,6 +14,8 @@ saveFraseRDataSet(fds, dir = NULL, name = NULL, rewrite = FALSE)
 
 \item{name}{The analysis name of the project (saved within the `dir`)}
 
+\item{upgrade}{Should the version of the loaded object be updated?}
+
 \item{fds}{A FraseRDataSet object ot be saved}
 
 \item{rewrite}{logical if the object should be rewritten. This makes sense if

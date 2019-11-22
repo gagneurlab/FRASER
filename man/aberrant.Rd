@@ -17,14 +17,14 @@ aberrant(fds, type = currentType(fds), padjCutoff = 0.05,
 
 \item{deltaPsiCutoff}{Delta PSI cutoff to be used or NA if not requested}
 
+\item{zScoreCutoff}{Z score cutoff to be used or NA if not requested}
+
 \item{by}{By default NA which means no grouping. But if \code{sample}
 or \code{feature} is specified the sum by sample or feature is
 returned}
 
 \item{aggregate}{If TRUE the returned object is based on the grouped 
 features}
-
-\item{zSCoreCutoff}{Z score cutoff to be used or NA if not requested}
 }
 \value{
 Either a of logical values of size introns/genes x samples if "by" 
