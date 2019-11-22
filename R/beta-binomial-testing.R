@@ -115,10 +115,14 @@ pvalueByBetaBinomialPerType <- function(fds, aname, psiType, pvalFun,
     # extract additional informations
     mcol_ls <- list(
         tested  = TRUE,
-        alpha   = as.vector(sapply(pvalues_ls, function(x) x[[1]]$alpha)),
-        beta    = as.vector(sapply(pvalues_ls, function(x) x[[1]]$beta)),
-        timing  = as.vector(sapply(pvalues_ls, function(x) x[[1]]$timing)),
-        idx     = as.vector(sapply(pvalues_ls, function(x) x[[1]]$idx)),
+        alpha   = as.vector(vapply(pvalues_ls, function(x) x[[1]]$alpha, 
+                                    FUN.VALUE=numeric(1))),
+        beta    = as.vector(vapply(pvalues_ls, function(x) x[[1]]$beta, 
+                                    FUN.VALUE=numeric(1))),
+        timing  = as.vector(vapply(pvalues_ls, function(x) x[[1]]$timing, 
+                                    FUN.VALUE=numeric(1))),
+        idx     = as.vector(vapply(pvalues_ls, function(x) x[[1]]$idx, 
+                                    FUN.VALUE=numeric(1))),
         errStr  = vglmInfos2character(pvalues_ls, "err"),
         warnStr = vglmInfos2character(pvalues_ls, "warn")
     )
@@ -223,7 +227,7 @@ tryCatchFactory <- function(fun, timeout=300){
 #'
 #' @noRd
 vglmInfos2character <- function(res, type){
-    infoList <- unlist(sapply(res, "[[", type))
+    infoList <- unlist(lapply(res, "[[", type))
     infoList <- gsub("^\\d+ diagonal ele", "xxx diagonal ele", infoList)
     infoTable <- sort(table(infoList))
 
@@ -244,9 +248,9 @@ vglmInfos2character <- function(res, type){
 #'
 #' @noRd
 table2character <- function(table){
-    sapply(seq_along(table), function(idx) paste(
+    vapply(seq_along(table), function(idx) paste(
         "\t", table[idx], "x", names(table)[idx]
-    ))
+    ), FUN.VALUE="")
 }
 
 

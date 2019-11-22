@@ -109,14 +109,20 @@ calculatePSIValuePrimeSite <- function(fds, psiType, overwriteCts, BPPARAM){
     names(psiValues) <- samples(fds)
 
     # merge it to a DataFrame and assign it to our object
-    assay(fds, type="j", "psi5") <- sapply(psiValues, "[[", "psi5")
-    assay(fds, type="j", "psi3") <- sapply(psiValues, "[[", "psi3")
+    assay(fds, type="j", "psi5") <- vapply(psiValues, "[[", "psi5", 
+                                            FUN.VALUE=numeric(nrow(
+                                                mcols(fds, type="psi5"))) )
+    assay(fds, type="j", "psi3") <- vapply(psiValues, "[[", "psi3",
+                                            FUN.VALUE=numeric(nrow(
+                                                mcols(fds, type="psi3"))))
 
     if(isTRUE(overwriteCts)){
         assay(fds, type="j", "rawOtherCounts_psi5") <-
-            sapply(psiValues, "[[", "o5")
+            vapply(psiValues, "[[", "o5", 
+                    FUN.VALUE=numeric(nrow(mcols(fds, type="psi5"))) )
         assay(fds, type="j", "rawOtherCounts_psi3") <-
-            sapply(psiValues, "[[", "o3")
+            vapply(psiValues, "[[", "o3", 
+                    FUN.VALUE=numeric(nrow(mcols(fds, type="psi3"))))
     }
 
     return(fds)
@@ -186,9 +192,13 @@ calculateSitePSIValue <- function(fds, overwriteCts, BPPARAM){
     names(psiSiteValues) <- samples(fds)
 
     # merge it to a DataFrame and assign it to our object
-    assay(fds, type="ss", psiName) <- sapply(psiSiteValues, "[[", "psiSite")
+    assay(fds, type="ss", psiName) <- 
+        vapply(psiSiteValues, "[[", "psiSite", 
+                FUN.VALUE=numeric(nrow(mcols(fds, type="psiSite"))) )
     if(isTRUE(overwriteCts)){
-        assay(fds, type="ss", psiROCName) <- sapply(psiSiteValues, "[[", "so")
+        assay(fds, type="ss", psiROCName) <- 
+            vapply(psiSiteValues, "[[", "so",
+                    FUN.VALUE=numeric(nrow(mcols(fds, type="psiSite"))))
     }
 
     return(fds)

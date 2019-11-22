@@ -130,7 +130,7 @@ plotCountsAtSite <- function(gr, fds, type, sample=NULL, plotLog=TRUE){
                 ylab=paste0(logpre, "raw other counts", logsuf)
     )
     if(!is.null(sample)){
-        sapply(sample, addSamplePoints, fds=fds,
+        lapply(sample, addSamplePoints, fds=fds,
                x=rcx, y=rocy, pch=20, col="red"
         )
     }

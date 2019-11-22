@@ -210,9 +210,9 @@ variable junctions (i.e. junction-sample correlations). By default the values
 are log transformed and row centered. The ... arguments are passed to the
 \code{\link[pheatmap]{pheatmap}} function.
 
-\code{plotFilterExpression}: The distribution of FPKM values. If the FraseRDataSet
-object contains the \code{passedFilter} column, it will plot both FPKM
-distributions for the expressed genes and for the filtered genes.
+\code{plotFilterExpression}: The distribution of FPKM values. If the 
+FraseRDataSet object contains the \code{passedFilter} column, it will plot 
+both FPKM distributions for the expressed genes and for the filtered genes.
 
 \code{plotEncDimSearch}: Visualization of the hyperparameter optimization.
 It plots the encoding dimension against the achieved loss (area under the

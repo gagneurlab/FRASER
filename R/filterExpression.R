@@ -73,7 +73,7 @@ filterExpression <- function(fds, minExpressionInOneSample=20, quantile=0.05,
             (cutoffs$quantileValue5    >= quantileMinExpression |
                 cutoffs$quantileValue3 >= quantileMinExpression) &
             (cutoffs$maxDPsi3     >= minDeltaPsi |
-                 cutoffs$maxDPsi5 >= minDeltaPsi)
+                cutoffs$maxDPsi5 >= minDeltaPsi)
 
     # filter if requested
     if(isTRUE(filter)){

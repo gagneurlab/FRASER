@@ -67,17 +67,17 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, minDeltaPsi=0.1,
 
         # initialize D
         fds <- updateD(fds, type=type, lambda=lambda, control=control,
-                       BPPARAM=BPPARAM, verbose=verbose, 
-                       nrDecoderBatches=batches4EFit,
-                       multiRho=multiRho, weighted=FALSE)
+                        BPPARAM=BPPARAM, verbose=verbose, 
+                        nrDecoderBatches=batches4EFit,
+                        multiRho=multiRho, weighted=FALSE)
         lossList <- updateLossList(fds, lossList, 'init', 'D', lambda, 
-                                   verbose=verbose)
+                                    verbose=verbose)
 
         # initialize rho step
         fds <- updateRho(fds, type=type, rhoRange, BPPARAM=BPPARAM, 
-                         verbose=verbose)
+                            verbose=verbose)
         lossList <- updateLossList(fds, lossList, 'init', 'Rho', lambda, 
-                                   verbose=verbose)
+                                    verbose=verbose)
 
         # optimize log likelihood
         t1 <- Sys.time()
@@ -87,29 +87,29 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, minDeltaPsi=0.1,
 
             # update E step
             fds <- updateE(fds, control=control, BPPARAM=BPPARAM, 
-                           verbose=verbose)
+                            verbose=verbose)
             lossList <- updateLossList(fds, lossList, i, 'E', lambda, 
-                                       verbose=verbose)
+                                        verbose=verbose)
 
             # update D step
             fds <- updateD(fds, type=type, lambda=lambda, control=control,
-                           BPPARAM=BPPARAM, verbose=verbose, 
-                           nrDecoderBatches=batches4EFit,
-                           multiRho=multiRho, weighted=FALSE)
+                            BPPARAM=BPPARAM, verbose=verbose, 
+                            nrDecoderBatches=batches4EFit,
+                            multiRho=multiRho, weighted=FALSE)
             lossList <- updateLossList(fds, lossList, i, 'D', lambda, 
-                                       verbose=verbose)
+                                        verbose=verbose)
 
             # update rho step
             fds <- updateRho(fds, type=type, rhoRange, BPPARAM=BPPARAM, 
-                             verbose=verbose)
+                            verbose=verbose)
             lossList <- updateLossList(fds, lossList, i, 'Rho', lambda, 
-                                       verbose=verbose)
+                                        verbose=verbose)
 
             if(isTRUE(verbose)){
                 print(paste('Time for one autoencoder loop:', Sys.time() - t2))
             } else {
                 print(paste0(date(), ': Iteration: ', i, ' loss: ',
-                             mean(lossList[,ncol(lossList)])))
+                            mean(lossList[,ncol(lossList)])))
             }
 
             # check
@@ -125,8 +125,8 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, minDeltaPsi=0.1,
                     message(date(), ": Current max diff is: ", max(curLossDiff))
                     message(date(), ": Summary: ", 
                             paste(collapse=", ", sep=": ",
-                                  names(summary(curLossDiff)),
-                                  signif(summary(curLossDiff), 2)))
+                                    names(summary(curLossDiff)),
+                                    signif(summary(curLossDiff), 2)))
                 }
             }
             currentLoss <- lossList[,ncol(lossList)]
@@ -144,7 +144,7 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, minDeltaPsi=0.1,
     } else {
         # update the D matrix and theta
         print(paste0("Finished with fitting the E matrix. Starting now with ",
-                     "the D fit. ..."))
+                    "the D fit. ..."))
 
         # set noiseAlpha to 0 or NULL to NOT use noise now 
         # (latent space already fitted)
@@ -171,20 +171,20 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, minDeltaPsi=0.1,
                                 nrDecoderBatches=nrDecoderBatches, 
                                 multiRho=multiRho, weighted=weighted)
             lossList <- updateLossList(copy_fds, lossList, paste0("final_", i), 
-                                       'D', lambda, verbose=verbose)
+                                        'D', lambda, verbose=verbose)
 
             # update rho step
             copy_fds <- updateRho(copy_fds, type=type, rhoRange, 
-                                  BPPARAM=BPPARAM, verbose=verbose)
+                                    BPPARAM=BPPARAM, verbose=verbose)
             lossList <- updateLossList(copy_fds, lossList, paste0("final_", i), 
-                                       'Rho', lambda, verbose=verbose)
+                                        'Rho', lambda, verbose=verbose)
 
             if(isTRUE(verbose)){
                 print(paste('Time for one D & Rho loop:', Sys.time() - t2))
             } else {
                 print(paste0(date(), ': Iteration: final_', i, ' loss: ',
-                             mean(lossList[,ncol(lossList)]), " (mean); ",
-                             max(lossList[,ncol(lossList)]), " (max)"))
+                            mean(lossList[,ncol(lossList)]), " (mean); ",
+                            max(lossList[,ncol(lossList)]), " (max)"))
             }
 
             # check
@@ -205,7 +205,7 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, minDeltaPsi=0.1,
     }
 
     print(paste0(i, ' Final betabin-AE loss: ', 
-                 mean(lossList[, ncol(lossList)])))
+                mean(lossList[, ncol(lossList)])))
     bpstop(BPPARAM)
 
     # add additional values for the user to the object

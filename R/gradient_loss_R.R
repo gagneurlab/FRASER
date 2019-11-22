@@ -191,14 +191,14 @@ res <- bplapply(mybprange, K=K, N=N, wd=wd, we=we, b=b, rho=rho,
 
         grad_d <- colMeans(grad_d_mat)
 
-        grad_d_replace <- sapply(seq_along(grad_d), function(j){
+        grad_d_replace <- vapply(seq_along(grad_d), function(j){
           badIdx = which(ph[j] == 0 | ph[j] == 1)
           if(sum(yi[badIdx] < 0) < length(badIdx)){
             -1
           } else {
             +1
           }
-        })
+        }, FUN.VALUE=numeric(1))
 
 
         #grad_d[idx2replace] <- grad_d_replace[idx2replace]
@@ -217,10 +217,10 @@ res <- bplapply(mybprange, K=K, N=N, wd=wd, we=we, b=b, rho=rho,
     list(nlgv=nlgv, grv=grv, cppnlgv=cppnlgv, cppgrv=cppgrv)
 })
 
-nlgv <- sapply(res, "[[", "nlgv")
-grv  <- sapply(res, "[[", "grv")
-cppnlgv <- sapply(res, "[[", "cppnlgv")
-cppgrv  <- sapply(res, "[[", "cppgrv")
+nlgv <- vapply(res, "[[", "nlgv", FUN.VALUE=numeric(ncol(wd)+1))
+grv  <- vapply(res, "[[", "grv", FUN.VALUE=numeric(ncol(wd)+1))
+cppnlgv <- vapply(res, "[[", "cppnlgv", FUN.VALUE=numeric(ncol(wd)+1))
+cppgrv  <- vapply(res, "[[", "cppgrv", FUN.VALUE=numeric(ncol(wd)+1))
 
 nlgv[,idx]
 grv[,idx]

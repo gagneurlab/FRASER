@@ -163,10 +163,10 @@ showFraseRDataSet <- function(object) {
     if("bamFile" %in% sampleData & all(
                 vapply(sampleData$bamFile, isScalarCharacter, logical(1)))){
         sampleData$bamFile <- gsub("... [^/]+/", ".../",
-            sapply(sampleData$bamFile, function(str){
+            vapply(sampleData$bamFile, function(str){
                 if(nchar(str) <= 29) return(str)
                 paste("...", substr(str, nchar(str) - 25, nchar(str)))
-            })
+            }, FUN.VALUE="")
         )
     }
     show(as_tibble(sampleData))

@@ -197,7 +197,7 @@ makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=1000, q=10,
     # of the group
     dt_n <- as.data.table(n)
     sum_n <- cbind(dt_n, junctionGroups)
-    res <- sapply(colnames(dt_n),function(x){
+    res <- lapply(colnames(dt_n),function(x){
         sum_n[,c(paste0(x, "_sum")):=sum(get(x)),by=junctionGroups]
     })
 
@@ -237,7 +237,7 @@ makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=1000, q=10,
         sum <- sum(exp(x))
         return( exp(x) / sum)
     }
-    softmax_mu <- sapply(donorGroups, function(groupID){
+    softmax_mu <- lapply(donorGroups, function(groupID){
         group_mu <- ae_mu[which(junctionGroups == groupID),]
         return( apply(group_mu, 2, softmax) )
     })
@@ -251,7 +251,7 @@ makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=1000, q=10,
     #
     # Simulate psi3=psi5 and SE jointly with Dirchilet-Multinomial
     #
-    res <- sapply(donorGroups, function(groupID){
+    res <- vapply(donorGroups, function(groupID){
 
         # Get the indices of the junctions in this group
         pos <- which(junctionGroups == groupID)
@@ -303,7 +303,10 @@ makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=1000, q=10,
         return(list(k=k, nonSplit=nonSplit, n=psi_n, group_n=se_n, 
                     psi_mu=psi_mu, se_mu=se_mu, psi_alpha=psi_alpha, 
                     se_alpha=se_alpha, psi_rho=psi_rho, se_rho=se_rho))
-    })
+    }, FUN.VALUE=list(k=numeric(m), nonSplit=numeric(m), n=numeric(m), 
+                      group_n=numeric(m), psi_mu=numeric(m), se_mu=numeric(m), 
+                      psi_alpha=numeric(m), se_alpha=numeric(m), 
+                      psi_rho=numeric(1), se_rho=numeric(1)))
 
     # Extract k and nonSplit reads
     k <- do.call(rbind, res[1,])
@@ -633,18 +636,27 @@ injectOutliers <- function(fds, type=c("psi5", "psi3", "psiSite"),
 #
 # Inject artificial outliers in an existing fds
 #
-injectOutliersBySwapping <- function(fds, type=type, nrOutliers=500, deltaPSI=pmin(0.7, pmax(-0.7, rnorm(nrOutliers, 0, 0.5))),
-                                     method=c('meanPSI', 'samplePSI', 'simulatedPSI'), swap=TRUE, verbose=FALSE){
+injectOutliersBySwapping <- function(fds, type=type, nrOutliers=500, 
+                                     deltaPSI=pmin(0.7, pmax(-0.7, rnorm(
+                                         nrOutliers, 0, 0.5))),
+                                     method=c('meanPSI', 'samplePSI', 
+                                              'simulatedPSI'), swap=TRUE, 
+                                     verbose=FALSE){
 
     # copy original k and o
     if(type == "psiSite"){
-        setAssayMatrix(fds, type="psiSite", "originalCounts") <- counts(fds, type="psiSite", side="ofInterest")
-        setAssayMatrix(fds, type="psiSite", "originalOtherCounts") <- counts(fds, type="psiSite", side="other")
+        setAssayMatrix(fds, type="psiSite", "originalCounts") <- 
+            counts(fds, type="psiSite", side="ofInterest")
+        setAssayMatrix(fds, type="psiSite", "originalOtherCounts") <- 
+            counts(fds, type="psiSite", side="other")
     }
     else{
-        setAssayMatrix(fds, type="psi5", "originalCounts") <- counts(fds, type="psi5", side="ofInterest")
-        setAssayMatrix(fds, type="psi5", "originalOtherCounts") <- counts(fds, type="psi5", side="other")
-        setAssayMatrix(fds, type="psi3", "originalOtherCounts") <- counts(fds, type="psi3", side="other")
+        setAssayMatrix(fds, type="psi5", "originalCounts") <- 
+            counts(fds, type="psi5", side="ofInterest")
+        setAssayMatrix(fds, type="psi5", "originalOtherCounts") <- 
+            counts(fds, type="psi5", side="other")
+        setAssayMatrix(fds, type="psi3", "originalOtherCounts") <- 
+            counts(fds, type="psi3", side="other")
     }
 
     # get infos from the fds
@@ -652,7 +664,9 @@ injectOutliersBySwapping <- function(fds, type=type, nrOutliers=500, deltaPSI=pm
     j <- nrow(mcols(fds, type=type))
 
     k <- as.matrix(K(fds, type=type))
-    n <- as.matrix(N(fds, type=type)) # as.matrix(..) needed so that n doesn't change after new k is stored (needed only for swap=FALSE)
+    # as.matrix(..) needed so that n doesn't change after new k is stored 
+    # (needed only for swap=FALSE)
+    n <- as.matrix(N(fds, type=type)) 
     o <- as.matrix(counts(fds, type=type, side="other"))
 
     psi <- (k + pseudocount())/(n + 2*pseudocount())
@@ -679,11 +693,15 @@ injectOutliersBySwapping <- function(fds, type=type, nrOutliers=500, deltaPSI=pm
 
         successful <- FALSE
 
-        possible_junctions <- if(deltaPSI[i] > 0){ which(rowMeans(psi) - 0.2 < (1 - deltaPSI[i])) }else{ which(rowMeans(psi) + 0.2 > -deltaPSI[i]) }
-        # possible_junctions <- ifelse(deltaPSI[i] > 0, which(rowMaxs(psi) < (1 - deltaPSI[i])), which(rowMaxs(psi) > -deltaPSI[i]) )
+        possible_junctions <- if(deltaPSI[i] > 0){ 
+            which(rowMeans(psi) - 0.2 < (1 - deltaPSI[i])) 
+            }else{ which(rowMeans(psi) + 0.2 > -deltaPSI[i]) }
+        # possible_junctions <- ifelse(deltaPSI[i] > 0, which(rowMaxs(psi) < 
+        # (1 - deltaPSI[i])), which(rowMaxs(psi) > -deltaPSI[i]) )
         counter <- 0
 
-        # for each outlier, draw random junction-sample pair and check if outlier can be injected there
+        # for each outlier, draw random junction-sample pair and check if 
+        # outlier can be injected there
         while(!successful && counter <= 1000){
 
             counter <- counter + 1
@@ -691,32 +709,43 @@ injectOutliersBySwapping <- function(fds, type=type, nrOutliers=500, deltaPSI=pm
             #   print(paste0(counter, ". try"))
             # }
 
-            if(length(intersect(available_junctions, possible_junctions)) == 0 ){
+            if(length(intersect(available_junctions, possible_junctions)) == 0 
+               ){
                 break
             }
 
-            junction <- sample(intersect(available_junctions, possible_junctions), 1)
+            junction <- sample(intersect(available_junctions, 
+                                         possible_junctions), 1)
             sample <- sample(m, 1)
 
             n_ji <- n[junction,sample]
 
             if(n_ji < 10){ next }
 
-            # new psi based on psi of sample i and junction j (=psi[j,i]) or based on junction mean = mean(psi[j,]) or based on the psi used during the simulation
+            # new psi based on psi of sample i and junction j (=psi[j,i]) or 
+            # based on junction mean = mean(psi[j,]) or based on the psi used 
+            # during the simulation
             outlier_psi <- switch(match.arg(method),
-                                  samplePSI    = psi[junction,sample] + deltaPSI[i],
-                                  meanPSI      = mean(psi[junction,]) + deltaPSI[i],
-                                  simulatedPSI = truePSI[junction,sample] + deltaPSI[i])
+                                  samplePSI    = psi[junction,sample] + 
+                                      deltaPSI[i],
+                                  meanPSI      = mean(psi[junction,]) + 
+                                      deltaPSI[i],
+                                  simulatedPSI = truePSI[junction,sample] + 
+                                      deltaPSI[i])
 
-            # change k based on n and outlier_psi (and take pseudocounts into account): (k+1)/(n+2)=psi -> k = psi*(n+2) - 1
-            k_new <- round( outlier_psi*(n_ji + 2*pseudocount()) - pseudocount() )
+            # change k based on n and outlier_psi (and take pseudocounts into 
+            # account): (k+1)/(n+2)=psi -> k = psi*(n+2) - 1
+            k_new <- round( outlier_psi*(n_ji + 2*pseudocount()) - 
+                                pseudocount() )
 
             # try again for outliers with psi < 0 or > 1 or k < 0 or k > n
-            if(outlier_psi <= 1 && outlier_psi >= 0 && k_new >= 0 && k_new <= n_ji){
+            if(outlier_psi <= 1 && outlier_psi >= 0 && k_new >= 0 && 
+               k_new <= n_ji){
 
                 if(swap){
                     #
-                    # check if junction can be swapped with other junction from same donor/acceptor
+                    # check if junction can be swapped with other junction from 
+                    # same donor/acceptor
                     #
                     dt <- data.table(
                         junctionID = seq_len(j),
@@ -726,15 +755,28 @@ injectOutliersBySwapping <- function(fds, type=type, nrOutliers=500, deltaPSI=pm
                         strand = as.factor(strand(fds))
                     )
                     if(type == "psi5"){
-                        samePos <- dt[start == dt[junctionID == junction, start] & chr == dt[junctionID == junction, chr] & strand == dt[junctionID == junction, strand], junctionID]
+                        samePos <- dt[start == dt[junctionID == junction, 
+                                                  start] 
+                                      & chr == dt[junctionID == junction, chr] 
+                                      & strand == dt[junctionID == junction, 
+                                                     strand], junctionID]
                     }
                     else if(type == "psi3"){
-                        samePos <- dt[end == dt[junctionID == junction, end] & chr == dt[junctionID == junction, chr] & strand == dt[junctionID == junction, strand], junctionID]
+                        samePos <- dt[end == dt[junctionID == junction, end] & 
+                                          chr == dt[junctionID == junction, 
+                                                    chr] 
+                                      & strand == dt[junctionID == junction, 
+                                                     strand], junctionID]
                     }
                     else{
                         # for SE: swap with one junction at the same position
-                        samePos <- which(mcols(fds, type="psi5")[["startID"]] == mcols(fds, type="psiSite")[["startID"]][junction])
-                        samePos <- c(samePos, which(mcols(fds, type="psi3")[["endID"]] == mcols(fds, type="psiSite")[["endID"]][junction]))
+                        samePos <- which(mcols(fds, 
+                                               type="psi5")[["startID"]] == 
+                            mcols(fds, type="psiSite")[["startID"]][junction])
+                        samePos <- c(samePos, 
+                                     which(mcols(fds, 
+                                                 type="psi3")[["endID"]] == 
+                            mcols(fds, type="psiSite")[["endID"]][junction]))
                         # n for other junctions is o for SE
                         n_ji <- o[junction, sample]
                     }
@@ -746,13 +788,15 @@ injectOutliersBySwapping <- function(fds, type=type, nrOutliers=500, deltaPSI=pm
                     }
 
                     k_group <- switch(type,
-                                      "psiSite" = k_other[group_others, sample],
+                                      "psiSite" = k_other[group_others, 
+                                                          sample],
                                       k[group_others, sample])
 
                     # difference between "old" and "new" k
                     diff <- k[junction, sample] - k_new
 
-                    # try if swapping counts with other junction at this position is possible
+                    # try if swapping counts with other junction at this 
+                    # position is possible
                     g <- 1
                     foundSwap <- FALSE
                     while(!foundSwap){
@@ -773,10 +817,16 @@ injectOutliersBySwapping <- function(fds, type=type, nrOutliers=500, deltaPSI=pm
                             foundSwap <- TRUE
                             successful <- TRUE
 
-                            # also store position of other junction used in swap
-                            indexOut[group_others[g], sample] <- ifelse(deltaPSI[i] >= 0, -2, 2)
+                            # store position of other junction used in swap
+                            indexOut[group_others[g], sample] <- 
+                                ifelse(deltaPSI[i] >= 0, -2, 2)
                             # indexDeltaPSI[junction, sample] <- deltaPSI[i]
-                            indexDeltaPSI[group_others[g], sample] <- ( (k[group_others[g],sample] + pseudocount())/(n[group_others[g],sample] + 2*pseudocount()) ) - psi[group_others[g], sample] # new dPsi - old dPsi
+                            indexDeltaPSI[group_others[g], sample] <- 
+                                ( (k[group_others[g],sample] + pseudocount())/
+                                      (n[group_others[g],sample] + 
+                                           2*pseudocount()) ) - 
+                                psi[group_others[g], sample] 
+                            # new dPsi - old dPsi
 
                         }
 
@@ -805,18 +855,22 @@ injectOutliersBySwapping <- function(fds, type=type, nrOutliers=500, deltaPSI=pm
 
         if(successful){
 
-            # remove junction where outlier was injected from available junctions (each junction at most one outlier)
-            available_junctions <- available_junctions[available_junctions != junction]
+            # remove junction where outlier was injected from available 
+            # junctions (each junction at most one outlier)
+            available_junctions <- available_junctions[available_junctions != 
+                                                           junction]
 
             if(verbose){
-                print(paste("Injected outlier", i, "at index", junction, ",", sample, ": new k =", k_new, ", n =", n_ji))
+                print(paste("Injected outlier", i, "at index", junction, ",", 
+                            sample, ": new k =", k_new, ", n =", n_ji))
             }
 
         }
         else{
 
             if(verbose){
-                print(paste("Skipped outlier", i, "with delta psi =", deltaPSI[i]))
+                print(paste("Skipped outlier", i, "with delta psi =", 
+                            deltaPSI[i]))
             }
 
         }
@@ -838,7 +892,8 @@ injectOutliersBySwapping <- function(fds, type=type, nrOutliers=500, deltaPSI=pm
 
     # re-calculate other counts if swapping was done
     if(swap){
-        # if psi values were already calculated, delete them (or rather move the old values somewhere else?) so that they are recalculated
+        # if psi values were already calculated, delete them (or rather move 
+        # the old values somewhere else?) so that they are recalculated
         for(psiType in c("psi3", "psi5", "psiSite")){
             if(assayExists(fds, psiType)){
                 assays(fds)[[psiType]] <- NULL

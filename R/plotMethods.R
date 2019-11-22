@@ -108,9 +108,9 @@
 #' are log transformed and row centered. The ... arguments are passed to the
 #' \code{\link[pheatmap]{pheatmap}} function.
 #'
-#' \code{plotFilterExpression}: The distribution of FPKM values. If the FraseRDataSet
-#' object contains the \code{passedFilter} column, it will plot both FPKM
-#' distributions for the expressed genes and for the filtered genes.
+#' \code{plotFilterExpression}: The distribution of FPKM values. If the 
+#' FraseRDataSet object contains the \code{passedFilter} column, it will plot 
+#' both FPKM distributions for the expressed genes and for the filtered genes.
 #'
 #' \code{plotEncDimSearch}: Visualization of the hyperparameter optimization.
 #' It plots the encoding dimension against the achieved loss (area under the
@@ -122,9 +122,9 @@
 #'
 #' @name plotFunctions
 #' @rdname plotFunctions
-#' @aliases plotFunctions plotAberrantPerSample plotVolcano plotQQ plotExpression
-#'             plotCountCorHeatmap plotFilterExpression plotExpectedVsObservedPsi
-#'             plotEncDimSearch
+#' @aliases plotFunctions plotAberrantPerSample plotVolcano plotQQ 
+#'             plotExpression plotCountCorHeatmap plotFilterExpression 
+#'             plotExpectedVsObservedPsi plotEncDimSearch
 #' @examples
 #' # TODO
 #' TODO <- 1
@@ -716,6 +716,16 @@ getColDataAsDFFactors <- function(fds, names){
     }
     rownames(tmpDF) <- rownames(colData(fds))
     return(tmpDF)
+}
+
+#' @noRd
+qlogisWithCap <- function(x){
+    ans <- qlogis(x)
+    ans[is.infinite(ans)] <- NA
+    rowm <- rowMaxs(ans, na.rm=TRUE)
+    idx <- which(is.na(ans), arr.ind=TRUE)
+    ans[idx] <- rowm[idx[,"row"]]
+    return(ans)
 }
 
 #'

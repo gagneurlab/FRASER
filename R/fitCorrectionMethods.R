@@ -276,10 +276,10 @@ needsHyperOpt <- function(method){
 #' @noRd
 getHyperOptimCorrectionMethod <- function(correction){
     switch(correction,
-           "PCA-BB-full"            = "PCA",
-           "PCA-reg-full"           = "PCA",
-           "PCA-BB-Decoder"         = "PCA-BB-Decoder",
-           correction
+            "PCA-BB-full"            = "PCA",
+            "PCA-reg-full"           = "PCA",
+            "PCA-BB-Decoder"         = "PCA-BB-Decoder",
+            correction
     )
 }
 
@@ -347,14 +347,15 @@ fitPCA <- function(fds, q, psiType, rhoRange=c(1e-5, 1-1e-5), noiseAlpha=NULL,
 fitBB <- function(fds, psiType){
     currentType(fds) <- psiType
     fds <- pvalueByBetaBinomialPerType(fds=fds,
-                                       aname=paste0("pvalues_BB_", psiType),
-                                       psiType=psiType, pvalFun=betabinVglmTest)
+                                        aname=paste0("pvalues_BB_", psiType),
+                                        psiType=psiType, 
+                                        pvalFun=betabinVglmTest)
     # predictedMeans(fds, type=psiType) <- rowMeans(
     #         getAssayMatrix(fds, type=psiType))
     predictedMeans(fds, type=psiType) <-
         mcols(fds, type=psiType)[,paste0(psiType, "_alpha")] /
         ( mcols(fds, type=psiType)[,paste0(psiType, "_alpha")] +
-              mcols(fds, type=psiType)[,paste0(psiType, "_beta")] )
+                mcols(fds, type=psiType)[,paste0(psiType, "_beta")] )
     fds
 }
 
@@ -375,12 +376,12 @@ fitFraserAE <- function(fds, q, type, noiseAlpha, rhoRange, lambda, convergence,
     print(table(featureExclusionMask(fds)))
 
     fds <- fitAutoencoder(fds=fds, q=q, type=type, noiseAlpha=noiseAlpha,
-                          rhoRange=rhoRange, lambda=lambda, 
-                          convergence=convergence, iterations=iterations, 
-                          initialize=initialize, nSubset=nSubset,
-                          weighted=weighted, control=control, BPPARAM=BPPARAM, 
-                          verbose=verbose, nrDecoderBatches=nrDecoderBatches, 
-                          latentSpace=latentSpace )
+                            rhoRange=rhoRange, lambda=lambda, 
+                            convergence=convergence, iterations=iterations, 
+                            initialize=initialize, nSubset=nSubset,
+                            weighted=weighted, control=control, BPPARAM=BPPARAM, 
+                            verbose=verbose, nrDecoderBatches=nrDecoderBatches, 
+                            latentSpace=latentSpace )
     return(fds)
 
 }

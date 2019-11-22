@@ -40,8 +40,9 @@ plotJunctionDistribution <- function(fds, gr, type=gr$type, sampleIDs=NULL,
     }
 
     # get number of plots
-    numPlots <- sum(sapply(list(plotRank, plotValVsCounts),
-            function(x){ ifelse(is.logical(x), sum(x), length(x)) })) +
+    numPlots <- sum(vapply(list(plotRank, plotValVsCounts),
+            function(x){ ifelse(is.logical(x), sum(x), length(x)) },
+            FUN.VALUE=integer(1))) +
             sum(qqplot) + sum(plotCounts)
 
     opar <- par(no.readonly=TRUE)
@@ -66,7 +67,7 @@ plotJunctionDistribution <- function(fds, gr, type=gr$type, sampleIDs=NULL,
     }
     # plot values versus counts
     if(!(length(plotValVsCounts) == 0 | isFALSE(plotValVsCounts))){
-        sapply(plotValVsCounts, plotValueVsCounts, gr=gr, fds=fds, data=NULL,
+        lapply(plotValVsCounts, plotValueVsCounts, gr=gr, fds=fds, data=NULL,
                sampleIDs=sampleIDs, plotlog=TRUE, rmZeroCts=FALSE)
     }
     # plot qq plot
@@ -207,7 +208,7 @@ plotCountsAtSite <- function(gr, fds, type, sampleIDs=NULL, plotLegend=TRUE,
     # add 50%, 25% and 10% lines
     curPlotPar <- data.table(fact=c(0.5, 0.25, 0.1), lty=c(2, 4, 3),
             name=c("PSI = 50%", "PSI = 25%", "PSI = 10%"))
-    sapply(seq_len(nrow(curPlotPar)), function(idx){
+    lapply(seq_len(nrow(curPlotPar)), function(idx){
         y2plot <- fitx * curPlotPar[idx, fact]
         lines(fitx, y2plot, lty=curPlotPar[idx, lty],
                 col=adjustcolor("black", 0.7))
@@ -215,7 +216,7 @@ plotCountsAtSite <- function(gr, fds, type, sampleIDs=NULL, plotLegend=TRUE,
 
     # add variance
     fityvar <- bbvariance(fitx, a, b)
-    sapply(c(-1, 1), function(varFactor) {
+    lapply(c(-1, 1), function(varFactor) {
         y <- fity + varFactor * fityvar # * scewFactor
         lines(fitx, y, lty="dotted", col=adjustcolor("firebrick", 0.5))
     })
@@ -224,7 +225,7 @@ plotCountsAtSite <- function(gr, fds, type, sampleIDs=NULL, plotLegend=TRUE,
     if(!is.null(sampleIDs)){
         names(x) <- samples(fds)
         names(y) <- samples(fds)
-        sapply(sampleIDs, addSamplePoints, x=x, y=y)
+        lapply(sampleIDs, addSamplePoints, x=x, y=y)
     }
 
     # add legend if requested
@@ -294,7 +295,7 @@ plotSampleRank <- function(gr, fds, type, sampleIDs=NULL, delta=FALSE,
          pch=16, col="gray"
     )
     if(!is.null(sampleIDs)){
-        sapply(sampleIDs, addSamplePoints, x=rank(p), y=p)
+        lapply(sampleIDs, addSamplePoints, x=rank(p), y=p)
     }
 }
 
@@ -331,7 +332,7 @@ plotValueVsCounts <- function(gr, fds, type, sampleIDs=NULL, delta=FALSE,
         axis(side=1, at=zeroVal, labels = "0", tick = TRUE)
     }
     if(!is.null(sampleIDs)){
-        sapply(sampleIDs, addSamplePoints, x=tcts, y=val)
+        lapply(sampleIDs, addSamplePoints, x=tcts, y=val)
     }
 }
 
@@ -370,8 +371,8 @@ plotQQplot <- function(gr=NULL, fds=NULL, type=NULL, data=NULL, maxOutlier=2,
     # get data
     if(is.null(data)){
         if(is.null(gr) | is.null(fds) | is.null(type)){
-            stop(paste0("If data is not provided gr, fds and type needs to be ", 
-                        "passed on."))
+            stop(paste0("If data is not provided gr, fds and type needs to ", 
+                        "be passed on."))
         }
         data <- getPlotDistributionData(gr, fds, type)
     }
@@ -454,7 +455,7 @@ plotQQplot <- function(gr=NULL, fds=NULL, type=NULL, data=NULL, maxOutlier=2,
 #' @noRd
 plotSampleQQ <- function(fds, type=c("psi5", "psi3", "psiSite"), sample=TRUE,
                     ...){
-    pvals <- sapply(type, function(x){
+    pvals <- lapply(type, function(x){
         readType <- whichReadType(fds, x)
         tested <- na2false(mcols(fds, type=x)[,paste0(x, "_tested")])
         as(assays(fds[tested,by=readType])[[paste0('pvalue_', x)]], "matrix")
@@ -504,13 +505,4 @@ testPlotting <- function(){
     plotJunctionDistribution(fds, gra[1], rmZeroCts = FALSE)
     plotCountsAtSite(gra[1], fds, gra[1]$type)
     plotValueVsCounts(gra[1], fds, gra[1]$type, plotLog=TRUE, rmZeroCts=FALSE)
-}
-
-qlogisWithCap <- function(x){
-    ans <- qlogis(x)
-    ans[is.infinite(ans)] <- NA
-    rowm <- rowMaxs(ans, na.rm=TRUE)
-    idx <- which(is.na(ans), arr.ind=TRUE)
-    ans[idx] <- rowm[idx[,"row"]]
-    return(ans)
 }
