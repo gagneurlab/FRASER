@@ -4,7 +4,7 @@
 #' @noRd
 fit_autoenc <- function(fds, type=currentType(fds), q_guess=round(ncol(fds)/4),
                     correction, noiseRatio=0.5, BPPARAM=bpparam(),
-                    iterations=3, nrDecoderBatches=1, verbose=FALSE){
+                    iterations=3, verbose=FALSE){
 
     message(paste(date(), "; q:", q_guess, "; noise: ", noiseRatio))
 
@@ -13,7 +13,7 @@ fit_autoenc <- function(fds, type=currentType(fds), q_guess=round(ncol(fds)/4),
 
     # train AE
     fds <- fit(fds, type=type, q=q_guess, correction=correction,
-            iterations=iterations, nrDecoderBatches=nrDecoderBatches,
+            iterations=iterations, 
             verbose=verbose, BPPARAM=BPPARAM)
     curLoss <- metadata(fds)[[paste0('loss_', type)]]
     curLoss <- mean(curLoss[,ncol(curLoss)])
@@ -56,8 +56,7 @@ eval_prot <- function(fds, type){
 
 
 findEncodingDim <- function(i, fds, type, params, correction,
-                    internalBPPARAM=1, iterations,
-                    nrDecoderBatches){
+                    internalBPPARAM=1, iterations){
     iBPPARAM <- MulticoreParam(internalBPPARAM)
 
     q_guess    <- params[i, "q"]
@@ -66,7 +65,7 @@ findEncodingDim <- function(i, fds, type, params, correction,
     correction <- getHyperOptimCorrectionMethod(correction)
 
     res_fit <- fit_autoenc(fds=fds, type=type, q_guess=q_guess,
-            correction=correction, nrDecoderBatches=nrDecoderBatches,
+            correction=correction, 
             noiseRatio=noiseRatio, BPPARAM=iBPPARAM,
             iterations=iterations)
     res_pvals <- predict_outliers(res_fit$fds, correction=correction,
@@ -186,7 +185,7 @@ optimHyperParams <- function(fds, type, correction,
                         type=type,
                         iterations=iterations, params=params, 
                         correction=correction,
-                        BPPARAM=BPPARAM, nrDecoderBatches=1,
+                        BPPARAM=BPPARAM, 
                         internalBPPARAM=internalThreads)
 
         data <- data.table(

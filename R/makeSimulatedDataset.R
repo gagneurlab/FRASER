@@ -577,7 +577,7 @@ injectOutliers <- function(fds, type=c("psi5", "psi3", "psiSite"),
             junctionID %in% goodJunctionIds]
     
     message(paste0(date(), ": Injecting outliers: ", sum(goodInjections), 
-            " / ", sum(goodSecondary), " (primary/secondary"))
+            " / ", sum(goodSecondary), " (primary/secondary)"))
     
     # 
     # prepare the injection into the dataset only for those which passed QC

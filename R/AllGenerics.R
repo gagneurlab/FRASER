@@ -570,8 +570,8 @@ setReplaceMethod("rowRanges", "FraseRDataSet", FraseR.rowRanges.replace)
 #'  fds <- makeExampleFraseRDataSet()
 #'  counts(fds, type="psi5", side="ofInterest")
 #'  counts(fds, type="psi5", side="other")
-#'  head(K(fds))
-#'  head(N(fds))
+#'  head(K(fds, type="psi3"))
+#'  head(N(fds, type="psi3"))
 #'  
 setMethod("counts", "FraseRDataSet", function(object, type=NULL,
             side=c("ofInterest", "otherSide")){
