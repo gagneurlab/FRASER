@@ -9,89 +9,83 @@ asFDS <- function(x){
     return(as(x, "FraseRDataSet"))
 }
 
-#' 
-#' Getters/Setters for FraseRDataSet values
-#' 
-#' @param object FraseRDataSet
-#' @param value The new value.
-#' 
-#' @return The value assigned to the FraseRDataSet object.
-#' @rdname fds_getters_setters
+
+#' @rdname samples
 #' @export
 setGeneric("samples",           
             function(object) standardGeneric("samples"))
 
-#' @rdname fds_getters_setters
+#' @rdname samples
 #' @export
 setGeneric("samples<-",         signature = "object", 
             function(object, value) standardGeneric("samples<-"))
 
-#' @rdname fds_getters_setters
+#' @rdname condition
 #' @export
 setGeneric("condition",         
             function(object) standardGeneric("condition"))
 
-#' @rdname fds_getters_setters
+#' @rdname condition
 #' @export
 setGeneric("condition<-",       signature = "object", 
             function(object, value) standardGeneric("condition<-"))
 
-#' @rdname fds_getters_setters
+#' @rdname bamFile
 #' @export
 setGeneric("bamFile",           
             function(object) standardGeneric("bamFile"))
 
-#' @rdname fds_getters_setters
+#' @rdname bamFile
 #' @export
 setGeneric("bamFile<-",         signature = "object", 
             function(object, value) standardGeneric("bamFile<-"))
 
-#' @rdname fds_getters_setters
+#' @rdname name
 #' @export
 setGeneric("name",              
             function(object) standardGeneric("name"))
 
-#' @rdname fds_getters_setters
+#' @rdname name
 #' @export
 setGeneric("name<-",            signature = "object", 
             function(object, value) standardGeneric("name<-"))
 
-#' @rdname fds_getters_setters
+#' @rdname strandSpecific
 #' @export
 setGeneric("strandSpecific",    
             function(object) standardGeneric("strandSpecific"))
 
-#' @rdname fds_getters_setters
+#' @rdname strandSpecific
 #' @export
 setGeneric("strandSpecific<-",  signature = "object", 
             function(object, value) standardGeneric("strandSpecific<-"))
 
-#' @rdname fds_getters_setters
+#' @rdname workingDir
 #' @export
 setGeneric("workingDir",        
             function(object) standardGeneric("workingDir"))
 
-#' @rdname fds_getters_setters
+#' @rdname workingDir
 #' @export
 setGeneric("workingDir<-",      signature = "object", 
             function(object, value) standardGeneric("workingDir<-"))
 
-#' @rdname fds_getters_setters
+#' @rdname scanBamParam
 #' @export
 setGeneric("scanBamParam",      
             function(object) standardGeneric("scanBamParam"))
 
-#' @rdname fds_getters_setters
+#' @rdname scanBamParam
 #' @export
 setGeneric("scanBamParam<-",    signature = "object", 
             function(object, value) standardGeneric("scanBamParam<-"))
 
-#' @rdname fds_getters_setters
+#' @rdname nonSplicedReads
 #' @export
 setGeneric("nonSplicedReads",   
             function(object) standardGeneric("nonSplicedReads"))
 
-#' @rdname fds_getters_setters
+#' @rdname nonSplicedReads
 #' @export
 setGeneric("nonSplicedReads<-", signature = "object", 
             function(object, value) standardGeneric("nonSplicedReads<-"))
@@ -406,6 +400,8 @@ subset.FraseR <- function(x, i, j, by=c("j", "ss")){
     validObject(newx)
     return(newx)
 }
+#' @rdname subset
+#' @export
 setMethod("[", c("FraseRDataSet", "ANY", "ANY"), subset.FraseR)
 
 
@@ -820,6 +816,7 @@ FraseR.results <- function(x, sampleIDs, fdrCutoff, zscoreCutoff, dPsiCutoff,
 #' result
 #' @param psiType The psi types for which the results should be retrieved.
 #' @param BPPARAM The BiocParallel parameter.
+#' @param ... Further parameters that are passed on.
 #'
 #' @return GRanges object containing significant results.
 #' 

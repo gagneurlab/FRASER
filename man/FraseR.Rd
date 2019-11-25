@@ -49,7 +49,7 @@ more control over each analysis step, one can call each function separately.
   fds <- filterExpression(fds)
 
   # Run analysis pipeline
-  fds <- FraseR(fds, iterations=2, correction='PCA')
+  fds <- FraseR(fds, q=5, iterations=2, correction='PCA')
 
   # save the final FraseR object
   saveFraseRDataSet(fds)

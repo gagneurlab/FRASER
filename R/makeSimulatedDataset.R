@@ -2,8 +2,7 @@
 #' Create an simulated example data set for FraseR
 #'
 #' Simulates a data set based on random counts following a
-#' negative binomial distribution with injected outliers with
-#' a fixed z score away from the mean of the gene.
+#' beta binomial (or Dirichlet-Multinomial) distribution.
 #'
 #' @param j Number of simulated junctions
 #' @param m Number of simulated samples
@@ -19,14 +18,13 @@
 #' # A generic dataset
 #' fds1 <- makeSimulatedFraserDataSet()
 #' fds1
-#' fds1 <- injectOutliers(fds1, minDpsi=0.2, freq=1E-3)
 #'
 #' # A generic dataset with specificed sample size and injection method
 #' fds2 <- makeSimulatedFraserDataSet(m=100, j=500, q=5)
 #' fds2
 #'
 #' @rdname makeSimulatedFraserDataSet
-#' @aliases makeSimulatedFraserDataSet, injectOutliers
+#' @aliases makeSimulatedFraserDataSet
 #' @export
 makeSimulatedFraserDataSet <- function(m=100, j=500, q=10,
                     distribution=c("BB", "DM"), ...){
@@ -307,9 +305,10 @@ makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=1000, q=10,
                     psi_mu=psi_mu, se_mu=se_mu, psi_alpha=psi_alpha, 
                     se_alpha=se_alpha, psi_rho=psi_rho, se_rho=se_rho))
     }, FUN.VALUE=list(k=numeric(m), nonSplit=numeric(m), n=numeric(m), 
-                        group_n=numeric(m), psi_mu=numeric(m), se_mu=numeric(m), 
-                        psi_alpha=numeric(m), se_alpha=numeric(m), 
-                        psi_rho=numeric(1), se_rho=numeric(1)))
+                        group_n=numeric(m), psi_mu=numeric(m), 
+                        se_mu=numeric(m), psi_alpha=numeric(m), 
+                        se_alpha=numeric(m), psi_rho=numeric(1), 
+                        se_rho=numeric(1)))
 
     # Extract k and nonSplit reads
     k <- do.call(rbind, res[1,])
@@ -415,16 +414,21 @@ makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=1000, q=10,
 #' @param minDpsi The minimal delta psi with which outliers will be injected.
 #' @param minCoverage The minimal total coverage (i.e. N) required for a 
 #' junction to be considered for injection of an outlier.
-#' @param deltaDistribution The distribution from which the delta psi value of 
+#' @param deltaDistr The distribution from which the delta psi value of 
 #' the injections is drawn (default: uniform distribution).
 #' @param verbose Should additional information be printed during computation?
 #' @param method Defines by which method the new psi of injections is computed, 
 #' i.e. to which value the delta psi of the injection is added: "meanPSI" for 
-#' adding to the mean psi of the junction over all samples or "samplePSI" to add 
-#' to the psi value of the junction in the specific sample. "simulatedPSI" is 
-#' only possible if a simulated dataset is used.
+#' adding to the mean psi of the junction over all samples or "samplePSI" to 
+#' add to the psi value of the junction in the specific sample. "simulatedPSI" 
+#' is only possible if a simulated dataset is used.
 #' 
 #' @return FraseRDataSet
+#' 
+#' @examples 
+#' # A generic dataset
+#' fds <- makeSimulatedFraserDataSet()
+#' fds <- injectOutliers(fds, minDpsi=0.2, freq=1E-3)
 #' @export
 injectOutliers <- function(fds, type=c("psi5", "psi3", "psiSite"),
                     freq=1E-3, minDpsi=0.2, minCoverage=2,
@@ -552,7 +556,7 @@ injectOutliers <- function(fds, type=c("psi5", "psi3", "psiSite"),
     # sample delta psi for injection from uniform distribution between 
     # min and max dpsi
     injMinDpsi <- ifelse(minDpsi + meanDpsi < maxDpsi,
-                         minDpsi + meanDpsi, maxDpsi)
+                        minDpsi + meanDpsi, maxDpsi)
     injDpsi <- injDirection * switch(deltaDistr,
             uniformDistr = runif(length(injMinDpsi), injMinDpsi, maxDpsi),
             ifelse(deltaDistr > maxDpsi, maxDpsi, deltaDistr))

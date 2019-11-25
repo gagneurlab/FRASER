@@ -45,6 +45,8 @@ dontWriteHDF5(fds) <- value
 \item{byGroup}{If TRUE, aggregation by donor/acceptor site will be done.}
 
 \item{dist}{Distribution for which the p-values should be extracted.}
+
+\item{value}{The new value to be assigned.}
 }
 \value{
 A (delayed) matrix or vector dependent on the type of data retrieved.

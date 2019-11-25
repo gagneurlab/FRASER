@@ -7,6 +7,7 @@
 #' @param type The type of psi (psi5, psi3 or psiSite)
 #' @param byGroup If TRUE, aggregation by donor/acceptor site will be done.
 #' @param dist Distribution for which the p-values should be extracted.
+#' @param value The new value to be assigned. 
 #' @return A (delayed) matrix or vector dependent on the type of data retrieved.
 #' 
 #' @name getter_setter_functions

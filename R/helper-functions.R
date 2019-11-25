@@ -502,9 +502,6 @@ putCounts2Memory <- function(fds, type=currentType(fds)){
 
 plotBasePlot <- function(ggplot, basePlot=FALSE){
     if(isFALSE(basePlot)){
-        if(!require(plotly)){
-            stop("Please install plotly, if you use the option basePlot=FALSE!")
-        }
         ggplot$labels <- lapply(ggplot$labels, function(x){
                 if(typeof(x) == "expression"){
                     warning("Found expression for plotly. Please adapt it!")

@@ -16,6 +16,8 @@ results(x, ...)
 \arguments{
 \item{x}{FraseRDataSet}
 
+\item{...}{Further parameters that are passed on.}
+
 \item{sampleIDs}{A vector of sample IDs for which results should be 
 retrieved}
 

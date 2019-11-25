@@ -20,20 +20,25 @@ injectOutliers(fds, type = c("psi5", "psi3", "psiSite"), freq = 0.001,
 \item{minCoverage}{The minimal total coverage (i.e. N) required for a 
 junction to be considered for injection of an outlier.}
 
+\item{deltaDistr}{The distribution from which the delta psi value of 
+the injections is drawn (default: uniform distribution).}
+
 \item{verbose}{Should additional information be printed during computation?}
 
 \item{method}{Defines by which method the new psi of injections is computed, 
 i.e. to which value the delta psi of the injection is added: "meanPSI" for 
-adding to the mean psi of the junction over all samples or "samplePSI" to add 
-to the psi value of the junction in the specific sample. "simulatedPSI" is 
-only possible if a simulated dataset is used.}
-
-\item{deltaDistribution}{The distribution from which the delta psi value of 
-the injections is drawn (default: uniform distribution).}
+adding to the mean psi of the junction over all samples or "samplePSI" to 
+add to the psi value of the junction in the specific sample. "simulatedPSI" 
+is only possible if a simulated dataset is used.}
 }
 \value{
 FraseRDataSet
 }
 \description{
 Inject artificial outliers in an existing fds
+}
+\examples{
+# A generic dataset
+fds <- makeSimulatedFraserDataSet()
+fds <- injectOutliers(fds, minDpsi=0.2, freq=1E-3)
 }
