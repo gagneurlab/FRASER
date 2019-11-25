@@ -13,6 +13,9 @@ object}
 }
 \arguments{
 \item{object}{A FraseRDataSet object.}
+
+\item{value}{A RangedSummarizedExperiment object containing the counts for 
+the non spliced reads overlapping splice sites in the fds.}
 }
 \value{
 RangedSummarizedExperiment (getter) or FraseRDataSet (setter)

@@ -25,6 +25,10 @@ returned}
 
 \item{aggregate}{If TRUE the returned object is based on the grouped 
 features}
+
+\item{...}{Further arguments can be passed to the method. If "zscores", 
+"padjVals" or "dPsi" is given, the values of those arguments are used to 
+define the aberrant events.}
 }
 \value{
 Either a of logical values of size introns/genes x samples if "by" 

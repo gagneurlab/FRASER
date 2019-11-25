@@ -8,6 +8,7 @@
 #' @param fds A FraseRDataSet object ot be saved
 #' @param dir A path where to save the objects (replaces the working directory)
 #' @param name The analysis name of the project (saved within the `dir`)
+#' @param file The file path to the fds-object.RDS file that should be loaded.
 #' @param rewrite logical if the object should be rewritten. This makes sense if
 #'             you have filtered or subsetted the object and want to save only
 #'             the subsetted version

@@ -13,6 +13,8 @@
 \alias{padjVals}
 \alias{predictedMeans}
 \alias{deltaPsiValue}
+\alias{dontWriteHDF5}
+\alias{dontWriteHDF5<-}
 \title{Getter/Setter functions}
 \usage{
 rho(fds, type = currentType(fds))
@@ -30,6 +32,10 @@ predictedMeans(fds, type = currentType(fds))
 deltaPsiValue(fds, type = currentType(fds))
 
 bestQ(fds, type = currentType(fds))
+
+dontWriteHDF5(fds)
+
+dontWriteHDF5(fds) <- value
 }
 \arguments{
 \item{fds}{An FraseRDataSet object.}
@@ -68,10 +74,18 @@ observed and the fitted psi values.
 latent space according to the hyperparameter optimization or a simple 
 estimate of about a tenth of the number of samples if the hyperparameter 
 opimization was not run yet.
+
+\item \code{dontWriteHDF5}: Gets the current value of whether the 
+assays should be stored as hdf5 files.
+
+\item \code{dontWriteHDF5<-}: Sets whether the assays should be stored 
+as hdf5 files.
 }}
 
 \examples{
 fds <- createTestFraseRDataSet()
+dontWriteHDF5(fds)
+dontWriteHDF5 <- TRUE
 currentType(fds) <- "psi5"
 
 bestQ(fds)

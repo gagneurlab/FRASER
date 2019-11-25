@@ -2,8 +2,6 @@
 #' Main autoencoder fit function
 #'
 #' @noRd
-#'
-#' @export
 fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, minDeltaPsi=0.1,
                     rhoRange=c(1e-5, 1-1e-5), lambda=0, convergence=1e-5,
                     iterations=15, initialize=TRUE, control=list(),

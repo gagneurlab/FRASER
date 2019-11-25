@@ -12,6 +12,8 @@
 }
 \arguments{
 \item{object}{A FraseRDataSet object.}
+
+\item{value}{The new sample IDs.}
 }
 \value{
 A \code{vector} with all sample IDs

@@ -12,6 +12,8 @@
 }
 \arguments{
 \item{object}{A FraseRDataSet object.}
+
+\item{value}{A vector with the conditions that should be assigned.}
 }
 \value{
 A \code{vector} with the condition per sample

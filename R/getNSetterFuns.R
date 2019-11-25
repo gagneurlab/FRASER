@@ -15,6 +15,8 @@
 #' 
 #' @examples 
 #' fds <- createTestFraseRDataSet()
+#' dontWriteHDF5(fds)
+#' dontWriteHDF5 <- TRUE
 #' currentType(fds) <- "psi5"
 #' 
 #' bestQ(fds)
@@ -35,6 +37,7 @@ NULL
 #' features which we do not want to model by the autoencoder.
 #'
 #' @param fds A FraseRDataSet object
+#' @param type The psi type.
 #' @param value A logical vector of the length of the features. If
 #'             \code{TRUE}, the corresponding feature will be excluded
 #'             from the encoding dimension fit.
@@ -411,11 +414,15 @@ bestNoise <- function(fds, type=currentType(fds)){
     as.numeric(as.character(ans))
 }
 
+#' @describeIn getter_setter_functions Gets the current value of whether the 
+#' assays should be stored as hdf5 files.
 #' @export
 dontWriteHDF5 <- function(fds){
     return(metadata(fds)[['dontWriteHDF5']])
 }
 
+#' @describeIn getter_setter_functions Sets whether the assays should be stored 
+#' as hdf5 files.
 #' @export
 `dontWriteHDF5<-` <- function(fds, value){
     metadata(fds)[['dontWriteHDF5']] <- isTRUE(value)

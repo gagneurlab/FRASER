@@ -145,11 +145,6 @@ getAnnotationFeature <- function(data, feature, annotation){
 #' 
 #' Annotate the object with a given annotation. 
 #' 
-#' @param fds FraseRDataSet
-#' @param annotation
-#' @param annotateNames
-#' @param seqLevelStyle
-#' 
 #' @return FraseRDataSet
 #' @examples 
 #'     TODO <- 1

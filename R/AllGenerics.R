@@ -106,6 +106,7 @@ setGeneric("results", function(x, ...) standardGeneric("results"))
 #'  Getter/Setter for the sampleIDs
 #'
 #' @param object A FraseRDataSet object.
+#' @param value The new sample IDs.
 #' @return A \code{vector} with all sample IDs
 #' @examples
 #' fds <- createTestFraseRSettings()
@@ -133,6 +134,7 @@ setReplaceMethod("samples", "FraseRDataSet", function(object, value) {
 #'  Get the condition for each sample
 #'
 #' @param object A FraseRDataSet object.
+#' @param value A vector with the conditions that should be assigned.
 #' @return A \code{vector} with the condition per sample
 #'     If the condition column is not set sequence of numbers is returned.
 #' @examples
@@ -162,6 +164,8 @@ setReplaceMethod("condition", "FraseRDataSet", function(object, value) {
 #'  Get/Set the bamFile
 #'
 #' @param object A FraseRDataSet object.
+#' @param value The new values (file.paths or objects of class BamFile) for the 
+#' bamfiles. 
 #' @return A \code{vector} with the bamFile for each sample
 #' @examples
 #' settings <- createTestFraseRSettings()
@@ -191,6 +195,7 @@ setReplaceMethod("bamFile", "FraseRDataSet", function(object, value) {
 #'  Get/Set the name of the analysis
 #'
 #' @param object A FraseRDataSet object.
+#' @param value The new name of the analysis.
 #' @return A character string representing the name of the analysis
 #' @examples
 #' settings <- createTestFraseRSettings()
@@ -216,6 +221,7 @@ setReplaceMethod("name", "FraseRDataSet", function(object, value) {
 #'  Get/Set the working directory from the FraseRDataSet object
 #'
 #' @param object A FraseRDataSet object.
+#' @param value The new working directory.
 #' @return A path
 #' @examples
 #' settings <- createTestFraseRSettings()
@@ -242,6 +248,7 @@ setReplaceMethod("workingDir", "FraseRDataSet", function(object, value) {
 #'  Get/Set if the analysis is strand specific or not
 #'
 #' @param object A FraseRDataSet object.
+#' @param value The new value for the strand specificity of the analysis.
 #' @return A logical value if the analysis is strand specific
 #' @examples
 #' settings <- createTestFraseRSettings()
@@ -267,6 +274,7 @@ setReplaceMethod("strandSpecific", "FraseRDataSet", function(object, value) {
 #' Get/Set the ScanBamParam object from the FraseRDataSet object
 #'
 #' @param object A FraseRDataSet object.
+#' @param value The new ScanBamParam.
 #' @return A ScanBamParam object
 #' @examples
 #' settings <- createTestFraseRSettings()
@@ -300,6 +308,8 @@ setMethod("nonSplicedReads", "FraseRDataSet", function(object){
 #' object
 #' 
 #' @param object A FraseRDataSet object.
+#' @param value A RangedSummarizedExperiment object containing the counts for 
+#' the non spliced reads overlapping splice sites in the fds.
 #' @return RangedSummarizedExperiment (getter) or FraseRDataSet (setter)
 #' @export
 #' @rdname nonSplicedReads
@@ -493,6 +503,7 @@ setMethod("length", "FraseRDataSet", function(x) callNextMethod())
 #' 
 #' @param x FraseRDataSet
 #' @param type The psi type.
+#' @param ... Further parameters passed to mcols
 #' 
 #' @return mcols
 #' @examples 
@@ -563,6 +574,7 @@ setReplaceMethod("rowRanges", "FraseRDataSet", FraseR.rowRanges.replace)
 #' all other junctions at the same donor site (psi5) or acceptor site (psi3), 
 #' respectively. 
 #' @param value An integer matrix containing the counts.
+#' @param ... Further parameters that are passed to assays(object,...)
 #' 
 #' @return FraseRDataSet
 #' @rdname counts
@@ -866,6 +878,10 @@ resultsByGenes <- function(res, geneColumn="hgncSymbol", method="BY"){
 #'
 #' Mapping of chromosome names
 #'
+#' @param fds FraseRDataSet
+#' @param style The style of the chromosome names.
+#' @param ... Further parameters passed to GenomeInfoDb::mapSeqlevels().
+#' 
 #' @return FraseRDataSet
 #' @examples
 #'
@@ -910,6 +926,9 @@ mapSeqlevels <- function(fds, style="UCSC", ...){
 #'              returned
 #' @param aggregate If TRUE the returned object is based on the grouped 
 #' features
+#' @param ... Further arguments can be passed to the method. If "zscores", 
+#' "padjVals" or "dPsi" is given, the values of those arguments are used to 
+#' define the aberrant events.
 #' @return Either a of logical values of size introns/genes x samples if "by" 
 #' is NA or a vector with the number of aberrant events per sample or feature 
 #' depending on the vaule of "by"

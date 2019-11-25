@@ -12,6 +12,8 @@
 }
 \arguments{
 \item{object}{A FraseRDataSet object.}
+
+\item{value}{The new name of the analysis.}
 }
 \value{
 A character string representing the name of the analysis

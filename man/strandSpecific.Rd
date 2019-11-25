@@ -12,6 +12,8 @@
 }
 \arguments{
 \item{object}{A FraseRDataSet object.}
+
+\item{value}{The new value for the strand specificity of the analysis.}
 }
 \value{
 A logical value if the analysis is strand specific

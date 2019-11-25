@@ -6,6 +6,13 @@
 \usage{
 mapSeqlevels(fds, style = "UCSC", ...)
 }
+\arguments{
+\item{fds}{FraseRDataSet}
+
+\item{style}{The style of the chromosome names.}
+
+\item{...}{Further parameters passed to GenomeInfoDb::mapSeqlevels().}
+}
 \value{
 FraseRDataSet
 }

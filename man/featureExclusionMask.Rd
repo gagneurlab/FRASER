@@ -14,6 +14,8 @@ featureExclusionMask(fds, type = currentType(fds)) <- value
 \arguments{
 \item{fds}{A FraseRDataSet object}
 
+\item{type}{The psi type.}
+
 \item{value}{A logical vector of the length of the features. If
 \code{TRUE}, the corresponding feature will be excluded
 from the encoding dimension fit.}

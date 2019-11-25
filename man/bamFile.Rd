@@ -12,6 +12,9 @@
 }
 \arguments{
 \item{object}{A FraseRDataSet object.}
+
+\item{value}{The new values (file.paths or objects of class BamFile) for the 
+bamfiles.}
 }
 \value{
 A \code{vector} with the bamFile for each sample

@@ -8,6 +8,9 @@
 #' @param j Number of simulated junctions
 #' @param m Number of simulated samples
 #' @param q number of simulated latent variables.
+#' @param distribution Either "BB" for a beta-binomial simulation or "DM" for a 
+#' dirichlet-multinomial simulation.
+#' @param ... Further arguments used to construct the FraseRDataSet.
 #'
 #' @return An FraserDataSet containing an example dataset based on
 #'         simulated data
@@ -403,9 +406,25 @@ makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=1000, q=10,
 
 }
 
-#
-# Inject artificial outliers in an existing fds
-#' @rdname makeSimulatedFraserDataSet
+#'
+#' Inject artificial outliers in an existing fds
+#' 
+#' @param fds FraseRDataSet
+#' @param type The psi type
+#' @param freq The injection frequency.
+#' @param minDpsi The minimal delta psi with which outliers will be injected.
+#' @param minCoverage The minimal total coverage (i.e. N) required for a 
+#' junction to be considered for injection of an outlier.
+#' @param deltaDistribution The distribution from which the delta psi value of 
+#' the injections is drawn (default: uniform distribution).
+#' @param verbose Should additional information be printed during computation?
+#' @param method Defines by which method the new psi of injections is computed, 
+#' i.e. to which value the delta psi of the injection is added: "meanPSI" for 
+#' adding to the mean psi of the junction over all samples or "samplePSI" to add 
+#' to the psi value of the junction in the specific sample. "simulatedPSI" is 
+#' only possible if a simulated dataset is used.
+#' 
+#' @return FraseRDataSet
 #' @export
 injectOutliers <- function(fds, type=c("psi5", "psi3", "psiSite"),
                     freq=1E-3, minDpsi=0.2, minCoverage=2,
@@ -550,7 +569,7 @@ injectOutliers <- function(fds, type=c("psi5", "psi3", "psiSite"),
     # inject secondary k_ij -> change k based on n and the new_psi
     second_delta_psi <- - injDpsi[secondaryPrimaryIndex[,"I"]] * (
         psi[secondaryIndexInReal] / (
-            1-psi[secondaryPrimaryIndex[,c("idxInCount", "col")]]))
+            1-psi[secondaryPrimaryIndex[,c("idxInCount", "col"),drop=FALSE]]))
     new_second_psi <- psi[secondaryIndexInReal] + second_delta_psi
     
     # sanity check for injected psi
@@ -584,8 +603,10 @@ injectOutliers <- function(fds, type=c("psi5", "psi3", "psiSite"),
     # 
     
     # set counts (k and o)
-    k[primaryIndexInReal[goodInjections,]]  <- new_primary_k[goodInjections]
-    k[secondaryIndexInReal[goodSecondary,]] <- new_second_k[goodSecondary]
+    k[primaryIndexInReal[goodInjections,,drop=FALSE]]  <- 
+        new_primary_k[goodInjections]
+    k[secondaryIndexInReal[goodSecondary,,drop=FALSE]] <- 
+        new_second_k[goodSecondary]
     o <- n - k
     
     # set injection status (direction, primary, secondary)

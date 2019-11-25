@@ -10,13 +10,13 @@ calculatePSIValues(fds, types = psiTypes, overwriteCts = FALSE,
 \arguments{
 \item{fds}{A FraseRDataSet object}
 
+\item{types}{A vector with the psi types which should be calculated. Default 
+is all of psi5, psi3 and psiSite.}
+
 \item{overwriteCts}{FALSE or TRUE (the default) the total counts (aka N) will
 be recalculated based on the existing junction counts (aka K)}
 
 \item{BPPARAM}{the BiocParallel parameters for the parallelization}
-
-\item{type}{A vector with the psi types which should be calculated. Default 
-is all of psi5, psi3 and psiSite.}
 }
 \value{
 FraseRDataSet

@@ -12,6 +12,8 @@
 }
 \arguments{
 \item{object}{A FraseRDataSet object.}
+
+\item{value}{The new ScanBamParam.}
 }
 \value{
 A ScanBamParam object

@@ -8,10 +8,6 @@
 \usage{
 makeSimulatedFraserDataSet(m = 100, j = 500, q = 10,
   distribution = c("BB", "DM"), ...)
-
-injectOutliers(fds, type = c("psi5", "psi3", "psiSite"), freq = 0.001,
-  minDpsi = 0.2, minCoverage = 2, deltaDistr = "uniformDistr",
-  verbose = FALSE, method = c("meanPSI", "samplePSI", "simulatedPSI"))
 }
 \arguments{
 \item{m}{Number of simulated samples}
@@ -19,6 +15,11 @@ injectOutliers(fds, type = c("psi5", "psi3", "psiSite"), freq = 0.001,
 \item{j}{Number of simulated junctions}
 
 \item{q}{number of simulated latent variables.}
+
+\item{distribution}{Either "BB" for a beta-binomial simulation or "DM" for a 
+dirichlet-multinomial simulation.}
+
+\item{...}{Further arguments used to construct the FraseRDataSet.}
 }
 \value{
 An FraserDataSet containing an example dataset based on

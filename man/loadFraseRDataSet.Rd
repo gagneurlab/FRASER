@@ -14,6 +14,8 @@ saveFraseRDataSet(fds, dir = NULL, name = NULL, rewrite = FALSE)
 
 \item{name}{The analysis name of the project (saved within the `dir`)}
 
+\item{file}{The file path to the fds-object.RDS file that should be loaded.}
+
 \item{upgrade}{Should the version of the loaded object be updated?}
 
 \item{fds}{A FraseRDataSet object ot be saved}

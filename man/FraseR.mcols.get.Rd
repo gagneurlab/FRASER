@@ -10,6 +10,8 @@ FraseR.mcols.get(x, type = NULL, ...)
 \item{x}{FraseRDataSet}
 
 \item{type}{The psi type.}
+
+\item{...}{Further parameters passed to mcols}
 }
 \value{
 mcols
