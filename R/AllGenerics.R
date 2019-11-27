@@ -822,8 +822,13 @@ FraseR.results <- function(x, sampleIDs, fdrCutoff, zscoreCutoff, dPsiCutoff,
 #' 
 #' @rdname results
 #' @examples
-#' # TODO
-#' TODO <- 1
+#' # get data, fit and compute p-values and z-scores
+#' fds <- createTestFraseRDataSet()
+#' 
+#' # extract results: for this example dataset, padjust cutoff of 0.15 used to
+#' # get at least one result and show the output
+#' res <- results(fds, padjCutoff=0.15, zScoreCutoff=NA, deltaPsiCutoff=0.1)
+#' res
 #'
 #' @export
 setMethod("results", "FraseRDataSet", function(x, sampleIDs=samples(x),
@@ -931,8 +936,22 @@ mapSeqlevels <- function(fds, style="UCSC", ...){
 #' depending on the vaule of "by"
 #' 
 #' @examples
-#' # TODO
-#' TODO <- 1
+#' # get data
+#' fds <- createTestFraseRDataSet()
+#' 
+#' # get aberrant events per sample: on the example data, nothing is aberrant
+#' # based on the adjusted p-value
+#' aberrant(fds, type="psi5", by="sample")
+#' 
+#' # use zScoreCutoff instead
+#' aberrant(fds, type="psi5", by="sample", zScoreCutoff=2, padjCutoff=NA)
+#' 
+#' # get aberrant events per gene
+#' aberrant(fds, type="psi5", by="feature", zScoreCutoff=2, padjCutoff=NA,
+#'         aggregate=TRUE)
+#'         
+#' # find aberrant junctions/splice sites
+#' aberrant(fds, type="psi5", by=NA)
 #'
 #' @export
 #'

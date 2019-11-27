@@ -45,7 +45,12 @@ The result function extracts the results from the given analysis object
 based on the given options and cutoffs.
 }
 \examples{
-# TODO
-TODO <- 1
+# get data, fit and compute p-values and z-scores
+fds <- createTestFraseRDataSet()
+
+# extract results: for this example dataset, padjust cutoff of 0.15 used to
+# get at least one result and show the output
+res <- results(fds, padjCutoff=0.15, zScoreCutoff=NA, deltaPsiCutoff=0.1)
+res
 
 }
