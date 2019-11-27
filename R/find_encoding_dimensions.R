@@ -163,6 +163,13 @@ optimHyperParams <- function(fds, type, correction,
         # inject outliers
         fds_copy <- injectOutliers(fds_copy, type=type, freq=injectFreq,
                 minDpsi=minDeltaPsi, method="samplePSI")
+        
+        if(sum(getAssayMatrix(fds_copy, type=type, "trueOutliers") != 0) == 0){
+            warning(paste0("No outliers could be injected so the ", 
+                           "hyperparameter optimization could not run. ", 
+                           "Possible reason: too few junctions in the data."))
+            return(fds)
+        }
 
         # remove unneeded blocks to save memory
         a2rm <- paste(sep="_", c("originalCounts", "originalOtherCounts"),
