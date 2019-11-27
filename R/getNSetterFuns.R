@@ -399,7 +399,7 @@ hyperParams <- function(fds, type=currentType(fds), all=FALSE){
 #' @export
 bestQ <- function(fds, type=currentType(fds)){
     ans <- hyperParams(fds, type=type)[1,q]
-    if(is.null(ans)){
+    if(is.null(ans) || is.na(ans)){
         warnings("Please set q by estimating it correctly.")
         ans <- min(100, max(2, round(ncol(fds)/10)))
     }
