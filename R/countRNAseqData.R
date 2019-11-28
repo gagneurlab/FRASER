@@ -59,11 +59,15 @@
 #'              non split read counts of all splice sites present in the 
 #'              dataset for all samples.
 #' @param sampleID The ID of the sample to be counted.
+#' @param longRead If TRUE, then the isLongRead option of 
+#' Rsubread::featureCounts is used when counting the non spliced reads 
+#' overlapping splice sites.
 #' @param countList A list of GRanges objects containing the counts that should
 #'     be merged into one object.
 #' @param assumeEqual Logical indicating whether all objects in 
 #'     \code{countList} can be assumed to contain counts for the same ranges. 
 #'     If FALSE, merging of the ranges is performed.
+#' @param ... Further parameters passed on to Rsubread::featureCounts.
 #' 
 #' @name countRNA
 #' @rdname countRNA
@@ -81,7 +85,8 @@ NULL
 countRNAData <- function(fds, NcpuPerSample=1, junctionMap=NULL, minAnchor=5,
                         recount=FALSE, BPPARAM=bpparam(), genome=NULL,
                         countDir=file.path(workingDir(fds), "savedObjects", 
-                                            nameNoSpace(name(fds)))){
+                                            nameNoSpace(name(fds))),
+                        ...){
     
     # Check input TODO
     stopifnot(is(fds, "FraseRDataSet"))
@@ -119,7 +124,8 @@ countRNAData <- function(fds, NcpuPerSample=1, junctionMap=NULL, minAnchor=5,
                                                 NcpuPerSample=NcpuPerSample, 
                                                 minAnchor=minAnchor,
                                                 recount=recount, 
-                                                BPPARAM=BPPARAM )
+                                                BPPARAM=BPPARAM,
+                                                ...)
     writeCountsToTsv(nonSplicedCounts, 
                     file=file.path(countDir, "nonSplitCounts.tsv.gz"))
     
@@ -214,7 +220,8 @@ getSplitReadCountsForAllSamples <- function(fds, NcpuPerSample=1,
 getNonSplitReadCountsForAllSamples <- function(fds, splitCounts, 
                                                 NcpuPerSample=1, minAnchor=5,
                                                 recount=FALSE, 
-                                                BPPARAM=bpparam() ){
+                                                BPPARAM=bpparam(),
+                                                longRead=TRUE){
     if(!("startID" %in% colnames(mcols(splitCounts))) | 
         !("endID" %in% colnames(mcols(splitCounts)))){
         # splice site map
@@ -242,7 +249,8 @@ getNonSplitReadCountsForAllSamples <- function(fds, splitCounts,
                             BPPARAM=BPPARAM,
                             NcpuPerSample=NcpuPerSample,
                             minAnchor=minAnchor,
-                            recount=recount)
+                            recount=recount,
+                            longRead=longRead)
     names(countList) <- samples(fds)
     siteCounts <- mergeCounts(countList, assumeEqual=TRUE)
     mcols(siteCounts)$type <- factor(countList[[1]]$type,
@@ -552,7 +560,8 @@ GRanges2SAF <- function(gr, minAnchor=1){
 #' @return \code{\link{countNonSplicedReads}} returns a GRanges object.
 #' @export
 countNonSplicedReads <- function(sampleID, splitCounts, fds,
-                                NcpuPerSample=1, minAnchor=5, recount=FALSE){
+                                NcpuPerSample=1, minAnchor=5, recount=FALSE,
+                                longRead=TRUE){
     
     # splice site map
     splitCounts <- annotateSpliceSite(splitCounts)
@@ -603,7 +612,7 @@ countNonSplicedReads <- function(sampleID, splitCounts, fds,
                                         strandSpecific(fds)),
                                     
                                     # activating long read mode
-                                    isLongRead=TRUE,
+                                    isLongRead=longRead,
                                     
                                     # multi-mapping reads
                                     countMultiMappingReads=TRUE,
