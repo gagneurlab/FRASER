@@ -39,7 +39,21 @@ depending on the vaule of "by"
 Use cutoffs to define splicing outlier event.
 }
 \examples{
-# TODO
-TODO <- 1
+# get data
+fds <- createTestFraseRDataSet()
+
+# get aberrant events per sample: on the example data, nothing is aberrant
+# based on the adjusted p-value
+aberrant(fds, type="psi5", by="sample")
+
+# use zScoreCutoff instead
+aberrant(fds, type="psi5", by="sample", zScoreCutoff=2, padjCutoff=NA)
+
+# get aberrant events per gene
+aberrant(fds, type="psi5", by="feature", zScoreCutoff=2, padjCutoff=NA,
+        aggregate=TRUE)
+        
+# find aberrant junctions/splice sites
+aberrant(fds, type="psi5", by=NA)
 
 }

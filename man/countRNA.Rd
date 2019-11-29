@@ -14,14 +14,15 @@
 countRNAData(fds, NcpuPerSample = 1, junctionMap = NULL,
   minAnchor = 5, recount = FALSE, BPPARAM = bpparam(),
   genome = NULL, countDir = file.path(workingDir(fds), "savedObjects",
-  nameNoSpace(name(fds))))
+  nameNoSpace(name(fds))), ...)
 
 getSplitReadCountsForAllSamples(fds, NcpuPerSample = 1,
   junctionMap = NULL, recount = FALSE, BPPARAM = bpparam(),
   genome = NULL, countFiles = NULL)
 
 getNonSplitReadCountsForAllSamples(fds, splitCounts, NcpuPerSample = 1,
-  minAnchor = 5, recount = FALSE, BPPARAM = bpparam())
+  minAnchor = 5, recount = FALSE, BPPARAM = bpparam(),
+  longRead = TRUE)
 
 addCountsToFraseRDataSet(fds, splitCounts, nonSplitCounts)
 
@@ -32,7 +33,7 @@ mergeCounts(countList, junctionMap = NULL, assumeEqual = FALSE,
   BPPARAM = SerialParam())
 
 countNonSplicedReads(sampleID, splitCounts, fds, NcpuPerSample = 1,
-  minAnchor = 5, recount = FALSE)
+  minAnchor = 5, recount = FALSE, longRead = TRUE)
 }
 \arguments{
 \item{fds}{A FraseRDataSet object}
@@ -56,6 +57,8 @@ non spliced reads. Default to 5}
 \item{countDir}{The directory in which the tsv containing the position and 
 counts of the junctions should be placed.}
 
+\item{...}{Further parameters passed on to Rsubread::featureCounts.}
+
 \item{countFiles}{If specified, the split read counts for all samples are 
 read from the specified files. Should be a vector of paths 
 to files containing the split read counts for the 
@@ -66,6 +69,10 @@ the order of the samples in the fds.}
 
 \item{splitCounts}{The merged GRanges object containing the position and 
 counts of all the introns in the dataset for all samples.}
+
+\item{longRead}{If TRUE, then the isLongRead option of 
+Rsubread::featureCounts is used when counting the non spliced reads 
+overlapping splice sites.}
 
 \item{nonSplitCounts}{The merged GRanges object containing the position and 
 non split read counts of all splice sites present in the 
