@@ -30,8 +30,8 @@ plotExpectedVsObservedPsi(fds, type = c("psi5", "psi3", "psiSite"),
 
 plotQQ(fds, type = NULL, idx = NULL, result = NULL,
   aggregate = FALSE, global = FALSE, main = NULL,
-  conf.alpha = 0.05, samplePoints = 30000, basePlot = TRUE,
-  Ncpus = min(4, getDTthreads()), ...)
+  conf.alpha = 0.05, samplingPrecision = 3, basePlot = TRUE,
+  Ncpus = min(3, getDTthreads()), ...)
 
 plotEncDimSearch(fds, type = c("psi3", "psi5", "psiSite"))
 
@@ -79,7 +79,8 @@ as indices.}
 
 \item{conf.alpha}{If set, a confidence interval is plotted, defaults to 0.05}
 
-\item{samplePoints}{Sample points for Q-Q plot, defaults to max 30k points}
+\item{samplingPrecision}{Plot only non overlapping points in Q-Q plot to 
+reduce number of points to plot. Defines the digits to round to.}
 
 \item{bins}{Set the number of bins to be used in the histogram.}
 
