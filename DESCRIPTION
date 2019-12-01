@@ -107,7 +107,6 @@ Collate:
     updateRho.R
     gradient_loss_R.R
     methods-makeExampleObj.R
-    plotAutoencoderResults.R
     pvalsNzscore.R
     makeSimulatedDataset.R
     fitCorrectionMethods.R

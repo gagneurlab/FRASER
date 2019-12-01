@@ -3,16 +3,19 @@
 #'
 #' Checks all user input and returns corresponding messages
 #' checkFraseRDataSet
-#'
+#' 
+#' @return logical(1)
 #' @rdname checkInputFunctions
+#' @noRd
 checkFraseRDataSet <- function(fds){
-    if(class(fds) != "FraseRDataSet"){
+    if(!is(fds, "FraseRDataSet")){
         stop("Please provide a FraseRDataSet object.")
     }
     return(invisible(TRUE))
 }
 
 #' @rdname checkInputFunctions
+#' @noRd
 checkCountData <- function(fds, stop=TRUE){
     checkFraseRDataSet(fds)
     if(!all(c("rawCountsJ", "rawCountsSS") %in% assayNames(fds))){
@@ -29,13 +32,13 @@ checkCountData <- function(fds, stop=TRUE){
 #'
 #' clear the files in the cache to start fresh
 #'
+#' @return nothing
 #' @examples
 #'     fds <- createTestFraseRSettings()
 #'     cleanCache(fds)
-#'
-#' @export
+#' @noRd
 cleanCache <- function(fds, all=FALSE, cache=TRUE, assays=FALSE, results=FALSE){
-    stopifnot(class(fds) == "FraseRDataSet")
+    stopifnot(is(fds, "FraseRDataSet"))
 
     dirs2delete <- c()
     fdsDirName <- nameNoSpace(fds)
@@ -89,7 +92,8 @@ checkReadType <- function(fds, type){
     if(!is.na(atype)) return(atype)
 
     # regex on the psi type
-    atype <- correctTypes[sapply(names(correctTypes), grepl, type)]
+    atype <- correctTypes[vapply(names(correctTypes), FUN=grepl, type, 
+                                FUN.VALUE=logical(1))]
     if(length(atype) == 1){
         return(atype)
     }
@@ -141,7 +145,7 @@ whichReadType <- function(fds, name){
 #' Removes the white spaces to have a cleaner file path
 #'@noRd
 nameNoSpace <- function(name){
-    if(class(name) == "FraseRDataSet") name <- name(name)
+    if(is(name, "FraseRDataSet")) name <- name(name)
     stopifnot(isScalarCharacter(name))
     gsub("\\s+", "_", name, perl=TRUE)
 }
@@ -154,6 +158,7 @@ nameNoSpace <- function(name){
 #'
 #' Convert NULL to NA or to another default value
 #'
+#' @return vector
 #' @examples
 #'   a <- c(TRUE, FALSE, NA, TRUE, NA)
 #'   na2false(a)
@@ -166,7 +171,7 @@ nameNoSpace <- function(name){
 #'
 #' @rdname na2default
 #' @aliases na2false na2zero null2na null2default
-#' @export
+#' @noRd
 na2default <- function(x, default=FALSE){
     if(any(class(x) %in% c("DataFrame", "matrix", "data.frame"))){
         stopifnot(dim(x)[2] == 1)
@@ -177,7 +182,7 @@ na2default <- function(x, default=FALSE){
 }
 
 #' @rdname na2default
-#' @export
+#' @noRd
 null2default <- function(x, default=NA){
     if(is.null(x)){
         return(default)
@@ -186,19 +191,19 @@ null2default <- function(x, default=NA){
 }
 
 #' @rdname na2default
-#' @export
+#' @noRd
 na2false <- function(x){
     na2default(x, FALSE)
 }
 
 #' @rdname na2default
-#' @export
+#' @noRd
 na2zero <- function(x){
     na2default(x, 0)
 }
 
 #' @rdname na2default
-#' @export
+#' @noRd
 null2na <- function(x){
     null2default(x, NA)
 }
@@ -213,7 +218,7 @@ fraserQQplotPlotly <- function(pvalues, ci=TRUE, reducePoints=FALSE,
     }
 
     # convert it to matrix if its a vector
-    if(any(class(pvalues) == "numeric")){
+    if(any(is(pvalues, "numeric"))){
         pvalues <- matrix(pvalues)
         colnames(pvalues) <- "observed pvalues"
     } else if(!sampleWise){
@@ -231,7 +236,7 @@ fraserQQplotPlotly <- function(pvalues, ci=TRUE, reducePoints=FALSE,
 
     # check colnames
     if(is.null(colnames(pvalues))){
-        colnames(pvalues) <- 1:dim(pvalues)[2]
+        colnames(pvalues) <- seq_len(dim(pvalues)[2])
     }
 
     # my observerd and expected values
@@ -275,7 +280,7 @@ fraserQQplotPlotly <- function(pvalues, ci=TRUE, reducePoints=FALSE,
             }
         } else {
             # confidence qbeta based from GWASTools::qqPlot
-            a <- 1:length(expect)
+            a <- seq_along(expect)
             upper <- -log10(qbeta(0.025, rev(a), a))
             lower <- -log10(qbeta(0.975, rev(a), a))
         }
@@ -287,7 +292,7 @@ fraserQQplotPlotly <- function(pvalues, ci=TRUE, reducePoints=FALSE,
         )))
     }
 
-    for(idx in 1:dim(pvalues)[2]){
+    for(idx in seq_len(dim(pvalues)[2])){
         dat <- data.table(
             expect=expect,
             observ=sort(observ[,idx], decreasing=TRUE, na.last=TRUE)
@@ -304,7 +309,7 @@ fraserQQplotPlotly <- function(pvalues, ci=TRUE, reducePoints=FALSE,
                 }
             }
             dat <- dat[sort(unique(c(
-                1:nEdge, -(nEdge-1):0+ldat, seq(1, ldat, nBy)
+                seq_len(nEdge), -(nEdge-1):0+ldat, seq(1, ldat, nBy)
             )))]
         }
         p <- add_trace(p, data=dat, mode="markers",
@@ -318,7 +323,7 @@ fraserQQplotPlotly <- function(pvalues, ci=TRUE, reducePoints=FALSE,
 
 #'
 #' logger function for internal use only
-#'
+#' @noRd
 logger <- function(type="INFO", name=flog.namespace(), ...){
     stopifnot(isScalarCharacter(type))
     type <- toupper(type)
@@ -337,7 +342,7 @@ logger <- function(type="INFO", name=flog.namespace(), ...){
 
 #'
 #' check if the given assay already exists within the object
-#'
+#' @noRd
 assayExists <- function(fds, assayName){
     stopifnot(isScalarCharacter(assayName))
     stopifnot(is(fds, "FraseRDataSet"))
@@ -364,7 +369,8 @@ variableJunctions <- function(fds, type, minDeltaPsi=0.1){
 }
 
 subsetKMostVariableJunctions <- function(fds, type, n){
-    curX <- as.matrix(x(fds, type=type, all=TRUE, center=FALSE, noiseAlpha=NULL))
+    curX <- as.matrix(x(fds, type=type, all=TRUE, center=FALSE, 
+                        noiseAlpha=NULL))
     xsd <- colSds(curX)
     nMostVarJuncs <- which(xsd >= sort(xsd, TRUE)[min(length(xsd), n*2)])
     ans <- logical(length(xsd))
@@ -393,7 +399,7 @@ pasteTable <- function(x, ...){
 #'
 #' Map between individual seq level style and dataset common one
 #' for counting and aggregating the reads
-#'
+#' @noRd
 checkSeqLevelStyle <- function(gr, fds, sampleID, sampleSpecific=FALSE){
     if(!"SeqLevelStyle" %in% colnames(colData(fds))){
         return(gr)
@@ -459,7 +465,7 @@ getSamplesByChunk <- function(fds, sampleIDs, chunkSize){
     ans <- lapply(0:max(chunks), function(x){
         intersect(sampleIDs, samples(fds)[chunks == x])
     })
-    ans[sapply(ans, length) >0]
+    ans[vapply(ans, length, integer(1)) >0]
 }
 
 checkNaAndRange <- function(x, min=-Inf, max=Inf, scalar=TRUE, na.ok=FALSE){
@@ -496,9 +502,6 @@ putCounts2Memory <- function(fds, type=currentType(fds)){
 
 plotBasePlot <- function(ggplot, basePlot=FALSE){
     if(isFALSE(basePlot)){
-        if(!require(plotly)){
-            stop("Please install plotly, if you use the option basePlot=FALSE!")
-        }
         ggplot$labels <- lapply(ggplot$labels, function(x){
                 if(typeof(x) == "expression"){
                     warning("Found expression for plotly. Please adapt it!")

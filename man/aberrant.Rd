@@ -17,19 +17,43 @@ aberrant(fds, type = currentType(fds), padjCutoff = 0.05,
 
 \item{deltaPsiCutoff}{Delta PSI cutoff to be used or NA if not requested}
 
+\item{zScoreCutoff}{Z score cutoff to be used or NA if not requested}
+
 \item{by}{By default NA which means no grouping. But if \code{sample}
 or \code{feature} is specified the sum by sample or feature is
 returned}
 
-\item{aggregate}{If TRUE the returned object is based on the grouped features}
+\item{aggregate}{If TRUE the returned object is based on the grouped 
+features}
 
-\item{zSCoreCutoff}{Z score cutoff to be used or NA if not requested}
+\item{...}{Further arguments can be passed to the method. If "zscores", 
+"padjVals" or "dPsi" is given, the values of those arguments are used to 
+define the aberrant events.}
+}
+\value{
+Either a of logical values of size introns/genes x samples if "by" 
+is NA or a vector with the number of aberrant events per sample or feature 
+depending on the vaule of "by"
 }
 \description{
 Use cutoffs to define splicing outlier event.
 }
 \examples{
-# TODO
-TODO <- 1
+# get data
+fds <- createTestFraseRDataSet()
+
+# get aberrant events per sample: on the example data, nothing is aberrant
+# based on the adjusted p-value
+aberrant(fds, type="psi5", by="sample")
+
+# use zScoreCutoff instead
+aberrant(fds, type="psi5", by="sample", zScoreCutoff=2, padjCutoff=NA)
+
+# get aberrant events per gene
+aberrant(fds, type="psi5", by="feature", zScoreCutoff=2, padjCutoff=NA,
+        aggregate=TRUE)
+        
+# find aberrant junctions/splice sites
+aberrant(fds, type="psi5", by=NA)
 
 }

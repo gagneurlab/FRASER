@@ -10,7 +10,8 @@
 #'
 #' Calculate the zscore for each PSI value.
 #'
-#' @export
+#' @noRd
+#' @return FraseRDataSet
 #' @examples
 #'   fds <- countRNAData(createTestFraseRSettings())
 #'   fds <- calculatePSIValues(fds)
@@ -18,7 +19,7 @@
 calculateZScores <- function(fds, type=psiTypes){
 
     # check input
-    stopifnot(class(fds) == "FraseRDataSet")
+    stopifnot(is(fds, "FraseRDataSet"))
 
     # calculate zscore for each psi type
     for(pt in type){

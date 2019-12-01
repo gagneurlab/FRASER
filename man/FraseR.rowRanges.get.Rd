@@ -2,10 +2,27 @@
 % Please edit documentation in R/AllGenerics.R
 \name{FraseR.rowRanges.get}
 \alias{FraseR.rowRanges.get}
-\title{getter and setter for rowRanges}
+\title{Getter and setter for rowRanges}
 \usage{
 FraseR.rowRanges.get(x, type = NULL, ...)
 }
+\arguments{
+\item{x}{FraseRDataSet}
+
+\item{type}{The psi type.}
+
+\item{...}{Parameters passed on to rowRanges()}
+}
+\value{
+GRanges object
+
+FraseRDataSet
+}
 \description{
-getter and setter for rowRanges
+Getter and setter for rowRanges
+}
+\examples{
+  fds <- makeExampleFraseRDataSet()
+  rowRanges(fds)
+
 }

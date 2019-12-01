@@ -26,7 +26,7 @@
 #' \code{\link{addCountsToFraseRDataSet}} adds these counts to an existing fds.
 #' 
 #' \code{\link{countSplitReads}} calculates the split read counts for a single
-#' sample. \code{\link{countNonSplitReads}} counts the non split reads 
+#' sample. \code{\link{countNonSplicedReads}} counts the non split reads 
 #' overlapping with splice sites for a single sample.
 #' 
 #' \code{\link{mergeCounts}} merges the counts from different samples into a 
@@ -48,22 +48,26 @@
 #'                 counts of the junctions should be placed.
 #' @param countFiles If specified, the split read counts for all samples are 
 #'                  read from the specified files. Should be a vector of paths 
-#'                  to files containing the split read counts for the individual 
-#'                  samples. Reading from files is only supported for tsv(.gz) 
-#'                  or RDS files containing GRranges objects. The order of the 
-#'                  individual sample files should correspond to the order of 
-#'                  the samples in the fds.
+#'                  to files containing the split read counts for the 
+#'                  individual samples. Reading from files is only supported 
+#'                  for tsv(.gz) or RDS files containing GRranges objects. The 
+#'                  order of the individual sample files should correspond to 
+#'                  the order of the samples in the fds.
 #' @param splitCounts The merged GRanges object containing the position and 
 #'              counts of all the introns in the dataset for all samples.
 #' @param nonSplitCounts The merged GRanges object containing the position and 
-#'              non split read counts of all splice sites present in the dataset 
-#'              for all samples.
+#'              non split read counts of all splice sites present in the 
+#'              dataset for all samples.
 #' @param sampleID The ID of the sample to be counted.
+#' @param longRead If TRUE, then the isLongRead option of 
+#' Rsubread::featureCounts is used when counting the non spliced reads 
+#' overlapping splice sites.
 #' @param countList A list of GRanges objects containing the counts that should
 #'     be merged into one object.
-#' @param assumeEqual Logical indicating whether all objects in \code{countList} 
-#'     can be assumed to contain counts for the same ranges. If FALSE, merging 
-#'     of the ranges is performed.
+#' @param assumeEqual Logical indicating whether all objects in 
+#'     \code{countList} can be assumed to contain counts for the same ranges. 
+#'     If FALSE, merging of the ranges is performed.
+#' @param ... Further parameters passed on to Rsubread::featureCounts.
 #' 
 #' @name countRNA
 #' @rdname countRNA
@@ -79,12 +83,13 @@ NULL
 #' @return \code{\link{countRNAData}} returns a FraseRDataSet.
 #' @export
 countRNAData <- function(fds, NcpuPerSample=1, junctionMap=NULL, minAnchor=5,
-                         recount=FALSE, BPPARAM=bpparam(), genome=NULL,
-                         countDir=file.path(workingDir(fds), "savedObjects", 
-                                            nameNoSpace(name(fds)))){
+                        recount=FALSE, BPPARAM=bpparam(), genome=NULL,
+                        countDir=file.path(workingDir(fds), "savedObjects", 
+                                            nameNoSpace(name(fds))),
+                        ...){
     
     # Check input TODO
-    stopifnot(class(fds) == "FraseRDataSet")
+    stopifnot(is(fds, "FraseRDataSet"))
     stopifnot(is.numeric(NcpuPerSample) && NcpuPerSample > 0)
     stopifnot(is.numeric(minAnchor) & minAnchor >= 1)
     minAnchor <- as.integer(minAnchor)
@@ -105,23 +110,24 @@ countRNAData <- function(fds, NcpuPerSample=1, junctionMap=NULL, minAnchor=5,
     
     # count splitreads first for every sample
     splitCounts <- getSplitReadCountsForAllSamples(fds=fds, 
-                                                   NcpuPerSample=NcpuPerSample, 
-                                                   junctionMap=junctionMap, 
-                                                   recount=recount, 
-                                                   BPPARAM=BPPARAM, 
-                                                   genome=genome)
+                                                NcpuPerSample=NcpuPerSample, 
+                                                junctionMap=junctionMap, 
+                                                recount=recount, 
+                                                BPPARAM=BPPARAM, 
+                                                genome=genome)
     writeCountsToTsv(splitCounts, 
-                     file=file.path(countDir, "splitCounts.tsv.gz"))
+                    file=file.path(countDir, "splitCounts.tsv.gz"))
     
     # count non spliced reads for every samples
     nonSplicedCounts <- getNonSplitReadCountsForAllSamples(fds=fds, 
-                                                    splitCounts=splitCounts, 
-                                                    NcpuPerSample=NcpuPerSample, 
-                                                    minAnchor=minAnchor,
-                                                    recount=recount, 
-                                                    BPPARAM=BPPARAM )
+                                                splitCounts=splitCounts, 
+                                                NcpuPerSample=NcpuPerSample, 
+                                                minAnchor=minAnchor,
+                                                recount=recount, 
+                                                BPPARAM=BPPARAM,
+                                                ...)
     writeCountsToTsv(nonSplicedCounts, 
-                     file=file.path(countDir, "nonSplitCounts.tsv.gz"))
+                    file=file.path(countDir, "nonSplitCounts.tsv.gz"))
     
     # create final FraseR dataset
     fds <- addCountsToFraseRDataSet(fds, splitCounts, nonSplicedCounts)
@@ -133,7 +139,8 @@ countRNAData <- function(fds, NcpuPerSample=1, junctionMap=NULL, minAnchor=5,
 
 #' @describeIn countRNA This method creates a GRanges object containing the 
 #'             split read counts from all specified samples.  
-#' @return \code{\link{getSplitReadCountsForAllSamples}} returns a GRanges object.
+#' @return \code{\link{getSplitReadCountsForAllSamples}} returns a GRanges 
+#' object.
 #' @export
 getSplitReadCountsForAllSamples <- function(fds, NcpuPerSample=1, 
                                             junctionMap=NULL, recount=FALSE, 
@@ -146,19 +153,19 @@ getSplitReadCountsForAllSamples <- function(fds, NcpuPerSample=1,
         # count splitreads first for every sample
         message(date(), ": Start counting the split reads ...")
         countList <- bplapply(samples(fds),
-                              FUN=countSplitReads,
-                              fds=fds,
-                              BPPARAM=BPPARAM,
-                              NcpuPerSample=NcpuPerSample,
-                              genome=genome,
-                              recount=recount)
+                                FUN=countSplitReads,
+                                fds=fds,
+                                BPPARAM=BPPARAM,
+                                NcpuPerSample=NcpuPerSample,
+                                genome=genome,
+                                recount=recount)
         
         
     } else { # counts should be read from files
         
         # check that all given files exist and that there is a file for every
         # sample
-        stopifnot(all(sapply(countFiles, file.exists)))
+        stopifnot(all(vapply(countFiles, file.exists, FUN.VALUE = logical(1))))
         stopifnot(length(samples(fds)) == length(countFiles))
         
         message(date(), ": Reading in the files with the split reads ...")
@@ -176,12 +183,12 @@ getSplitReadCountsForAllSamples <- function(fds, NcpuPerSample=1,
                 
             # read in rds files with GRanges objects
             countList <- lapply(countFiles, readRDS)
-            stopifnot(all(sapply(countList, 
-                                 function(x){ class(x) == "GRanges" })))
+            stopifnot(all(vapply(countList, FUN=is, class2="GRanges", 
+                                FUN.VALUE = logical(1))))
                 
         } else{
-            stop("Reading from files is only supported for tsv(.gz) or RDS files
-                containing GRranges objects.")
+            stop(paste0("Reading from files is only supported for tsv(.gz) or ",
+                        "RDS files containing GRranges objects."))
         }
         
     }
@@ -189,10 +196,10 @@ getSplitReadCountsForAllSamples <- function(fds, NcpuPerSample=1,
     names(countList) <- samples(fds)
     BPPARAM_old <- setMaxThreads(BPPARAM, 10, 10)
     counts <- mergeCounts(countList, junctionMap=junctionMap,
-                          assumeEqual=FALSE, BPPARAM=BPPARAM_old$BPPARAM)
+                            assumeEqual=FALSE, BPPARAM=BPPARAM_old$BPPARAM)
     BPPARAM <- setMaxThreads(BPPARAM_old$BPPARAM,
-                             BPPARAM_old$numWorkers, BPPARAM_old$numTasks, 
-                             set=TRUE)
+                            BPPARAM_old$numWorkers, BPPARAM_old$numTasks, 
+                            set=TRUE)
     
     rm(countList)
     gc()
@@ -211,9 +218,10 @@ getSplitReadCountsForAllSamples <- function(fds, NcpuPerSample=1,
 #'          GRanges object.
 #' @export
 getNonSplitReadCountsForAllSamples <- function(fds, splitCounts, 
-                                               NcpuPerSample=1, minAnchor=5,
-                                               recount=FALSE, 
-                                               BPPARAM=bpparam() ){
+                                                NcpuPerSample=1, minAnchor=5,
+                                                recount=FALSE, 
+                                                BPPARAM=bpparam(),
+                                                longRead=TRUE){
     if(!("startID" %in% colnames(mcols(splitCounts))) | 
         !("endID" %in% colnames(mcols(splitCounts)))){
         # splice site map
@@ -235,17 +243,18 @@ getNonSplitReadCountsForAllSamples <- function(fds, splitCounts,
     
     # count non spliced reads for every samples
     countList <- bplapply(samples(fds),
-                          FUN=countNonSplicedReads,
-                          fds=fds,
-                          splitCounts=splitCounts,
-                          BPPARAM=BPPARAM,
-                          NcpuPerSample=NcpuPerSample,
-                          minAnchor=minAnchor,
-                          recount=recount)
+                            FUN=countNonSplicedReads,
+                            fds=fds,
+                            splitCounts=splitCounts,
+                            BPPARAM=BPPARAM,
+                            NcpuPerSample=NcpuPerSample,
+                            minAnchor=minAnchor,
+                            recount=recount,
+                            longRead=longRead)
     names(countList) <- samples(fds)
     siteCounts <- mergeCounts(countList, assumeEqual=TRUE)
     mcols(siteCounts)$type <- factor(countList[[1]]$type,
-                                     levels = c("Acceptor", "Donor")
+                                    levels = c("Acceptor", "Donor")
     )
     
     rm(countList)
@@ -261,11 +270,11 @@ getNonSplitReadCountsForAllSamples <- function(fds, splitCounts,
 #' @return \code{\link{addCountsToFraseRDataSet}} returns a FraseRDataSet.
 #' @export
 addCountsToFraseRDataSet <- function(fds, splitCounts, 
-                                     nonSplitCounts){
+                                        nonSplitCounts){
     
     # create summarized object for split read counts
     h5 <- saveAsHDF5(fds, "rawCountsJ", 
-                     as.matrix(mcols(splitCounts)[samples(fds)]))
+                        as.matrix(mcols(splitCounts)[samples(fds)]))
     colnames(h5) <- samples(fds)
     final_splitCounts <- SummarizedExperiment(
         colData=colData(fds),
@@ -277,26 +286,26 @@ addCountsToFraseRDataSet <- function(fds, splitCounts,
     
     # create summarized object for non split reads
     h5 <- saveAsHDF5(fds, "rawCountsSS",
-                     as.matrix(mcols(nonSplitCounts)[samples(fds)]))
+                        as.matrix(mcols(nonSplitCounts)[samples(fds)]))
     colnames(h5) <- samples(fds)
     final_nonSplicedCounts <- SummarizedExperiment(
         colData=colData(fds),
         assays=list(rawCountsSS=h5),
         rowRanges=nonSplitCounts[,!colnames(mcols(nonSplitCounts)) %in% 
-                                     samples(fds)]
+                                    samples(fds)]
     )
     rm(h5)
     gc()
     
     # create final FraseR dataset
     fds <- new("FraseRDataSet",
-               final_splitCounts,
-               name            = name(fds),
-               bamParam        = scanBamParam(fds),
-               strandSpecific  = strandSpecific(fds),
-               workingDir      = workingDir(fds),
-               nonSplicedReads = final_nonSplicedCounts,
-               metadata        = metadata(fds)
+                final_splitCounts,
+                name            = name(fds),
+                bamParam        = scanBamParam(fds),
+                strandSpecific  = strandSpecific(fds),
+                workingDir      = workingDir(fds),
+                nonSplicedReads = final_nonSplicedCounts,
+                metadata        = metadata(fds)
     )
     
     # save it so the FraseR object also gets saved
@@ -355,7 +364,7 @@ countSplitReads <- function(sampleID, fds, NcpuPerSample=1, genome=NULL,
         }
         if(length(cache) > 0){
             return(checkSeqLevelStyle(cache, fds, sampleID,
-                                      sampleSpecific=FALSE))
+                                        sampleSpecific=FALSE))
         }
     }
     
@@ -368,12 +377,12 @@ countSplitReads <- function(sampleID, fds, NcpuPerSample=1, genome=NULL,
     
     # extract the counts per chromosome
     countsList <- bplapply(chromosomes,
-                           FUN=countSplitReadsPerChromosome,
-                           bamFile=bamFile,
-                           settings=fds,
-                           BPPARAM=MulticoreParam(NcpuPerSample, 
-                                                  length(chromosomes)),
-                           genome=genome)
+                            FUN=countSplitReadsPerChromosome,
+                            bamFile=bamFile,
+                            settings=fds,
+                            BPPARAM=MulticoreParam(NcpuPerSample, 
+                                                    length(chromosomes)),
+                            genome=genome)
     
     # sort and merge the results befor returning/saving
     countsGR <- sort(unlist(GRangesList(countsList)))
@@ -476,7 +485,7 @@ mergeCounts <- function(countList, junctionMap=NULL, assumeEqual=FALSE,
         countList <- uniformSeqInfo(countList)
         countgr <- GRangesList(countList)
         if(!is.null(junctionMap)){
-            stopifnot(class(junctionMap) == "GRanges")
+            stopifnot(is(junctionMap, "GRanges"))
             countgr <- c(countgr, GRangesList(junctionMap))
         }
         ranges <- sort(unique(unlist(countgr)))
@@ -486,21 +495,20 @@ mergeCounts <- function(countList, junctionMap=NULL, assumeEqual=FALSE,
         message(paste(date(), ": count ranges need to be merged ..."))
         # merge each sample counts into the combined range object
         sample_counts <- bplapply(countList, ranges = ranges, BPPARAM=BPPARAM,
-                            FUN = function(gr, ranges){
-                                  suppressPackageStartupMessages(require(FraseR))
-                                      
-                                  # init with 0 since we did not find any read
-                                  # for this sample supporting a given site
-                                  sample_count <- integer(length(ranges))
-                                      
-                                  # get overlap and add counts to the 
-                                  # corresponding ranges
-                                  overlaps <- findOverlaps(gr, ranges, 
-                                                           type = "equal")
-                                  sample_count[overlaps@to] <- mcols(gr)$count
-                                      
-                                  return(sample_count)
-                            }
+                        FUN = function(gr, ranges){
+                                
+                                # init with 0 since we did not find any read
+                                # for this sample supporting a given site
+                                sample_count <- integer(length(ranges))
+                                
+                                # get overlap and add counts to the 
+                                # corresponding ranges
+                                overlaps <- findOverlaps(gr, ranges, 
+                                                            type = "equal")
+                                sample_count[overlaps@to] <- mcols(gr)$count
+                                
+                                return(sample_count)
+                        }
         )
     }
     
@@ -552,7 +560,8 @@ GRanges2SAF <- function(gr, minAnchor=1){
 #' @return \code{\link{countNonSplicedReads}} returns a GRanges object.
 #' @export
 countNonSplicedReads <- function(sampleID, splitCounts, fds,
-                                 NcpuPerSample=1, minAnchor=5, recount=FALSE){
+                                NcpuPerSample=1, minAnchor=5, recount=FALSE,
+                                longRead=TRUE){
     
     # splice site map
     splitCounts <- annotateSpliceSite(splitCounts)
@@ -568,7 +577,7 @@ countNonSplicedReads <- function(sampleID, splitCounts, fds,
     if(isFALSE(recount) & !is.null(cacheFile) && file.exists(cacheFile)){
         # check if needs to be recalculated
         cache <- try(readRDS(cacheFile), silent=TRUE)
-        if(class(cache) == "try-error"){
+        if(is(cache, "try-error")){
             message(date(), ":Cache is currupt for sample:",
                     sampleID, ". Will recount it."
             )
@@ -578,15 +587,15 @@ countNonSplicedReads <- function(sampleID, splitCounts, fds,
         ov    <- findOverlaps(cache, spliceSiteCoords, type="equal")
         
         # we have all sites of interest cached
-        if(all(1:length(spliceSiteCoords) %in% to(ov))){
+        if(all(seq_along(spliceSiteCoords) %in% to(ov))){
             cache2return <- cache[from(ov)]
             cache2return$spliceSiteID <- spliceSiteCoords[to(ov)]$spliceSiteID
             cache2return$type <- spliceSiteCoords[to(ov)]$type
             return(cache2return)
         } else {
             message(paste("The cache file does not contain the needed",
-                          "genomic positions. Adding the remaining sites to",
-                          "the cache ..."
+                            "genomic positions. Adding the remaining sites to",
+                            "the cache ..."
             ))
         }
     }
@@ -595,21 +604,25 @@ countNonSplicedReads <- function(sampleID, splitCounts, fds,
     tmp_ssc <- checkSeqLevelStyle(spliceSiteCoords, fds, sampleID, TRUE)
     anno <- GRanges2SAF(tmp_ssc, minAnchor=minAnchor)
     rsubreadCounts <- featureCounts(files=bamFile, annot.ext=anno,
-                                    minOverlap=minAnchor*2, allowMultiOverlap=TRUE,
+                                    minOverlap=minAnchor*2, 
+                                    allowMultiOverlap=TRUE,
                                     checkFragLength=FALSE,
                                     minMQS=bamMapqFilter(scanBamParam(fds)),
-                                    strandSpecific=as.integer(strandSpecific(fds)),
+                                    strandSpecific=as.integer(
+                                        strandSpecific(fds)),
                                     
                                     # activating long read mode
-                                    isLongRead=TRUE,
+                                    isLongRead=longRead,
                                     
                                     # multi-mapping reads
                                     countMultiMappingReads=TRUE,
                                     
-                                    # for counting only non spliced reads we skip this information
+                                    # for counting only non spliced reads we 
+                                    # skip this information
                                     isPairedEnd=FALSE,
                                     
-                                    # this is important, otherwise it will sort it by name
+                                    # this is important, otherwise it will sort 
+                                    # it by name
                                     autosort=FALSE,
                                     nthreads=NcpuPerSample,
                                     tmpDir=file.path(workingDir(fds), "cache")
@@ -622,7 +635,7 @@ countNonSplicedReads <- function(sampleID, splitCounts, fds,
     
     # cache it if enabled
     if(!is.null(cacheFile)){
-        if(exists("cache") && class(cache) == "GRanges"){
+        if(exists("cache") && is(cache, "GRanges")){
             message("Adding splice sites to cache ...")
             cache <- unique(unlist(GRangesList(spliceSiteCoords, cache)))
         } else {
@@ -653,18 +666,18 @@ readJunctionMap <- function(junctionMap){
         stopifnot(file.exists(junctionMap))
         if(endsWith(junctionMap, ".RDS")){
             map <- readRDS(junctionMap)
-            stopifnot(class(map) == "GRanges")
+            stopifnot(is(map, "GRanges"))
             return(map)
         }
         message(date(), ": currently not supported.")
         message(date(), ": will only use the provided junctions")
         return(NULL)
     }
-    if(class(junctionMap) == "GRanges"){
+    if(is(junctionMap, "GRanges")){
         return(junctionMap)
     }
     stop("Objecttype (class) for junction map currently not supported:",
-         class(junctionMap)
+        class(junctionMap)
     )
 }
 
@@ -750,7 +763,7 @@ annotateSpliceSite <- function(gr){
     
     # annotate and enumerate donor/acceptor
     annotadedDT <- rbind(startSideDT, endSideDT)
-    annotadedDT[,id:=1:nrow(annotadedDT)]
+    annotadedDT[,id:=seq_len(nrow(annotadedDT))]
     
     # convert back to granges
     annogr <- makeGRangesFromDataFrame(annotadedDT, keep.extra.columns=TRUE)
@@ -769,7 +782,7 @@ annotateSpliceSite <- function(gr){
 }
 
 setMaxThreads <- function(BPPARAM, maxWorkers=bpworkers(BPPARAM), 
-                          maxTasks=bptasks(BPPARAM), set=FALSE){
+                            maxTasks=bptasks(BPPARAM), set=FALSE){
     numWorkers <- bpworkers(BPPARAM)
     numTasks <- bptasks(BPPARAM)
     try({
@@ -788,9 +801,7 @@ setMaxThreads <- function(BPPARAM, maxWorkers=bpworkers(BPPARAM),
 
 #' writes a GRanges object with the counts as a tsv (or tsv.gz) file.
 #' @noRd
-writeCountsToTsv <- function(counts, 
-                             file=file.path(workingDir(fds), 
-                                            "counts.tsv.gz")){
+writeCountsToTsv <- function(counts, file="counts.tsv.gz"){
     if(!dir.exists(dirname(file))){
         dir.create(dirname(file), recursive=TRUE)
     }

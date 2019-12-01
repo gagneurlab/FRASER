@@ -103,7 +103,7 @@ uiAbout <- function(){
 #' main sample results
 #' @noRd
 getMainPsiTypePanel <- function(sampleID, psiType, fds){
-    plotdata <- plotVolcano(fds, sampleID, psiType, source=psiType)
+    plotdata <- plotVolcano(fds, sampleID, psiType)
     shinyPlotDF[[psiType]] <<- plotdata[["plotDF"]]
     plotdata[["plot"]] %>% layout(dragmode="select", showlegend=TRUE,
             legend = list(x = 1, y = 0.0, title = "&#936; filter")
@@ -127,7 +127,7 @@ serverMain <- function(input, output) {
 
     # main results
     filteredResDT <- reactive({
-        browser()
+        # browser()
 
         # convert to data.table
         tmpRes <- as.data.table(shinyFdsRes)
@@ -282,14 +282,15 @@ getDisttributionPlot <- function(fds, psiType, dist, idx, sampleID=NULL, ...){
     names(data) <- samples(fds)
     data <- sort(data)
     if(!is.null(sampleID) && any(sampleID %in% names(data))){
-        message("color sample: ", sampleID, " on idx: ", which(sampleID %in% names(data)))
+        message("color sample: ", sampleID, " on idx: ", which(sampleID %in% 
+                                                                   names(data)))
         col[which(sampleID %in% names(data))] <- "firebrick"
     }
 
     opar <- par(cex=1.6)
     on.exit(par(opar))
 
-    plot(1:length(data), data, col = col, pch=20,
+    plot(seq_along(data), data, col = col, pch=20,
         xlab="sample rank", ylab=dist, las=1,
         main=paste("Distribution of:", dist)
     )
@@ -304,6 +305,7 @@ getDisttributionPlot <- function(fds, psiType, dist, idx, sampleID=NULL, ...){
 #'
 #' Present the FraseR results as shiny app
 #'
+#' @return shiny application
 #' @examples
 #'     fds <- createTestFraseRDataSet()
 #'
@@ -313,7 +315,7 @@ getDisttributionPlot <- function(fds, psiType, dist, idx, sampleID=NULL, ...){
 #'     # for running a shiny application as server
 #'     myShinyAppObj <- FraseRShinyApp(fds, server=TRUE)
 #'
-#' @export
+#' @noRd
 FraseRShinyApp <- function(fds, fdsres=NULL, server=!interactive(), ...){
     if(is.null(fdsres)){
         fdsres <- results(fds)

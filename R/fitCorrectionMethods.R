@@ -28,20 +28,35 @@
 #' @param iterations The maximal number of iterations. When the autoencoder has 
 #' not yet converged after these number of iterations, the fit stops anyway.
 #' @param verbose Controls the level of information printed during the fit.
-#' @param minDeltaPsi 
+#' @param minDeltaPsi Minimal delta psi of an intron to be be considered a 
+#' variable intron. 
+#' @param initialize If FALSE and a fit has been previoulsy run, the values 
+#' from the previous fit will be used as initial values. If TRUE, 
+#' (re-)initialization will be done. 
+#' @param control List of control parameters passed on to optim().
+#' @param nSubset The size of the subset to be used in fitting if subsetting is
+#' used.
+#' 
+#' @return FraseRDataSet
+#' 
 #' @examples 
-#' TODO <- 1
+#'   # generate toy data
+#'   fds <- makeExampleFraseRDataSet()
+#'   
+#'   # fit
+#'   fds <- fit(fds, correction="PCA", q=3, type="psi5")
+#'   
 #' @export
 fit <- function(fds, correction=c("PCA-regression", "PCA-BB-Decoder", "FraseR",
                         "FraseR-weighted", "PCA-BB-full", "PCA-reg-full",
                         "FraseR-5DecoderBatches", "FraseR-1DecoderBatches",
                         "fullFraseR", "PCA", "PCA-BB-Decoder-no-weights",
                         "BB"),
-                    q, type="psi3", rhoRange=c(1e-8, 1-1e-8), nrDecoderBatches=5,
-                    weighted=FALSE, noiseAlpha=1, lambda=0, convergence=1e-5, iterations=15,
-                    initialize=TRUE, control=list(), BPPARAM=bpparam(), nSubset=15000,
-                    verbose=FALSE, recommendedPEERq=TRUE, lr=0.00005, epochs=20,
-                    minDeltaPsi=0.1){
+                q, type="psi3", rhoRange=c(1e-8, 1-1e-8), 
+                weighted=FALSE, noiseAlpha=1, convergence=1e-5, 
+                iterations=15, initialize=TRUE, control=list(), 
+                BPPARAM=bpparam(), nSubset=15000, verbose=FALSE, 
+                minDeltaPsi=0.1){
     method <- match.arg(correction)
 
     # make sure its only in-memory data for k and n
@@ -57,45 +72,185 @@ fit <- function(fds, correction=c("PCA-regression", "PCA-BB-Decoder", "FraseR",
     }
     
     message(date(), ": Running fit with correction method: ", correction)
-    fds <- switch(method,
-            FraseR      = fitFraserAE(fds=fds, q=q, type=type, noiseAlpha=noiseAlpha, rhoRange=rhoRange, lambda=lambda,
-                                  convergence=convergence, iterations=iterations, initialize=initialize, weighted=weighted,
-                                  control=control, BPPARAM=BPPARAM, verbose=verbose, subset=TRUE, nrDecoderBatches=nrDecoderBatches),
-            "FraseR-5DecoderBatches" = fitFraserAE(fds=fds, q=q, type=type, noiseAlpha=noiseAlpha, rhoRange=rhoRange, lambda=lambda,
-                                  convergence=convergence, iterations=iterations, initialize=initialize, nSubset=nSubset,
-                                  control=control, BPPARAM=BPPARAM, verbose=verbose, subset=TRUE, nrDecoderBatches=5, weighted=FALSE),
-            "FraseR-1DecoderBatches" = fitFraserAE(fds=fds, q=q, type=type, noiseAlpha=noiseAlpha, rhoRange=rhoRange, lambda=lambda,
-                                  convergence=convergence, iterations=iterations, initialize=initialize, nSubset=nSubset,
-                                  control=control, BPPARAM=BPPARAM, verbose=verbose, subset=TRUE, nrDecoderBatches=1, weighted=FALSE),
-            "FraseR-weighted" = fitFraserAE(fds=fds, q=q, type=type, noiseAlpha=noiseAlpha, nSubset=nSubset,
-                                  rhoRange=rhoRange, lambda=lambda, convergence=convergence, iterations=iterations,
-                                  initialize=initialize, weighted=TRUE, control=control, BPPARAM=BPPARAM,
-                                  verbose=verbose, subset=TRUE, nrDecoderBatches=1),
-            "PCA-BB-Decoder" = fitFraserAE(fds=fds, q=q, type=type, 
-                    noiseAlpha=noiseAlpha, nSubset=nSubset, rhoRange=rhoRange,
-                    lambda=lambda, convergence=convergence, 
-                    iterations=iterations, initialize=initialize, weighted=TRUE,
-                    control=control, BPPARAM=BPPARAM, verbose=verbose, 
-                    subset=TRUE, nrDecoderBatches=1, latentSpace='PCA'),
-            "PCA-BB-Decoder-no-weights" = fitFraserAE(fds=fds, q=q, type=type, 
-                    noiseAlpha=noiseAlpha, nSubset=nSubset, rhoRange=rhoRange,
-                    lambda=lambda, convergence=convergence, latentSpace='PCA',
-                    iterations=iterations, initialize=initialize, 
-                    weighted=FALSE, control=control, BPPARAM=BPPARAM,
-                    verbose=verbose, subset=TRUE, nrDecoderBatches=1),
-            "PCA-BB-full"       = fitFraserAE(fds=fds, q=q, type=type, noiseAlpha=noiseAlpha,
-                            rhoRange=rhoRange, lambda=lambda, convergence=convergence, iterations=iterations,
-                            initialize=initialize, weighted=TRUE, control=control, BPPARAM=BPPARAM,
-                            verbose=verbose, subset=FALSE, nrDecoderBatches=1, latentSpace='PCA'),
-            "PCA-reg-full"      = fitPCA(fds=fds, q=q, psiType=type, noiseAlpha=noiseAlpha,
-                            rhoRange=rhoRange, subset=FALSE, minDeltaPsi=minDeltaPsi, useLM=TRUE),
-            fullFraseR  = fitFraserAE(fds=fds, q=q, type=type, noiseAlpha=noiseAlpha, rhoRange=rhoRange, lambda=lambda,
-                                  convergence=convergence, iterations=iterations, initialize=initialize, nSubset=nSubset, weighted=weighted,
-                                  control=control, BPPARAM=BPPARAM, verbose=verbose, subset=FALSE, nrDecoderBatches=nrDecoderBatches),
-            PCA         = fitPCA(fds=fds, q=q, psiType=type, rhoRange=rhoRange, noiseAlpha=NULL, BPPARAM=BPPARAM, subset=FALSE),
-            'PCA-regression' = fitPCA(fds=fds, q=q, psiType=type, rhoRange=rhoRange, noiseAlpha=noiseAlpha, BPPARAM=BPPARAM, subset=TRUE, nSubset=nSubset, minDeltaPsi=minDeltaPsi),
-            BB          = fitBB(fds=fds, psiType=type) 
-            )
+    fds <- switch(
+        method,
+        FraseR      = fitFraserAE(
+            fds = fds, 
+            q = q,
+            type = type,
+            noiseAlpha = noiseAlpha,
+            rhoRange = rhoRange,
+            lambda = 0,
+            convergence = convergence,
+            iterations = iterations,
+            initialize = initialize,
+            weighted = weighted,
+            control = control,
+            BPPARAM = BPPARAM,
+            verbose = verbose,
+            subset = TRUE,
+            nrDecoderBatches = 1
+        ),
+        "FraseR-5DecoderBatches" = fitFraserAE(
+            fds = fds,
+            q = q,
+            type = type,
+            noiseAlpha = noiseAlpha,
+            rhoRange = rhoRange,
+            lambda = 0,
+            convergence = convergence,
+            iterations = iterations,
+            initialize = initialize,
+            nSubset = nSubset,
+            control = control,
+            BPPARAM = BPPARAM,
+            verbose = verbose,
+            subset = TRUE,
+            nrDecoderBatches = 5,
+            weighted = FALSE
+        ),
+        "FraseR-1DecoderBatches" = fitFraserAE(
+            fds = fds,
+            q = q,
+            type = type,
+            noiseAlpha = noiseAlpha,
+            rhoRange = rhoRange,
+            lambda = 0,
+            convergence = convergence,
+            iterations = iterations,
+            initialize = initialize,
+            nSubset = nSubset,
+            control = control,
+            BPPARAM = BPPARAM,
+            verbose = verbose,
+            subset = TRUE,
+            nrDecoderBatches = 1,
+            weighted = FALSE
+        ),
+        "FraseR-weighted" = fitFraserAE(
+            fds = fds,
+            q = q,
+            type = type,
+            noiseAlpha = noiseAlpha,
+            nSubset = nSubset,
+            rhoRange = rhoRange,
+            lambda = 0,
+            convergence = convergence,
+            iterations = iterations,
+            initialize = initialize,
+            weighted = TRUE,
+            control = control,
+            BPPARAM = BPPARAM,
+            verbose = verbose,
+            subset = TRUE,
+            nrDecoderBatches = 1
+        ),
+        "PCA-BB-Decoder" = fitFraserAE(
+            fds = fds,
+            q = q,
+            type = type,
+            noiseAlpha = noiseAlpha,
+            nSubset = nSubset,
+            rhoRange = rhoRange,
+            lambda = 0,
+            convergence = convergence,
+            iterations = iterations,
+            initialize = initialize,
+            weighted = TRUE,
+            control = control,
+            BPPARAM = BPPARAM,
+            verbose = verbose,
+            subset = TRUE,
+            nrDecoderBatches = 1,
+            latentSpace = 'PCA'
+        ),
+        "PCA-BB-Decoder-no-weights" = fitFraserAE(
+            fds = fds,
+            q = q,
+            type = type,
+            noiseAlpha = noiseAlpha,
+            nSubset = nSubset,
+            rhoRange = rhoRange,
+            lambda = 0,
+            convergence = convergence,
+            latentSpace = 'PCA',
+            iterations = iterations,
+            initialize = initialize,
+            weighted = FALSE,
+            control = control,
+            BPPARAM = BPPARAM,
+            verbose = verbose,
+            subset = TRUE,
+            nrDecoderBatches = 1
+        ),
+        "PCA-BB-full"       = fitFraserAE(
+            fds = fds,
+            q = q,
+            type = type,
+            noiseAlpha = noiseAlpha,
+            rhoRange = rhoRange,
+            lambda = 0,
+            convergence = convergence,
+            iterations = iterations,
+            initialize = initialize,
+            weighted = TRUE,
+            control = control,
+            BPPARAM = BPPARAM,
+            verbose = verbose,
+            subset = FALSE,
+            nrDecoderBatches = 1,
+            latentSpace = 'PCA'
+        ),
+        "PCA-reg-full"      = fitPCA(
+            fds = fds,
+            q = q,
+            psiType = type,
+            noiseAlpha = noiseAlpha,
+            rhoRange = rhoRange,
+            subset = FALSE,
+            minDeltaPsi = minDeltaPsi,
+            useLM = TRUE
+        ),
+        fullFraseR  = fitFraserAE(
+            fds = fds,
+            q = q,
+            type = type,
+            noiseAlpha = noiseAlpha,
+            rhoRange = rhoRange,
+            lambda = 0,
+            convergence = convergence,
+            iterations = iterations,
+            initialize = initialize,
+            nSubset = nSubset,
+            weighted = weighted,
+            control = control,
+            BPPARAM = BPPARAM,
+            verbose = verbose,
+            subset = FALSE,
+            nrDecoderBatches = 1
+        ),
+        PCA         = fitPCA(
+            fds = fds,
+            q = q,
+            psiType = type,
+            rhoRange = rhoRange,
+            noiseAlpha = NULL,
+            BPPARAM = BPPARAM,
+            subset = FALSE
+        ),
+        'PCA-regression' = fitPCA(
+            fds = fds,
+            q = q,
+            psiType = type,
+            rhoRange = rhoRange,
+            noiseAlpha = noiseAlpha,
+            BPPARAM = BPPARAM,
+            subset = TRUE,
+            nSubset = nSubset,
+            minDeltaPsi = minDeltaPsi
+        ),
+        BB          = fitBB(fds = fds, psiType = type)
+    )
 
     return(fds)
 
@@ -128,10 +283,10 @@ needsHyperOpt <- function(method){
 #' @noRd
 getHyperOptimCorrectionMethod <- function(correction){
     switch(correction,
-           "PCA-BB-full"            = "PCA",
-           "PCA-reg-full"           = "PCA",
-           "PCA-BB-Decoder"         = "PCA-BB-Decoder",
-           correction
+            "PCA-BB-full"            = "PCA",
+            "PCA-reg-full"           = "PCA",
+            "PCA-BB-Decoder"         = "PCA-BB-Decoder",
+            correction
     )
 }
 
@@ -199,14 +354,15 @@ fitPCA <- function(fds, q, psiType, rhoRange=c(1e-5, 1-1e-5), noiseAlpha=NULL,
 fitBB <- function(fds, psiType){
     currentType(fds) <- psiType
     fds <- pvalueByBetaBinomialPerType(fds=fds,
-                                       aname=paste0("pvalues_BB_", psiType),
-                                       psiType=psiType, pvalFun=betabinVglmTest)
+                                        aname=paste0("pvalues_BB_", psiType),
+                                        psiType=psiType, 
+                                        pvalFun=betabinVglmTest)
     # predictedMeans(fds, type=psiType) <- rowMeans(
     #         getAssayMatrix(fds, type=psiType))
     predictedMeans(fds, type=psiType) <-
         mcols(fds, type=psiType)[,paste0(psiType, "_alpha")] /
         ( mcols(fds, type=psiType)[,paste0(psiType, "_alpha")] +
-              mcols(fds, type=psiType)[,paste0(psiType, "_beta")] )
+                mcols(fds, type=psiType)[,paste0(psiType, "_beta")] )
     fds
 }
 
@@ -219,17 +375,21 @@ fitFraserAE <- function(fds, q, type, noiseAlpha, rhoRange, lambda, convergence,
     if(isTRUE(subset)){
         probE <- max(0.001, min(1,30000/curDims[1]))
         featureExclusionMask(fds) <- sample(c(TRUE, FALSE), curDims[1],
-                                            replace=TRUE, prob=c(probE, 1-probE))
+                                            replace=TRUE, 
+                                            prob=c(probE, 1-probE))
     } else{
         featureExclusionMask(fds) <- rep(TRUE,curDims[1])
     }
     print(table(featureExclusionMask(fds)))
 
     fds <- fitAutoencoder(fds=fds, q=q, type=type, noiseAlpha=noiseAlpha,
-                          rhoRange=rhoRange, lambda=lambda, convergence=convergence,
-                          iterations=iterations, initialize=initialize, nSubset=nSubset,
-                          weighted=weighted, control=control, BPPARAM=BPPARAM, verbose=verbose,
-                          nrDecoderBatches=nrDecoderBatches, latentSpace=latentSpace )
+                            rhoRange=rhoRange, lambda=lambda, 
+                            convergence=convergence, iterations=iterations, 
+                            initialize=initialize, nSubset=nSubset,
+                            weighted=weighted, control=control, 
+                            BPPARAM=BPPARAM, verbose=verbose, 
+                            nrDecoderBatches=nrDecoderBatches, 
+                            latentSpace=latentSpace )
     return(fds)
 
 }

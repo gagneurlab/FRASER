@@ -1,9 +1,10 @@
 #'
 #' ### MODEL
 #'
+#' @noRd
 fit_autoenc <- function(fds, type=currentType(fds), q_guess=round(ncol(fds)/4),
                     correction, noiseRatio=0.5, BPPARAM=bpparam(),
-                    iterations=3, nrDecoderBatches=1, verbose=FALSE){
+                    iterations=3, verbose=FALSE){
 
     message(paste(date(), "; q:", q_guess, "; noise: ", noiseRatio))
 
@@ -12,7 +13,7 @@ fit_autoenc <- function(fds, type=currentType(fds), q_guess=round(ncol(fds)/4),
 
     # train AE
     fds <- fit(fds, type=type, q=q_guess, correction=correction,
-            iterations=iterations, nrDecoderBatches=nrDecoderBatches,
+            iterations=iterations, 
             verbose=verbose, BPPARAM=BPPARAM)
     curLoss <- metadata(fds)[[paste0('loss_', type)]]
     curLoss <- mean(curLoss[,ncol(curLoss)])
@@ -37,11 +38,11 @@ eval_prot <- function(fds, type){
     dt <- cbind(data.table(id=index),
             as.data.table(assay(fds, paste0("trueOutliers_", type))))
     setkey(dt, id)
-    labels <- as.vector(sapply(samples(fds), function(i){
+    labels <- as.vector(vapply(samples(fds), function(i){
         dttmp <- dt[,any(get(i) != 0),by=id]
         setkey(dttmp, id)
         dttmp[J(unique(index)), V1]
-    })) + 0
+    }, FUN.VALUE=logical(length(unique(index))) ) ) + 0
 
     if(any(is.na(scores))){
         warning(sum(is.na(scores)), " P-values where NAs.")
@@ -55,8 +56,7 @@ eval_prot <- function(fds, type){
 
 
 findEncodingDim <- function(i, fds, type, params, correction,
-                    internalBPPARAM=1, iterations,
-                    nrDecoderBatches){
+                    internalBPPARAM=1, iterations){
     iBPPARAM <- MulticoreParam(internalBPPARAM)
 
     q_guess    <- params[i, "q"]
@@ -65,14 +65,15 @@ findEncodingDim <- function(i, fds, type, params, correction,
     correction <- getHyperOptimCorrectionMethod(correction)
 
     res_fit <- fit_autoenc(fds=fds, type=type, q_guess=q_guess,
-            correction=correction, nrDecoderBatches=nrDecoderBatches,
+            correction=correction, 
             noiseRatio=noiseRatio, BPPARAM=iBPPARAM,
             iterations=iterations)
     res_pvals <- predict_outliers(res_fit$fds, correction=correction,
             type=type, BPPARAM=iBPPARAM)
     evals <- eval_prot(res_pvals, type=type)
 
-    return(list(q=q_guess, noiseRatio=noiseRatio, loss=res_fit$evaluation, aroc=evals))
+    return(list(q=q_guess, noiseRatio=noiseRatio, loss=res_fit$evaluation, 
+                aroc=evals))
 }
 
 #'
@@ -82,17 +83,35 @@ findEncodingDim <- function(i, fds, type, params, correction,
 #' ratios while maximizing the precision-recall curve.
 #'
 #' @inheritParams fit
+#' @param q_param Vector specifying which values of q should be tested
+#' @param noise_param Vector specifying which noise levels should be tested.
+#' @param setSubset The size of the subset of the most variable introns that 
+#' should be used for the hyperparameter optimization.
+#' @param internalThreads The number of threads used internally.
+#' @param injectFreq The frequency with which outliers are injected into the 
+#' data.
+#' 
+#' @return FraseRDataSet
 #'
 #' @examples
-#' # TODO
-#' TODO <- 1
+#'   # generate data
+#'   fds <- makeSimulatedFraserDataSet(j=500, m=20, q=4)
+#'   
+#'   # run hyperparameter optimization
+#'   fds <- optimHyperParams(fds, type="psi5", correction="PCA")
+#'   
+#'   # get estimated optimal dimension of the latent space
+#'   bestQ(fds, type="psi5")
+#'   
+#'   # plot the AUC for the different encoding dimensions tested
+#'   plotEncDimSearch(fds, type="psi5")
 #'
 #' @export
 optimHyperParams <- function(fds, type, correction,
                     q_param=seq(2, min(40, ncol(fds)), by=3),
                     noise_param=c(0, 0.5, 1, 2, 5), minDeltaPsi=0.1,
                     iterations=5, setSubset=15000, injectFreq=1e-2,
-                    nrDecoderBatches=1, BPPARAM=bpparam(), internalThreads=3){
+                    BPPARAM=bpparam(), internalThreads=3){
     if(isFALSE(needsHyperOpt(correction))){
         message(date(), ": For correction '", correction, "' no hyper paramter",
                 "optimization is needed.")
@@ -119,9 +138,11 @@ optimHyperParams <- function(fds, type, correction,
     message("dPsi filter:", pasteTable(j2keep))
     # TODO fds <- fds[j2keep,,by=type]
 
+    # ensure that subset size is not larger that number of introns/splice sites
+    setSubset <- pmin(setSubset, nrow(K(fds, type)))
+    
     optData <- data.table()
     for(nsub in setSubset){
-        #
         # subset for finding encoding dimensions
         # most variable functions + random subset for decoder
         exMask <- subsetKMostVariableJunctions(fds[j2keep,,by=type], type, nsub)
@@ -142,6 +163,13 @@ optimHyperParams <- function(fds, type, correction,
         # inject outliers
         fds_copy <- injectOutliers(fds_copy, type=type, freq=injectFreq,
                 minDpsi=minDeltaPsi, method="samplePSI")
+        
+        if(sum(getAssayMatrix(fds_copy, type=type, "trueOutliers") != 0) == 0){
+            warning(paste0("No outliers could be injected so the ", 
+                           "hyperparameter optimization could not run. ", 
+                           "Possible reason: too few junctions in the data."))
+            return(fds)
+        }
 
         # remove unneeded blocks to save memory
         a2rm <- paste(sep="_", c("originalCounts", "originalOtherCounts"),
@@ -158,18 +186,21 @@ optimHyperParams <- function(fds, type, correction,
 
         # run hyper parameter optimization
         params <- expand.grid(q=q_param, noise=noise_param)
-        message(date(), ": Run hyper optimization with ", nrow(params), " options.")
-        res <- bplapply(seq_len(nrow(params)), findEncodingDim, fds=fds_copy, type=type,
-                        iterations=iterations, params=params, correction=correction,
-                        BPPARAM=BPPARAM, nrDecoderBatches=nrDecoderBatches,
+        message(date(), ": Run hyper optimization with ", nrow(params), 
+                " options.")
+        res <- bplapply(seq_len(nrow(params)), findEncodingDim, fds=fds_copy, 
+                        type=type,
+                        iterations=iterations, params=params, 
+                        correction=correction,
+                        BPPARAM=BPPARAM, 
                         internalBPPARAM=internalThreads)
 
         data <- data.table(
-            q=sapply(res, "[[", "q"),
-            noise=sapply(res, "[[", "noiseRatio"),
+            q=vapply(res, "[[", "q", FUN.VALUE=numeric(1)),
+            noise=vapply(res, "[[", "noiseRatio", FUN.VALUE=numeric(1)),
             nsubset=nsub,
-            eval=sapply(res, "[[", "loss"),
-            aroc=sapply(res, "[[", "aroc"))
+            eval=vapply(res, "[[", "loss", FUN.VALUE=numeric(1)),
+            aroc=vapply(res, "[[", "aroc", FUN.VALUE=numeric(1)))
 
         optData <- rbind(optData, data)
     }

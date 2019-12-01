@@ -2,16 +2,10 @@
 % Please edit documentation in R/makeSimulatedDataset.R
 \name{makeSimulatedFraserDataSet}
 \alias{makeSimulatedFraserDataSet}
-\alias{makeSimulatedFraserDataSet,}
-\alias{injectOutliers}
 \title{Create an simulated example data set for FraseR}
 \usage{
 makeSimulatedFraserDataSet(m = 100, j = 500, q = 10,
   distribution = c("BB", "DM"), ...)
-
-injectOutliers(fds, type = c("psi5", "psi3", "psiSite"), freq = 0.001,
-  minDpsi = 0.2, minCoverage = 2, deltaDistr = "uniformDistr",
-  verbose = FALSE, method = c("meanPSI", "samplePSI", "simulatedPSI"))
 }
 \arguments{
 \item{m}{Number of simulated samples}
@@ -19,6 +13,11 @@ injectOutliers(fds, type = c("psi5", "psi3", "psiSite"), freq = 0.001,
 \item{j}{Number of simulated junctions}
 
 \item{q}{number of simulated latent variables.}
+
+\item{distribution}{Either "BB" for a beta-binomial simulation or "DM" for a 
+dirichlet-multinomial simulation.}
+
+\item{...}{Further arguments used to construct the FraseRDataSet.}
 }
 \value{
 An FraserDataSet containing an example dataset based on
@@ -26,14 +25,12 @@ An FraserDataSet containing an example dataset based on
 }
 \description{
 Simulates a data set based on random counts following a
-negative binomial distribution with injected outliers with
-a fixed z score away from the mean of the gene.
+beta binomial (or Dirichlet-Multinomial) distribution.
 }
 \examples{
 # A generic dataset
 fds1 <- makeSimulatedFraserDataSet()
 fds1
-fds1 <- injectOutliers(fds1, minDpsi=0.2, freq=1E-3)
 
 # A generic dataset with specificed sample size and injection method
 fds2 <- makeSimulatedFraserDataSet(m=100, j=500, q=5)

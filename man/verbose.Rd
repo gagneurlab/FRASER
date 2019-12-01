@@ -9,6 +9,15 @@ verbose(fds)
 
 verbose(fds) <- value
 }
+\arguments{
+\item{fds}{FraseRDataSet}
+
+\item{value}{The level of verbosity, between 0 and 10. TRUE/FALSE are also 
+accepted.}
+}
+\value{
+numeric(1) (getter) or FraseRDataSet (setter)
+}
 \description{
 Dependend on the level of verbosity the algorithm reports more or less to
 the user. 0 means being quiet and 10 means everything.

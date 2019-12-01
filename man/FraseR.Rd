@@ -15,11 +15,14 @@ FraseR(fds, q, correction = "PCA-BB-Decoder", iterations = 15,
 If a named vector is provided it is used for the different
 splicing types.}
 
+\item{correction}{The method that should be used to correct for confounders.}
+
+\item{iterations}{The maximal number of iterations. When the autoencoder has 
+not yet converged after these number of iterations, the fit stops anyway.}
+
 \item{BPPARAM}{A BiocParallel object to run the computation in parallel}
 
 \item{...}{Additional parameters passed on to the internal fit function}
-
-\item{implementation}{the correction method to use}
 }
 \value{
 FraseRDataSet
@@ -46,7 +49,7 @@ more control over each analysis step, one can call each function separately.
   fds <- filterExpression(fds)
 
   # Run analysis pipeline
-  fds <- FraseR(fds, iterations=2, correction='PCA')
+  fds <- FraseR(fds, q=5, iterations=2, correction='PCA')
 
   # save the final FraseR object
   saveFraseRDataSet(fds)

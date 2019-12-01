@@ -1,3 +1,34 @@
+#' Getter/Setter functions
+#' 
+#' This is a collection of small accessor/setter functions for easy access to
+#' the values within the FraseR model.
+#' 
+#' @param fds An FraseRDataSet object.
+#' @param type The type of psi (psi5, psi3 or psiSite)
+#' @param byGroup If TRUE, aggregation by donor/acceptor site will be done.
+#' @param dist Distribution for which the p-values should be extracted.
+#' @param value The new value to be assigned. 
+#' @return A (delayed) matrix or vector dependent on the type of data retrieved.
+#' 
+#' @name getter_setter_functions
+#' @rdname getter_setter_functions
+#' @aliases zScore, pVals, padjVals, rho, bestQ
+#' 
+#' @examples 
+#' fds <- createTestFraseRDataSet()
+#' dontWriteHDF5(fds)
+#' dontWriteHDF5 <- TRUE
+#' currentType(fds) <- "psi5"
+#' 
+#' bestQ(fds)
+#' rho(fds)
+#' # get statistics
+#' pVals(fds)
+#' padjVals(fds)
+#' zScores(fds)
+#' 
+NULL
+
 #'
 #' Feature exclusion
 #'
@@ -6,7 +37,8 @@
 #' \code{FALSE}. This can be helpfull if we have local linkage between
 #' features which we do not want to model by the autoencoder.
 #'
-#' @param ods An OutriderDataSet object
+#' @param fds A FraseRDataSet object
+#' @param type The psi type.
 #' @param value A logical vector of the length of the features. If
 #'             \code{TRUE}, the corresponding feature will be excluded
 #'             from the encoding dimension fit.
@@ -41,11 +73,15 @@ featureExclusionMask <- function(fds, type=currentType(fds)){
     return(fds)
 }
 
+#' @rdname counts
+#' @export
 K <- function(fds, type=currentType(fds)){
     K <- counts(fds, type=type, side="ofInterest")
     return(K);
 }
 
+#' @rdname counts
+#' @export
 N <- function(fds, type=currentType(fds)){
     N <- K(fds, type=type) + counts(fds, type=type, side="other")
     return(N);
@@ -127,6 +163,9 @@ b <- function(fds, type=currentType(fds)){
     return(fds)
 }
 
+#' @describeIn getter_setter_functions Returns the fitted rho values for the 
+#' beta-binomial distribution
+#' @export
 rho <- function(fds, type=currentType(fds)){
     return(mcols(fds, type=type)[[paste0('rho_', type)]])
 }
@@ -181,6 +220,8 @@ getAssayMatrix <- function(fds, name, type, byGroup=FALSE){
     ans[idx,]
 }
 
+#' @describeIn getter_setter_functions This returns the calculated z-scores.
+#' @export
 zScores <- function(fds, type=currentType(fds), byGroup=FALSE){
     ans <- getAssayMatrix(fds, name='zScores', type=type)
     if(isTRUE(byGroup)){
@@ -193,7 +234,8 @@ zScores <- function(fds, type=currentType(fds), byGroup=FALSE){
     setAssayMatrix(fds, name="zScores", type=type, ...) <- value
     return(fds)
 }
-
+#' @describeIn getter_setter_functions This returns the calculated p-values.
+#' @export
 pVals <- function(fds, type=currentType(fds), 
                     dist="BetaBinomial", byGroup=FALSE){
     dist <- match.arg(dist, choices=c("BetaBinomial", "Binomial", "Normal"))
@@ -207,6 +249,8 @@ pVals <- function(fds, type=currentType(fds),
     return(fds)
 }
 
+#' @describeIn getter_setter_functions This returns the adjusted p-values.
+#' @export
 padjVals <- function(fds, type=currentType(fds),
                     dist=c("BetaBinomial"), byGroup=FALSE){
     dist <- match.arg(dist, choices=c("BetaBinomial", "Binomial", "Normal"))
@@ -220,6 +264,9 @@ padjVals <- function(fds, type=currentType(fds),
     return(fds)
 }
 
+#' @describeIn getter_setter_functions This returns the fitted mu (i.e. psi) 
+#' values.
+#' @export
 predictedMeans <- function(fds, type=currentType(fds)){
     return(getAssayMatrix(fds, name="predictedMeans", type=type))
 }
@@ -229,14 +276,41 @@ predictedMeans <- function(fds, type=currentType(fds)){
     return(fds)
 }
 
+#' @describeIn getter_setter_functions Returns the difference between the 
+#' observed and the fitted psi values.
+#' @export
 deltaPsiValue <- function(fds, type=currentType(fds)){
     return(assay(fds, type) - predictedMeans(fds, type=type))
 }
 
+
+#'
+#' Set/get psi type
+#'
+#' Set and returns the psi type that is to be used within several methods in 
+#' the FraseR package.
+#'
+#' @param fds FraseRDataSet
+#' @param value If given, is sets the psi type. It is required to be a scalar 
+#' character.
+#' @return character() (getter) or FraseRDataSet(setter)
+#' @examples
+#'   # get data
+#'   fds <- makeSimulatedFraserDataSet(m=50, j=1000)
+#' 
+#'   # set
+#'   currentType(fds) <- "psi5"
+#'
+#'   # get
+#'   currentType(fds)
+#'
+#' @export
 currentType <- function(fds){
     return(metadata(fds)[['currentType']])
 }
 
+#' @rdname currentType
+#' @export 
 `currentType<-` <- function(fds, value){
     stopifnot(isScalarCharacter(whichPSIType(value)))
     metadata(fds)[['currentType']] <- whichPSIType(value)
@@ -250,6 +324,7 @@ currentType <- function(fds){
 #'
 #' @param value If given, is sets the psuedocount. It requires a positive
 #'                number and rounds it to the next integer.
+#' @return numeric scalar
 #' @examples
 #' # set
 #' pseudocount(4L)
@@ -317,6 +392,11 @@ hyperParams <- function(fds, type=currentType(fds), all=FALSE){
     return(fds)
 }
 
+#' @describeIn getter_setter_functions This returns the optimal size of the 
+#' latent space according to the hyperparameter optimization or a simple 
+#' estimate of about a tenth of the number of samples if the hyperparameter 
+#' opimization was not run yet.
+#' @export
 bestQ <- function(fds, type=currentType(fds)){
     ans <- hyperParams(fds, type=type)[1,q]
     if(is.null(ans)){
@@ -335,11 +415,15 @@ bestNoise <- function(fds, type=currentType(fds)){
     as.numeric(as.character(ans))
 }
 
+#' @describeIn getter_setter_functions Gets the current value of whether the 
+#' assays should be stored as hdf5 files.
 #' @export
 dontWriteHDF5 <- function(fds){
     return(metadata(fds)[['dontWriteHDF5']])
 }
 
+#' @describeIn getter_setter_functions Sets whether the assays should be stored 
+#' as hdf5 files.
 #' @export
 `dontWriteHDF5<-` <- function(fds, value){
     metadata(fds)[['dontWriteHDF5']] <- isTRUE(value)
@@ -534,7 +618,12 @@ getPlottingDT <- function(fds, axis=c("row", "col"), type=NULL, result=NULL,
 #' Dependend on the level of verbosity the algorithm reports more or less to
 #' the user. 0 means being quiet and 10 means everything.
 #'
+#' @param fds FraseRDataSet
+#' @param value The level of verbosity, between 0 and 10. TRUE/FALSE are also 
+#' accepted.
+#'
 #' @rdname verbose
+#' @return numeric(1) (getter) or FraseRDataSet (setter)
 #' @examples
 #' fds <- createTestFraseRSettings()
 #' verbose(fds)

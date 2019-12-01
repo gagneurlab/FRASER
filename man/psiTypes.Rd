@@ -11,4 +11,9 @@ psiTypes
 \description{
 Available psi types
 }
+\examples{
+  # to show available psi types:
+  psiTypes
+
+}
 \keyword{datasets}

@@ -7,6 +7,12 @@
 \usage{
 \S4method{length}{FraseRDataSet}(x)
 }
+\arguments{
+\item{x}{FraseRDataSet}
+}
+\value{
+Length of the object.
+}
 \description{
 retrive the length of the object (aka number of junctions)
 }

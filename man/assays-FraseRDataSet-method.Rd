@@ -7,6 +7,16 @@
 \usage{
 \S4method{assays}{FraseRDataSet}(x, ..., withDimnames = TRUE)
 }
+\arguments{
+\item{x}{FraseRDataSet}
+
+\item{...}{Parameters passed on to SummarizedExperiment::assays()}
+
+\item{withDimnames}{Passed on to SummarizedExperiment::assays()}
+}
+\value{
+(Delayed) matrix.
+}
 \description{
 Returns the assay corrensonding to the given name/index of the FraseRDataSet
 }

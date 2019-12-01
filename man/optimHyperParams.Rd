@@ -7,8 +7,7 @@
 optimHyperParams(fds, type, correction, q_param = seq(2, min(40,
   ncol(fds)), by = 3), noise_param = c(0, 0.5, 1, 2, 5),
   minDeltaPsi = 0.1, iterations = 5, setSubset = 15000,
-  injectFreq = 0.01, nrDecoderBatches = 1, BPPARAM = bpparam(),
-  internalThreads = 3)
+  injectFreq = 0.01, BPPARAM = bpparam(), internalThreads = 3)
 }
 \arguments{
 \item{fds}{A FraseRDataSet object}
@@ -18,19 +17,44 @@ efficiency)}
 
 \item{correction}{The method that should be used to correct for confounders.}
 
-\item{minDeltaPsi}{}
+\item{q_param}{Vector specifying which values of q should be tested}
+
+\item{noise_param}{Vector specifying which noise levels should be tested.}
+
+\item{minDeltaPsi}{Minimal delta psi of an intron to be be considered a 
+variable intron.}
 
 \item{iterations}{The maximal number of iterations. When the autoencoder has 
 not yet converged after these number of iterations, the fit stops anyway.}
 
+\item{setSubset}{The size of the subset of the most variable introns that 
+should be used for the hyperparameter optimization.}
+
+\item{injectFreq}{The frequency with which outliers are injected into the 
+data.}
+
 \item{BPPARAM}{the BiocParallel parameters for the parallelization}
+
+\item{internalThreads}{The number of threads used internally.}
+}
+\value{
+FraseRDataSet
 }
 \description{
 Finds the optimal encoding dimension by injecting artificial splicing outlier
 ratios while maximizing the precision-recall curve.
 }
 \examples{
-# TODO
-TODO <- 1
+  # generate data
+  fds <- makeSimulatedFraserDataSet(j=500, m=20, q=4)
+  
+  # run hyperparameter optimization
+  fds <- optimHyperParams(fds, type="psi5", correction="PCA")
+  
+  # get estimated optimal dimension of the latent space
+  bestQ(fds, type="psi5")
+  
+  # plot the AUC for the different encoding dimensions tested
+  plotEncDimSearch(fds, type="psi5")
 
 }

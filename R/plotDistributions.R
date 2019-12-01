@@ -8,12 +8,13 @@
 #'              Needs to match a junction or splice site within the FraseR obj.
 #'              Also it needs to have a type column specifying
 #'              the site of interest ("psi3", "psi5", "psiSite").
-#' @param sample A vector of sampleIDs which should be highlighted.
+#' @param sampleIDs A vector of sampleIDs which should be highlighted.
 #'              If this value is not set but the gr object contains a sampleID
 #'              column it will take this column to highlight samples.
 #' @param ... Additional paramerters which are pased on to
 #'              the underlying plotting functions
 #'
+#' @return nothing
 #' @examples
 #' # TODO
 #' DEPRICATED <- 1
@@ -22,7 +23,7 @@
 #' # plotJunctionDistribution(fds, results(fds)[1])
 #' # plotJunctionDistribution(fds, results(fds)[3])
 #'
-#' @export
+#' @noRd
 plotJunctionDistribution <- function(fds, gr, type=gr$type, sampleIDs=NULL,
             rmZeroCts=FALSE, plotRank=paste0(c("", "delta_", "zScores_"), type),
             plotCounts=TRUE, plotValVsCounts=type, qqplot=TRUE,
@@ -39,8 +40,9 @@ plotJunctionDistribution <- function(fds, gr, type=gr$type, sampleIDs=NULL,
     }
 
     # get number of plots
-    numPlots <- sum(sapply(list(plotRank, plotValVsCounts),
-            function(x){ ifelse(is.logical(x), sum(x), length(x)) })) +
+    numPlots <- sum(vapply(list(plotRank, plotValVsCounts),
+            function(x){ ifelse(is.logical(x), sum(x), length(x)) },
+            FUN.VALUE=integer(1))) +
             sum(qqplot) + sum(plotCounts)
 
     opar <- par(no.readonly=TRUE)
@@ -48,7 +50,8 @@ plotJunctionDistribution <- function(fds, gr, type=gr$type, sampleIDs=NULL,
 
     data <- getPlotDistributionData(gr=gr, fds=fds, type=type, rmZeroCts)
 
-    par(mfrow=c(ceiling(numPlots/mfrow),ifelse(numPlots < mfrow, numPlots, mfrow)), cex=cex)
+    par(mfrow=c(ceiling(numPlots/mfrow),ifelse(numPlots < mfrow, numPlots, 
+                                               mfrow)), cex=cex)
 
     # plot sample rank if requested
     if(!(length(plotRank) == 0 | isFALSE(plotRank))){
@@ -64,7 +67,7 @@ plotJunctionDistribution <- function(fds, gr, type=gr$type, sampleIDs=NULL,
     }
     # plot values versus counts
     if(!(length(plotValVsCounts) == 0 | isFALSE(plotValVsCounts))){
-        sapply(plotValVsCounts, plotValueVsCounts, gr=gr, fds=fds, data=NULL,
+        lapply(plotValVsCounts, plotValueVsCounts, gr=gr, fds=fds, data=NULL,
                sampleIDs=sampleIDs, plotlog=TRUE, rmZeroCts=FALSE)
     }
     # plot qq plot
@@ -198,14 +201,14 @@ plotCountsAtSite <- function(gr, fds, type, sampleIDs=NULL, plotLegend=TRUE,
     a <- data$alpha
     b <- data$beta
     ab <- a + b
-    fitx <- 1:as.integer(max(x)*1.5)
+    fitx <- seq_len(as.integer(max(x)*1.5))
     fity <- bbmean(fitx, a, b)
     lines(c(zeroVal, fitx), c(zeroVal, fity), col="firebrick")
 
     # add 50%, 25% and 10% lines
     curPlotPar <- data.table(fact=c(0.5, 0.25, 0.1), lty=c(2, 4, 3),
             name=c("PSI = 50%", "PSI = 25%", "PSI = 10%"))
-    sapply(1:nrow(curPlotPar), function(idx){
+    lapply(seq_len(nrow(curPlotPar)), function(idx){
         y2plot <- fitx * curPlotPar[idx, fact]
         lines(fitx, y2plot, lty=curPlotPar[idx, lty],
                 col=adjustcolor("black", 0.7))
@@ -213,7 +216,7 @@ plotCountsAtSite <- function(gr, fds, type, sampleIDs=NULL, plotLegend=TRUE,
 
     # add variance
     fityvar <- bbvariance(fitx, a, b)
-    sapply(c(-1, 1), function(varFactor) {
+    lapply(c(-1, 1), function(varFactor) {
         y <- fity + varFactor * fityvar # * scewFactor
         lines(fitx, y, lty="dotted", col=adjustcolor("firebrick", 0.5))
     })
@@ -222,7 +225,7 @@ plotCountsAtSite <- function(gr, fds, type, sampleIDs=NULL, plotLegend=TRUE,
     if(!is.null(sampleIDs)){
         names(x) <- samples(fds)
         names(y) <- samples(fds)
-        sapply(sampleIDs, addSamplePoints, x=x, y=y)
+        lapply(sampleIDs, addSamplePoints, x=x, y=y)
     }
 
     # add legend if requested
@@ -292,7 +295,7 @@ plotSampleRank <- function(gr, fds, type, sampleIDs=NULL, delta=FALSE,
          pch=16, col="gray"
     )
     if(!is.null(sampleIDs)){
-        sapply(sampleIDs, addSamplePoints, x=rank(p), y=p)
+        lapply(sampleIDs, addSamplePoints, x=rank(p), y=p)
     }
 }
 
@@ -329,7 +332,7 @@ plotValueVsCounts <- function(gr, fds, type, sampleIDs=NULL, delta=FALSE,
         axis(side=1, at=zeroVal, labels = "0", tick = TRUE)
     }
     if(!is.null(sampleIDs)){
-        sapply(sampleIDs, addSamplePoints, x=tcts, y=val)
+        lapply(sampleIDs, addSamplePoints, x=tcts, y=val)
     }
 }
 
@@ -358,7 +361,8 @@ getTitle <- function(plotMainTxt, gr, psiType){
 #'
 #' @noRd
 plotQQplot <- function(gr=NULL, fds=NULL, type=NULL, data=NULL, maxOutlier=2,
-                    conf.alpha=0.05, sample=FALSE, breakTies=TRUE, mainName="qqPlot",
+                    conf.alpha=0.05, sample=FALSE, breakTies=TRUE, 
+                    mainName="qqPlot",
                     legendPos="bottomright"){
     if(isScalarLogical(conf.alpha)){
         conf.alpha <- ifelse(isTRUE(conf.alpha), 0.05, NA)
@@ -367,7 +371,8 @@ plotQQplot <- function(gr=NULL, fds=NULL, type=NULL, data=NULL, maxOutlier=2,
     # get data
     if(is.null(data)){
         if(is.null(gr) | is.null(fds) | is.null(type)){
-            stop("If data is not provided gr, fds and type needs to be passed on.")
+            stop(paste0("If data is not provided gr, fds and type needs to ", 
+                        "be passed on."))
         }
         data <- getPlotDistributionData(gr, fds, type)
     }
@@ -406,8 +411,8 @@ plotQQplot <- function(gr=NULL, fds=NULL, type=NULL, data=NULL, maxOutlier=2,
             m <- (y2-y1)/(x2-x1)
             return(10^-(y1 + m*((x2+1)-x1)))
         }
-        upper <- qbeta(conf.alpha/2,   1:len, rev(1:len))
-        lower <- qbeta(1-conf.alpha/2, 1:len, rev(1:len))
+        upper <- qbeta(conf.alpha/2,   seq_len(len), rev(seq_len(len)))
+        lower <- qbeta(1-conf.alpha/2, seq_len(len), rev(seq_len(len)))
         polygon(col="gray", border="gray", x=c(rev(exp), max(exp)+c(1,1), exp),
                 y=-log10(c(
                         rev(upper), getY(upper, exp), getY(lower, exp), lower)))
@@ -419,8 +424,11 @@ plotQQplot <- function(gr=NULL, fds=NULL, type=NULL, data=NULL, maxOutlier=2,
     plotPoint <- TRUE
     if(isTRUE(sample)){
         lo <- length(obs)
-        plotPoint <- 1:lo %in% unique(c(1:min(lo, 100), sort(sample(1:lo,
-                size = min(lo, 30000), prob=log10(1+lo:1)/sum(log10(1+lo:1))))))
+        plotPoint <- seq_len(lo) %in% unique(c(seq_len(min(lo, 100)), 
+                                               sort(sample(seq_len(lo),
+                size = min(lo, 30000), 
+                prob=log10(1+rev(seq_len(lo))) /
+                    sum(log10(1+rev(seq_len(lo))))))))
     }
 
     # add the points
@@ -447,7 +455,7 @@ plotQQplot <- function(gr=NULL, fds=NULL, type=NULL, data=NULL, maxOutlier=2,
 #' @noRd
 plotSampleQQ <- function(fds, type=c("psi5", "psi3", "psiSite"), sample=TRUE,
                     ...){
-    pvals <- sapply(type, function(x){
+    pvals <- lapply(type, function(x){
         readType <- whichReadType(fds, x)
         tested <- na2false(mcols(fds, type=x)[,paste0(x, "_tested")])
         as(assays(fds[tested,by=readType])[[paste0('pvalue_', x)]], "matrix")
@@ -462,10 +470,12 @@ testPlotting <- function(){
     if(!testset){
         fds  <- loadFraseRDataSet(
             "/s/project/fraser/analysis/datasets", "kremer-bader-et-al")
-        grdt <- as.data.table(metadata(fds)[[6]])[p.adj < 1 & abs(deltaPsi) > 0.1]
-        gra   <- makeGRangesFromDataFrame(keep.extra.columns = TRUE,
-                                          grdt[order(p.adj)][
-                                              hgnc_symbol %in% c("MCOLN1", "TIMMDC1")][c(1,3,5)])
+        grdt <- as.data.table(metadata(fds)[[6]])[p.adj < 1 & 
+                                                      abs(deltaPsi) > 0.1]
+        gra   <- makeGRangesFromDataFrame(
+                    keep.extra.columns = TRUE,
+                    grdt[order(p.adj)][
+                        hgnc_symbol %in% c("MCOLN1", "TIMMDC1")][c(1,3,5)])
     } else {
         fds  <- annotateRanges(FraseR())
         grdt <- as.data.table(results(fds, fdrCut=1))
@@ -474,7 +484,7 @@ testPlotting <- function(){
     }
 
     pdf("result-distribution-top50.pdf")
-    idx2plot <- sample(1:min(3000, length(gra)), min(200, length(gra)))
+    idx2plot <- sample(seq_len(min(3000, length(gra))), min(200, length(gra)))
     for(i in sort(idx2plot)){
         gr        <- gra[i]
         sampleIDs <- gra[i]$sampleID
@@ -495,198 +505,4 @@ testPlotting <- function(){
     plotJunctionDistribution(fds, gra[1], rmZeroCts = FALSE)
     plotCountsAtSite(gra[1], fds, gra[1]$type)
     plotValueVsCounts(gra[1], fds, gra[1]$type, plotLog=TRUE, rmZeroCts=FALSE)
-}
-
-qlogisWithCap <- function(x){
-    ans <- qlogis(x)
-    ans[is.infinite(ans)] <- NA
-    rowm <- rowMaxs(ans, na.rm=TRUE)
-    idx <- which(is.na(ans), arr.ind=TRUE)
-    ans[idx] <- rowm[idx[,"row"]]
-    return(ans)
-}
-
-#'
-#' Plot count correlation
-#'
-#' @examples
-#' # TODO
-#' TODO <- 1
-#'
-#' @export
-plotCountCorHeatmap <- function(fds, type=c("psi5", "psi3", "psiSite"),
-            logit=FALSE, topN=50000, minMedian=1, main=NULL, normalized=FALSE,
-            show_rownames=FALSE, show_colnames=FALSE, minDeltaPsi=0.1,
-            annotation_col=NA, annotation_row=NA, border_color=NA, topJ=5000,
-            plotType=c("sampleCorrelation", "junctionSample"),
-            nClust=5, sampleClustering=NULL, plotMeanPsi=TRUE, plotCov=TRUE,
-            ...){
-
-    type <- match.arg(type)
-    plotType <- match.arg(plotType)
-
-    # use counts as matrix, otherwise x(fds,...) does not work later on
-    counts(fds, type=type, side="other", HDF5=FALSE)      <-
-        as.matrix(counts(fds, type=type, side="other"))
-    counts(fds, type=type, side="ofInterest", HDF5=FALSE) <-
-        as.matrix(counts(fds, type=type, side="ofInterest"))
-
-    kmat <- as.matrix(counts(fds, type=type, side="ofIn"))
-    nmat <- kmat + as.matrix(counts(fds, type=type, side="other"))
-
-    expRowsMedian <- rowMedians(kmat) >= minMedian
-    expRowsMax    <- rowMax(kmat)     >= 10
-    table(expRowsMax & expRowsMedian)
-
-    skmat <- kmat[expRowsMax & expRowsMedian,]
-    snmat <- nmat[expRowsMax & expRowsMedian,]
-
-    xmat <- (skmat + 1)/(snmat + 2)
-    if(isTRUE(logit)){
-        xmat <- qlogisWithCap(xmat)
-    }
-    xmat_rc    <- xmat - rowMeans(xmat)
-
-    xmat_rc_sd <- rowSds(xmat_rc)
-    plotIdx <- rank(xmat_rc_sd) >= length(xmat_rc_sd) - topN
-    xmat_rc_2_plot <- xmat_rc[plotIdx,]
-    cormatS <- cor(xmat_rc_2_plot)
-    if(isTRUE(normalized)){
-        pred_mu <- as.matrix(predictedMeans(fds, type=type)[
-                    expRowsMax & expRowsMedian,][plotIdx,])
-        pred_mu <- qlogisWithCap(pred_mu)
-        lpred_mu_rc <- pred_mu - rowMeans(pred_mu)
-        xmat_rc_2_plot <- xmat_rc_2_plot - lpred_mu_rc
-    }
-    cormat <- cor(xmat_rc_2_plot)
-    breaks <- seq(-1, 1, length.out=50)
-
-    if(plotType == "junctionSample"){
-
-        if(isTRUE(normalized)){
-            pred_mu <- as.matrix(predictedMeans(fds, type=type)[
-                expRowsMax & expRowsMedian,])
-            if(isTRUE(logit)){
-                pred_mu <- qlogisWithCap(pred_mu)
-            }
-            lpred_mu_rc <- pred_mu - rowMeans(pred_mu)
-            xmat_rc <- xmat_rc - lpred_mu_rc
-        }
-
-        fds <- fds[expRowsMax & expRowsMedian,,by=type]
-        j2keepVa <- variableJunctions(fds, type, minDeltaPsi)
-        j2keepDP <- rowQuantiles(kmat[expRowsMax & expRowsMedian,],
-                                 probs=0.75) >= 10
-        j2keep <- j2keepDP & j2keepVa
-        xmat_rc_2_plot <- xmat_rc[j2keep,]
-        mostVarKeep <- subsetKMostVariableJunctions(fds[j2keep,,by=type],
-                                                    type, topJ)
-        xmat_rc_2_plot <- xmat_rc_2_plot[mostVarKeep,]
-        rownames(xmat_rc_2_plot) <- seq_len(nrow(xmat_rc_2_plot))
-        breaks <- seq(-5, 5, length.out=50)
-
-    }
-
-
-    if(is.character(annotation_col)){
-        annotation_col <- getColDataAsDFFactors(fds, annotation_col)
-    }
-    if(is.character(annotation_row)){
-        annotation_row <- getColDataAsDFFactors(fds, annotation_row)
-    }
-
-    # annotate with sample clusters
-    if(is.null(sampleClustering)){
-        # annotate samples with clusters from sample correlation heatmap
-        clusters <- as.factor(cutree(hclust(dist(cormatS)), k=nClust))
-    } else if(!is.na(sampleClustering)){
-        clusters <- sampleClustering
-    }
-
-    if(isFALSE(is.na(sampleClustering))){
-        if(!is.null(nrow(annotation_col))){
-            annotation_col$sampleCluster <- clusters
-        } else {
-            annotation_col <- data.frame(sampleCluster=clusters)
-        }
-    }
-
-
-    if(plotType == "junctionSample"){
-
-        # annotate junctions with meanPsi and meanCoverage
-        xmat <- xmat[j2keep,]
-        xmat <- xmat[mostVarKeep,]
-        meanPsi <- if(isTRUE(logit)){
-            rowMeans(plogis(xmat))
-        } else{
-            rowMeans(xmat)
-        }
-        meanPsiBins <- cut(meanPsi, breaks = c(0, 0.33, 0.66, 1),
-                include.lowest=TRUE)
-        if(isTRUE(plotMeanPsi)){
-            if(!is.null(nrow(annotation_row))){
-                annotation_row$meanPsi <- meanPsiBins
-            } else{
-                annotation_row <- data.frame(meanPsi=meanPsiBins)
-            }
-        }
-
-        snmat <- snmat[j2keep,]
-        snmat <- snmat[mostVarKeep,]
-        meanCoverage <- rowMeans(snmat)
-        cutpoints <- sort(unique(round(log10(meanCoverage))))
-        if(max(cutpoints) < ceiling(log10(max(meanCoverage)))){
-            cutpoints <- c(cutpoints, ceiling(log10(max(meanCoverage))))
-        }
-        meanCoverage <- cut(meanCoverage, breaks=10^(cutpoints),
-                include.lowest=TRUE)
-
-        if(isTRUE(plotCov)){
-            annotation_row$meanCoverage <- meanCoverage
-        }
-        if(isTRUE(nrow(annotation_row) > 0)){
-            rownames(annotation_row) <- rownames(xmat_rc_2_plot)
-        }
-        cormat <- xmat_rc_2_plot
-    }
-
-    if(is.null(main)){
-        main <- ifelse(normalized, "Normalized row-centered ", "Raw row-centered ")
-        if(plotType == "sampleCorrelation"){
-            if(isTRUE(logit)){
-                main <- paste0(main, "Logit(PSI) correlation (", type, ")")
-            } else {
-                main <- paste0(main, "PSI correlation (", type, ")")
-            }
-        } else {
-            if(isTRUE(logit)){
-                main <- paste0(main, "Logit(PSI) data (", type, ", top ", topJ, ")")
-            } else {
-                main <- paste0(main, "PSI data (", type, ", top ", topJ, ")")
-            }
-        }
-    }
-
-    pheatmap(cormat, show_rownames=show_rownames, show_colnames=show_colnames,
-            main=main, annotation_col=annotation_col, breaks=breaks,
-            annotation_row=annotation_row, ..., border_color=border_color,
-            color=colorRampPalette(colors=rev(brewer.pal(11, "RdBu")))(50)
-    )
-}
-
-
-getColDataAsDFFactors <- function(fds, names){
-    tmpDF <- data.frame(colData(fds)[,names])
-    colnames(tmpDF) <- names
-    for(i in names){
-        if(any(is.na(tmpDF[, i]))){
-            tmpDF[,i] <- as.factor(paste0("", tmpDF[,i]))
-        }
-        if(is.integer(tmpDF[,i]) && length(levels(as.factor(tmpDF[,i]))) <= 10){
-            tmpDF[,i] <- as.factor(paste0("", tmpDF[,i]))
-        }
-    }
-    rownames(tmpDF) <- rownames(colData(fds))
-    return(tmpDF)
 }

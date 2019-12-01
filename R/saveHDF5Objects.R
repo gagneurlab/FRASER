@@ -8,9 +8,11 @@
 #' @param fds A FraseRDataSet object ot be saved
 #' @param dir A path where to save the objects (replaces the working directory)
 #' @param name The analysis name of the project (saved within the `dir`)
+#' @param file The file path to the fds-object.RDS file that should be loaded.
 #' @param rewrite logical if the object should be rewritten. This makes sense if
 #'             you have filtered or subsetted the object and want to save only
 #'             the subsetted version
+#' @param upgrade Should the version of the loaded object be updated?
 #'
 #' @examples
 #' fds <- countRNAData(createTestFraseRSettings())
@@ -21,7 +23,8 @@
 #' fdsLoaded
 #'
 #' testthat::expect_equivalent(fdsSaved, fdsLoaded)
-#'
+#' 
+#' @return FraseRDataSet
 #' @aliases loadFraseRDataSet saveFraseRDataSet
 #' @rdname loadFraseRDataSet
 #' @export
@@ -106,7 +109,7 @@ saveFraseRDataSet <- function(fds, dir=NULL, name=NULL, rewrite=FALSE) {
     }
 
     # check input
-    stopifnot(class(fds) == "FraseRDataSet")
+    stopifnot(is(fds, "FraseRDataSet"))
     if(is.null(dir)) dir <- workingDir(fds)
     stopifnot(isScalarCharacter(dir))
     if(is.null(name)) name <- name(fds)

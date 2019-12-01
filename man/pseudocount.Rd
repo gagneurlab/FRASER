@@ -10,6 +10,9 @@ pseudocount(value = NULL)
 \item{value}{If given, is sets the psuedocount. It requires a positive
 number and rounds it to the next integer.}
 }
+\value{
+numeric scalar
+}
 \description{
 Set and returns the pseudo count used within the FraseR fitting procedure.
 }

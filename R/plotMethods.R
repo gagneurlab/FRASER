@@ -19,11 +19,11 @@
 #' Most of the functions share the same parameters.
 #'
 #### Data specific parameters
-#' @param fds,object An FraseRDataSet object.
+#' @param fds An FraseRDataSet object.
 #' @param type The psi type: either psi5, psi3 or psiSite (for SE).
 #' @param sampleID A sample ID which should be plotted. Can also be a vector.
 #'             Integers are treated as indices.
-#' @param idx,site,feature A junction site ID or gene ID or one of both, which
+#' @param idx,site A junction site ID or gene ID or one of both, which
 #'             should be plotted. Can also be a vector. Integers are treated
 #'             as indices.
 #' @param padjCutoff,zScoreCutoff,deltaPsiCutoff Significance, Z-score or delta
@@ -31,27 +31,19 @@
 #' @param global Flag to plot a global Q-Q plot, default FALSE
 #' @param normalized If TRUE, the normalized psi values are used, the default,
 #'             otherwise the raw psi values
-#' @param aggregate If TRUE, the pvalues are aggregated by gene, otherwise
-#'             junction level pvalues are used (default).
+#' @param aggregate,aggregated If TRUE, the pvalues are aggregated by gene, 
+#'             otherwise junction level pvalues are used (default).
 #' @param result The result table to be used by the method.
+#' @param BPPARAM BiocParallel parameter to use.
+#' @param Ncpus Number of cores to use.
 #### Graphical parameters
 #' @param main Title for the plot, if missing a default title will be used.
-#' @param col Set color for the barplot.
 #' @param colGroup Group of samples that should be colored.
-#' @param yadjust Option to adjust position of Median and 90 percentile labels.
-#' @param ylab The y axis label
-#' @param labCex The label cex parameter
-#' @param labLine Option to move axis labels
 #' @param basePlot if \code{TRUE} (default), use the R base plot version, else
 #'             use the plotly framework.
 #' @param conf.alpha If set, a confidence interval is plotted, defaults to 0.05
 #' @param samplingPrecision Plot only non overlapping points in Q-Q plot to 
 #'             reduce number of points to plot. Defines the digits to round to. 
-#' @param breakTies If \code{TRUE},
-#' @param highlightOutliers If \code{TRUE}, then outliers are highlighted.
-#' @param maxOutlier Used to define the y axis limit.
-#' @param cutYaxis If \code{TRUE}, cuts the y axis of the plot at some point.
-#' @param ymax If set, ymax is the upper bound for the plot range on the y axis.
 #' @param logit If TRUE, the default, psi values are plotted in logit space.
 #' @param nClust Number of clusters to show in the row and
 #'             column dendrograms.
@@ -109,9 +101,9 @@
 #' are log transformed and row centered. The ... arguments are passed to the
 #' \code{\link[pheatmap]{pheatmap}} function.
 #'
-#' \code{plotFilterExpression}: The distribution of FPKM values. If the FraseRDataSet
-#' object contains the \code{passedFilter} column, it will plot both FPKM
-#' distributions for the expressed genes and for the filtered genes.
+#' \code{plotFilterExpression}: The distribution of FPKM values. If the 
+#' FraseRDataSet object contains the \code{passedFilter} column, it will plot 
+#' both FPKM distributions for the expressed genes and for the filtered genes.
 #'
 #' \code{plotEncDimSearch}: Visualization of the hyperparameter optimization.
 #' It plots the encoding dimension against the achieved loss (area under the
@@ -123,9 +115,9 @@
 #'
 #' @name plotFunctions
 #' @rdname plotFunctions
-#' @aliases plotFunctions plotAberrantPerSample plotVolcano plotQQ plotExpression
-#'             plotCountCorHeatmap plotFilterExpression plotExpectedVsObservedPsi
-#'             plotEncDimSearch
+#' @aliases plotFunctions plotAberrantPerSample plotVolcano plotQQ 
+#'             plotExpression plotCountCorHeatmap plotFilterExpression 
+#'             plotExpectedVsObservedPsi plotEncDimSearch
 #' @examples
 #' # TODO
 #' TODO <- 1
@@ -303,7 +295,8 @@ plotExpression <- function(fds, type=c("psi5", "psi3", "psiSite"),
 #' @export
 plotExpectedVsObservedPsi <- function(fds, type=c("psi5", "psi3", "psiSite"),
                                       idx=NULL, result=NULL, colGroup=NULL,
-                                      main=NULL, basePlot=TRUE, padjCutoff=0.05){
+                                      main=NULL, basePlot=TRUE, 
+                                      padjCutoff=0.05){
     type <- match.arg(type)
 
     # get plotting data
@@ -684,7 +677,8 @@ plotCountCorHeatmap <- function(fds, type=c("psi5", "psi3", "psiSite"),
     }
 
     if(is.null(main)){
-        main <- ifelse(normalized, "Normalized row-centered ", "Raw row-centered ")
+        main <- ifelse(normalized, "Normalized row-centered ", 
+                       "Raw row-centered ")
         if(plotType == "sampleCorrelation"){
             if(isTRUE(logit)){
                 main <- paste0(main, "Logit(PSI) correlation (", type, ")")
@@ -693,7 +687,8 @@ plotCountCorHeatmap <- function(fds, type=c("psi5", "psi3", "psiSite"),
             }
         } else {
             if(isTRUE(logit)){
-                main <- paste0(main, "Logit(PSI) data (", type, ", top ", topJ, ")")
+                main <- paste0(main, "Logit(PSI) data (", type, ", top ", topJ, 
+                               ")")
             } else {
                 main <- paste0(main, "PSI data (", type, ", top ", topJ, ")")
             }
@@ -726,14 +721,62 @@ getColDataAsDFFactors <- function(fds, names){
     return(tmpDF)
 }
 
+#' @noRd
+qlogisWithCap <- function(x){
+    ans <- qlogis(x)
+    ans[is.infinite(ans)] <- NA
+    rowm <- rowMaxs(ans, na.rm=TRUE)
+    idx <- which(is.na(ans), arr.ind=TRUE)
+    ans[idx] <- rowm[idx[,"row"]]
+    return(ans)
+}
+
 #'
 #' Helper to get nice Splice metric labels in ggplot
 #'
 #' @noRd
 ggplotLabelPsi <- function(type){
-    sapply(type, function(x)
+    vapply(type, FUN=function(x)
         switch (x,
-                psi5 = bquote(psi[5]),
-                psi3 = bquote(psi[3]),
-                psiSite = bquote(theta)))
+                psi5 = c(bquote(psi[5])),
+                psi3 = c(bquote(psi[3])),
+                psiSite = c(bquote(theta))),
+        FUN.VALUE=c(bquote(psi[3])))
+}
+
+#' @noRd
+plotLoss <- function(fds, type){
+    type
+    fds <- fds_new
+    lossList <- metadata(fds)[[paste0('loss_', type)]]
+    dt2plot <- as.data.table(melt(do.call(rbind, list(
+        max=colMaxs(lossList, na.rm=TRUE),
+        mean=colMeans(lossList, na.rm=TRUE),
+        min=colMins(lossList, na.rm=TRUE),
+        sd=colSds(lossList, na.rm=TRUE))), value.name="Loss"))
+    colnames(dt2plot)[c(1,2)] <- c("Aggregation", "IterSteps")
+    
+    # set iterations
+    dt2plot[grepl("init",IterSteps),iteration:=0]
+    dt2plot[is.na(iteration),iteration:=as.numeric(as.character(
+        gsub("_.*", "" ,gsub("final_", "" , IterSteps))))]
+    
+    # set step
+    dt2plot[grepl("final", IterSteps),Step:="D fit"]
+    dt2plot[is.na(Step) & !grepl("init", IterSteps),Step:="E fit"]
+    dt2plot[is.na(Step),Step:="Init"]
+    dt2plot[,Iteration:=seq_len(.N)/1,by="Aggregation,Step"]
+    dt2plot[Step=="E fit", Iteration:=Iteration/3]
+    dt2plot[Step=="D fit", Iteration:=Iteration/2]
+    
+    # summaries
+    ggplot(dt2plot[Aggregation != "sd"], aes(x=Iteration, y=Loss, col=Step, 
+                                             lty=Aggregation)) +
+        geom_ribbon(data=dt2plot[Aggregation == "mean",], aes(
+            ymin = dt2plot[Aggregation == "mean", Loss] - 
+                dt2plot[Aggregation == "sd", Loss],
+            ymax = dt2plot[Aggregation == "mean", Loss] + 
+                dt2plot[Aggregation == "sd", Loss]), fill="gray80", col=NA) +
+        geom_line() +
+        scale_y_log10()
 }

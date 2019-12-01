@@ -193,14 +193,15 @@ Additionally, the user can create several analysis plots directly from the
 fitted \fds{} object. These plotting functions are described in section 
 \ref{sec:result-vis}.
 
-<<quick faser guide, echo=TRUE, eval=FALSE>>=
-if(!requireNamespace("FraseR", quietly=TRUE)){
-    devtools::install("../FraseR")
-}
+<<quick_faser_guide, echo=TRUE>>=
+# if(!requireNamespace("FraseR", quietly=TRUE)){
+#     devtools::install("../FraseR")
+# }
 library(FraseR)
 
-# parallelization
-register(MulticoreParam(workers=min(6, bpworkers())))
+# example of how to use parallelization: use 10 cores or the maximal number of 
+# available cores if fewer than 10 are available
+register(MulticoreParam(workers=min(10, multicoreWorkers())))
 
 # count data
 fds <- createTestFraseRSettings()
@@ -222,7 +223,8 @@ fds <- FraseR(fds, q=2, correction="PCA")
 
 fds <- annotateRanges(fds)
 
-# get results
+# get results: usually, using p-value cutoff is recommended, but on the small 
+# example dataset, this would give no results, so we use z-scores here instead
 # res <- results(fds, zScoreCutoff=NA, padjCutoff=0.05, deltaPsiCutoff=0.1)
 res <- results(fds, zScoreCutoff=2, padjCutoff=NA, deltaPsiCutoff=0.1)
 res
@@ -334,8 +336,9 @@ resulting \Rclass{FraseRDataSet} object contains two
 sites.
 
 <<counting reads, echo=TRUE>>=
-# parallelization parameters
-register(MulticoreParam(workers=min(6, bpworkers())))
+# example of how to use parallelization: use 10 cores or the maximal number of 
+# available cores if fewer than 10 are available
+register(MulticoreParam(workers=min(10, multicoreWorkers())))
 
 # count reads
 fds <- countRNAData(settings)
@@ -416,10 +419,11 @@ plotFilterExpression(fds, bins=100)
 After looking at the expression distribution between filtered and unfiltered 
 junctions, we can now subset the dataset:
 
-<<subset to filtered junctions, echo=TRUE, eval=FALSE>>=
-# skipped for this tutorial because the example dataset is otherwise too small
-fds <- fds[mcols(fds, type="j")[,"passed"],]
-fds
+<<subset to filtered junctions, echo=TRUE>>=
+fds_filtered <- fds[mcols(fds, type="j")[,"passed"],]
+fds_filtered
+# filtered_fds not further used for this tutorial because the example dataset 
+# is otherwise too small
 @
 
 \section{Sample co-variation}
@@ -433,7 +437,7 @@ tissues and cohorts. Let's have a look into our data to see if we do have
 correlation structure or not. To have a better estimate, we use the logit 
 transformed $\Psi$ values to compute the correlation.
 
-<<sample covariation, echo=TRUE>>=
+<<sample_covariation, echo=TRUE>>=
 # Heatmap of the sample correlation
 plotCountCorHeatmap(fds, type="psi5", logit=TRUE, normalized=FALSE)
 @
@@ -441,7 +445,7 @@ plotCountCorHeatmap(fds, type="psi5", logit=TRUE, normalized=FALSE)
 It is also possible to visualize the correlation structure of the logit 
 transformed $\Psi$ values of the $topJ$ most variable introns for all samples:
 
-<<intron sample correlation, echo=TRUE, eval=FALSE>>=
+<<intron_sample_correlation, echo=TRUE, eval=FALSE>>=
 # Heatmap of the intron/sample expression
 plotCountCorHeatmap(fds, type="psi5", logit=TRUE, normalized=FALSE, 
                     plotType="junctionSample", topJ=100, minDeltaPsi = 0.01)
@@ -507,7 +511,7 @@ res
 Let's hava a look at sample 10 and check if we got some splicing 
 candidates for this sample.
 
-<<finding candidates, echo=TRUE>>=
+<<finding_candidates, echo=TRUE>>=
 plotVolcano(fds, type="psi5", "sample10")
 @
 
@@ -520,7 +524,7 @@ sampleRes
 
 To have a closer look at the junction level, use the following functions:
 
-<<plot expression, echo=TRUE, eval=FALSE>>=
+<<plot_expression, echo=TRUE, eval=FALSE>>=
 plotExpression(fds, type="psi5", result=sampleRes[1])
 plotExpectedVsObservedPsi(fds, result=sampleRes[1])
 @
@@ -570,13 +574,9 @@ for a subset of the dataset:
 
 <<findBestQ, echo=TRUE>>=
 # hyperparameter opimization 
-fds <- optimHyperParams(fds, "psi5", 
-                             correction="PCA", # PCA used to speed it up
-                             setSubset=50 # for this tutorial: only consider 
-                                          # 50 most variable junctions for the 
-                                          # hyper param optimization
-                                          # default is 15000
-                             )
+fds <- optimHyperParams(fds, type="psi5", 
+                        correction="PCA") # PCA used to speed it up
+                        
 # retrieve the estimated optimal dimension of the latent space
 bestQ(fds, type="psi5")
 @
@@ -584,7 +584,7 @@ bestQ(fds, type="psi5")
 The results from this hyper parameter optimization can be visualized with the 
 function \Rfunction{plotEncDimSearch}.
 
-<<figure findBestQ, echo=TRUE>>=
+<<figure_findBestQ, echo=TRUE>>=
 plotEncDimSearch(fds, type="psi5")
 @
 
@@ -658,7 +658,7 @@ results:
 sample and \Rfunction{plotQQ} gives a quantile-quantile plot either for a single 
 junction/splice site or globally.
 
-<<result visualization, echo=TRUE>>=
+<<result_visualization, echo=TRUE>>=
 plotAberrantPerSample(fds)
 
 # qq-plot for single junction

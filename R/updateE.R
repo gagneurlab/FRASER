@@ -14,8 +14,8 @@ updateE <- function(fds, control, BPPARAM, verbose){
   control[['maxit']] <- 50
 
   fit <- optim(par, fn=truncNLL_e, gr=truncGrad_e,
-               x=as.matrix(x), D=D, k=as.matrix(k), n=as.matrix(n), rho=rho, b=b,
-               method="L-BFGS-B", control=control)
+               x=as.matrix(x), D=D, k=as.matrix(k), n=as.matrix(n), rho=rho, 
+               b=b, method="L-BFGS-B", control=control)
 
   # Check that fit converged
   if(isTRUE(verbose) & fit$convergence != 0){

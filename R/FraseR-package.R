@@ -69,7 +69,7 @@
 #'
 #' @importFrom stats sd rbinom fisher.test na.omit p.adjust ppoints qbeta rnorm
 #'          predict cor cutree dbinom dist hclust lm optim optimize pbinom
-#'          plogis qlogis rlnorm rnbinom
+#'          plogis qlogis rlnorm rnbinom pnorm
 #' @importFrom VGAM rbetabinom vglm Coef pbetabinom pbetabinom.ab betabinomial
 #'          dbetabinom.ab dbetabinom
 #'
@@ -88,11 +88,12 @@
 ### To be added into the functions above
 #
 #' @importFrom S4Vectors DataFrame metadata Rle SimpleList mcols mcols<-
-#'          start end metadata metadata<-
+#'          start end metadata metadata<- subjectHits queryHits
 #' @importFrom grDevices dev.off adjustcolor pdf colorRampPalette
 #' @importFrom plotly event_data
 #' @importFrom GenomeInfoDb keepStandardChromosomes seqlevels<- seqlevels
-#'          seqlengths seqlengths<- seqlevelsStyle<- seqnames seqinfo
+#'          seqlengths seqlengths<- seqlevelsStyle<- seqlevelsStyle seqnames 
+#'          seqinfo
 #' @importFrom shiny renderUI reactive renderPrint renderPlot
 #' @importFrom DelayedArray rowMaxs rowMeans path<-
 #' @importFrom DelayedMatrixStats colSds rowMedians rowSds colMeans2 rowMeans2
@@ -101,12 +102,12 @@
 #' @importFrom stats runif median quantile
 #' @importFrom extraDistr rdirmnom dbbinom pbbinom
 #' @importFrom PRROC pr.curve
-#' @importFrom ggplot2 ggtitle xlab ylab ggplot geom_point geom_line geom_smooth aes
-#'          geom_line geom_hline geom_vline geom_abline geom_segment geom_ribbon
-#'          scale_color_manual scale_x_log10 scale_y_log10 scale_color_gradientn
-#'          labs theme_bw scale_color_brewer scale_color_discrete
-#'          scale_linetype_manual annotate geom_histogram theme
-#'          scale_fill_manual xlim scale_colour_manual
+#' @importFrom ggplot2 ggtitle xlab ylab ggplot geom_point geom_line 
+#'          geom_smooth aes geom_line geom_hline geom_vline geom_abline 
+#'          geom_segment geom_ribbon scale_color_manual scale_x_log10 
+#'          scale_y_log10 scale_color_gradientn labs theme_bw theme
+#'          scale_color_brewer scale_color_discrete scale_linetype_manual 
+#'          annotate geom_histogram scale_fill_manual xlim scale_colour_manual
 #' @importFrom ggpubr ggarrange
 #'
 #' @importFrom MASS kde2d bandwidth.nrd
@@ -122,8 +123,8 @@ NULL
 
 #' TODO: Should be removed in the end!
 #' @noRd
-globalVariables(c(".", "J", ".N", ".asDataFrame", "End", "FN", "HTML", "Start", "TP",
-        "deltaPsi", "curgr", "gene", "lty", "hgnc_symbol", "id",
+globalVariables(c(".", "J", ".N", ".asDataFrame", "End", "FN", "HTML", "Start", 
+        "TP", "deltaPsi", "curgr", "gene", "lty", "hgnc_symbol", "id",
         "ldat", "p.adj", "pval", "pvalue", "shinyFds", "shinyFdsRes",
         "sampleID", "sampleGroup", "chr", "symbol", "type", "pseudocount",
         "..sum_cols", "acceptorGroupID", "acceptorGroupSize", "Aggregation",

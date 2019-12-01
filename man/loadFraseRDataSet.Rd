@@ -14,11 +14,18 @@ saveFraseRDataSet(fds, dir = NULL, name = NULL, rewrite = FALSE)
 
 \item{name}{The analysis name of the project (saved within the `dir`)}
 
+\item{file}{The file path to the fds-object.RDS file that should be loaded.}
+
+\item{upgrade}{Should the version of the loaded object be updated?}
+
 \item{fds}{A FraseRDataSet object ot be saved}
 
 \item{rewrite}{logical if the object should be rewritten. This makes sense if
 you have filtered or subsetted the object and want to save only
 the subsetted version}
+}
+\value{
+FraseRDataSet
 }
 \description{
 This is a convinient function to load and save a FraseRDataSet object.

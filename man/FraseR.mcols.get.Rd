@@ -6,6 +6,20 @@
 \usage{
 FraseR.mcols.get(x, type = NULL, ...)
 }
+\arguments{
+\item{x}{FraseRDataSet}
+
+\item{type}{The psi type.}
+
+\item{...}{Further parameters passed to mcols}
+}
+\value{
+mcols
+}
 \description{
 getter and setter for mcols
+}
+\examples{
+  fds <- makeExampleFraseRDataSet()
+  mcols(fds, type="psi5")
 }

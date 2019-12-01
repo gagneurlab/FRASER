@@ -13,12 +13,44 @@ results(x, ...)
   minCount = 5, psiType = c("psi3", "psi5", "psiSite"),
   BPPARAM = bpparam())
 }
+\arguments{
+\item{x}{FraseRDataSet}
+
+\item{...}{Further parameters that are passed on.}
+
+\item{sampleIDs}{A vector of sample IDs for which results should be 
+retrieved}
+
+\item{padjCutoff}{The FDR cutoff to be applied.}
+
+\item{zScoreCutoff}{The z-score cutoff to be applied.}
+
+\item{deltaPsiCutoff}{The cutoff on delta psi.}
+
+\item{minCount}{The minimum count value of the total coverage of an intron 
+to be considered as significant.
+result}
+
+\item{psiType}{The psi types for which the results should be retrieved.}
+
+\item{BPPARAM}{The BiocParallel parameter.}
+}
+\value{
+GRanges object
+
+GRanges object containing significant results.
+}
 \description{
 The result function extracts the results from the given analysis object
 based on the given options and cutoffs.
 }
 \examples{
-# TODO
-TODO <- 1
+# get data, fit and compute p-values and z-scores
+fds <- createTestFraseRDataSet()
+
+# extract results: for this example dataset, padjust cutoff of 0.15 used to
+# get at least one result and show the output
+res <- results(fds, padjCutoff=0.15, zScoreCutoff=NA, deltaPsiCutoff=0.1)
+res
 
 }

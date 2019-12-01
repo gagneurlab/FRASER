@@ -46,7 +46,7 @@ plotCountCorHeatmap(fds, type = c("psi5", "psi3", "psiSite"),
   sampleClustering = NULL, plotMeanPsi = TRUE, plotCov = TRUE, ...)
 }
 \arguments{
-\item{fds, object}{An FraseRDataSet object.}
+\item{fds}{An FraseRDataSet object.}
 
 \item{sampleID}{A sample ID which should be plotted. Can also be a vector.
 Integers are treated as indices.}
@@ -59,10 +59,12 @@ psi cutoff to mark outliers}
 \item{basePlot}{if \code{TRUE} (default), use the R base plot version, else
 use the plotly framework.}
 
-\item{aggregate}{If TRUE, the pvalues are aggregated by gene, otherwise
-junction level pvalues are used (default).}
+\item{aggregate, aggregated}{If TRUE, the pvalues are aggregated by gene, 
+otherwise junction level pvalues are used (default).}
 
 \item{main}{Title for the plot, if missing a default title will be used.}
+
+\item{BPPARAM}{BiocParallel parameter to use.}
 
 \item{...}{Additional parameters passed to plot() or plot_ly() if not stated
 otherwise in the details for each plot function}
@@ -71,7 +73,7 @@ otherwise in the details for each plot function}
 
 \item{colGroup}{Group of samples that should be colored.}
 
-\item{idx, site, feature}{A junction site ID or gene ID or one of both, which
+\item{idx, site}{A junction site ID or gene ID or one of both, which
 should be plotted. Can also be a vector. Integers are treated
 as indices.}
 
@@ -81,6 +83,8 @@ as indices.}
 
 \item{samplingPrecision}{Plot only non overlapping points in Q-Q plot to 
 reduce number of points to plot. Defines the digits to round to.}
+
+\item{Ncpus}{Number of cores to use.}
 
 \item{bins}{Set the number of bins to be used in the histogram.}
 
@@ -120,26 +124,6 @@ annotation of the heatmap.}
 
 \item{plotMeanPsi, plotCov}{If \code{TRUE}, then the heatmap is annotated with
 the mean psi values or the junction coverage.}
-
-\item{col}{Set color for the barplot.}
-
-\item{yadjust}{Option to adjust position of Median and 90 percentile labels.}
-
-\item{ylab}{The y axis label}
-
-\item{labCex}{The label cex parameter}
-
-\item{labLine}{Option to move axis labels}
-
-\item{breakTies}{If \code{TRUE},}
-
-\item{highlightOutliers}{If \code{TRUE}, then outliers are highlighted.}
-
-\item{maxOutlier}{Used to define the y axis limit.}
-
-\item{cutYaxis}{If \code{TRUE}, cuts the y axis of the plot at some point.}
-
-\item{ymax}{If set, ymax is the upper bound for the plot range on the y axis.}
 }
 \value{
 If base R graphics are used nothing is returned else the plotly or
@@ -211,9 +195,9 @@ variable junctions (i.e. junction-sample correlations). By default the values
 are log transformed and row centered. The ... arguments are passed to the
 \code{\link[pheatmap]{pheatmap}} function.
 
-\code{plotFilterExpression}: The distribution of FPKM values. If the FraseRDataSet
-object contains the \code{passedFilter} column, it will plot both FPKM
-distributions for the expressed genes and for the filtered genes.
+\code{plotFilterExpression}: The distribution of FPKM values. If the 
+FraseRDataSet object contains the \code{passedFilter} column, it will plot 
+both FPKM distributions for the expressed genes and for the filtered genes.
 
 \code{plotEncDimSearch}: Visualization of the hyperparameter optimization.
 It plots the encoding dimension against the achieved loss (area under the

@@ -8,7 +8,7 @@ context("Testing the FraseR shiny app")
 #     appURL <- "http://ouga03:3843/"
 # })
 #  
-# if(class(tmpTry) == "try-error"){
+# if(is(tmpTry, "try-error")){
 #     message("Skip shiny app test since we can not connect to server.")
 #     testSkipShiny <- TRUE
 # }
