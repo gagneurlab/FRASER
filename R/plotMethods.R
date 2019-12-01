@@ -133,43 +133,41 @@ NULL
 #'
 #' @rdname plotFunctions
 #' @export
-plotVolcano <- function(fds, sampleID, type, deltaPsiCutoff=0.3,
-                    padjCutoff=0.05, basePlot=TRUE, aggregate=FALSE,
-                    main=paste0("Volcano plot: ", sampleID)){
+plotVolcano <- function(fds, sampleID, type, basePlot=TRUE, aggregate=FALSE,
+                    main=paste0("Volcano plot: ", sampleID),
+                    deltaPsiCutoff=0.3, padjCutoff=0.1, ...){
 
     dt <- getPlottingDT(fds, axis="col", type=type, idx=sampleID,
-            aggregate=aggregate)
-
-    padj_line <- dt[padj < 0.05, min(5.5, -log10(pval))]
-    if(length(padj_line) == 0){
-        padj_line <- 5.5
+            aggregate=aggregate, deltaPsiCutoff=deltaPsiCutoff, 
+            padjCutoff=padjCutoff, ...)
+    
+    padj_line <- min(dt[padj < padjCutoff, -log10(pval)])
+    if(length(padj_line) == 0 | padj_line > 10){
+        padj_line <- 6
     }
-
-    dt[,aberrant:=FALSE]
-    dt[abs(deltaPsi) >= deltaPsiCutoff & padj <= padjCutoff, aberrant:=TRUE]
-
+    
     g <- ggplot(dt, aes(x=deltaPsi, y=-log10(pval), color=aberrant, text=paste0(
-        "SampleID: ", sampleID, "<br>",
-        "featureID: ", featureID, "<br>",
-        "Raw count (K): ", k, "<br>",
-        "Raw total count (N): ", n, "<br>",
-        "p value: ", signif(pval, 5), "<br>",
-        "delta Psi: ", round(deltaPsi, 2), "<br>",
-        "Type: ", type))) +
-        geom_point(aes(alpha=ifelse(isTRUE(aberrant), 1, 0.5))) +
+            "SampleID: ", sampleID, "<br>",
+            "featureID: ", featureID, "<br>",
+            "Raw count (K): ", k, "<br>",
+            "Raw total count (N): ", n, "<br>",
+            "p value: ", signif(pval, 5), "<br>",
+            "delta Psi: ", round(deltaPsi, 2), "<br>",
+            "Type: ", type))) +
+        geom_point(aes(alpha=ifelse(aberrant == TRUE, 1, 0.8))) +
         xlab(expression(paste(Delta, Psi))) +
-        ylab(expression(paste(-log[10], "(p value)"))) +
+        ylab(expression(paste(-log[10], "(P value)"))) +
         geom_vline(xintercept=c(-deltaPsiCutoff, deltaPsiCutoff),
                    color="firebrick", linetype=2) +
         geom_hline(yintercept=padj_line, color="firebrick", linetype=4) +
         ggtitle(main) +
         theme_bw() +
         theme(legend.position="none") +
-        scale_color_manual(values=c("gray70", "firebrick"))
-
+        scale_color_manual(values=c("gray40", "firebrick"))
+    
     if(isFALSE(basePlot)){
         g <- g + xlab("delta Psi") +
-            ylab("-log[10](p value)")
+            ylab("-log[10](P value)")
     }
     plotBasePlot(g, basePlot)
 }
@@ -300,8 +298,9 @@ plotExpectedVsObservedPsi <- function(fds, type=c("psi5", "psi3", "psiSite"),
     type <- match.arg(type)
 
     # get plotting data
-    dt <- getPlottingDT(fds, axis="row", type=type, result=result, idx=idx)
-    idx <- unique(dt$idx)
+    dt   <- getPlottingDT(fds, axis="row", type=type, result=result, idx=idx)
+    type <- as.character(unique(dt$type))
+    idx  <- unique(dt$idx)
 
     if(is.null(main)){
         # TODO extract feature name if present: siteName <- ...
@@ -319,18 +318,18 @@ plotExpectedVsObservedPsi <- function(fds, type=c("psi5", "psi3", "psiSite"),
         }
     }
 
-    xlab <- switch(type,
-                   'psi3' = bquote("Observed " ~ psi[3]),
-                   'psi5' = bquote("Observed " ~ psi[5]),
-                   'psiSite' = "Observed SE"
-    )
     ylab <- switch(type,
-                   'psi3' = bquote("Predicted " ~ psi[3]),
-                   'psi5' = bquote("Predicted " ~ psi[5]),
-                   'psiSite' = "Predicted SE"
+            'psi3' = bquote("Observed " ~ psi[3]),
+            'psi5' = bquote("Observed " ~ psi[5]),
+            'psiSite' = "Observed SE"
+    )
+    xlab <- switch(type,
+            'psi3' = bquote("Predicted " ~ psi[3]),
+            'psi5' = bquote("Predicted " ~ psi[5]),
+            'psiSite' = "Predicted SE"
     )
 
-    g <- ggplot(dt, aes(x=obsPsi, y=predPsi, color=!aberrant)) +
+    g <- ggplot(dt, aes(y=obsPsi, x=predPsi, color=!aberrant)) +
         geom_point(alpha=ifelse(dt$aberrant, 1, 0.5)) +
         geom_abline(intercept = 0, slope=1) +
         theme_bw() +

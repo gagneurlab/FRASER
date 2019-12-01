@@ -12,9 +12,9 @@
 \alias{plotEncDimSearch}
 \title{Visualization functions for FraseR}
 \usage{
-plotVolcano(fds, sampleID, type, deltaPsiCutoff = 0.3,
-  padjCutoff = 0.05, basePlot = TRUE, aggregate = FALSE,
-  main = paste0("Volcano plot: ", sampleID))
+plotVolcano(fds, sampleID, type, basePlot = TRUE, aggregate = FALSE,
+  main = paste0("Volcano plot: ", sampleID), deltaPsiCutoff = 0.3,
+  padjCutoff = 0.1, ...)
 
 plotAberrantPerSample(fds, main, type = c("psi3", "psi5", "psiSite"),
   padjCutoff = 0.1, zScoreCutoff = NA, deltaPsiCutoff = 0.3,
@@ -53,9 +53,6 @@ Integers are treated as indices.}
 
 \item{type}{The psi type: either psi5, psi3 or psiSite (for SE).}
 
-\item{padjCutoff, zScoreCutoff, deltaPsiCutoff}{Significance, Z-score or delta
-psi cutoff to mark outliers}
-
 \item{basePlot}{if \code{TRUE} (default), use the R base plot version, else
 use the plotly framework.}
 
@@ -64,10 +61,13 @@ otherwise junction level pvalues are used (default).}
 
 \item{main}{Title for the plot, if missing a default title will be used.}
 
-\item{BPPARAM}{BiocParallel parameter to use.}
+\item{padjCutoff, zScoreCutoff, deltaPsiCutoff}{Significance, Z-score or delta
+psi cutoff to mark outliers}
 
 \item{...}{Additional parameters passed to plot() or plot_ly() if not stated
 otherwise in the details for each plot function}
+
+\item{BPPARAM}{BiocParallel parameter to use.}
 
 \item{result}{The result table to be used by the method.}
 
