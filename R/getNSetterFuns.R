@@ -456,7 +456,7 @@ getIndexFromResultTable <- function(fds, resultTable, padj.method="holm"){
 
 getPlottingDT <- function(fds, axis=c("row", "col"), type=NULL, result=NULL,
                     idx=NULL, aggregate=FALSE, BPPARAM=SerialParam(),
-                    mc.cores=min(10, getDTthreads()), ...){
+                    Ncpus=min(10, getDTthreads()), ...){
     if(!is.null(result)){
         type <- as.character(result$type)
         idx  <- getIndexFromResultTable(fds, result)
@@ -475,7 +475,8 @@ getPlottingDT <- function(fds, axis=c("row", "col"), type=NULL, result=NULL,
 
     k <- K(fds, type)[idxrow, idxcol]
     n <- N(fds, type)[idxrow, idxcol]
-
+    
+    spliceID <- getSiteIndex(fds, type=type)[idxrow]
     feature_names <- rownames(mcols(fds, type=type))[idxrow]
     if("hgnc_symbol" %in% colnames(mcols(fds, type=type))){
         feature_names <- mcols(fds, type=type)[idxrow,"hgnc_symbol"]
@@ -487,6 +488,7 @@ getPlottingDT <- function(fds, axis=c("row", "col"), type=NULL, result=NULL,
     dt <- data.table(
             idx       = idx,
             sampleID  = factor(as.character(colnames(K(fds, type))[idxcol])),
+            spliceID  = factor(spliceID),
             featureID = factor(feature_names),
             type      = factor(type),
             k         = c(k),
@@ -503,7 +505,7 @@ getPlottingDT <- function(fds, axis=c("row", "col"), type=NULL, result=NULL,
         dt <- dt[!is.na(featureID)]
 
         # correct by gene and take the smallest p value
-        dt <- rbindlist(mclapply(unique(dt[,sampleID]), mc.cores=mc.cores,
+        dt <- rbindlist(mclapply(unique(dt[,sampleID]), mc.cores=Ncpus,
             FUN=function(x){
                     dttmp <- dt[sampleID == x]
                     dttmp[, pval:=p.adjust(pval, method="holm"),
