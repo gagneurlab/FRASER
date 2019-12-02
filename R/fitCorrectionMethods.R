@@ -47,10 +47,11 @@
 #'   fds <- fit(fds, correction="PCA", q=3, type="psi5")
 #'   
 #' @export
-fit <- function(fds, correction=c("PCA-regression", "PCA-BB-Decoder", "FraseR",
+fit <- function(fds, correction=c("PCA", "PCA-regression", "PCA-BB-Decoder", 
+                        "FraseR",
                         "FraseR-weighted", "PCA-BB-full", "PCA-reg-full",
                         "FraseR-5DecoderBatches", "FraseR-1DecoderBatches",
-                        "fullFraseR", "PCA", "PCA-BB-Decoder-no-weights",
+                        "fullFraseR", "PCA-BB-Decoder-no-weights",
                         "BB"),
                 q, type="psi3", rhoRange=c(1e-8, 1-1e-8), 
                 weighted=FALSE, noiseAlpha=1, convergence=1e-5, 
