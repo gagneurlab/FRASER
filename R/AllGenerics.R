@@ -916,24 +916,24 @@ mapSeqlevels <- function(fds, style="UCSC", ...){
 #'
 #' Aberrant splicing events
 #'
-#' Use cutoffs to define splicing outlier event.
+#' Use cutoffs to define splicing outlier events.
 #'
 #' @param fds FraseRDataSet object
 #' @param type Splicing type
 #' @param padjCutoff Adjusted p value cutoff to be used or NA if not requested
 #' @param deltaPsiCutoff Delta PSI cutoff to be used or NA if not requested
 #' @param zScoreCutoff Z score cutoff to be used or NA if not requested
-#' @param by By default NA which means no grouping. But if \code{sample}
-#'              or \code{feature} is specified the sum by sample or feature is
-#'              returned
+#' @param by By default \code{none} which means no grouping. But if 
+#'              \code{sample} or \code{feature} is specified the sum by 
+#'              sample or feature is returned
 #' @param aggregate If TRUE the returned object is based on the grouped 
-#' features
+#'              features
 #' @param ... Further arguments can be passed to the method. If "zscores", 
-#' "padjVals" or "dPsi" is given, the values of those arguments are used to 
-#' define the aberrant events.
+#'              "padjVals" or "dPsi" is given, the values of those arguments
+#'              are used to define the aberrant events.
 #' @return Either a of logical values of size introns/genes x samples if "by" 
-#' is NA or a vector with the number of aberrant events per sample or feature 
-#' depending on the vaule of "by"
+#'              is NA or a vector with the number of aberrant events per 
+#'              sample or feature depending on the vaule of "by"
 #' 
 #' @examples
 #' # get data
@@ -946,18 +946,21 @@ mapSeqlevels <- function(fds, style="UCSC", ...){
 #' # use zScoreCutoff instead
 #' aberrant(fds, type="psi5", by="sample", zScoreCutoff=2, padjCutoff=NA)
 #' 
-#' # get aberrant events per gene
+#' # get aberrant events per gene (first annotate gene symbols)
+#' fds <- annotateRanges(fds)
 #' aberrant(fds, type="psi5", by="feature", zScoreCutoff=2, padjCutoff=NA,
 #'         aggregate=TRUE)
+#' aberrant(fds, type="psi5", zScoreCutoff=2, padjCutoff=NA, aggregate=TRUE)
 #'         
 #' # find aberrant junctions/splice sites
-#' aberrant(fds, type="psi5", by=NA)
+#' aberrant(fds, type="psi5", by="none")
+#' aberrant(fds, type="psi5")
 #'
 #' @export
 #'
 aberrant <- function(fds, type=currentType(fds), padjCutoff=0.05,
                     deltaPsiCutoff=0.3, zScoreCutoff=NA,
-                    by=c(NA, "sample", "feature"), aggregate=FALSE, ...){
+                    by=c("none", "sample", "feature"), aggregate=FALSE, ...){
 
     checkNaAndRange(zScoreCutoff,   min=0, max=Inf, na.ok=TRUE)
     checkNaAndRange(padjCutoff,     min=0, max=1,   na.ok=TRUE)
@@ -980,29 +983,17 @@ aberrant <- function(fds, type=currentType(fds), padjCutoff=0.05,
     } else {
         dpsi <- deltaPsiValue(fds, type=type)
     }
-
+    
+    # create cutoff matrix
     goodCutoff <- matrix(TRUE, nrow=nrow(zscores), ncol=ncol(zscores),
             dimnames=dimnames(zscores))
-
-    # TODO to speed it up currently we only use the smallest one per feature
-    if(isTRUE(aggregate)){
-        if("pvalue" %in% names(dots)){
-            pvals <- dots[['pvalue']]
-        } else {
-            pvals <- pVals(fds, type=type)
-        }
-        if(!"hgnc_symbol" %in% colnames(mcols(fds, type=type))){
-            stop("Please provide hgnc symbols to compute gene p values!")
-        }
-        groups <- mcols(fds, type=type)[,"hgnc_symbol"]
-        smallestPVal <- apply(pvals, 2, groups=groups, function(i, groups) {
-            data.table(p=i, groups, order=seq_along(i))[,
-                    .(order, min=seq_len(.N) == which.min(p)), by=groups][
-                    order(order)][,min]
-        })
-        goodCutoff <- goodCutoff & smallestPVal
+    if("hgnc_symbol" %in% colnames(mcols(fds, type=type))){
+        rownames(goodCutoff) <- mcols(fds, type=type)[,"hgnc_symbol"]
+    } else if(isTRUE(aggregate)){
+        stop("Please provide hgnc symbols to compute gene p values!")
     }
-
+    
+    # check each cutoff if in use (not NA)
     if(!is.na(zScoreCutoff)){
         goodCutoff <- goodCutoff & as.matrix(abs(zscores) > zScoreCutoff)
     }
@@ -1012,12 +1003,23 @@ aberrant <- function(fds, type=currentType(fds), padjCutoff=0.05,
     if(!is.na(padjCutoff)){
         goodCutoff <- goodCutoff & as.matrix(padj < padjCutoff)
     }
-
-    if(is.na(by)){
-        return(goodCutoff)
+    
+    # check if we should go for aggregation
+    # TODO to speed it up we only use any hit within a feature
+    # but should do a holm's + BY correction per gene and genome wide
+    if(isTRUE(aggregate)){
+        goodCutoff <- as.matrix(data.table(goodCutoff, keep.rownames=TRUE)[,
+                as.data.table(t(colAnys(as.matrix(.SD)))), by=rn][,-1])
+        rownames(goodCutoff) <- unique(mcols(fds, type=type)[,"hgnc_symbol"])
+        colnames(goodCutoff) <- colnames(zscores)
+    }
+    
+    # return results
+    if(by == "feature"){
+        return(rowSums(goodCutoff))
     }
     if(by == "sample"){
         return(colSums(goodCutoff))
     }
-    return(rowSums(goodCutoff))
+    return(goodCutoff)
 }

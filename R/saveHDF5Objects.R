@@ -41,12 +41,12 @@ loadFraseRDataSet <- function(dir, name=NULL, file=NULL, upgrade=FALSE){
         name <- basename(dirname(file))
         dir  <- dirname(dirname(dirname(file)))
     }
-
+    
     # check dir
     if(is.null(dir)) stop("dir: can not be NULL")
     if(!isScalarCharacter(dir)) stop("dir: needs to be a character path name.")
     if(!dir.exists(dir)) stop("The given dir does not exists: ", dir)
-
+    
     # check name
     if(is.null(name)) name <- "Data Analysis"
     if(!isScalarCharacter(name)) stop("name: needs to be a character dir name.")
@@ -75,11 +75,11 @@ loadFraseRDataSet <- function(dir, name=NULL, file=NULL, upgrade=FALSE){
             }
         }
     }
-
+    
     # set working dir and name correct
     workingDir(fds) <- dir
     name(fds) <- name
-
+    
     # set the correct path of the assay seed file (if folder changed)
     for(aname in assayNames(fds)){
         message("Loading assay: ", aname)

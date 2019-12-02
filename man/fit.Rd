@@ -4,9 +4,9 @@
 \alias{fit}
 \title{Fit a beta-binomial distribution and correction for confounders}
 \usage{
-fit(fds, correction = c("PCA-regression", "PCA-BB-Decoder", "FraseR",
-  "FraseR-weighted", "PCA-BB-full", "PCA-reg-full",
-  "FraseR-5DecoderBatches", "FraseR-1DecoderBatches", "fullFraseR", "PCA",
+fit(fds, correction = c("PCA", "PCA-regression", "PCA-BB-Decoder",
+  "FraseR", "FraseR-weighted", "PCA-BB-full", "PCA-reg-full",
+  "FraseR-5DecoderBatches", "FraseR-1DecoderBatches", "fullFraseR",
   "PCA-BB-Decoder-no-weights", "BB"), q, type = "psi3",
   rhoRange = c(1e-08, 1 - 1e-08), weighted = FALSE, noiseAlpha = 1,
   convergence = 1e-05, iterations = 15, initialize = TRUE,

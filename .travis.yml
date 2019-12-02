@@ -51,7 +51,7 @@ install:
   - Rscript setupEnv.R
 
 script:
-  - R CMD build .
+  - R CMD build --no-build-vignettes .
   - R CMD BiocCheck --no-check-vignettes *tar.gz
   - R CMD check --no-vignettes --timings *tar.gz
   - R -e 'devtools::run_examples()'

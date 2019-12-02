@@ -42,7 +42,8 @@
 #' @param basePlot if \code{TRUE} (default), use the R base plot version, else
 #'             use the plotly framework.
 #' @param conf.alpha If set, a confidence interval is plotted, defaults to 0.05
-#' @param samplePoints Sample points for Q-Q plot, defaults to max 30k points
+#' @param samplingPrecision Plot only non overlapping points in Q-Q plot to 
+#'             reduce number of points to plot. Defines the digits to round to. 
 #' @param logit If TRUE, the default, psi values are plotted in logit space.
 #' @param nClust Number of clusters to show in the row and
 #'             column dendrograms.
@@ -132,43 +133,41 @@ NULL
 #'
 #' @rdname plotFunctions
 #' @export
-plotVolcano <- function(fds, sampleID, type, deltaPsiCutoff=0.3,
-                    padjCutoff=0.05, basePlot=TRUE, aggregate=FALSE,
-                    main=paste0("Volcano plot: ", sampleID)){
+plotVolcano <- function(fds, sampleID, type, basePlot=TRUE, aggregate=FALSE,
+                    main=paste0("Volcano plot: ", sampleID),
+                    deltaPsiCutoff=0.3, padjCutoff=0.1, ...){
 
     dt <- getPlottingDT(fds, axis="col", type=type, idx=sampleID,
-            aggregate=aggregate)
-
-    padj_line <- dt[padj < 0.05, min(5.5, -log10(pval))]
-    if(length(padj_line) == 0){
-        padj_line <- 5.5
+            aggregate=aggregate, deltaPsiCutoff=deltaPsiCutoff, 
+            padjCutoff=padjCutoff, ...)
+    
+    padj_line <- min(dt[padj < padjCutoff, -log10(pval)])
+    if(length(padj_line) == 0 | padj_line > 10){
+        padj_line <- 6
     }
-
-    dt[,aberrant:=FALSE]
-    dt[abs(deltaPsi) >= deltaPsiCutoff & padj <= padjCutoff, aberrant:=TRUE]
-
+    
     g <- ggplot(dt, aes(x=deltaPsi, y=-log10(pval), color=aberrant, text=paste0(
-        "SampleID: ", sampleID, "<br>",
-        "featureID: ", featureID, "<br>",
-        "Raw count (K): ", k, "<br>",
-        "Raw total count (N): ", n, "<br>",
-        "p value: ", signif(pval, 5), "<br>",
-        "delta Psi: ", round(deltaPsi, 2), "<br>",
-        "Type: ", type))) +
-        geom_point(aes(alpha=ifelse(isTRUE(aberrant), 1, 0.5))) +
+            "SampleID: ", sampleID, "<br>",
+            "featureID: ", featureID, "<br>",
+            "Raw count (K): ", k, "<br>",
+            "Raw total count (N): ", n, "<br>",
+            "p value: ", signif(pval, 5), "<br>",
+            "delta Psi: ", round(deltaPsi, 2), "<br>",
+            "Type: ", type))) +
+        geom_point(aes(alpha=ifelse(aberrant == TRUE, 1, 0.8))) +
         xlab(expression(paste(Delta, Psi))) +
-        ylab(expression(paste(-log[10], "(p value)"))) +
+        ylab(expression(paste(-log[10], "(P value)"))) +
         geom_vline(xintercept=c(-deltaPsiCutoff, deltaPsiCutoff),
                    color="firebrick", linetype=2) +
         geom_hline(yintercept=padj_line, color="firebrick", linetype=4) +
         ggtitle(main) +
         theme_bw() +
         theme(legend.position="none") +
-        scale_color_manual(values=c("gray70", "firebrick"))
-
+        scale_color_manual(values=c("gray40", "firebrick"))
+    
     if(isFALSE(basePlot)){
         g <- g + xlab("delta Psi") +
-            ylab("-log[10](p value)")
+            ylab("-log[10](P value)")
     }
     plotBasePlot(g, basePlot)
 }
@@ -212,7 +211,7 @@ plotAberrantPerSample <- function(fds, main, type=c("psi3", "psi5", "psiSite"),
         ggtitle(main) +
         xlab("Sample rank") +
         ylab("Number of outliers") +
-        scale_color_brewer(palette="Dark2", name="Splice metric",
+        scale_color_brewer(palette="Dark2", name=element_blank(),
                 labels=ggplotLabelPsi(dt2p[,unique(type)])) +
         scale_linetype_manual(name="", values=2, labels="Median")
 
@@ -299,8 +298,9 @@ plotExpectedVsObservedPsi <- function(fds, type=c("psi5", "psi3", "psiSite"),
     type <- match.arg(type)
 
     # get plotting data
-    dt <- getPlottingDT(fds, axis="row", type=type, result=result, idx=idx)
-    idx <- unique(dt$idx)
+    dt   <- getPlottingDT(fds, axis="row", type=type, result=result, idx=idx)
+    type <- as.character(unique(dt$type))
+    idx  <- unique(dt$idx)
 
     if(is.null(main)){
         # TODO extract feature name if present: siteName <- ...
@@ -318,18 +318,18 @@ plotExpectedVsObservedPsi <- function(fds, type=c("psi5", "psi3", "psiSite"),
         }
     }
 
-    xlab <- switch(type,
-                   'psi3' = bquote("Observed " ~ psi[3]),
-                   'psi5' = bquote("Observed " ~ psi[5]),
-                   'psiSite' = "Observed SE"
-    )
     ylab <- switch(type,
-                   'psi3' = bquote("Predicted " ~ psi[3]),
-                   'psi5' = bquote("Predicted " ~ psi[5]),
-                   'psiSite' = "Predicted SE"
+            'psi3' = bquote("Observed " ~ psi[3]),
+            'psi5' = bquote("Observed " ~ psi[5]),
+            'psiSite' = "Observed SE"
+    )
+    xlab <- switch(type,
+            'psi3' = bquote("Predicted " ~ psi[3]),
+            'psi5' = bquote("Predicted " ~ psi[5]),
+            'psiSite' = "Predicted SE"
     )
 
-    g <- ggplot(dt, aes(x=obsPsi, y=predPsi, color=!aberrant)) +
+    g <- ggplot(dt, aes(y=obsPsi, x=predPsi, color=!aberrant)) +
         geom_point(alpha=ifelse(dt$aberrant, 1, 0.5)) +
         geom_abline(intercept = 0, slope=1) +
         theme_bw() +
@@ -351,8 +351,8 @@ plotExpectedVsObservedPsi <- function(fds, type=c("psi5", "psi3", "psiSite"),
 #' @export
 plotQQ <- function(fds, type=NULL, idx=NULL, result=NULL, aggregate=FALSE,
                     global=FALSE, main=NULL, conf.alpha=0.05,
-                    samplePoints=30000, basePlot=TRUE,
-                    Ncpus=min(4, getDTthreads()), ...){
+                    samplingPrecision=3, basePlot=TRUE,
+                    Ncpus=min(3, getDTthreads()), ...){
 
     # check parameters
     if(is.null(aggregate)){
@@ -367,8 +367,14 @@ plotQQ <- function(fds, type=NULL, idx=NULL, result=NULL, aggregate=FALSE,
         if(is.null(type)){
             type <- psiTypes
         }
-        dt <- rbindlist(lapply(type, getPlottingDT, fds=fds, axis="col",
-                idx=TRUE, aggregate=aggregate, mc.cores=Ncpus, ...))
+        dt <- rbindlist(mclapply(type, getPlottingDT, fds=fds, axis="col",
+                idx=TRUE, aggregate=aggregate, Ncpus=Ncpus, ..., 
+                mc.cores=Ncpus))
+        # remove duplicated entries donor/acceptor sites if not aggregated 
+        # by a feature
+        if(isFALSE(aggregate)){
+            dt <- dt[!duplicated(dt, by=c("type", "spliceID", "sampleID"))]
+        }
     } else {
         dt <- getPlottingDT(fds, axis="row", type=type, idx=idx, result=result,
                 aggregate=aggregate, ...)
@@ -400,18 +406,14 @@ plotQQ <- function(fds, type=NULL, idx=NULL, result=NULL, aggregate=FALSE,
 
     # down sample if requested
     dt2p[,plotPoint:=TRUE]
-    if(isTRUE(samplePoints) | isScalarNumeric(samplePoints)){
-        if(isScalarLogical(samplePoints)){
-            samplePoints <- 30000
+    if(isTRUE(samplingPrecision) | isScalarNumeric(samplingPrecision)){
+        if(is.logical(samplingPrecision)){
+            samplingPrecision <- 3
         }
-        getProb <- function(n){
-            rnl <- log10(rev(seq_len(n)) + 1)
-            rnl/sum(rnl)
-        }
-        dt2p[,plotPoint:=
-                rep(c(TRUE, FALSE), c(min(10000, .N), .N - min(10000, .N))) |
-                sample(c(TRUE, FALSE), size=.N, replace=TRUE,
-                        prob=c(samplePoints/.N, 1)), by=type]
+        mypoints <- !duplicated(dt2p[,.(obs=round(obs, samplingPrecision), 
+                        exp=round(exp, samplingPrecision), type)], 
+                by=c("obs", "exp", "type"))
+        dt2p[,plotPoint:=mypoints]
     }
 
     # create qq-plot
@@ -422,8 +424,8 @@ plotQQ <- function(fds, type=NULL, idx=NULL, result=NULL, aggregate=FALSE,
         theme_bw() +
         theme(legend.position="none") +
         ggtitle(main) +
-        xlab(expression(-log[10]~"(exp. p value)")) +
-        ylab(expression(-log[10]~"(obs. p value)"))
+        xlab(expression(-log[10]~"(expected P)")) +
+        ylab(expression(-log[10]~"(observed P)"))
 
     # Set color scale for global/local
     if(isFALSE(global)){
@@ -439,11 +441,19 @@ plotQQ <- function(fds, type=NULL, idx=NULL, result=NULL, aggregate=FALSE,
     # add confidence band if requesded
     # http://genome.sph.umich.edu/wiki/Code_Sample:_Generating_QQ_Plots_in_R
     if(is.numeric(conf.alpha)){
-        dt2p[,upper:=-log10(
-                qbeta(conf.alpha/2,   seq_len(.N), rev(seq_len(.N)))), by=type]
-        dt2p[,lower:=-log10(
-                qbeta(1-conf.alpha/2, seq_len(.N), rev(seq_len(.N)))), by=type]
-        g <- g + geom_ribbon(data=dt2p[plotPoint == TRUE,],
+        dt2p[,rank:=seq_len(.N), by=type]
+        dt2p[plotPoint == TRUE,upper:=-log10(
+                qbeta(conf.alpha/2, rank, max(rank) - rank)), by=type]
+        dt2p[plotPoint == TRUE,lower:=-log10(
+                qbeta(1-conf.alpha/2, rank, max(rank) - rank)), by=type]
+        # only plot one psiType if multiple are existing
+        if(length(unique(dt2p$type)) > 1){
+            typeOrder <- c("psiSite", "psi5", "psi3")
+            type2take <- min(which(typeOrder %in% unique(dt2p$type)))
+            dt2p[type != typeOrder[type2take], 
+                    c("upper", "lower"):=list(NA, NA)]
+        }
+        g <- g + geom_ribbon(data=dt2p[plotPoint == TRUE & !is.na(upper),],
                 aes(x=exp, ymin=lower, ymax=upper, text=NULL),
                 alpha=0.2, color="gray")
     }
