@@ -53,6 +53,12 @@
 #'                  for tsv(.gz) or RDS files containing GRranges objects. The 
 #'                  order of the individual sample files should correspond to 
 #'                  the order of the samples in the fds.
+#' @param outFile The full path to the output tsv file containing the merged 
+#'               counts. If the given file already exists, this counts from 
+#'               this file will be read in and used in the following (i.e. the 
+#'               reads are not recounted), unless the option recount=TRUE is 
+#'               used. If this file doesn't exist or if recount=TRUE, then it 
+#'               will be created after counting has finished.
 #' @param splitCounts The merged GRanges object containing the position and 
 #'              counts of all the introns in the dataset for all samples.
 #' @param nonSplitCounts The merged GRanges object containing the position and 
@@ -114,9 +120,9 @@ countRNAData <- function(fds, NcpuPerSample=1, junctionMap=NULL, minAnchor=5,
                                                 junctionMap=junctionMap, 
                                                 recount=recount, 
                                                 BPPARAM=BPPARAM, 
-                                                genome=genome)
-    writeCountsToTsv(splitCounts, 
-                    file=file.path(countDir, "splitCounts.tsv.gz"))
+                                                genome=genome,
+                                                outFile=file.path(countDir, 
+                                                        "splitCounts.tsv.gz"))
     
     # count non spliced reads for every samples
     nonSplicedCounts <- getNonSplitReadCountsForAllSamples(fds=fds, 
@@ -126,8 +132,6 @@ countRNAData <- function(fds, NcpuPerSample=1, junctionMap=NULL, minAnchor=5,
                                                 recount=recount, 
                                                 BPPARAM=BPPARAM,
                                                 ...)
-    writeCountsToTsv(nonSplicedCounts, 
-                    file=file.path(countDir, "nonSplitCounts.tsv.gz"))
     
     # create final FraseR dataset
     fds <- addCountsToFraseRDataSet(fds, splitCounts, nonSplicedCounts)
@@ -145,7 +149,23 @@ countRNAData <- function(fds, NcpuPerSample=1, junctionMap=NULL, minAnchor=5,
 getSplitReadCountsForAllSamples <- function(fds, NcpuPerSample=1, 
                                             junctionMap=NULL, recount=FALSE, 
                                             BPPARAM=bpparam(), genome=NULL, 
-                                            countFiles=NULL){
+                                            countFiles=NULL,
+                                            outFile=file.path(workingDir(fds), 
+                                                        "savedObjects", 
+                                                        nameNoSpace(name(fds)),
+                                                        "splitCounts.tsv.gz")){
+    
+    # check if outFile with mergedCounts already exists
+    # if so, don't recalculate the split counts
+    if(file.exists(outFile) && isFALSE(recount)){
+        message(date(), ": File with the merged split read counts exists ", 
+                "already and will be used. If you want to count the split ",
+                "reads again, use the option recount=TRUE or remove this ",
+                "file: \n", outFile)
+        counts <- makeGRangesFromDataFrame(fread(outFile), 
+                                           keep.extra.columns=TRUE)
+        return(counts)
+    }
     
     # split reads need to be counted for the given samples
     if(is.null(countFiles)){ 
@@ -207,6 +227,9 @@ getSplitReadCountsForAllSamples <- function(fds, NcpuPerSample=1,
     # splice site map
     counts <- annotateSpliceSite(counts)
     
+    # write tsv
+    writeCountsToTsv(counts, file=outFile)
+    
     return(counts)
 }
 
@@ -221,7 +244,25 @@ getNonSplitReadCountsForAllSamples <- function(fds, splitCounts,
                                                 NcpuPerSample=1, minAnchor=5,
                                                 recount=FALSE, 
                                                 BPPARAM=bpparam(),
+                                                outFile=file.path(
+                                                    workingDir(fds), 
+                                                    "savedObjects", 
+                                                    nameNoSpace(name(fds)), 
+                                                    "nonSplitCounts.tsv.gz"),
                                                 longRead=TRUE){
+
+    # check if outFile with mergedCounts already exists
+    # if so, don't recalculate the non split counts
+    if(file.exists(outFile) && isFALSE(recount)){
+        message(date(), ": File with the merged non-split read counts exists ", 
+                "already and will be used. If you want to count the non-split ",
+                "reads again, use the option recount=TRUE or remove this ",
+                "file: \n", outFile)
+        siteCounts <- makeGRangesFromDataFrame(fread(outFile), 
+                                                keep.extra.columns=TRUE)
+        return(siteCounts)
+    }
+    
     if(!("startID" %in% colnames(mcols(splitCounts))) | 
         !("endID" %in% colnames(mcols(splitCounts)))){
         # splice site map
@@ -250,6 +291,7 @@ getNonSplitReadCountsForAllSamples <- function(fds, splitCounts,
                             NcpuPerSample=NcpuPerSample,
                             minAnchor=minAnchor,
                             recount=recount,
+                            spliceSiteCoords=spliceSiteCoords,
                             longRead=longRead)
     names(countList) <- samples(fds)
     siteCounts <- mergeCounts(countList, assumeEqual=TRUE)
@@ -259,6 +301,9 @@ getNonSplitReadCountsForAllSamples <- function(fds, splitCounts,
     
     rm(countList)
     gc()
+    
+    # write tsv
+    writeCountsToTsv(siteCounts, file=outFile)
     
     return(siteCounts)
     
@@ -561,13 +606,21 @@ GRanges2SAF <- function(gr, minAnchor=1){
 #' @export
 countNonSplicedReads <- function(sampleID, splitCounts, fds,
                                 NcpuPerSample=1, minAnchor=5, recount=FALSE,
+                                spliceSiteCoords=NULL, 
                                 longRead=TRUE){
     
-    # splice site map
-    splitCounts <- annotateSpliceSite(splitCounts)
+    if(is.null(spliceSiteCoords) | !is(spliceSiteCoords, "GRanges")){
+        
+        # splice site map
+        if(!("startID" %in% colnames(mcols(splitCounts))) | 
+           !("endID" %in% colnames(mcols(splitCounts)))){
+            splitCounts <- annotateSpliceSite(splitCounts)
+        }
+        
+        # extract donor and acceptor sites
+        spliceSiteCoords <- extractSpliceSiteCoordinates(splitCounts, fds)
+    }
     
-    # extract donor and acceptor sites
-    spliceSiteCoords <- extractSpliceSiteCoordinates(splitCounts, fds)
     
     message(date(), ": Count non spliced reads for sample: ", sampleID)
     bamFile <- bamFile(fds[,samples(fds) == sampleID])[[1]]

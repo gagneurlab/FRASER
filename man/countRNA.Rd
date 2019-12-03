@@ -18,11 +18,14 @@ countRNAData(fds, NcpuPerSample = 1, junctionMap = NULL,
 
 getSplitReadCountsForAllSamples(fds, NcpuPerSample = 1,
   junctionMap = NULL, recount = FALSE, BPPARAM = bpparam(),
-  genome = NULL, countFiles = NULL)
+  genome = NULL, countFiles = NULL,
+  outFile = file.path(workingDir(fds), "savedObjects",
+  nameNoSpace(name(fds)), "splitCounts.tsv.gz"))
 
 getNonSplitReadCountsForAllSamples(fds, splitCounts, NcpuPerSample = 1,
   minAnchor = 5, recount = FALSE, BPPARAM = bpparam(),
-  longRead = TRUE)
+  outFile = file.path(workingDir(fds), "savedObjects",
+  nameNoSpace(name(fds)), "nonSplitCounts.tsv.gz"), longRead = TRUE)
 
 addCountsToFraseRDataSet(fds, splitCounts, nonSplitCounts)
 
@@ -33,7 +36,8 @@ mergeCounts(countList, junctionMap = NULL, assumeEqual = FALSE,
   BPPARAM = SerialParam())
 
 countNonSplicedReads(sampleID, splitCounts, fds, NcpuPerSample = 1,
-  minAnchor = 5, recount = FALSE, longRead = TRUE)
+  minAnchor = 5, recount = FALSE, spliceSiteCoords = NULL,
+  longRead = TRUE)
 }
 \arguments{
 \item{fds}{A FraseRDataSet object}
@@ -66,6 +70,13 @@ individual samples. Reading from files is only supported
 for tsv(.gz) or RDS files containing GRranges objects. The 
 order of the individual sample files should correspond to 
 the order of the samples in the fds.}
+
+\item{outFile}{The full path to the output tsv file containing the merged 
+counts. If the given file already exists, this counts from 
+this file will be read in and used in the following (i.e. the 
+reads are not recounted), unless the option recount=TRUE is 
+used. If this file doesn't exist or if recount=TRUE, then it 
+will be created after counting has finished.}
 
 \item{splitCounts}{The merged GRanges object containing the position and 
 counts of all the introns in the dataset for all samples.}
