@@ -98,7 +98,7 @@
 #' @importFrom DelayedArray rowMaxs rowMeans path<-
 #' @importFrom DelayedMatrixStats colSds rowMedians rowSds colMeans2 rowMeans2
 #'          rowQuantiles
-#' @importFrom matrixStats colMaxs colMedians colMins
+#' @importFrom matrixStats colMaxs colMedians colMins colAnys
 #' @importFrom stats runif median quantile
 #' @importFrom extraDistr rdirmnom dbbinom pbbinom
 #' @importFrom PRROC pr.curve
@@ -108,6 +108,7 @@
 #'          scale_y_log10 scale_color_gradientn labs theme_bw theme
 #'          scale_color_brewer scale_color_discrete scale_linetype_manual 
 #'          annotate geom_histogram scale_fill_manual xlim scale_colour_manual
+#'          element_blank
 #' @importFrom ggpubr ggarrange
 #'
 #' @importFrom MASS kde2d bandwidth.nrd

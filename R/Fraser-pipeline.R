@@ -40,7 +40,7 @@
 #'
 #' @author Christian Mertes \email{mertes@@in.tum.de}
 #' @export
-FraseR <- function(fds, q, correction="PCA-BB-Decoder", iterations=15,
+FraseR <- function(fds, q, correction="PCA", iterations=15,
                     BPPARAM=bpparam(), ...){
 
     # Check input

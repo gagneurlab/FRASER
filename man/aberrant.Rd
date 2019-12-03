@@ -5,7 +5,7 @@
 \title{Aberrant splicing events}
 \usage{
 aberrant(fds, type = currentType(fds), padjCutoff = 0.05,
-  deltaPsiCutoff = 0.3, zScoreCutoff = NA, by = c(NA, "sample",
+  deltaPsiCutoff = 0.3, zScoreCutoff = NA, by = c("none", "sample",
   "feature"), aggregate = FALSE, ...)
 }
 \arguments{
@@ -19,24 +19,24 @@ aberrant(fds, type = currentType(fds), padjCutoff = 0.05,
 
 \item{zScoreCutoff}{Z score cutoff to be used or NA if not requested}
 
-\item{by}{By default NA which means no grouping. But if \code{sample}
-or \code{feature} is specified the sum by sample or feature is
-returned}
+\item{by}{By default \code{none} which means no grouping. But if 
+\code{sample} or \code{feature} is specified the sum by 
+sample or feature is returned}
 
 \item{aggregate}{If TRUE the returned object is based on the grouped 
 features}
 
 \item{...}{Further arguments can be passed to the method. If "zscores", 
-"padjVals" or "dPsi" is given, the values of those arguments are used to 
-define the aberrant events.}
+"padjVals" or "dPsi" is given, the values of those arguments
+are used to define the aberrant events.}
 }
 \value{
 Either a of logical values of size introns/genes x samples if "by" 
-is NA or a vector with the number of aberrant events per sample or feature 
-depending on the vaule of "by"
+             is NA or a vector with the number of aberrant events per 
+             sample or feature depending on the vaule of "by"
 }
 \description{
-Use cutoffs to define splicing outlier event.
+Use cutoffs to define splicing outlier events.
 }
 \examples{
 # get data
@@ -49,11 +49,14 @@ aberrant(fds, type="psi5", by="sample")
 # use zScoreCutoff instead
 aberrant(fds, type="psi5", by="sample", zScoreCutoff=2, padjCutoff=NA)
 
-# get aberrant events per gene
+# get aberrant events per gene (first annotate gene symbols)
+fds <- annotateRanges(fds)
 aberrant(fds, type="psi5", by="feature", zScoreCutoff=2, padjCutoff=NA,
         aggregate=TRUE)
+aberrant(fds, type="psi5", zScoreCutoff=2, padjCutoff=NA, aggregate=TRUE)
         
 # find aberrant junctions/splice sites
-aberrant(fds, type="psi5", by=NA)
+aberrant(fds, type="psi5", by="none")
+aberrant(fds, type="psi5")
 
 }
