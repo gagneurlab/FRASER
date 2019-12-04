@@ -55,7 +55,6 @@ createTestFraseRSettings <- function(workingDir=tempdir()){
 }
 
 
-#' 
 #' @rdname createTestFraseRDataSet
 #' @export
 createTestFraseRDataSet <- function(workingDir=tempdir(), rerun=FALSE){
