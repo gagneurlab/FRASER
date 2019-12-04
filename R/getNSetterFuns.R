@@ -7,7 +7,8 @@
 #' @param type The type of psi (psi5, psi3 or psiSite)
 #' @param byGroup If TRUE, aggregation by donor/acceptor site will be done.
 #' @param dist Distribution for which the p-values should be extracted.
-#' @param value The new value to be assigned. 
+#' @param value The new value to be assigned.
+#' @param ... Internally used parameteres. 
 #' @return A (delayed) matrix or vector dependent on the type of data retrieved.
 #' 
 #' @name getter_setter_functions
@@ -222,10 +223,10 @@ getAssayMatrix <- function(fds, name, type, byGroup=FALSE){
 
 #' @describeIn getter_setter_functions This returns the calculated z-scores.
 #' @export
-zScores <- function(fds, type=currentType(fds), byGroup=FALSE){
+zScores <- function(fds, type=currentType(fds), byGroup=FALSE, ...){
     ans <- getAssayMatrix(fds, name='zScores', type=type)
     if(isTRUE(byGroup)){
-        ans <- getAbsMaxByGroup(fds, type, ans)
+        ans <- getAbsMaxByGroup(fds, type, ans, ...)
     }
     ans
 }
@@ -430,20 +431,20 @@ dontWriteHDF5 <- function(fds){
     return(fds)
 }
 
-getTrueOutliers <- function(fds, type, BPPARAM=bpparam(), byGroup=FALSE){
+getTrueOutliers <- function(fds, type, byGroup=FALSE, ...){
     ans <- getAssayMatrix(fds, "trueOutliers", type)
     if(isTRUE(byGroup)){
-        ans <- getAbsMaxByGroup(fds, type, ans, BPPARAM)
+        ans <- getAbsMaxByGroup(fds, type, ans, ...)
     }
     
     # remove secondary injections -> -1/0/+1 instead of -2/-1/0/+1/+2
     pmin(pmax(ans, -1), 1)
 }
 
-getTrueDeltaPsi <- function(fds, type, BPPARAM=bpparam(), byGroup=FALSE){
+getTrueDeltaPsi <- function(fds, type, byGroup=FALSE, ...){
     ans <- getAssayMatrix(fds, "trueDeltaPSI", type)
     if(isTRUE(byGroup)){
-        ans <- getAbsMaxByGroup(fds, type, ans, BPPARAM)
+        ans <- getAbsMaxByGroup(fds, type, ans, ...)
     }
     ans
 }
@@ -473,12 +474,12 @@ getByGroup <- function(fds, type, value){
     return(value[idx,])
 }
 
-getDeltaPsi <- function(fds, type, byGroup=FALSE){
+getDeltaPsi <- function(fds, type, byGroup=FALSE, ...){
     mu <- predictedMeans(fds, type)
     dataPsi <- (K(fds, type) + pseudocount())/(N(fds, type) + 2*pseudocount())
     deltaPSI <- dataPsi - mu
     if(isTRUE(byGroup)){
-        deltaPSI <- getAbsMaxByGroup(fds, psiType, deltaPSI)
+        deltaPSI <- getAbsMaxByGroup(fds, type=psiType, mat=deltaPSI, ...)
     }
     deltaPSI
 }

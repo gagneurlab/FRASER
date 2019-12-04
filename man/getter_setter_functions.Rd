@@ -19,7 +19,7 @@
 \usage{
 rho(fds, type = currentType(fds))
 
-zScores(fds, type = currentType(fds), byGroup = FALSE)
+zScores(fds, type = currentType(fds), byGroup = FALSE, ...)
 
 pVals(fds, type = currentType(fds), dist = "BetaBinomial",
   byGroup = FALSE)
@@ -43,6 +43,8 @@ dontWriteHDF5(fds) <- value
 \item{type}{The type of psi (psi5, psi3 or psiSite)}
 
 \item{byGroup}{If TRUE, aggregation by donor/acceptor site will be done.}
+
+\item{...}{Internally used parameteres.}
 
 \item{dist}{Distribution for which the p-values should be extracted.}
 

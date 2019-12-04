@@ -987,7 +987,8 @@ aberrant <- function(fds, type=currentType(fds), padjCutoff=0.05,
     # create cutoff matrix
     goodCutoff <- matrix(TRUE, nrow=nrow(zscores), ncol=ncol(zscores),
             dimnames=dimnames(zscores))
-    if("hgnc_symbol" %in% colnames(mcols(fds, type=type))){
+    if("hgnc_symbol" %in% colnames(mcols(fds, type=type)) &
+                nrow(mcols(fds, type=type)) == nrow(goodCutoff)){
         rownames(goodCutoff) <- mcols(fds, type=type)[,"hgnc_symbol"]
     } else if(isTRUE(aggregate)){
         stop("Please provide hgnc symbols to compute gene p values!")
