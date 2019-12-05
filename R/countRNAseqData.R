@@ -158,13 +158,18 @@ getSplitReadCountsForAllSamples <- function(fds, NcpuPerSample=1,
     # check if outFile with mergedCounts already exists
     # if so, don't recalculate the split counts
     if(file.exists(outFile) && isFALSE(recount)){
-        message(date(), ": File with the merged split read counts exists ", 
-                "already and will be used. If you want to count the split ",
-                "reads again, use the option recount=TRUE or remove this ",
-                "file: \n", outFile)
+        
         counts <- makeGRangesFromDataFrame(fread(outFile), 
                                            keep.extra.columns=TRUE)
-        return(counts)
+        
+        # if counts for all samples are present in the tsv, return those counts
+        if(all(samples(fds) %in% colnames(mcols(counts)))){
+            message(date(), ": File with the merged split read counts exists ", 
+                    "already and will be used. If you want to count the split ",
+                    "reads again, use the option recount=TRUE or remove this ",
+                    "file: \n", outFile)
+            return(counts)
+        }
     }
     
     # split reads need to be counted for the given samples
@@ -254,13 +259,18 @@ getNonSplitReadCountsForAllSamples <- function(fds, splitCounts,
     # check if outFile with mergedCounts already exists
     # if so, don't recalculate the non split counts
     if(file.exists(outFile) && isFALSE(recount)){
-        message(date(), ": File with the merged non-split read counts exists ", 
-                "already and will be used. If you want to count the non-split ",
-                "reads again, use the option recount=TRUE or remove this ",
-                "file: \n", outFile)
+        
         siteCounts <- makeGRangesFromDataFrame(fread(outFile), 
                                                 keep.extra.columns=TRUE)
-        return(siteCounts)
+        
+        # if counts for all samples are present in the tsv, return those counts
+        if(all(samples(fds) %in% colnames(mcols(siteCounts)))){
+            message(date(), ": File with the merged non-split read counts exists ", 
+                    "already and will be used. If you want to count the non-split ",
+                    "reads again, use the option recount=TRUE or remove this ",
+                    "file: \n", outFile)
+            return(siteCounts)
+        }
     }
     
     if(!("startID" %in% colnames(mcols(splitCounts))) | 

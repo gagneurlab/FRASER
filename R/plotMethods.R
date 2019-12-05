@@ -36,6 +36,9 @@
 #' @param result The result table to be used by the method.
 #' @param BPPARAM BiocParallel parameter to use.
 #' @param Ncpus Number of cores to use.
+#' @param plotType The type of plot that should be shown for plotEncDimSearch. 
+#'              Has to be either \code{"auc"} for a plot of the area under the 
+#'              curve (AUC) or \code{"loss"} for the model loss.
 #### Graphical parameters
 #' @param main Title for the plot, if missing a default title will be used.
 #' @param colGroup Group of samples that should be colored.
@@ -472,8 +475,10 @@ plotQQ <- function(fds, type=NULL, idx=NULL, result=NULL, aggregate=FALSE,
 #'
 #' @rdname plotFunctions
 #' @export
-plotEncDimSearch <- function(fds, type=c("psi3", "psi5", "psiSite")){
+plotEncDimSearch <- function(fds, type=c("psi3", "psi5", "psiSite"), 
+                             plotType=c("auc", "loss")){
     type <- match.arg(type)
+    plotType <- match.arg(plotType)
     data <- hyperParams(fds, type=type, all=TRUE)
     if (is.null(data)) {
         warning(paste("no hyperparameters were estimated for", type, 
@@ -486,24 +491,31 @@ plotEncDimSearch <- function(fds, type=c("psi3", "psi5", "psiSite")){
     data[,noise:=as.factor(noise)]
     data[,nsubset:=as.factor(nsubset)]
 
-    g1 <- ggplot(data, aes(q, aroc, col=nsubset, linetype=noise)) +
-        geom_point() +
-        geom_line() +
-        geom_smooth() +
-        ggtitle("Q estimation") +
-        xlab("Estimated q") +
-        ylab("Area under the ROC curve")
+    if(plotType == "auc"){
+        
+        g1 <- ggplot(data, aes(q, aroc, col=nsubset, linetype=noise)) +
+            geom_point() +
+            geom_line() +
+            geom_smooth() +
+            ggtitle("Q estimation") +
+            xlab("Estimated q") +
+            ylab("Area under the ROC curve") +
+            theme_bw(base_size=16)
+        g1
+    }
+    else{
 
-    g2 <- ggplot(data, aes(q, eval, col=nsubset, linetype=noise)) +
-        geom_point() +
-        geom_line() +
-        geom_smooth() +
-        ggtitle("Q estimation") +
-        xlab("Estimated q") +
-        ylab("Model loss")
+        g2 <- ggplot(data, aes(q, eval, col=nsubset, linetype=noise)) +
+            geom_point() +
+            geom_line() +
+            geom_smooth() +
+            ggtitle("Q estimation") +
+            xlab("Estimated q") +
+            ylab("Model loss") +
+            theme_bw(base_size=16)
+        g2
+    }
 
-
-    ggarrange(g1, g2, nrow=2)
 }
 
 

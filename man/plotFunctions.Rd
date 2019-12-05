@@ -33,7 +33,8 @@ plotQQ(fds, type = NULL, idx = NULL, result = NULL,
   conf.alpha = 0.05, samplingPrecision = 3, basePlot = TRUE,
   Ncpus = min(3, getDTthreads()), ...)
 
-plotEncDimSearch(fds, type = c("psi3", "psi5", "psiSite"))
+plotEncDimSearch(fds, type = c("psi3", "psi5", "psiSite"),
+  plotType = c("auc", "loss"))
 
 plotFilterExpression(fds, bins = 200, legend.position = c(0.8, 0.8))
 
@@ -86,6 +87,10 @@ reduce number of points to plot. Defines the digits to round to.}
 
 \item{Ncpus}{Number of cores to use.}
 
+\item{plotType}{The type of plot that should be shown for plotEncDimSearch. 
+Has to be either \code{"auc"} for a plot of the area under the 
+curve (AUC) or \code{"loss"} for the model loss.}
+
 \item{bins}{Set the number of bins to be used in the histogram.}
 
 \item{legend.position}{Set legend position (x and y coordinate), defaults to
@@ -114,16 +119,16 @@ plotted on the heatmap.}
 \item{nClust}{Number of clusters to show in the row and
 column dendrograms.}
 
-\item{plotType}{Character string indicating the type of correlation heatmap
-that should be plotted. Can be either 'sampleCorrelation' for a
-sample-sample correlation heatmap or 'junctionSample' for a
-junction-sample correlation heatmap.}
-
 \item{sampleClustering}{A clustering of the samples that should be used as an
 annotation of the heatmap.}
 
 \item{plotMeanPsi, plotCov}{If \code{TRUE}, then the heatmap is annotated with
 the mean psi values or the junction coverage.}
+
+\item{plotType}{Character string indicating the type of correlation heatmap
+that should be plotted. Can be either 'sampleCorrelation' for a
+sample-sample correlation heatmap or 'junctionSample' for a
+junction-sample correlation heatmap.}
 }
 \value{
 If base R graphics are used nothing is returned else the plotly or
