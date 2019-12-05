@@ -483,7 +483,7 @@ plotEncDimSearch <- function(fds, type=c("psi3", "psi5", "psiSite"),
     if (is.null(data)) {
         warning(paste("no hyperparameters were estimated for", type, 
                       "\nPlease use `optimHyperParams` to compute them."))
-        return()
+        return(NULL)
     }
     if(!"nsubset" %in% colnames(data)){
         data[,nsubset:="NA"]
