@@ -126,7 +126,8 @@ countRNAData <- function(fds, NcpuPerSample=1, junctionMap=NULL, minAnchor=5,
     
     # count non spliced reads for every samples
     nonSplicedCounts <- getNonSplitReadCountsForAllSamples(fds=fds, 
-                                                splitCounts=splitCounts, 
+                                                splitCounts=
+                                                    granges(splitCounts), 
                                                 NcpuPerSample=NcpuPerSample, 
                                                 minAnchor=minAnchor,
                                                 recount=recount, 
