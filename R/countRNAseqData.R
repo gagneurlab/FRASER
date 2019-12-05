@@ -132,6 +132,8 @@ countRNAData <- function(fds, NcpuPerSample=1, junctionMap=NULL, minAnchor=5,
                                                 minAnchor=minAnchor,
                                                 recount=recount, 
                                                 BPPARAM=BPPARAM,
+                                                outFile=file.path(countDir, 
+                                                    "nonSplitCounts.tsv.gz"),
                                                 ...)
     
     # create final FraseR dataset
@@ -638,7 +640,7 @@ countNonSplicedReads <- function(sampleID, splitCounts, fds,
     
     # check cache if available
     cacheFile <- getNonSplicedCountCacheFile(sampleID, fds)
-    if(isFALSE(recount) & !is.null(cacheFile) && file.exists(cacheFile)){
+    if(isFALSE(recount) && !is.null(cacheFile) && file.exists(cacheFile)){
         # check if needs to be recalculated
         cache <- try(readRDS(cacheFile), silent=TRUE)
         if(is(cache, "try-error")){
