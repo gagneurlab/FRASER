@@ -1,8 +1,8 @@
 # FRASER - Find RAre Splicing Events in RNA-seq
 FRASER is a tool to detect aberrant splicing events in RNA-seq data. The method is currently avaiable as preprint [here].
 
-[![Build Status](https://travis-ci.org/gagneurlab/FRASER.svg?branch=master)](https://travis-ci.org/gagneurlab/FRASER)
-
+[![Build Status](https://travis-ci.com/gagneurlab/FRASER.svg?branch=master)](https://travis-ci.com/gagneurlab/FRASER)
+                                                                             
 The FRASER framework and workflow aims to assist the diagnostics in the field of rare diseases where RNA-seq is performed to identify aberrant splicing defects. For a short tutorial on how to use FRASER on a dataset please use our Colab tutorial at: [http://tinyurl.com/RNA-ASHG-colab](http://tinyurl.com/RNA-ASHG-colab). This is based on a workshop we presented at ASHG 2019. 
 
 ## Installation
