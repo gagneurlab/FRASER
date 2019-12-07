@@ -24,7 +24,6 @@ Imports:
     cowplot,
     DelayedArray (>= 0.5.11),
     DelayedMatrixStats,
-    DT,
     extraDistr,
     GenomeInfoDb,
     GenomicAlignments,
@@ -36,10 +35,8 @@ Imports:
     gplots,
     ggplot2,
     ggpubr,
-    htmlwidgets,
     HDF5Array,
     LSD,
-    MASS,
     matrixStats,
     methods,
     parallel,
@@ -52,7 +49,6 @@ Imports:
     Rsubread,
     R.utils,
     S4Vectors,
-    shiny,
     stats,
     tibble,
     tidyr,
@@ -98,7 +94,6 @@ Collate:
     helper-functions.R
     plotResults.R
     saveHDF5Objects.R
-    shiny.R
     plotDistributions.R
     RcppExports.R
     autoencoder.R

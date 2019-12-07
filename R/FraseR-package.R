@@ -42,20 +42,11 @@
 #'
 #' @importFrom plotly plot_ly subplot layout add_trace ggplotly
 #' @importFrom gplots col2hex barplot2
-#' @importFrom htmlwidgets saveWidget
 #' @importFrom LSD heatscatter colorpalette
 #' @importFrom pheatmap pheatmap
 #' @importFrom RColorBrewer brewer.pal
 #' @importFrom cowplot theme_cowplot
 #'
-### Shiny App
-#'
-## @import shiny
-#' @importFrom shiny column fluidPage fluidRow h3 h1 htmlOutput mainPanel
-#'          navbarPage numericInput p plotOutput renderText selectInput
-#'          sidebarLayout sidebarPanel shinyApp tabPanel textInput titlePanel
-#' @importFrom DT dataTableOutput renderDataTable
-#' @importFrom plotly plotlyOutput renderPlotly
 #'
 ### Data handling
 #'
@@ -90,11 +81,9 @@
 #' @importFrom S4Vectors DataFrame metadata Rle SimpleList mcols mcols<-
 #'          start end metadata metadata<- subjectHits queryHits
 #' @importFrom grDevices dev.off adjustcolor pdf colorRampPalette
-#' @importFrom plotly event_data
 #' @importFrom GenomeInfoDb keepStandardChromosomes seqlevels<- seqlevels
 #'          seqlengths seqlengths<- seqlevelsStyle<- seqlevelsStyle seqnames 
 #'          seqinfo
-#' @importFrom shiny renderUI reactive renderPrint renderPlot
 #' @importFrom DelayedArray rowMaxs rowMeans path<-
 #' @importFrom DelayedMatrixStats colSds rowMedians rowSds colMeans2 rowMeans2
 #'          rowQuantiles
@@ -111,8 +100,6 @@
 #'          element_blank
 #' @importFrom ggpubr ggarrange
 #'
-#' @importFrom MASS kde2d bandwidth.nrd
-#'
 #' @importFrom tibble as_tibble
 #'
 #' @useDynLib FraseR
@@ -126,8 +113,8 @@ NULL
 #' @noRd
 globalVariables(c(".", "J", ".N", ".asDataFrame", "End", "FN", "HTML", "Start", 
         "TP", "deltaPsi", "curgr", "gene", "lty", "hgnc_symbol", "id",
-        "ldat", "p.adj", "pval", "pvalue", "shinyFds", "shinyFdsRes",
-        "sampleID", "sampleGroup", "chr", "symbol", "type", "pseudocount",
+        "ldat", "p.adj", "pval", "pvalue", "sampleID", "sampleGroup", "chr",
+        "symbol", "type", "pseudocount",
         "..sum_cols", "acceptorGroupID", "acceptorGroupSize", "Aggregation",
         "aroc", "donorGroupID", "donorGroupSize", "dpsi", "exMask", "fact",
         "fdrByFeature", "fds_inputK", "fds_inputN", "fds_new", "fds_rhoIn",
