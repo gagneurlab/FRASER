@@ -258,8 +258,8 @@ getNonSplitReadCountsForAllSamples <- function(fds, splitCounts,
                 "already and will be used. If you want to count the non-split ",
                 "reads again, use the option recount=TRUE or remove this ",
                 "file: \n", outFile)
-        siteCounts <- makeGRangesFromDataFrame(fread(outFile), 
-                                                keep.extra.columns=TRUE)
+        siteCounts <- makeGRangesFromDataFrame(
+                fread(outFile), keep.extra.columns=TRUE)
         return(siteCounts)
     }
     
@@ -273,14 +273,12 @@ getNonSplitReadCountsForAllSamples <- function(fds, splitCounts,
     # count the retained reads
     message(date(), ": Start counting the non spliced reads ...")
     message(date(), ": In total ", length(splitCounts),
-            " splice junctions are found."
-    )
+            " splice junctions are found.")
     
     # extract donor and acceptor sites
     spliceSiteCoords <- extractSpliceSiteCoordinates(splitCounts, fds)
     message(date(), ": In total ", length(spliceSiteCoords),
-            " splice sites (acceptor/donor) will be counted ..."
-    )
+            " splice sites (acceptor/donor) will be counted ...")
     
     # count non spliced reads for every samples
     countList <- bplapply(samples(fds),
