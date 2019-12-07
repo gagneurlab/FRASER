@@ -144,11 +144,6 @@ plotVolcano <- function(fds, sampleID, type, basePlot=TRUE, aggregate=FALSE,
             aggregate=aggregate, deltaPsiCutoff=deltaPsiCutoff, 
             padjCutoff=padjCutoff, ...)
     
-    padj_line <- min(dt[padj < padjCutoff, -log10(pval)])
-    if(length(padj_line) == 0 | padj_line > 10){
-        padj_line <- 6
-    }
-    
     g <- ggplot(dt, aes(x=deltaPsi, y=-log10(pval), color=aberrant, text=paste0(
             "SampleID: ", sampleID, "<br>",
             "featureID: ", featureID, "<br>",
@@ -160,13 +155,27 @@ plotVolcano <- function(fds, sampleID, type, basePlot=TRUE, aggregate=FALSE,
         geom_point(aes(alpha=ifelse(aberrant == TRUE, 1, 0.8))) +
         xlab(expression(paste(Delta, Psi))) +
         ylab(expression(paste(-log[10], "(P value)"))) +
-        geom_vline(xintercept=c(-deltaPsiCutoff, deltaPsiCutoff),
-                   color="firebrick", linetype=2) +
-        geom_hline(yintercept=padj_line, color="firebrick", linetype=4) +
         ggtitle(main) +
         theme_bw() +
         theme(legend.position="none") +
         scale_color_manual(values=c("gray40", "firebrick"))
+    
+    if(!is.na(deltaPsiCutoff)){
+        g <- g + 
+            geom_vline(xintercept=c(-deltaPsiCutoff, deltaPsiCutoff),
+                    color="firebrick", linetype=2)
+    }
+    
+    if(!is.na(padjCutoff)){
+        if(dt[,any(padj < padjCutoff)]){
+            padj_line <- min(dt[padj < padjCutoff, -log10(pval)])
+        }
+        if(padj_line > 10 | is.na(padj_line)){
+            padj_line <- 6
+        }
+        g <- g + 
+            geom_hline(yintercept=padj_line, color="firebrick", linetype=4)
+    }
     
     if(isFALSE(basePlot)){
         g <- g + xlab("delta Psi") +
@@ -295,24 +304,21 @@ plotExpression <- function(fds, type=c("psi5", "psi3", "psiSite"),
 #' @rdname plotFunctions
 #' @export
 plotExpectedVsObservedPsi <- function(fds, type=c("psi5", "psi3", "psiSite"),
-                                      idx=NULL, result=NULL, colGroup=NULL,
-                                      main=NULL, basePlot=TRUE, 
-                                      padjCutoff=0.05){
+                    idx=NULL, result=NULL, colGroup=NULL, main=NULL,
+                    basePlot=TRUE, ...){
     type <- match.arg(type)
-
+    
     # get plotting data
-    dt   <- getPlottingDT(fds, axis="row", type=type, result=result, idx=idx)
+    dt   <- getPlottingDT(fds, axis="row", type=type, result=result, 
+            idx=idx, ...)
     type <- as.character(unique(dt$type))
     idx  <- unique(dt$idx)
-
+    
     if(is.null(main)){
         # TODO extract feature name if present: siteName <- ...
         main <- paste0("Expression vs prediction plot: ", idx)
     }
-
-    dt[,aberrant:=FALSE]
-    dt[padj < padjCutoff, aberrant:=TRUE]
-
+    
     if(!is.null(colGroup)){
         if(is.logical(colGroup)){
             dt[colGroup, aberrant:=TRUE]
@@ -332,14 +338,16 @@ plotExpectedVsObservedPsi <- function(fds, type=c("psi5", "psi3", "psiSite"),
             'psiSite' = "Predicted SE"
     )
 
-    g <- ggplot(dt, aes(y=obsPsi, x=predPsi, color=!aberrant)) +
-        geom_point(alpha=ifelse(dt$aberrant, 1, 0.5)) +
+    g <- ggplot(dt, aes(y=obsPsi, x=predPsi)) +
+        geom_point(alpha=ifelse(dt$aberrant, 1, 0.5),
+                color=c("gray70", "firebrick")[dt$aberrant + 1]) +
         geom_abline(intercept = 0, slope=1) +
         theme_bw() +
         theme(legend.position="none") +
         xlab(xlab) +
         ylab(ylab) +
         ggtitle(main)
+        
 
     plotBasePlot(g, basePlot)
 }

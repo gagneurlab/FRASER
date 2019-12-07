@@ -55,7 +55,7 @@ plotExpectedVsObservedPsi(
   colGroup = NULL,
   main = NULL,
   basePlot = TRUE,
-  padjCutoff = 0.05
+  ...
 )
 
 plotQQ(
