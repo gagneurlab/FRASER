@@ -237,39 +237,41 @@ getSiteIndex <- function(fds, type){
     ans[selectionMat]
 }
 
-getGeneIDs <- function(fds, type){
-    geneIDs <- unique(mcols(fds, type=type)$hgnc_symbol)
-    geneIDs <- geneIDs[!is.na(geneIDs)]
-    return(geneIDs)
+getGeneIDs <- function(fds, type, unique=TRUE){
+    geneIDs <- mcols(fds, type=type)$hgnc_symbol
+    if(isTRUE(unique)){
+        geneIDs <- unique(geneIDs)
+        geneIDs <- geneIDs[!is.na(geneIDs)]
+    }
+    geneIDs
 }
 
 getPvalsPerGene <- function(fds, type, pvals=pVals(fds, type=type),
                     sampleID=NULL, method="holm", BPPARAM=bpparam()){
-
+    
     # extract data and take only the first index of per site
     dt <- data.table(
             index=getSiteIndex(fds, type=type),
-            geneID=mcols(fds, type=type)$hgnc_symbol,
+            geneID=getGeneIDs(fds, type=type, unique=FALSE),
             as.data.table(pvals))[!duplicated(index)]
     dt <- dt[!is.na(geneID)]
     setkey(dt, geneID)
-
+    
     samples <- samples(fds)
     if(!is.null(sampleID)){
         samples <- sampleID
     }
-
+    
     pvalsPerGene <- matrix(unlist(bplapply(samples, BPPARAM=BPPARAM,
         function(i){
                 dttmp <- dt[,min(p.adjust(get(i), method=method)),by=geneID]
-                dttmp <- dttmp[!is.na(geneID),]
                 setkey(dttmp, geneID)
-                dttmp[J(getGeneIDs(fds, type)), V1]
+                dttmp[J(getGeneIDs(fds, type=type)), V1]
         })), ncol=length(samples))
-
+    
     colnames(pvalsPerGene) <- samples
-    rownames(pvalsPerGene) <- na.omit(unique(dt$geneID))
-
+    rownames(pvalsPerGene) <- getGeneIDs(fds, type=type)
+    
     return(pvalsPerGene)
 
 }
