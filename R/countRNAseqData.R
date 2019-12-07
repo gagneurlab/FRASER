@@ -126,11 +126,14 @@ countRNAData <- function(fds, NcpuPerSample=1, junctionMap=NULL, minAnchor=5,
     
     # count non spliced reads for every samples
     nonSplicedCounts <- getNonSplitReadCountsForAllSamples(fds=fds, 
-                                                splitCounts=splitCounts, 
+                                                splitCounts=
+                                                    granges(splitCounts), 
                                                 NcpuPerSample=NcpuPerSample, 
                                                 minAnchor=minAnchor,
                                                 recount=recount, 
                                                 BPPARAM=BPPARAM,
+                                                outFile=file.path(countDir, 
+                                                    "nonSplitCounts.tsv.gz"),
                                                 ...)
     
     # create final FraseR dataset
@@ -158,13 +161,18 @@ getSplitReadCountsForAllSamples <- function(fds, NcpuPerSample=1,
     # check if outFile with mergedCounts already exists
     # if so, don't recalculate the split counts
     if(file.exists(outFile) && isFALSE(recount)){
-        message(date(), ": File with the merged split read counts exists ", 
-                "already and will be used. If you want to count the split ",
-                "reads again, use the option recount=TRUE or remove this ",
-                "file: \n", outFile)
+        
         counts <- makeGRangesFromDataFrame(fread(outFile), 
                                            keep.extra.columns=TRUE)
-        return(counts)
+        
+        # if counts for all samples are present in the tsv, return those counts
+        if(all(samples(fds) %in% colnames(mcols(counts)))){
+            message(date(), ": File with the merged split read counts exists ", 
+                    "already and will be used. If you want to count the split ",
+                    "reads again, use the option recount=TRUE or remove this ",
+                    "file: \n", outFile)
+            return(counts)
+        }
     }
     
     # split reads need to be counted for the given samples
@@ -241,26 +249,25 @@ getSplitReadCountsForAllSamples <- function(fds, NcpuPerSample=1,
 #'          GRanges object.
 #' @export
 getNonSplitReadCountsForAllSamples <- function(fds, splitCounts, 
-                                                NcpuPerSample=1, minAnchor=5,
-                                                recount=FALSE, 
-                                                BPPARAM=bpparam(),
-                                                outFile=file.path(
-                                                    workingDir(fds), 
-                                                    "savedObjects", 
-                                                    nameNoSpace(name(fds)), 
-                                                    "nonSplitCounts.tsv.gz"),
-                                                longRead=TRUE){
-
+                    NcpuPerSample=1, minAnchor=5, recount=FALSE, 
+                    BPPARAM=bpparam(), longRead=TRUE, outFile=file.path(
+                            workingDir(fds), "savedObjects", 
+                            nameNoSpace(name(fds)), "nonSplitCounts.tsv.gz")){
+    
     # check if outFile with mergedCounts already exists
     # if so, don't recalculate the non split counts
     if(file.exists(outFile) && isFALSE(recount)){
-        message(date(), ": File with the merged non-split read counts exists ", 
-                "already and will be used. If you want to count the non-split ",
-                "reads again, use the option recount=TRUE or remove this ",
-                "file: \n", outFile)
-        siteCounts <- makeGRangesFromDataFrame(
-                fread(outFile), keep.extra.columns=TRUE)
-        return(siteCounts)
+        siteCounts <- makeGRangesFromDataFrame(fread(outFile), 
+                keep.extra.columns=TRUE)
+        
+        # if counts for all samples are present in the tsv, return those counts
+        if(all(samples(fds) %in% colnames(mcols(siteCounts)))){
+            message(date(), ": File with the merged non-split read counts ", 
+                    "exists already and will be used. If you want to count ",
+                    "the non-split reads again, use the option recount=TRUE ",
+                    "or remove this file: \n", outFile)
+            return(siteCounts)
+        }
     }
     
     if(!("startID" %in% colnames(mcols(splitCounts))) | 
@@ -625,7 +632,7 @@ countNonSplicedReads <- function(sampleID, splitCounts, fds,
     
     # check cache if available
     cacheFile <- getNonSplicedCountCacheFile(sampleID, fds)
-    if(isFALSE(recount) & !is.null(cacheFile) && file.exists(cacheFile)){
+    if(isFALSE(recount) && !is.null(cacheFile) && file.exists(cacheFile)){
         # check if needs to be recalculated
         cache <- try(readRDS(cacheFile), silent=TRUE)
         if(is(cache, "try-error")){

@@ -4,8 +4,13 @@
 \alias{makeSimulatedFraserDataSet}
 \title{Create an simulated example data set for FraseR}
 \usage{
-makeSimulatedFraserDataSet(m = 100, j = 500, q = 10,
-  distribution = c("BB", "DM"), ...)
+makeSimulatedFraserDataSet(
+  m = 100,
+  j = 500,
+  q = 10,
+  distribution = c("BB", "DM"),
+  ...
+)
 }
 \arguments{
 \item{m}{Number of simulated samples}

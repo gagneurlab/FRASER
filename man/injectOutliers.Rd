@@ -4,9 +4,16 @@
 \alias{injectOutliers}
 \title{Inject artificial outliers in an existing fds}
 \usage{
-injectOutliers(fds, type = c("psi5", "psi3", "psiSite"), freq = 0.001,
-  minDpsi = 0.2, minCoverage = 2, deltaDistr = "uniformDistr",
-  verbose = FALSE, method = c("meanPSI", "samplePSI", "simulatedPSI"))
+injectOutliers(
+  fds,
+  type = c("psi5", "psi3", "psiSite"),
+  freq = 0.001,
+  minDpsi = 0.2,
+  minCoverage = 2,
+  deltaDistr = "uniformDistr",
+  verbose = FALSE,
+  method = c("meanPSI", "samplePSI", "simulatedPSI")
+)
 }
 \arguments{
 \item{fds}{FraseRDataSet}

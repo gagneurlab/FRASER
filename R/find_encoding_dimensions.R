@@ -90,6 +90,9 @@ findEncodingDim <- function(i, fds, type, params, correction,
 #' @param internalThreads The number of threads used internally.
 #' @param injectFreq The frequency with which outliers are injected into the 
 #' data.
+#' @param plot If \code{TRUE}, a plot of the area under the curve and the 
+#' model loss for each evaluated parameter combination will be displayed after 
+#' the hyperparameter optimization finishes.
 #' 
 #' @return FraseRDataSet
 #'
@@ -107,11 +110,11 @@ findEncodingDim <- function(i, fds, type, params, correction,
 #'   plotEncDimSearch(fds, type="psi5")
 #'
 #' @export
-optimHyperParams <- function(fds, type, correction,
+optimHyperParams <- function(fds, type, correction="PCA",
                     q_param=seq(2, min(40, ncol(fds)), by=3),
                     noise_param=c(0, 0.5, 1, 2, 5), minDeltaPsi=0.1,
                     iterations=5, setSubset=15000, injectFreq=1e-2,
-                    BPPARAM=bpparam(), internalThreads=3){
+                    BPPARAM=bpparam(), internalThreads=3, plot=TRUE){
     if(isFALSE(needsHyperOpt(correction))){
         message(date(), ": For correction '", correction, "' no hyper paramter",
                 "optimization is needed.")
@@ -206,7 +209,9 @@ optimHyperParams <- function(fds, type, correction,
     }
 
     hyperParams(fds, type=type) <- optData
-    print(plotEncDimSearch(fds, type=type))
+    if(isTRUE(plot)){
+        print(plotEncDimSearch(fds, type=type, plotType="auc"))
+    }
     return(fds)
 }
 

@@ -4,9 +4,16 @@
 \alias{aberrant}
 \title{Aberrant splicing events}
 \usage{
-aberrant(fds, type = currentType(fds), padjCutoff = 0.05,
-  deltaPsiCutoff = 0.3, zScoreCutoff = NA, by = c("none", "sample",
-  "feature"), aggregate = FALSE, ...)
+aberrant(
+  fds,
+  type = currentType(fds),
+  padjCutoff = 0.05,
+  deltaPsiCutoff = 0.3,
+  zScoreCutoff = NA,
+  by = c("none", "sample", "feature"),
+  aggregate = FALSE,
+  ...
+)
 }
 \arguments{
 \item{fds}{FraseRDataSet object}

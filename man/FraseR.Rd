@@ -5,8 +5,7 @@
 \title{FraseR: A package providing a workflow to detect aberrant splicing events
     in RNA sequencing data in a rare disease cohort}
 \usage{
-FraseR(fds, q, correction = "PCA", iterations = 15,
-  BPPARAM = bpparam(), ...)
+FraseR(fds, q, correction = "PCA", iterations = 15, BPPARAM = bpparam(), ...)
 }
 \arguments{
 \item{fds}{A FraseRDataSet object}

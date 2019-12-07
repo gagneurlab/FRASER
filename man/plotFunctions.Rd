@@ -12,38 +12,97 @@
 \alias{plotEncDimSearch}
 \title{Visualization functions for FraseR}
 \usage{
-plotVolcano(fds, sampleID, type, basePlot = TRUE, aggregate = FALSE,
-  main = paste0("Volcano plot: ", sampleID), deltaPsiCutoff = 0.3,
-  padjCutoff = 0.1, ...)
+plotVolcano(
+  fds,
+  sampleID,
+  type,
+  basePlot = TRUE,
+  aggregate = FALSE,
+  main = paste0("Volcano plot: ", sampleID),
+  deltaPsiCutoff = 0.3,
+  padjCutoff = 0.1,
+  ...
+)
 
-plotAberrantPerSample(fds, main, type = c("psi3", "psi5", "psiSite"),
-  padjCutoff = 0.1, zScoreCutoff = NA, deltaPsiCutoff = 0.3,
-  aggregated = TRUE, BPPARAM = bpparam(), ...)
+plotAberrantPerSample(
+  fds,
+  main,
+  type = c("psi3", "psi5", "psiSite"),
+  padjCutoff = 0.1,
+  zScoreCutoff = NA,
+  deltaPsiCutoff = 0.3,
+  aggregated = TRUE,
+  BPPARAM = bpparam(),
+  ...
+)
 
-plotExpression(fds, type = c("psi5", "psi3", "psiSite"), site = NULL,
-  result = NULL, colGroup = NULL, basePlot = TRUE, main = NULL,
-  ...)
+plotExpression(
+  fds,
+  type = c("psi5", "psi3", "psiSite"),
+  site = NULL,
+  result = NULL,
+  colGroup = NULL,
+  basePlot = TRUE,
+  main = NULL,
+  ...
+)
 
-plotExpectedVsObservedPsi(fds, type = c("psi5", "psi3", "psiSite"),
-  idx = NULL, result = NULL, colGroup = NULL, main = NULL,
-  basePlot = TRUE, padjCutoff = 0.05)
+plotExpectedVsObservedPsi(
+  fds,
+  type = c("psi5", "psi3", "psiSite"),
+  idx = NULL,
+  result = NULL,
+  colGroup = NULL,
+  main = NULL,
+  basePlot = TRUE,
+  padjCutoff = 0.05
+)
 
-plotQQ(fds, type = NULL, idx = NULL, result = NULL,
-  aggregate = FALSE, global = FALSE, main = NULL,
-  conf.alpha = 0.05, samplingPrecision = 3, basePlot = TRUE,
-  Ncpus = min(3, getDTthreads()), ...)
+plotQQ(
+  fds,
+  type = NULL,
+  idx = NULL,
+  result = NULL,
+  aggregate = FALSE,
+  global = FALSE,
+  main = NULL,
+  conf.alpha = 0.05,
+  samplingPrecision = 3,
+  basePlot = TRUE,
+  Ncpus = min(3, getDTthreads()),
+  ...
+)
 
-plotEncDimSearch(fds, type = c("psi3", "psi5", "psiSite"))
+plotEncDimSearch(
+  fds,
+  type = c("psi3", "psi5", "psiSite"),
+  plotType = c("auc", "loss")
+)
 
 plotFilterExpression(fds, bins = 200, legend.position = c(0.8, 0.8))
 
-plotCountCorHeatmap(fds, type = c("psi5", "psi3", "psiSite"),
-  logit = FALSE, topN = 50000, topJ = 5000, minMedian = 1,
-  main = NULL, normalized = FALSE, show_rownames = FALSE,
-  show_colnames = FALSE, minDeltaPsi = 0.1, annotation_col = NA,
-  annotation_row = NA, border_color = NA, nClust = 5,
+plotCountCorHeatmap(
+  fds,
+  type = c("psi5", "psi3", "psiSite"),
+  logit = FALSE,
+  topN = 50000,
+  topJ = 5000,
+  minMedian = 1,
+  main = NULL,
+  normalized = FALSE,
+  show_rownames = FALSE,
+  show_colnames = FALSE,
+  minDeltaPsi = 0.1,
+  annotation_col = NA,
+  annotation_row = NA,
+  border_color = NA,
+  nClust = 5,
   plotType = c("sampleCorrelation", "junctionSample"),
-  sampleClustering = NULL, plotMeanPsi = TRUE, plotCov = TRUE, ...)
+  sampleClustering = NULL,
+  plotMeanPsi = TRUE,
+  plotCov = TRUE,
+  ...
+)
 }
 \arguments{
 \item{fds}{An FraseRDataSet object.}
@@ -86,6 +145,11 @@ reduce number of points to plot. Defines the digits to round to.}
 
 \item{Ncpus}{Number of cores to use.}
 
+\item{plotType}{Character string indicating the type of correlation heatmap
+that should be plotted. Can be either 'sampleCorrelation' for a
+sample-sample correlation heatmap or 'junctionSample' for a
+junction-sample correlation heatmap.}
+
 \item{bins}{Set the number of bins to be used in the histogram.}
 
 \item{legend.position}{Set legend position (x and y coordinate), defaults to
@@ -113,11 +177,6 @@ plotted on the heatmap.}
 
 \item{nClust}{Number of clusters to show in the row and
 column dendrograms.}
-
-\item{plotType}{Character string indicating the type of correlation heatmap
-that should be plotted. Can be either 'sampleCorrelation' for a
-sample-sample correlation heatmap or 'junctionSample' for a
-junction-sample correlation heatmap.}
 
 \item{sampleClustering}{A clustering of the samples that should be used as an
 annotation of the heatmap.}

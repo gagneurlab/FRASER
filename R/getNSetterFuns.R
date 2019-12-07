@@ -8,6 +8,9 @@
 #' @param byGroup If TRUE, aggregation by donor/acceptor site will be done.
 #' @param dist Distribution for which the p-values should be extracted.
 #' @param value The new value to be assigned.
+#' @param all Logical value indicating whether \code{hyperParams(fds)} should 
+#'          return the results of all evaluated parameter combinations or only 
+#'          for the optimal parameter combination.
 #' @param ... Internally used parameteres. 
 #' @return A (delayed) matrix or vector dependent on the type of data retrieved.
 #' 
@@ -376,7 +379,10 @@ noise <- function(fds, type=currentType(fds)){
     return(fds)
 }
 
-
+#' @describeIn getter_setter_functions This returns the results of the 
+#' hyperparameter optimization NULL if the hyperparameter 
+#' opimization was not run yet.
+#' @export
 hyperParams <- function(fds, type=currentType(fds), all=FALSE){
     ans <- metadata(fds)[[paste0("hyperParams_", type)]]
     if(is.null(ans)){
@@ -400,7 +406,7 @@ hyperParams <- function(fds, type=currentType(fds), all=FALSE){
 #' @export
 bestQ <- function(fds, type=currentType(fds)){
     ans <- hyperParams(fds, type=type)[1,q]
-    if(is.null(ans)){
+    if(is.null(ans) || is.na(ans)){
         warnings("Please set q by estimating it correctly.")
         ans <- min(100, max(2, round(ncol(fds)/10)))
     }

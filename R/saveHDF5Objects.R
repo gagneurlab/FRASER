@@ -149,7 +149,7 @@ saveAsHDF5 <- function(fds, name, object=NULL, rewrite=FALSE){
     chunkDims <- c(
         min(nrow(object), options()[['FraseR-hdf5-chunk-nrow']]),
         min(ncol(object), options()[['FraseR-hdf5-chunk-ncol']]))
-
+    
     if(isTRUE(dontWriteHDF5(fds))){
         if(verbose(fds) > 3){
             message(date(), ": Dont save HDF5 for assay: ", name)
@@ -169,7 +169,8 @@ saveAsHDF5 <- function(fds, name, object=NULL, rewrite=FALSE){
     if(verbose(fds) > 2) {
         message(date(), ": Preparing data for HDF5 conversion: ", name)
     }
-    aMat <- as(object, "matrix")
+    aMat <- as.matrix(object)
+    #aMat <- as(object, "matrix") # this command breaks the code in some cases
     if(verbose(fds) > 1) {
         message(date(), ": Writing data: ", name, " to file: ", h5File)
     }

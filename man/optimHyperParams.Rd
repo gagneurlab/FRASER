@@ -4,10 +4,20 @@
 \alias{optimHyperParams}
 \title{Find optimal encoding dimension}
 \usage{
-optimHyperParams(fds, type, correction, q_param = seq(2, min(40,
-  ncol(fds)), by = 3), noise_param = c(0, 0.5, 1, 2, 5),
-  minDeltaPsi = 0.1, iterations = 5, setSubset = 15000,
-  injectFreq = 0.01, BPPARAM = bpparam(), internalThreads = 3)
+optimHyperParams(
+  fds,
+  type,
+  correction = "PCA",
+  q_param = seq(2, min(40, ncol(fds)), by = 3),
+  noise_param = c(0, 0.5, 1, 2, 5),
+  minDeltaPsi = 0.1,
+  iterations = 5,
+  setSubset = 15000,
+  injectFreq = 0.01,
+  BPPARAM = bpparam(),
+  internalThreads = 3,
+  plot = TRUE
+)
 }
 \arguments{
 \item{fds}{A FraseRDataSet object}
@@ -36,6 +46,10 @@ data.}
 \item{BPPARAM}{the BiocParallel parameters for the parallelization}
 
 \item{internalThreads}{The number of threads used internally.}
+
+\item{plot}{If \code{TRUE}, a plot of the area under the curve and the 
+model loss for each evaluated parameter combination will be displayed after 
+the hyperparameter optimization finishes.}
 }
 \value{
 FraseRDataSet

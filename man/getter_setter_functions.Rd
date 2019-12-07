@@ -13,6 +13,7 @@
 \alias{padjVals}
 \alias{predictedMeans}
 \alias{deltaPsiValue}
+\alias{hyperParams}
 \alias{dontWriteHDF5}
 \alias{dontWriteHDF5<-}
 \title{Getter/Setter functions}
@@ -21,15 +22,20 @@ rho(fds, type = currentType(fds))
 
 zScores(fds, type = currentType(fds), byGroup = FALSE, ...)
 
-pVals(fds, type = currentType(fds), dist = "BetaBinomial",
-  byGroup = FALSE)
+pVals(fds, type = currentType(fds), dist = "BetaBinomial", byGroup = FALSE)
 
-padjVals(fds, type = currentType(fds), dist = c("BetaBinomial"),
-  byGroup = FALSE)
+padjVals(
+  fds,
+  type = currentType(fds),
+  dist = c("BetaBinomial"),
+  byGroup = FALSE
+)
 
 predictedMeans(fds, type = currentType(fds))
 
 deltaPsiValue(fds, type = currentType(fds))
+
+hyperParams(fds, type = currentType(fds), all = FALSE)
 
 bestQ(fds, type = currentType(fds))
 
@@ -47,6 +53,10 @@ dontWriteHDF5(fds) <- value
 \item{...}{Internally used parameteres.}
 
 \item{dist}{Distribution for which the p-values should be extracted.}
+
+\item{all}{Logical value indicating whether \code{hyperParams(fds)} should 
+return the results of all evaluated parameter combinations or only 
+for the optimal parameter combination.}
 
 \item{value}{The new value to be assigned.}
 }
@@ -73,6 +83,10 @@ values.
 
 \item \code{deltaPsiValue}: Returns the difference between the 
 observed and the fitted psi values.
+
+\item \code{hyperParams}: This returns the results of the 
+hyperparameter optimization NULL if the hyperparameter 
+opimization was not run yet.
 
 \item \code{bestQ}: This returns the optimal size of the 
 latent space according to the hyperparameter optimization or a simple 

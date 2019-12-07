@@ -9,9 +9,14 @@
 \usage{
 calculateZscore(fds, type = currentType(fds), correction = "FraseR")
 
-calculatePvalues(fds, type = currentType(fds), correction = "FraseR",
-  BPPARAM = bpparam(), distributions = c("betabinomial"), capN = 5 *
-  1e+05)
+calculatePvalues(
+  fds,
+  type = currentType(fds),
+  correction = "FraseR",
+  BPPARAM = bpparam(),
+  distributions = c("betabinomial"),
+  capN = 5 * 1e+05
+)
 
 calculatePadjValues(fds, type = currentType(fds), method = "BY")
 }

@@ -11,33 +11,69 @@
 \alias{countNonSplicedReads}
 \title{Count RNA-seq data}
 \usage{
-countRNAData(fds, NcpuPerSample = 1, junctionMap = NULL,
-  minAnchor = 5, recount = FALSE, BPPARAM = bpparam(),
-  genome = NULL, countDir = file.path(workingDir(fds), "savedObjects",
-  nameNoSpace(name(fds))), ...)
+countRNAData(
+  fds,
+  NcpuPerSample = 1,
+  junctionMap = NULL,
+  minAnchor = 5,
+  recount = FALSE,
+  BPPARAM = bpparam(),
+  genome = NULL,
+  countDir = file.path(workingDir(fds), "savedObjects", nameNoSpace(name(fds))),
+  ...
+)
 
-getSplitReadCountsForAllSamples(fds, NcpuPerSample = 1,
-  junctionMap = NULL, recount = FALSE, BPPARAM = bpparam(),
-  genome = NULL, countFiles = NULL,
-  outFile = file.path(workingDir(fds), "savedObjects",
-  nameNoSpace(name(fds)), "splitCounts.tsv.gz"))
+getSplitReadCountsForAllSamples(
+  fds,
+  NcpuPerSample = 1,
+  junctionMap = NULL,
+  recount = FALSE,
+  BPPARAM = bpparam(),
+  genome = NULL,
+  countFiles = NULL,
+  outFile = file.path(workingDir(fds), "savedObjects", nameNoSpace(name(fds)),
+    "splitCounts.tsv.gz")
+)
 
-getNonSplitReadCountsForAllSamples(fds, splitCounts, NcpuPerSample = 1,
-  minAnchor = 5, recount = FALSE, BPPARAM = bpparam(),
-  outFile = file.path(workingDir(fds), "savedObjects",
-  nameNoSpace(name(fds)), "nonSplitCounts.tsv.gz"), longRead = TRUE)
+getNonSplitReadCountsForAllSamples(
+  fds,
+  splitCounts,
+  NcpuPerSample = 1,
+  minAnchor = 5,
+  recount = FALSE,
+  BPPARAM = bpparam(),
+  longRead = TRUE,
+  outFile = file.path(workingDir(fds), "savedObjects", nameNoSpace(name(fds)),
+    "nonSplitCounts.tsv.gz")
+)
 
 addCountsToFraseRDataSet(fds, splitCounts, nonSplitCounts)
 
-countSplitReads(sampleID, fds, NcpuPerSample = 1, genome = NULL,
-  recount = FALSE)
+countSplitReads(
+  sampleID,
+  fds,
+  NcpuPerSample = 1,
+  genome = NULL,
+  recount = FALSE
+)
 
-mergeCounts(countList, junctionMap = NULL, assumeEqual = FALSE,
-  BPPARAM = SerialParam())
+mergeCounts(
+  countList,
+  junctionMap = NULL,
+  assumeEqual = FALSE,
+  BPPARAM = SerialParam()
+)
 
-countNonSplicedReads(sampleID, splitCounts, fds, NcpuPerSample = 1,
-  minAnchor = 5, recount = FALSE, spliceSiteCoords = NULL,
-  longRead = TRUE)
+countNonSplicedReads(
+  sampleID,
+  splitCounts,
+  fds,
+  NcpuPerSample = 1,
+  minAnchor = 5,
+  recount = FALSE,
+  spliceSiteCoords = NULL,
+  longRead = TRUE
+)
 }
 \arguments{
 \item{fds}{A FraseRDataSet object}

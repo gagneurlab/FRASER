@@ -4,8 +4,12 @@
 \alias{calculatePSIValues}
 \title{PSI value calculation}
 \usage{
-calculatePSIValues(fds, types = psiTypes, overwriteCts = FALSE,
-  BPPARAM = bpparam())
+calculatePSIValues(
+  fds,
+  types = psiTypes,
+  overwriteCts = FALSE,
+  BPPARAM = bpparam()
+)
 }
 \arguments{
 \item{fds}{A FraseRDataSet object}

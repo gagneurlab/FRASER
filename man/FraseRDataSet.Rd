@@ -4,8 +4,7 @@
 \alias{FraseRDataSet}
 \title{The FraseR dataset object}
 \usage{
-FraseRDataSet(colData = NULL, junctions = NULL, spliceSites = NULL,
-  ...)
+FraseRDataSet(colData = NULL, junctions = NULL, spliceSites = NULL, ...)
 }
 \arguments{
 \item{colData}{A DataFrame containing the annotation of the samples}

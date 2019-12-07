@@ -4,9 +4,16 @@
 \alias{filterExpression}
 \title{Filtering FraseRDataSets}
 \usage{
-filterExpression(fds, minExpressionInOneSample = 20, quantile = 0.05,
-  quantileMinExpression = 1, minDeltaPsi = 0, filter = TRUE,
-  BPPARAM = bpparam(), delayed = FALSE)
+filterExpression(
+  fds,
+  minExpressionInOneSample = 20,
+  quantile = 0.05,
+  quantileMinExpression = 1,
+  minDeltaPsi = 0,
+  filter = TRUE,
+  BPPARAM = bpparam(),
+  delayed = FALSE
+)
 }
 \arguments{
 \item{fds}{A FraseRDataSet object}

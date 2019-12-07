@@ -76,7 +76,7 @@ biocViews:
     Genetics,
     Coverage
 URL: https://i12g-gagneurweb.in.tum.de/gitlab/mertes/FraseR/
-RoxygenNote: 6.1.1
+RoxygenNote: 7.0.2
 Encoding: UTF-8
 Collate:
     variables.R
