@@ -264,7 +264,20 @@ precision-recall curve). From this plot the optimum should be choosen for
 the \code{q} in fitting process.
 }
 \examples{
-# TODO
-TODO <- 1
+fds <- createTestFraseRDataSet()
+
+plotAberrantPerSample(fds, padjCutoff=NA, zScoreCutoff=0.5)
+
+plotVolcano(fds, "sample1", "psi5")
+
+res <- results(fds, padjCutoff=NA, zScoreCutoff=0.5, )
+res
+plotExpression(fds, result=res[1])
+
+plotQQ(fds, result=res[1])
+
+plotExpectedVsObservedPsi(fds, type="psi5", idx=5)
+
+plotCountCorHeatmap(fds, "psiSite")
 
 }

@@ -122,8 +122,21 @@
 #'             plotExpression plotCountCorHeatmap plotFilterExpression 
 #'             plotExpectedVsObservedPsi plotEncDimSearch
 #' @examples
-#' # TODO
-#' TODO <- 1
+#' fds <- createTestFraseRDataSet()
+#' 
+#' plotAberrantPerSample(fds, padjCutoff=NA, zScoreCutoff=0.5)
+#' 
+#' plotVolcano(fds, "sample1", "psi5")
+#' 
+#' res <- results(fds, padjCutoff=NA, zScoreCutoff=0.5, )
+#' res
+#' plotExpression(fds, result=res[1])
+#' 
+#' plotQQ(fds, result=res[1])
+#' 
+#' plotExpectedVsObservedPsi(fds, type="psi5", idx=5)
+#' 
+#' plotCountCorHeatmap(fds, "psiSite")
 #'
 NULL
 
@@ -170,7 +183,7 @@ plotVolcano <- function(fds, sampleID, type, basePlot=TRUE, aggregate=FALSE,
         if(dt[,any(padj < padjCutoff)]){
             padj_line <- min(dt[padj < padjCutoff, -log10(pval)])
         }
-        if(padj_line > 10 | is.na(padj_line)){
+        if(!"padj_line" %in% ls() || padj_line > 10 || is.na(padj_line)){
             padj_line <- 6
         }
         g <- g + 
