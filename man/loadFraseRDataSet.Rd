@@ -33,13 +33,17 @@ It looks and saves the FraseRDataSet objects and HDF5 files on disk under
 the given working dir. Internally it uses HDF5 files for all assays.
 }
 \examples{
-fds <- countRNAData(createTestFraseRSettings())
+fds <- createTestFraseRSettings()
+
+# make sure the object is saved to disc
+dontWriteHDF5(fds) <- FALSE
 fdsSaved <- saveFraseRDataSet(fds)
 fdsSaved
 
+# load object from disc
 fdsLoaded <- loadFraseRDataSet(dir=workingDir(fds), name=name(fds))
 fdsLoaded
 
-testthat::expect_equivalent(fdsSaved, fdsLoaded)
+all.equal(fdsSaved, fdsLoaded)
 
 }
