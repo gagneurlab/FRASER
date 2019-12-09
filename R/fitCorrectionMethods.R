@@ -321,7 +321,7 @@ fitPCA <- function(fds, q, psiType, rhoRange=c(1e-5, 1-1e-5), noiseAlpha=NULL,
     }
 
     # PCA on subset -> E matrix
-    message(date(), " Computing PCA ...")
+    message(date(), ": Computing PCA ...")
     xin <- x(fds_pca, noiseAlpha=noiseAlpha, center=TRUE)
     pca <- pca(xin, nPcs=q)
     pc <- pcaMethods::loadings(pca)
@@ -340,7 +340,7 @@ fitPCA <- function(fds, q, psiType, rhoRange=c(1e-5, 1-1e-5), noiseAlpha=NULL,
     }
 
     # fit rho
-    message(date(), " Fitting rho ...")
+    message(date(), ": Fitting rho ...")
     fds <- updateRho(fds, type=psiType, rhoRange=rhoRange,
             BPPARAM=BPPARAM, verbose=TRUE)
 
