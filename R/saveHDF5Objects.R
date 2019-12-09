@@ -16,6 +16,7 @@
 #'
 #' @examples
 #' fds <- createTestFraseRSettings()
+#' name(fds) <- "saveing_test"
 #' 
 #' # make sure the object is saved to disc
 #' dontWriteHDF5(fds) <- FALSE

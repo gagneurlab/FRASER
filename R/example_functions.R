@@ -59,15 +59,18 @@ createTestFraseRSettings <- function(workingDir=tempdir()){
 #' @export
 createTestFraseRDataSet <- function(workingDir=tempdir(), rerun=FALSE){
     # check if file exists already
-    padjHDF5 <- file.path(workingDir, "savedObjects", "Data_Analysis", 
-            "pajdBetaBinomial_psiSite.h5")
-    if(file.exists(padjHDF5)){
-        if(isTRUE(rerun)){
-            cleanCache(createTestFraseRSettings(workingDir), all=TRUE)
-        } else {
-            message(date(), ": Use existing cache data.")
-            return(loadFraseRDataSet(workingDir, name="Data_Analysis"))
+    hdf5Files <- file.path(workingDir, "savedObjects", "Data_Analysis", 
+            "fds-object.RDS")
+    if(all(file.exists(hdf5Files))){
+        if(isFALSE(rerun)){
+            fds <- loadFraseRDataSet(workingDir, name="Data_Analysis")
+            if(all(paste0(c("zScores", "pajdBetaBinomial", "predictedMeans"),
+                        "_", rep(psiTypes, 3)) %in% assayNames(fds))){
+                message(date(), ": Use existing cache data.")
+                return(fds)
+            }
         }
+        cleanCache(createTestFraseRSettings(workingDir), all=TRUE)
     }
     
     # get test sample annotation

@@ -66,17 +66,17 @@ FraseR <- function(fds, q, correction="PCA", iterations=15,
             currQ <- q[i]
         }
 
-        message("\n", date(), ": Fit step for: '", i, "'.\n")
+        message("\n", date(), ": Fit step for: '", i, "'.")
         fds <- fit(fds, correction=correction, q=currQ,
                 iterations=iterations, type=i, BPPARAM=BPPARAM, ...)
 
-        message("\n", date(), ": Compute p values for: '", i, "'.\n")
+        message(date(), ": Compute p values for: '", i, "'.")
         fds <- calculatePvalues(fds, type=i)
 
-        message("\n", date(), ": Adjust p values for: '", i, "'.\n")
+        message(date(), ": Adjust p values for: '", i, "'.")
         fds <- calculatePadjValues(fds, type=i)
 
-        #message("\n", date(), ": Compute Z scores for: '", i, "'.\n")
+        message(date(), ": Compute Z scores for: '", i, "'.")
         fds <- calculateZscore(fds, type=i)
     }
 

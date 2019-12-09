@@ -34,6 +34,7 @@ the given working dir. Internally it uses HDF5 files for all assays.
 }
 \examples{
 fds <- createTestFraseRSettings()
+name(fds) <- "saveing_test"
 
 # make sure the object is saved to disc
 dontWriteHDF5(fds) <- FALSE
