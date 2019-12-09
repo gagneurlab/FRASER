@@ -248,13 +248,12 @@ getGeneIDs <- function(fds, type, unique=TRUE){
 
 getPvalsPerGene <- function(fds, type, pvals=pVals(fds, type=type),
                     sampleID=NULL, method="holm", BPPARAM=bpparam()){
-    
     # extract data and take only the first index of per site
     dt <- data.table(
-            index=getSiteIndex(fds, type=type),
+            idx=getSiteIndex(fds, type=type),
             geneID=getGeneIDs(fds, type=type, unique=FALSE),
-            as.data.table(pvals))[!duplicated(index)]
-    dt <- dt[!is.na(geneID)]
+            as.data.table(pvals))
+    dt <- dt[!duplicated(idx) & !is.na(geneID)]
     setkey(dt, geneID)
     
     samples <- samples(fds)
