@@ -170,8 +170,8 @@ optimHyperParams <- function(fds, type, correction="PCA",
         
         if(sum(getAssayMatrix(fds_copy, type=type, "trueOutliers") != 0) == 0){
             warning(paste0("No outliers could be injected so the ", 
-                           "hyperparameter optimization could not run. ", 
-                           "Possible reason: too few junctions in the data."))
+                            "hyperparameter optimization could not run. ", 
+                            "Possible reason: too few junctions in the data."))
             return(fds)
         }
 

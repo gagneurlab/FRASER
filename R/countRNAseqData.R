@@ -65,6 +65,10 @@
 #'              non split read counts of all splice sites present in the 
 #'              dataset for all samples.
 #' @param sampleID The ID of the sample to be counted.
+#' @param spliceSiteCoords A GRanges object containing the positions of the 
+#'         splice sites. If it is NULL, then splice sites coordinates are 
+#'         calculated first based on the positions of the junctions defined 
+#'         from the split reads.
 #' @param longRead If TRUE, then the isLongRead option of 
 #' Rsubread::featureCounts is used when counting the non spliced reads 
 #' overlapping splice sites.
@@ -163,7 +167,7 @@ getSplitReadCountsForAllSamples <- function(fds, NcpuPerSample=1,
     if(file.exists(outFile) && isFALSE(recount)){
         
         counts <- makeGRangesFromDataFrame(fread(outFile), 
-                                           keep.extra.columns=TRUE)
+                                            keep.extra.columns=TRUE)
         
         # if counts for all samples are present in the tsv, return those counts
         if(all(samples(fds) %in% colnames(mcols(counts)))){
@@ -618,7 +622,7 @@ countNonSplicedReads <- function(sampleID, splitCounts, fds,
         
         # splice site map
         if(!("startID" %in% colnames(mcols(splitCounts))) | 
-           !("endID" %in% colnames(mcols(splitCounts)))){
+            !("endID" %in% colnames(mcols(splitCounts)))){
             splitCounts <- annotateSpliceSite(splitCounts)
         }
         
