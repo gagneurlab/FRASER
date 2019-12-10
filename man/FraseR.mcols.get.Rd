@@ -20,6 +20,8 @@ mcols
 getter and setter for mcols
 }
 \examples{
-  fds <- makeExampleFraseRDataSet()
+  fds <- createTestFraseRDataSet()
+  
   mcols(fds, type="psi5")
+  mcols(fds, type="psiSite")
 }

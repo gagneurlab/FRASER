@@ -503,8 +503,10 @@ setMethod("length", "FraseRDataSet", function(x) callNextMethod())
 #' 
 #' @return mcols
 #' @examples 
-#'   fds <- makeExampleFraseRDataSet()
+#'   fds <- createTestFraseRDataSet()
+#'   
 #'   mcols(fds, type="psi5")
+#'   mcols(fds, type="psiSite")
 #' @export
 FraseR.mcols.get <- function(x, type=NULL, ...){
     type <- checkReadType(x, type)

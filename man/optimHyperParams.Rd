@@ -60,10 +60,11 @@ ratios while maximizing the precision-recall curve.
 }
 \examples{
   # generate data
-  fds <- makeSimulatedFraserDataSet(j=500, m=20, q=4)
+  fds <- createTestFraseRDataSet()
   
   # run hyperparameter optimization
-  fds <- optimHyperParams(fds, type="psi5", correction="PCA")
+  fds <- optimHyperParams(fds, type="psi5", correction="PCA",
+          q_param=2:6, noise_param=0)
   
   # get estimated optimal dimension of the latent space
   bestQ(fds, type="psi5")

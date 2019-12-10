@@ -30,7 +30,8 @@
 #'   fds <- filterExpression(fds)
 #'
 #'   # Run analysis pipeline
-#'   fds <- FraseR(fds, q=5, iterations=2, correction='PCA')
+#'   fds <- FraseR(fds, q=2)
+#'   fds
 #'
 #'   # save the final FraseR object
 #'   saveFraseRDataSet(fds)
