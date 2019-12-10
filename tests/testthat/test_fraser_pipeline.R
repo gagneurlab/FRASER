@@ -12,6 +12,10 @@ test_that("FraseR function", {
 test_that("FraseRDataSet create settings", {
     fds <- createTestFraseRDataSet()
     expect_is(fds, "FraseRDataSet")
+    anames <- c(psiTypes, paste0(c("delta", "predictedMeans", 
+            "pvaluesBetaBinomial", "pajdBetaBinomial", "zScores"), "_", 
+            rep(psiTypes, 5)))
+    expect_equal(anames %in% assayNames(fds), !logical(length(anames)))
 })
 
 

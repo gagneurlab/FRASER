@@ -1,51 +1,17 @@
 #
 # helper scripts for the testing step
 #
-
-getDir <- function(useHome=FALSE){
-    if(useHome){
-        file.path(Sys.getenv("HOME"),  "FraseR_test_that")
-    } else {
-        file.path(tempdir(), "FraseR_test_that")
-    }
-}
-
-getName <- function(){
-    "test_that"
-}
-
-getFraseRTestFile <- function(useHome=FALSE){
-    file.path(getDir(useHome), getName(), "fds-object.RDS")
-}
-
-getFraseR <- function(clean=FALSE, useHome=FALSE){
-    fds <- NULL
-    try({
-        fds <- readRDS(getFraseRTestFile(useHome=useHome))
-        if(clean == TRUE){
-            unlink(getFraseRTestFile(useHome=useHome))
-            fds <- NULL
-        }
-    }, silent=TRUE)
-    if(is.null(fds)) {
-        fds <- createTestFraseRSettings()
-        workingDir(fds) <- getDir()
-        name(fds) <- getName()
-        verbose(fds) <- 0
-        dontWriteHDF5(fds) <- TRUE
-        dir.create(dirname(getFraseRTestFile(useHome=useHome)), recursive=TRUE)
-        
+getFraseR <- function(clean=FALSE){
+    if(!"initBPPARAM" %in% ls()){
         if(.Platform$OS.type != "windows"){
             register(MulticoreParam(min(4, bpworkers())))
         } else {
             register(SerialParam())
         }
-
-        fds <- countRNAData(fds)
-        fds <- calculatePSIValues(fds)
-        fds <- filterExpression(fds)
-        fds <- FraseR(fds, q=2, correction="PCA")
-        saveRDS(fds, getFraseRTestFile(useHome=useHome))
     }
-    return(fds)
+    initBPPARAM <- TRUE
+    assign("initBPPARAM", initBPPARAM, envir=parent.env(environment()))
+    
+    fds <- createTestFraseRDataSet(rerun=clean)
+    fds
 }
