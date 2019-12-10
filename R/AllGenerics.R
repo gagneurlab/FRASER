@@ -577,7 +577,8 @@ setReplaceMethod("rowRanges", "FraseRDataSet", FraseR.rowRanges.replace)
 #' @return FraseRDataSet
 #' @rdname counts
 #' @examples 
-#'  fds <- makeExampleFraseRDataSet()
+#'  fds <- createTestFraseRDataSet()
+#'  
 #'  counts(fds, type="psi5", side="ofInterest")
 #'  counts(fds, type="psi5", side="other")
 #'  head(K(fds, type="psi3"))
@@ -889,8 +890,9 @@ resultsByGenes <- function(res, geneColumn="hgncSymbol", method="BY"){
 #' @return FraseRDataSet
 #' @examples
 #'
-#' fds <- countRNAData(createTestFraseRSettings())
-#'
+#' fds <- createTestFraseRDataSet()
+#' 
+#' seqlevels(fds)
 #' seqlevels(mapSeqlevels(fds, style="UCSC"))
 #' seqlevels(mapSeqlevels(fds, style="Ensembl"))
 #' seqlevels(mapSeqlevels(fds, style="dbSNP"))

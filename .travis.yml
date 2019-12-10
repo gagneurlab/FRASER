@@ -17,7 +17,7 @@ r:
   - bioc-devel
   - bioc-release
   - 3.6.0
-  - 3.5.3
+#  - 3.5.3
   - 3.5.0
 
 stages:
@@ -36,9 +36,9 @@ jobs:
     - stage: Setup Cache
       r: 3.6.0
       script: true
-    - stage: Setup Cache
-      r: 3.5.3
-      script: true
+#    - stage: Setup Cache
+#      r: 3.5.3
+#      script: true
     - stage: Setup Cache
       r: 3.5.0
       script: true

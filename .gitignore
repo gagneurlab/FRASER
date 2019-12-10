@@ -29,3 +29,5 @@ vignettes/figure/*
 .nfs000*
 .Rsubread*
 kremer_ae_*.pdf
+doc
+Meta

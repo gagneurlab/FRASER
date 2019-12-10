@@ -21,8 +21,9 @@ Mapping of chromosome names
 }
 \examples{
 
-fds <- countRNAData(createTestFraseRSettings())
+fds <- createTestFraseRDataSet()
 
+seqlevels(fds)
 seqlevels(mapSeqlevels(fds, style="UCSC"))
 seqlevels(mapSeqlevels(fds, style="Ensembl"))
 seqlevels(mapSeqlevels(fds, style="dbSNP"))

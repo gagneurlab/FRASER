@@ -37,7 +37,8 @@ Getter/setter for count data
 setter for count data
 }
 \examples{
- fds <- makeExampleFraseRDataSet()
+ fds <- createTestFraseRDataSet()
+ 
  counts(fds, type="psi5", side="ofInterest")
  counts(fds, type="psi5", side="other")
  head(K(fds, type="psi3"))

@@ -29,3 +29,5 @@ kremer_ae_*
 ^tmp_libs/
 ^.*\.Rproj$
 ^\.Rproj\.user$
+^doc$
+^Meta$
