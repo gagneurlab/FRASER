@@ -170,15 +170,6 @@ intron-exon boundary of acceptor A.  While we calculate $\theta$ for the 5' and
 between $\theta_5$ and $\theta_3$ and hence call it jointly $\theta$ in the 
 following.
 
-\section{Installation}
-
-To install and load \fraser{}, run the follwing:
-
-<<installation, echo=TRUE, eval=FALSE>>=
-# TODO installation
-# library(FraseR)
-@
-
 \section{Quick guide to \fraser{}}
 
 Here we quickly show how to do an analysis with \fraser{}, starting from a 
@@ -193,10 +184,7 @@ fitted \fds{} object. These plotting functions are described in section
 \ref{sec:result-vis}.
 
 <<quick_faser_guide, echo=TRUE>>=
-# if(!requireNamespace("FraseR", quietly=TRUE)){
-#     devtools::install("../FraseR")
-# }
-library(FraseR)
+library(FRASER)
 
 # example of how to use parallelization: use 10 cores or the maximal number of 
 # available cores if fewer than 10 are available
