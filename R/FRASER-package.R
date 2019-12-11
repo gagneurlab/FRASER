@@ -1,11 +1,11 @@
-#'
+#' 
 #' FRASER: A package providing a workflow to detect aberrant splicing events
 #'     in RNA sequencing data in a rare disease cohort
 #'
 ### PACKAGE NAME
 #'
 #' @name FRASER
-#'
+#' @noRd
 #'
 #' @import data.table
 #'
@@ -104,9 +104,6 @@
 #'
 #' @useDynLib FRASER
 #'
-
-
-
 NULL
 
 #' TODO: Should be removed in the end!
@@ -114,7 +111,10 @@ NULL
 globalVariables(c(".", "J", ".N", ".asDataFrame", "End", "FN", "HTML", "Start", 
         "TP", "deltaPsi", "curgr", "gene", "lty", "hgnc_symbol", "id",
         "ldat", "p.adj", "pval", "pvalue", "sampleID", "sampleGroup", "chr",
-        "symbol", "type", "pseudocount",
+        "symbol", "type", "pseudocount", "known_intron", "known_start", 
+        "known_end", "..columns2Write", "maxVal", "idxGroup", "idxInCount", 
+        "idxInGroup", "lower", "nOk", "nPerGroup", "nsubset", "obs", "p", 
+        "plotPoint", "rn", "upper", 
         "..sum_cols", "acceptorGroupID", "acceptorGroupSize", "Aggregation",
         "aroc", "donorGroupID", "donorGroupSize", "dpsi", "exMask", "fact",
         "fdrByFeature", "fds_inputK", "fds_inputN", "fds_new", "fds_rhoIn",
@@ -126,4 +126,5 @@ globalVariables(c(".", "J", ".N", ".asDataFrame", "End", "FN", "HTML", "Start",
         "psiType", "psiValue", "seqlength", "seqlevel", "Step", "traceNr",
         "V1", "value", "zscore"),
         package="FRASER")
+
 options("FRASER.pseudoCount"=1)

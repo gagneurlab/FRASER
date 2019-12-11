@@ -538,8 +538,10 @@ setReplaceMethod("mcols", "FraseRDataSet", FraseR.mcols.replace)
 #' 
 #' @return GRanges object
 #' @examples 
-#'   fds <- makeExampleFraseRDataSet()
+#'   fds <- createTestFraseRDataSet()
+#'   
 #'   rowRanges(fds)
+#'   rowRanges(fds, type="psiSite")
 #' 
 #' @return FraseRDataSet
 FraseR.rowRanges.get <- function(x, type=NULL, ...){
@@ -549,13 +551,7 @@ FraseR.rowRanges.get <- function(x, type=NULL, ...){
 }
 FraseR.rowRanges.replace <- function(x, type=NULL, ..., value){
     type <- checkReadType(x, type)
-    if(type=="j") {
-        return(callNextMethod())
-        #rr <- rowRanges(x, type=type)
-        #rowRanges(rr, ...) <- value
-
-        #return(callNextMethod())
-    }
+    if(type=="j") return(callNextMethod())
     rowRanges(nonSplicedReads(x), ...) <- value
     return(x)
 }

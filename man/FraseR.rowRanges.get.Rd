@@ -22,7 +22,9 @@ FraseRDataSet
 Getter and setter for rowRanges
 }
 \examples{
-  fds <- makeExampleFraseRDataSet()
+  fds <- createTestFraseRDataSet()
+  
   rowRanges(fds)
+  rowRanges(fds, type="psiSite")
 
 }
