@@ -9,7 +9,7 @@ optimHyperParams(
   type,
   correction = "PCA",
   q_param = seq(2, min(40, ncol(fds)), by = 3),
-  noise_param = c(0, 0.5, 1, 2, 5),
+  noise_param = 0,
   minDeltaPsi = 0.1,
   iterations = 5,
   setSubset = 15000,

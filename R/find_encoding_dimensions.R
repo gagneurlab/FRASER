@@ -113,7 +113,7 @@ findEncodingDim <- function(i, fds, type, params, correction,
 #' @export
 optimHyperParams <- function(fds, type, correction="PCA",
                     q_param=seq(2, min(40, ncol(fds)), by=3),
-                    noise_param=c(0, 0.5, 1, 2, 5), minDeltaPsi=0.1,
+                    noise_param=0, minDeltaPsi=0.1,
                     iterations=5, setSubset=15000, injectFreq=1e-2,
                     BPPARAM=bpparam(), internalThreads=3, plot=TRUE){
     if(isFALSE(needsHyperOpt(correction))){
