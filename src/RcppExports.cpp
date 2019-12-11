@@ -8,7 +8,7 @@ using namespace Rcpp;
 
 // setPseudoCount
 double setPseudoCount(double pseudoCount);
-RcppExport SEXP _FraseR_setPseudoCount(SEXP pseudoCountSEXP) {
+RcppExport SEXP _FRASER_setPseudoCount(SEXP pseudoCountSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -19,7 +19,7 @@ END_RCPP
 }
 // predictYCpp
 arma::mat predictYCpp(arma::mat H, arma::mat D, arma::vec b);
-RcppExport SEXP _FraseR_predictYCpp(SEXP HSEXP, SEXP DSEXP, SEXP bSEXP) {
+RcppExport SEXP _FRASER_predictYCpp(SEXP HSEXP, SEXP DSEXP, SEXP bSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -32,7 +32,7 @@ END_RCPP
 }
 // predictMuCpp
 arma::mat predictMuCpp(arma::mat y);
-RcppExport SEXP _FraseR_predictMuCpp(SEXP ySEXP) {
+RcppExport SEXP _FRASER_predictMuCpp(SEXP ySEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -43,7 +43,7 @@ END_RCPP
 }
 // estLgammaAlpha
 arma::vec estLgammaAlpha(arma::vec y, arma::uvec pos, double ar);
-RcppExport SEXP _FraseR_estLgammaAlpha(SEXP ySEXP, SEXP posSEXP, SEXP arSEXP) {
+RcppExport SEXP _FRASER_estLgammaAlpha(SEXP ySEXP, SEXP posSEXP, SEXP arSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -56,7 +56,7 @@ END_RCPP
 }
 // estLgammaBeta
 arma::vec estLgammaBeta(arma::vec y, arma::uvec pos, double br);
-RcppExport SEXP _FraseR_estLgammaBeta(SEXP ySEXP, SEXP posSEXP, SEXP brSEXP) {
+RcppExport SEXP _FRASER_estLgammaBeta(SEXP ySEXP, SEXP posSEXP, SEXP brSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -69,7 +69,7 @@ END_RCPP
 }
 // truncNLL_db
 double truncNLL_db(arma::vec par, arma::mat H, arma::vec k, arma::vec n, double rho, double lambda);
-RcppExport SEXP _FraseR_truncNLL_db(SEXP parSEXP, SEXP HSEXP, SEXP kSEXP, SEXP nSEXP, SEXP rhoSEXP, SEXP lambdaSEXP) {
+RcppExport SEXP _FRASER_truncNLL_db(SEXP parSEXP, SEXP HSEXP, SEXP kSEXP, SEXP nSEXP, SEXP rhoSEXP, SEXP lambdaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -85,7 +85,7 @@ END_RCPP
 }
 // truncGrad_db
 arma::vec truncGrad_db(arma::vec par, arma::mat H, arma::vec k, arma::vec n, double rho, double lambda);
-RcppExport SEXP _FraseR_truncGrad_db(SEXP parSEXP, SEXP HSEXP, SEXP kSEXP, SEXP nSEXP, SEXP rhoSEXP, SEXP lambdaSEXP) {
+RcppExport SEXP _FRASER_truncGrad_db(SEXP parSEXP, SEXP HSEXP, SEXP kSEXP, SEXP nSEXP, SEXP rhoSEXP, SEXP lambdaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -101,7 +101,7 @@ END_RCPP
 }
 // truncNLL_e
 double truncNLL_e(arma::vec par, arma::mat x, arma::mat D, arma::vec b, arma::mat k, arma::mat n, arma::vec rho);
-RcppExport SEXP _FraseR_truncNLL_e(SEXP parSEXP, SEXP xSEXP, SEXP DSEXP, SEXP bSEXP, SEXP kSEXP, SEXP nSEXP, SEXP rhoSEXP) {
+RcppExport SEXP _FRASER_truncNLL_e(SEXP parSEXP, SEXP xSEXP, SEXP DSEXP, SEXP bSEXP, SEXP kSEXP, SEXP nSEXP, SEXP rhoSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -118,7 +118,7 @@ END_RCPP
 }
 // truncGrad_e
 arma::mat truncGrad_e(arma::vec par, arma::mat x, arma::mat D, arma::vec b, arma::mat k, arma::mat n, arma::vec rho);
-RcppExport SEXP _FraseR_truncGrad_e(SEXP parSEXP, SEXP xSEXP, SEXP DSEXP, SEXP bSEXP, SEXP kSEXP, SEXP nSEXP, SEXP rhoSEXP) {
+RcppExport SEXP _FRASER_truncGrad_e(SEXP parSEXP, SEXP xSEXP, SEXP DSEXP, SEXP bSEXP, SEXP kSEXP, SEXP nSEXP, SEXP rhoSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -135,7 +135,7 @@ END_RCPP
 }
 // truncNLL_rho
 double truncNLL_rho(double rho, arma::vec yi, arma::vec ki, arma::vec ni);
-RcppExport SEXP _FraseR_truncNLL_rho(SEXP rhoSEXP, SEXP yiSEXP, SEXP kiSEXP, SEXP niSEXP) {
+RcppExport SEXP _FRASER_truncNLL_rho(SEXP rhoSEXP, SEXP yiSEXP, SEXP kiSEXP, SEXP niSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -149,7 +149,7 @@ END_RCPP
 }
 // fullNLL
 arma::vec fullNLL(arma::mat y, arma::mat rho, arma::mat k, arma::mat n, arma::mat D, double lambda, bool byRows);
-RcppExport SEXP _FraseR_fullNLL(SEXP ySEXP, SEXP rhoSEXP, SEXP kSEXP, SEXP nSEXP, SEXP DSEXP, SEXP lambdaSEXP, SEXP byRowsSEXP) {
+RcppExport SEXP _FRASER_fullNLL(SEXP ySEXP, SEXP rhoSEXP, SEXP kSEXP, SEXP nSEXP, SEXP DSEXP, SEXP lambdaSEXP, SEXP byRowsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -166,7 +166,7 @@ END_RCPP
 }
 // truncWeightedNLL_db
 double truncWeightedNLL_db(arma::vec par, arma::mat H, arma::vec k, arma::vec n, double rho, double lambda, arma::vec w);
-RcppExport SEXP _FraseR_truncWeightedNLL_db(SEXP parSEXP, SEXP HSEXP, SEXP kSEXP, SEXP nSEXP, SEXP rhoSEXP, SEXP lambdaSEXP, SEXP wSEXP) {
+RcppExport SEXP _FRASER_truncWeightedNLL_db(SEXP parSEXP, SEXP HSEXP, SEXP kSEXP, SEXP nSEXP, SEXP rhoSEXP, SEXP lambdaSEXP, SEXP wSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -183,7 +183,7 @@ END_RCPP
 }
 // truncWeightedGrad_db
 arma::vec truncWeightedGrad_db(arma::vec par, arma::mat H, arma::vec k, arma::vec n, double rho, double lambda, arma::vec w);
-RcppExport SEXP _FraseR_truncWeightedGrad_db(SEXP parSEXP, SEXP HSEXP, SEXP kSEXP, SEXP nSEXP, SEXP rhoSEXP, SEXP lambdaSEXP, SEXP wSEXP) {
+RcppExport SEXP _FRASER_truncWeightedGrad_db(SEXP parSEXP, SEXP HSEXP, SEXP kSEXP, SEXP nSEXP, SEXP rhoSEXP, SEXP lambdaSEXP, SEXP wSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -200,23 +200,23 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_FraseR_setPseudoCount", (DL_FUNC) &_FraseR_setPseudoCount, 1},
-    {"_FraseR_predictYCpp", (DL_FUNC) &_FraseR_predictYCpp, 3},
-    {"_FraseR_predictMuCpp", (DL_FUNC) &_FraseR_predictMuCpp, 1},
-    {"_FraseR_estLgammaAlpha", (DL_FUNC) &_FraseR_estLgammaAlpha, 3},
-    {"_FraseR_estLgammaBeta", (DL_FUNC) &_FraseR_estLgammaBeta, 3},
-    {"_FraseR_truncNLL_db", (DL_FUNC) &_FraseR_truncNLL_db, 6},
-    {"_FraseR_truncGrad_db", (DL_FUNC) &_FraseR_truncGrad_db, 6},
-    {"_FraseR_truncNLL_e", (DL_FUNC) &_FraseR_truncNLL_e, 7},
-    {"_FraseR_truncGrad_e", (DL_FUNC) &_FraseR_truncGrad_e, 7},
-    {"_FraseR_truncNLL_rho", (DL_FUNC) &_FraseR_truncNLL_rho, 4},
-    {"_FraseR_fullNLL", (DL_FUNC) &_FraseR_fullNLL, 7},
-    {"_FraseR_truncWeightedNLL_db", (DL_FUNC) &_FraseR_truncWeightedNLL_db, 7},
-    {"_FraseR_truncWeightedGrad_db", (DL_FUNC) &_FraseR_truncWeightedGrad_db, 7},
+    {"_FRASER_setPseudoCount", (DL_FUNC) &_FRASER_setPseudoCount, 1},
+    {"_FRASER_predictYCpp", (DL_FUNC) &_FRASER_predictYCpp, 3},
+    {"_FRASER_predictMuCpp", (DL_FUNC) &_FRASER_predictMuCpp, 1},
+    {"_FRASER_estLgammaAlpha", (DL_FUNC) &_FRASER_estLgammaAlpha, 3},
+    {"_FRASER_estLgammaBeta", (DL_FUNC) &_FRASER_estLgammaBeta, 3},
+    {"_FRASER_truncNLL_db", (DL_FUNC) &_FRASER_truncNLL_db, 6},
+    {"_FRASER_truncGrad_db", (DL_FUNC) &_FRASER_truncGrad_db, 6},
+    {"_FRASER_truncNLL_e", (DL_FUNC) &_FRASER_truncNLL_e, 7},
+    {"_FRASER_truncGrad_e", (DL_FUNC) &_FRASER_truncGrad_e, 7},
+    {"_FRASER_truncNLL_rho", (DL_FUNC) &_FRASER_truncNLL_rho, 4},
+    {"_FRASER_fullNLL", (DL_FUNC) &_FRASER_fullNLL, 7},
+    {"_FRASER_truncWeightedNLL_db", (DL_FUNC) &_FRASER_truncWeightedNLL_db, 7},
+    {"_FRASER_truncWeightedGrad_db", (DL_FUNC) &_FRASER_truncWeightedGrad_db, 7},
     {NULL, NULL, 0}
 };
 
-RcppExport void R_init_FraseR(DllInfo *dll) {
+RcppExport void R_init_FRASER(DllInfo *dll) {
     R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
     R_useDynamicSymbols(dll, FALSE);
 }

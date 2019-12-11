@@ -1,5 +1,5 @@
 %\VignetteIndexEntry{FRASER: Find RAre Splicing Evens in RNA-seq Data}
-%\VignettePackage{FraseR}
+%\VignettePackage{FRASER}
 %\VignetteEngine{knitr::knitr}
 %\VignetteEncoding{UTF-8}
 
@@ -27,7 +27,7 @@ opts_chunk$set(
 \usepackage{verbatim}
 \usepackage[nottoc]{tocbibind}
 
-\newcommand{\fraser}{\Biocpkg{FraseR}}
+\newcommand{\fraser}{\Biocpkg{FRASER}}
 \newcommand{\fds}{\Rclass{FraseRDataSet}}
 
 \title{FRASER: Find RAre Splicing Events in RNA-seq data}
@@ -96,8 +96,7 @@ Mertes C, Gagneur J, \emph{et al.}
 
 <<loadFraseR, echo=FALSE>>=
 suppressPackageStartupMessages({
-    library(FraseR)
-    # devtools::load_all("../")
+    library(FRASER)
 })
 @
 
@@ -665,7 +664,7 @@ plotAberrantPerSample(fds)
 plotQQ(fds, result=res[1])
 
 # global qq-plot (on gene level since aggregate=TRUE)
-plotQQ(fds, type="psi5", aggregate=TRUE, global=TRUE)
+plotQQ(fds, aggregate=TRUE, global=TRUE)
 @
 
 \section{Acknowledgments}

@@ -1,10 +1,10 @@
 #'
-#' FraseR: A package providing a workflow to detect aberrant splicing events
+#' FRASER: A package providing a workflow to detect aberrant splicing events
 #'     in RNA sequencing data in a rare disease cohort
 #'
 ### PACKAGE NAME
 #'
-#' @name FraseR
+#' @name FRASER
 #'
 #'
 #' @import data.table
@@ -102,7 +102,7 @@
 #'
 #' @importFrom tibble as_tibble
 #'
-#' @useDynLib FraseR
+#' @useDynLib FRASER
 #'
 
 
@@ -125,5 +125,5 @@ globalVariables(c(".", "J", ".N", ".asDataFrame", "End", "FN", "HTML", "Start",
         "padj", "passed", "pByFeature", "pointNr", "predPsi", "psi3", "psi5",
         "psiType", "psiValue", "seqlength", "seqlevel", "Step", "traceNr",
         "V1", "value", "zscore"),
-        package="FraseR")
-options("FraseR.pseudoCount"=1)
+        package="FRASER")
+options("FRASER.pseudoCount"=1)

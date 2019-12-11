@@ -2,54 +2,54 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 .setPseudoCount <- function(pseudoCount) {
-    .Call('_FraseR_setPseudoCount', PACKAGE = 'FraseR', pseudoCount)
+    .Call('_FRASER_setPseudoCount', PACKAGE = 'FRASER', pseudoCount)
 }
 
 predictYCpp <- function(H, D, b) {
-    .Call('_FraseR_predictYCpp', PACKAGE = 'FraseR', H, D, b)
+    .Call('_FRASER_predictYCpp', PACKAGE = 'FRASER', H, D, b)
 }
 
 predictMuCpp <- function(y) {
-    .Call('_FraseR_predictMuCpp', PACKAGE = 'FraseR', y)
+    .Call('_FRASER_predictMuCpp', PACKAGE = 'FRASER', y)
 }
 
 estLgammaAlpha <- function(y, pos, ar) {
-    .Call('_FraseR_estLgammaAlpha', PACKAGE = 'FraseR', y, pos, ar)
+    .Call('_FRASER_estLgammaAlpha', PACKAGE = 'FRASER', y, pos, ar)
 }
 
 estLgammaBeta <- function(y, pos, br) {
-    .Call('_FraseR_estLgammaBeta', PACKAGE = 'FraseR', y, pos, br)
+    .Call('_FRASER_estLgammaBeta', PACKAGE = 'FRASER', y, pos, br)
 }
 
 truncNLL_db <- function(par, H, k, n, rho, lambda) {
-    .Call('_FraseR_truncNLL_db', PACKAGE = 'FraseR', par, H, k, n, rho, lambda)
+    .Call('_FRASER_truncNLL_db', PACKAGE = 'FRASER', par, H, k, n, rho, lambda)
 }
 
 truncGrad_db <- function(par, H, k, n, rho, lambda) {
-    .Call('_FraseR_truncGrad_db', PACKAGE = 'FraseR', par, H, k, n, rho, lambda)
+    .Call('_FRASER_truncGrad_db', PACKAGE = 'FRASER', par, H, k, n, rho, lambda)
 }
 
 truncNLL_e <- function(par, x, D, b, k, n, rho) {
-    .Call('_FraseR_truncNLL_e', PACKAGE = 'FraseR', par, x, D, b, k, n, rho)
+    .Call('_FRASER_truncNLL_e', PACKAGE = 'FRASER', par, x, D, b, k, n, rho)
 }
 
 truncGrad_e <- function(par, x, D, b, k, n, rho) {
-    .Call('_FraseR_truncGrad_e', PACKAGE = 'FraseR', par, x, D, b, k, n, rho)
+    .Call('_FRASER_truncGrad_e', PACKAGE = 'FRASER', par, x, D, b, k, n, rho)
 }
 
 truncNLL_rho <- function(rho, yi, ki, ni) {
-    .Call('_FraseR_truncNLL_rho', PACKAGE = 'FraseR', rho, yi, ki, ni)
+    .Call('_FRASER_truncNLL_rho', PACKAGE = 'FRASER', rho, yi, ki, ni)
 }
 
 fullNLL <- function(y, rho, k, n, D, lambda, byRows = FALSE) {
-    .Call('_FraseR_fullNLL', PACKAGE = 'FraseR', y, rho, k, n, D, lambda, byRows)
+    .Call('_FRASER_fullNLL', PACKAGE = 'FRASER', y, rho, k, n, D, lambda, byRows)
 }
 
 truncWeightedNLL_db <- function(par, H, k, n, rho, lambda, w) {
-    .Call('_FraseR_truncWeightedNLL_db', PACKAGE = 'FraseR', par, H, k, n, rho, lambda, w)
+    .Call('_FRASER_truncWeightedNLL_db', PACKAGE = 'FRASER', par, H, k, n, rho, lambda, w)
 }
 
 truncWeightedGrad_db <- function(par, H, k, n, rho, lambda, w) {
-    .Call('_FraseR_truncWeightedGrad_db', PACKAGE = 'FraseR', par, H, k, n, rho, lambda, w)
+    .Call('_FRASER_truncWeightedGrad_db', PACKAGE = 'FRASER', par, H, k, n, rho, lambda, w)
 }
 

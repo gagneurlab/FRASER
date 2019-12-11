@@ -1,4 +1,4 @@
-Package: FraseR
+Package: FRASER
 Type: Package
 Title: Find RAre Splicing Events in RNA-Seq Data
 Version: 0.99.7
@@ -77,7 +77,7 @@ Encoding: UTF-8
 Collate:
     variables.R
     getNSetterFuns.R
-    FraseR-package.R
+    FRASER-package.R
     FraseRDataSet-class.R
     AllGenerics.R
     Fraser-pipeline.R
