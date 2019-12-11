@@ -54,7 +54,8 @@
 #'          setnames
 #' @importFrom tidyr %>%
 #' @importFrom HDF5Array writeHDF5Array path
-#' @importFrom rhdf5 h5ls H5Fopen H5Fclose
+#' @importFrom rhdf5 h5ls H5Fopen H5Fclose H5Pclose H5Dget_create_plist
+#'          H5Pget_layout H5Pget_chunk
 #'
 ### P-Value calculation
 #'

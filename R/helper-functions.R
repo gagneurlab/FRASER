@@ -435,10 +435,22 @@ uniformSeqInfo <- function(grls){
 }
 
 getHDF5ChunkSize <- function(fds, assayName){
-    h5obj <- H5Fopen(getFraseRHDF5File(fds, assayName), flags="H5F_ACC_RDONLY")
-    ans <- rhdf5:::H5Dchunk_dims(h5obj&assayName)
-    H5Fclose(h5obj)
-    ans
+    # taken from here : https://github.com/grimbough/rhdf5/commit/52af7840c7
+    # To be backwards compatible to R version 3.5.0
+    # 
+    h5file <- getFraseRHDF5File(fds, assayName)
+    h5obj <- H5Fopen(h5file, flags="H5F_ACC_RDONLY")
+    h5dataset <- h5obj&assayName
+    
+    pid <- H5Dget_create_plist(h5dataset)
+    
+    on.exit(H5Pclose(pid), add=TRUE)
+    on.exit(H5Fclose(h5obj), add=TRUE)
+    
+    if (H5Pget_layout(pid) != "H5D_CHUNKED")
+        return(NULL)
+    else 
+        return(rev(H5Pget_chunk(pid)))
 }
 
 getMaxChunks2Read <- function(fds, assayName, max=15, axis=c("col", "row")){
