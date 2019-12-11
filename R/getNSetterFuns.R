@@ -52,9 +52,9 @@ NULL
 #' @aliases featureExclusionMask, `featureExclusionMask<-`
 #'
 #' @examples
-#' fds <- makeExampleFraseRDataSet()
+#' fds <- createTestFraseRDataSet()
+#' 
 #' featureExclusionMask(fds) <- sample(c(FALSE, TRUE), nrow(fds), replace=TRUE)
-#'
 #' featureExclusionMask(fds)
 #'
 #' @export featureExclusionMask
