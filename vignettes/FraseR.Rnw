@@ -78,7 +78,7 @@ If you use \fraser{} in published research, please cite:  \\
 Mertes C, Gagneur J, \emph{et al.}
 \textbf{FRASER: A statistical method to detect aberrant } \\
 \textbf{splicing events in RNA-Seq data} \\
-\emph{bioRxiv}\\
+\emph{\url{https://tinyurl.com/FRASER-paper}}\\
 \hline
 \end{tabular}
 \end{center}
