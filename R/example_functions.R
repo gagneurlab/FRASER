@@ -29,11 +29,11 @@ createTestFraseRSettings <- function(workingDir=tempdir()){
 
     # get sample data table
     sampleTable <- fread(system.file(
-            "extdata", "sampleTable.tsv", package="FraseR", mustWork=TRUE))
+            "extdata", "sampleTable.tsv", package="FRASER", mustWork=TRUE))
 
     # convert it to a bamFile list
     bamFiles <- system.file(
-        sampleTable[,bamFile], package="FraseR", mustWork=TRUE)
+        sampleTable[,bamFile], package="FRASER", mustWork=TRUE)
     sampleTable[,bamFile:=bamFiles]
 
     # TODO remove after example data update
