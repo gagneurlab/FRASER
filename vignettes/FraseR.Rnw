@@ -85,7 +85,7 @@ Mertes C, Gagneur J, \emph{et al.}
 
 \end{abstract}
 
-\packageVersion{\Sexpr{BiocStyle::pkg_ver("FraseR")}}
+\packageVersion{\Sexpr{BiocStyle::pkg_ver("FRASER")}}
 
 \newpage
 
@@ -269,8 +269,7 @@ table is given within the package:
 
 <<sampleData Table, echo=TRUE>>=
 sampleTable <- fread(system.file(
-    "extdata", "sampleTable.tsv", package="FraseR", mustWork=TRUE
-))
+    "extdata", "sampleTable.tsv", package="FRASER", mustWork=TRUE))
 head(sampleTable)
 @
 
@@ -291,14 +290,12 @@ options from the sample annotation above:
 
 <<FraseR setting example1, echo=TRUE>>=
 # convert it to a bamFile list
-bamFiles <- system.file(
-    sampleTable[,bamFile], package="FraseR", mustWork=TRUE
-)
+bamFiles <- system.file(sampleTable[,bamFile], package="FRASER", mustWork=TRUE)
 sampleTable[,bamFile:=bamFiles]
 
 # create FraseR object
 settings <- FraseRDataSet(colData=sampleTable, 
-        workingDir=file.path(Sys.getenv("HOME"), "FraseR"))
+        workingDir=file.path(Sys.getenv("HOME"), "FRASER"))
 
 # show the FraseRSettings object
 settings
@@ -340,16 +337,12 @@ together with the sample annotation from above to create the \fds:
 <<create fds with counts, echo=TRUE, eval=FALSE>>=
 
 # get raw counts 
-junctionCts   <- fread(system.file(
-    "extdata", "raw_junction_counts.tsv.gz", package="FraseR", 
-    mustWork=TRUE
-))
+junctionCts   <- fread(system.file("extdata", "raw_junction_counts.tsv.gz",
+    package="FRASER", mustWork=TRUE))
 head(junctionCts)
 
-spliceSiteCts <- fread(system.file(
-    "extdata", "raw_site_counts.tsv.gz", package="FraseR", 
-    mustWork=TRUE
-))
+spliceSiteCts <- fread(system.file("extdata", "raw_site_counts.tsv.gz",
+    package="FRASER", mustWork=TRUE))
 head(spliceSiteCts)
 
 # create FraseR object
@@ -435,7 +428,7 @@ transformed $\Psi$ values of the $topJ$ most variable introns for all samples:
 <<intron_sample_correlation, echo=TRUE, eval=FALSE>>=
 # Heatmap of the intron/sample expression
 plotCountCorHeatmap(fds, type="psi5", logit=TRUE, normalized=FALSE, 
-                    plotType="junctionSample", topJ=100, minDeltaPsi = 0.01)
+    plotType="junctionSample", topJ=100, minDeltaPsi = 0.01)
 @
 
 \subsection{Detection of aberrant splicing events}
@@ -456,9 +449,8 @@ p-values and z-scores for all $\Psi$ types. For more details see section
 \ref{sec:details}.
 
 <<model fitting, echo=TRUE>>=
-fds <- FraseR(fds, q=10,
-        correction="PCA") # we use the PCA approach here to speed up the tutorial
-                         # Should take around 3 min
+# This is computational heavy and can take around 3 min
+fds <- FraseR(fds, q=10)
 @
 
 To check whether the correction worked, we can have a look at the correlation 
@@ -542,10 +534,10 @@ confounders in the data. Currently the following methods are implemented:
 \end{itemize}
 
 <<control confounders, echo=TRUE>>=
-fds <- fit(fds, type="psi5", correction="PCA-BB-Decoder", q=5, 
-           iteration=2, # here: only 2 iteration to speed the calculation up
-                       # for the vignette, the default is 15 iterations
-           )
+# Using an alternative way to correct splicing ratios
+# here: only 2 iteration to speed the calculation up
+# for the vignette, the default is 15 iterations
+fds <- fit(fds, q=5, type="psi5", correction="PCA-BB-Decoder", iterations=2)
 @
 
 \subsubsection{Finding the dimension of the latent space}
@@ -561,8 +553,7 @@ for a subset of the dataset:
 
 <<findBestQ, echo=TRUE>>=
 # hyperparameter opimization 
-fds <- optimHyperParams(fds, type="psi5", 
-                        correction="PCA") # PCA used to speed it up
+fds <- optimHyperParams(fds, type="psi5")
                         
 # retrieve the estimated optimal dimension of the latent space
 bestQ(fds, type="psi5")
@@ -654,11 +645,6 @@ plotQQ(fds, result=res[1])
 # global qq-plot (on gene level since aggregate=TRUE)
 plotQQ(fds, aggregate=TRUE, global=TRUE)
 @
-
-\section{Acknowledgments}
-
-We thank Daniel Bader and Martin Morgan for input in the development of 
-\fraser{}.
 
 \section{Session Info}
 

@@ -1,4 +1,4 @@
 library(testthat)
-library(FraseR)
+library(FRASER)
 
-test_check("FraseR")
+test_check("FRASER")
