@@ -4,7 +4,7 @@
 \alias{K}
 \alias{N}
 \alias{counts,FraseRDataSet-method}
-\alias{counts<-,FraseRDataSet,ANY-method}
+\alias{counts<-,FraseRDataSet-method}
 \title{Getter/setter for count data}
 \usage{
 K(fds, type = currentType(fds))
@@ -13,7 +13,7 @@ N(fds, type = currentType(fds))
 
 \S4method{counts}{FraseRDataSet}(object, type = NULL, side = c("ofInterest", "otherSide"))
 
-\S4method{counts}{FraseRDataSet,ANY}(object, type = NULL, side = c("ofInterest", "otherSide"), ...) <- value
+\S4method{counts}{FraseRDataSet}(object, type = NULL, side = c("ofInterest", "otherSide"), ...) <- value
 }
 \arguments{
 \item{fds, object}{FraseRDataSet}

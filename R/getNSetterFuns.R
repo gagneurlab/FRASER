@@ -54,8 +54,9 @@ NULL
 #' @examples
 #' fds <- createTestFraseRDataSet()
 #' 
-#' featureExclusionMask(fds) <- sample(c(FALSE, TRUE), nrow(fds), replace=TRUE)
-#' featureExclusionMask(fds)
+#' featureExclusionMask(fds, type="psiSite") <- sample(
+#'         c(FALSE, TRUE), nrow(mcols(fds, type="psiSite")), replace=TRUE)
+#' featureExclusionMask(fds, type="psiSite")
 #'
 #' @export featureExclusionMask
 featureExclusionMask <- function(fds, type=currentType(fds)){

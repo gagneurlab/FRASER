@@ -32,7 +32,8 @@ features which we do not want to model by the autoencoder.
 \examples{
 fds <- createTestFraseRDataSet()
 
-featureExclusionMask(fds) <- sample(c(FALSE, TRUE), nrow(fds), replace=TRUE)
-featureExclusionMask(fds)
+featureExclusionMask(fds, type="psiSite") <- sample(
+        c(FALSE, TRUE), nrow(mcols(fds, type="psiSite")), replace=TRUE)
+featureExclusionMask(fds, type="psiSite")
 
 }
