@@ -188,7 +188,11 @@ library(FRASER)
 
 # example of how to use parallelization: use 10 cores or the maximal number of 
 # available cores if fewer than 10 are available
-register(MulticoreParam(workers=min(10, multicoreWorkers())))
+if(.Platform$OS.type == "windows"){
+    register(SnowParam(workers=min(10, snowWorkers())))
+} else{
+    register(MulticoreParam(workers=min(10, multicoreWorkers())))
+}
 
 # count data
 fds <- createTestFraseRSettings()

@@ -393,7 +393,7 @@ plotQQ <- function(fds, type=NULL, idx=NULL, result=NULL, aggregate=FALSE,
         }
         dt <- rbindlist(mclapply(type, getPlottingDT, fds=fds, axis="col",
                 idx=TRUE, aggregate=aggregate, Ncpus=Ncpus, ..., 
-                mc.cores=Ncpus))
+                mc.cores=ifelse(.Platform$OS.type == "windows", 1, Ncpus)))
         # remove duplicated entries donor/acceptor sites if not aggregated 
         # by a feature
         if(isFALSE(aggregate)){

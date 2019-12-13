@@ -830,7 +830,8 @@ annotateSpliceSite <- function(gr){
     # convert back to granges
     annogr <- makeGRangesFromDataFrame(annotadedDT, keep.extra.columns=TRUE)
     
-    ids <- mclapply(c("start", "end"), mc.cores=2, function(type){
+    mc.cores <- ifelse(.Platform$OS.type == "windows", 1, 2)
+    ids <- mclapply(c("start", "end"), mc.cores=mc.cores, function(type){
         # reduce annogr to only the specific type to prevent overlap
         annogrtmp <- annogr[annogr$type == type]
         ov <- findOverlaps(gr, annogrtmp, type=type)

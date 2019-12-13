@@ -597,7 +597,9 @@ getPlottingDT <- function(fds, axis=c("row", "col"), type=NULL, result=NULL,
         dt <- dt[!is.na(featureID)]
 
         # correct by gene and take the smallest p value
-        dt <- rbindlist(mclapply(unique(dt[,sampleID]), mc.cores=Ncpus,
+        dt <- rbindlist(mclapply(unique(dt[,sampleID]), 
+                                 mc.cores=ifelse(
+                                     .Platform$OS.type == "windows", 1, Ncpus),
             FUN=function(x){
                     dttmp <- dt[sampleID == x]
                     dttmp[, pval:=p.adjust(pval, method="holm"),

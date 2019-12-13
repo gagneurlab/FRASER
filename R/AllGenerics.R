@@ -644,7 +644,9 @@ setAs("DelayedMatrix", "data.table", function(from){
     } else if(length(chunks) < num.chunks){
         ans <- lapply(chunks, fun, from=from)
     } else {
-        ans <- mclapply(chunks, fun, from=from, mc.cores=mc.cores)
+        ans <- mclapply(chunks, fun, from=from, 
+                        mc.cores=ifelse(.Platform$OS.type == "windows", 1, 
+                                        mc.cores))
         isDT <- vapply(ans, is.data.table, FUN.VALUE=logical(1))
         if(sum(isDT) != length(chunks)){
             # error happend during extractions, redo
