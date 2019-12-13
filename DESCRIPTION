@@ -9,7 +9,7 @@ Maintainer: Christian Mertes <mertes@in.tum.de>
 Description: Detection of rare aberrant splicing events in transcriptome 
     profiles. The workflow aims to assist the diagnostics in the field of 
     rare diseases where RNA-seq is performed to identify splicing defects.
-License: Artistic-2.0
+License: MIT + file LICENSE
 Depends:
     R (>= 3.5),
     BiocParallel,
@@ -71,7 +71,7 @@ biocViews:
     Software,
     Genetics,
     Coverage
-URL: https://i12g-gagneurweb.in.tum.de/gitlab/mertes/FraseR/
+URL: https://github.com/gagneurlab/FRASER
 RoxygenNote: 7.0.2
 Encoding: UTF-8
 Collate:
