@@ -50,6 +50,7 @@ R.utils::withTimeout(timeout=2400, {
     try({
         print_log("Update packages")
         INSTALL(ask=FALSE, type=BTYPE, Ncpus=NCPUS)
+        BiocManager::valid()
     
         print_log("Install dev package")
         devtools::install(".", dependencies=TRUE, upgrade=TRUE, 
