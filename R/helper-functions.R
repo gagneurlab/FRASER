@@ -525,7 +525,7 @@ plotBasePlot <- function(ggplot, basePlot=FALSE){
     ggplot
 }
 
-getBPParam <- function(worker, tasks, ...){
+getBPParam <- function(worker, tasks=0, ...){
     ans <- MulticoreParam(workers=min(worker, multicoreWorkers()), tasks, ...)
     if(.Platform$OS.type != "unix") {
         ans <- SnowParam(workers=min(worker, multicoreWorkers()), 

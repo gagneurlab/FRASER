@@ -302,26 +302,6 @@ test_that("CPP gradient", {
         
         lgamma(1e-323)
         
-        
-        
-        library(microbenchmark)
-        bres <- microbenchmark(
-            rl = loosDb(par, ki=ki, ni=ni, H=H, rhoi=rhoi),
-            rg = gradDb(par, ki, ni, H, rhoi),
-            cl = cppnll(par, k=ki, n=ni, H=H, rho=rhoi),
-            cg = cppgr(par=par, H=H, k=ki, n=ni, rho=rhoi),
-            times=400
-        )
-        library(ggplot2)
-        autoplot(bres)
-        
-        
-        
-        
-        
-        
-        
-        
         #
         # Gradient and loss for E (calculated in a matrix fashion)
         #
