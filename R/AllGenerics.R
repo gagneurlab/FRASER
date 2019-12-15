@@ -629,21 +629,14 @@ setReplaceMethod("counts", "FraseRDataSet", function(object, type=NULL,
 })
 
 
-setAs("DelayedMatrix", "data.table", function(from){
-    as.data.table(from)
-})
-
-setAs("DelayedMatrix", "matrix", function(from){
-    as.matrix(as(from, "data.table"))
-})
-
-setAs("DataFrame", "data.table", function(from){
-    as.data.table(from)
-})
-
+setAs("DelayedMatrix", "data.table", function(from){ 
+    as.data.table(from) })
+setAs("DataFrame",     "data.table", function(from){ 
+    as.data.table(from) })
+setAs("DelayedMatrix", "matrix", function(from){ 
+    as.matrix(as(from, "data.table")) })
 setAs("DataFrame", "matrix", function(from){
-    as.matrix(as(from, "data.table"))
-})
+    as.matrix(as(from, "data.table")) })
 
 #'
 #' retrieve a single sample result object
