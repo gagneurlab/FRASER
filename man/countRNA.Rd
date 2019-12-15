@@ -13,7 +13,7 @@
 \usage{
 countRNAData(
   fds,
-  NcpuPerSample = 1,
+  NcpuPerSample = 3,
   junctionMap = NULL,
   minAnchor = 5,
   recount = FALSE,
@@ -25,7 +25,7 @@ countRNAData(
 
 getSplitReadCountsForAllSamples(
   fds,
-  NcpuPerSample = 1,
+  NcpuPerSample = 3,
   junctionMap = NULL,
   recount = FALSE,
   BPPARAM = bpparam(),
@@ -38,7 +38,7 @@ getSplitReadCountsForAllSamples(
 getNonSplitReadCountsForAllSamples(
   fds,
   splitCounts,
-  NcpuPerSample = 1,
+  NcpuPerSample = 3,
   minAnchor = 5,
   recount = FALSE,
   BPPARAM = bpparam(),
@@ -68,7 +68,7 @@ countNonSplicedReads(
   sampleID,
   splitCounts,
   fds,
-  NcpuPerSample = 1,
+  NcpuPerSample = 3,
   minAnchor = 5,
   recount = FALSE,
   spliceSiteCoords = NULL,

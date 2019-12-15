@@ -184,11 +184,8 @@ fitted \fds{} object. These plotting functions are described in section
 \ref{sec:result-vis}.
 
 <<quick_faser_guide, echo=TRUE>>=
+# load FRASER library
 library(FRASER)
-
-# example of how to use parallelization: use 10 cores or the maximal number of 
-# available cores if fewer than 10 are available
-register(MulticoreParam(workers=min(10, multicoreWorkers())))
 
 # count data
 fds <- createTestFraseRSettings()
@@ -321,8 +318,12 @@ sites.
 
 <<counting reads, echo=TRUE>>=
 # example of how to use parallelization: use 10 cores or the maximal number of 
-# available cores if fewer than 10 are available
-register(MulticoreParam(workers=min(10, multicoreWorkers())))
+# available cores if fewer than 10 are available and use Snow if on Windows
+if(.Platform$OS.type == "unix") {
+    register(MulticoreParam(workers=min(10, multicoreWorkers())))
+} else {
+    register(SnowParam(workers=min(10, multicoreWorkers())))
+}
 
 # count reads
 fds <- countRNAData(settings)

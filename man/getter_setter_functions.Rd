@@ -22,14 +22,9 @@ rho(fds, type = currentType(fds))
 
 zScores(fds, type = currentType(fds), byGroup = FALSE, ...)
 
-pVals(fds, type = currentType(fds), dist = "BetaBinomial", byGroup = FALSE)
+pVals(fds, type = currentType(fds), dist = "BetaBinomial", ...)
 
-padjVals(
-  fds,
-  type = currentType(fds),
-  dist = c("BetaBinomial"),
-  byGroup = FALSE
-)
+padjVals(fds, type = currentType(fds), dist = c("BetaBinomial"), ...)
 
 predictedMeans(fds, type = currentType(fds))
 

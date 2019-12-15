@@ -6,8 +6,7 @@ test_that("Check test randomization is correct", {
     # fds <- fds[which(mcols(fds, type="psi3")$psi3_tested)[1:20]]
     # name(fds) <- "betabinomTest"
     # fds <- saveFraseRDataSet(fds)
-    # parallel(fds) <- MulticoreParam(5)
-
+    
     # for(psiType in c("psi3", "psi5", "psiSite")){
      #   pvalls <- sapply(1:2, function(i){
      #       aname <- paste0("pvalue_", psiType)

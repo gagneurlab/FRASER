@@ -92,7 +92,7 @@ NULL
 #'             non spliced reads from RNA bam files.
 #' @return \code{\link{countRNAData}} returns a FraseRDataSet.
 #' @export
-countRNAData <- function(fds, NcpuPerSample=1, junctionMap=NULL, minAnchor=5,
+countRNAData <- function(fds, NcpuPerSample=3, junctionMap=NULL, minAnchor=5,
                         recount=FALSE, BPPARAM=bpparam(), genome=NULL,
                         countDir=file.path(workingDir(fds), "savedObjects", 
                                             nameNoSpace(name(fds))),
@@ -153,7 +153,7 @@ countRNAData <- function(fds, NcpuPerSample=1, junctionMap=NULL, minAnchor=5,
 #' @return \code{\link{getSplitReadCountsForAllSamples}} returns a GRanges 
 #' object.
 #' @export
-getSplitReadCountsForAllSamples <- function(fds, NcpuPerSample=1, 
+getSplitReadCountsForAllSamples <- function(fds, NcpuPerSample=3, 
                                             junctionMap=NULL, recount=FALSE, 
                                             BPPARAM=bpparam(), genome=NULL, 
                                             countFiles=NULL,
@@ -253,7 +253,7 @@ getSplitReadCountsForAllSamples <- function(fds, NcpuPerSample=1,
 #'          GRanges object.
 #' @export
 getNonSplitReadCountsForAllSamples <- function(fds, splitCounts, 
-                    NcpuPerSample=1, minAnchor=5, recount=FALSE, 
+                    NcpuPerSample=3, minAnchor=5, recount=FALSE, 
                     BPPARAM=bpparam(), longRead=TRUE, outFile=file.path(
                             workingDir(fds), "savedObjects", 
                             nameNoSpace(name(fds)), "nonSplitCounts.tsv.gz")){
@@ -430,13 +430,9 @@ countSplitReads <- function(sampleID, fds, NcpuPerSample=1, genome=NULL,
     }
     
     # extract the counts per chromosome
-    countsList <- bplapply(chromosomes,
-                            FUN=countSplitReadsPerChromosome,
-                            bamFile=bamFile,
-                            settings=fds,
-                            BPPARAM=MulticoreParam(NcpuPerSample, 
-                                                    length(chromosomes)),
-                            genome=genome)
+    countsList <- bplapply(chromosomes, FUN=countSplitReadsPerChromosome,
+            bamFile=bamFile, settings=fds, genome=genome,
+            BPPARAM=getBPParam(NcpuPerSample, length(chromosomes)))
     
     # sort and merge the results befor returning/saving
     countsGR <- sort(unlist(GRangesList(countsList)))
@@ -614,7 +610,7 @@ GRanges2SAF <- function(gr, minAnchor=1){
 #' @return \code{\link{countNonSplicedReads}} returns a GRanges object.
 #' @export
 countNonSplicedReads <- function(sampleID, splitCounts, fds,
-                                NcpuPerSample=1, minAnchor=5, recount=FALSE,
+                                NcpuPerSample=3, minAnchor=5, recount=FALSE,
                                 spliceSiteCoords=NULL, 
                                 longRead=TRUE){
     
@@ -830,7 +826,7 @@ annotateSpliceSite <- function(gr){
     # convert back to granges
     annogr <- makeGRangesFromDataFrame(annotadedDT, keep.extra.columns=TRUE)
     
-    ids <- mclapply(c("start", "end"), mc.cores=2, function(type){
+    ids <- lapply(c("start", "end"), function(type){
         # reduce annogr to only the specific type to prevent overlap
         annogrtmp <- annogr[annogr$type == type]
         ov <- findOverlaps(gr, annogrtmp, type=type)

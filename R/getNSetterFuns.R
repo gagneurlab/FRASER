@@ -241,10 +241,9 @@ zScores <- function(fds, type=currentType(fds), byGroup=FALSE, ...){
 }
 #' @describeIn getter_setter_functions This returns the calculated p-values.
 #' @export
-pVals <- function(fds, type=currentType(fds), 
-                    dist="BetaBinomial", byGroup=FALSE){
+pVals <- function(fds, type=currentType(fds), dist="BetaBinomial", ...){
     dist <- match.arg(dist, choices=c("BetaBinomial", "Binomial", "Normal"))
-    getAssayMatrix(fds, paste0("pvalues", dist), type=type, byGroup=byGroup)
+    getAssayMatrix(fds, paste0("pvalues", dist), type=type, ...)
 }
 
 `pVals<-` <- function(fds, type=currentType(fds),
@@ -256,10 +255,9 @@ pVals <- function(fds, type=currentType(fds),
 
 #' @describeIn getter_setter_functions This returns the adjusted p-values.
 #' @export
-padjVals <- function(fds, type=currentType(fds),
-                    dist=c("BetaBinomial"), byGroup=FALSE){
+padjVals <- function(fds, type=currentType(fds), dist=c("BetaBinomial"), ...){
     dist <- match.arg(dist, choices=c("BetaBinomial", "Binomial", "Normal"))
-    getAssayMatrix(fds, paste0("pajd", dist), type=type, byGroup=byGroup)
+    getAssayMatrix(fds, paste0("pajd", dist), type=type, ...)
 }
 
 `padjVals<-` <- function(fds, type=currentType(fds),
@@ -547,8 +545,7 @@ getIndexFromResultTable <- function(fds, resultTable, padj.method="holm"){
 }
 
 getPlottingDT <- function(fds, axis=c("row", "col"), type=NULL, result=NULL,
-                    idx=NULL, aggregate=FALSE, BPPARAM=SerialParam(),
-                    Ncpus=min(10, getDTthreads()), ...){
+                    idx=NULL, aggregate=FALSE, Ncpus=3, ...){
     if(!is.null(result)){
         type <- as.character(result$type)
         idx  <- getIndexFromResultTable(fds, result)
@@ -597,7 +594,8 @@ getPlottingDT <- function(fds, axis=c("row", "col"), type=NULL, result=NULL,
         dt <- dt[!is.na(featureID)]
 
         # correct by gene and take the smallest p value
-        dt <- rbindlist(mclapply(unique(dt[,sampleID]), mc.cores=Ncpus,
+        dt <- rbindlist(bplapply(unique(dt[,sampleID]), 
+            BPPARAM=getBPParam(Ncpus, length(unique(dt[,sampleID]))),
             FUN=function(x){
                     dttmp <- dt[sampleID == x]
                     dttmp[, pval:=p.adjust(pval, method="holm"),

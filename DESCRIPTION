@@ -100,7 +100,6 @@ Collate:
     updateD.R
     updateE.R
     updateRho.R
-    gradient_loss_R.R
     methods-makeExampleObj.R
     pvalsNzscore.R
     makeSimulatedDataset.R

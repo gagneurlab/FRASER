@@ -524,3 +524,12 @@ plotBasePlot <- function(ggplot, basePlot=FALSE){
     }
     ggplot
 }
+
+getBPParam <- function(worker, tasks, ...){
+    ans <- MulticoreParam(workers=min(worker, multicoreWorkers()), tasks, ...)
+    if(.Platform$OS.type != "unix") {
+        ans <- SnowParam(workers=min(worker, multicoreWorkers()), 
+                tasks=tasks, ...)
+    }
+    ans
+}

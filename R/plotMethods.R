@@ -391,9 +391,8 @@ plotQQ <- function(fds, type=NULL, idx=NULL, result=NULL, aggregate=FALSE,
         if(is.null(type)){
             type <- psiTypes
         }
-        dt <- rbindlist(mclapply(type, getPlottingDT, fds=fds, axis="col",
-                idx=TRUE, aggregate=aggregate, Ncpus=Ncpus, ..., 
-                mc.cores=Ncpus))
+        dt <- rbindlist(bplapply(type, getPlottingDT, fds=fds, axis="col",
+                idx=TRUE, aggregate=aggregate, Ncpus=Ncpus, ...))
         # remove duplicated entries donor/acceptor sites if not aggregated 
         # by a feature
         if(isFALSE(aggregate)){

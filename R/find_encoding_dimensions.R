@@ -57,7 +57,7 @@ eval_prot <- function(fds, type){
 
 findEncodingDim <- function(i, fds, type, params, correction,
                     internalBPPARAM=1, iterations){
-    iBPPARAM <- MulticoreParam(internalBPPARAM)
+    iBPPARAM <- getBPParam(internalBPPARAM)
 
     q_guess    <- params[i, "q"]
     noiseRatio <- params[i, "noise"]

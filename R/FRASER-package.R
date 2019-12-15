@@ -13,7 +13,6 @@
 #'
 ### Parallel computing
 #'
-#' @importFrom parallel mclapply detectCores
 #' @import BiocParallel
 #' @importFrom pcaMethods pca loadings
 #'

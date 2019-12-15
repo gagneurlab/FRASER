@@ -629,31 +629,8 @@ setReplaceMethod("counts", "FraseRDataSet", function(object, type=NULL,
 })
 
 
-options("FraseR-hdf5-cores"=1)
-options("FraseR-hdf5-num-chunks"=6)
 setAs("DelayedMatrix", "data.table", function(from){
-    chunk.size <- options()[['FraseR-hdf5-chunk-nrow']]
-    mc.cores   <- max(8,    options()[['FraseR-hdf5-cors']])
-    num.chunks <- max(6,    options()[['FraseR-hdf5-num-chunks']])
-
-    mc.cores <- min(mc.cores, max(1, detectCores() - 1))
-    chunks <- chunk(seq_len(dim(from)[1]), chunk.size)
-    fun <- function(x, from) as.data.table(from[x,])
-    if(mc.cores == 1){
-        return(as.data.table(x))
-    } else if(length(chunks) < num.chunks){
-        ans <- lapply(chunks, fun, from=from)
-    } else {
-        ans <- mclapply(chunks, fun, from=from, mc.cores=mc.cores)
-        isDT <- vapply(ans, is.data.table, FUN.VALUE=logical(1))
-        if(sum(isDT) != length(chunks)){
-            # error happend during extractions, redo
-            ans[!isDT] <- lapply(chunks[!isDT], fun, from=from)
-        }
-    }
-
-    ans <- rbindlist(ans)
-    ans
+    as.data.table(from)
 })
 
 setAs("DelayedMatrix", "matrix", function(from){

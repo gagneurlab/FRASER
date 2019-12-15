@@ -65,6 +65,11 @@ loadFraseRDataSet <- function(dir, name=NULL, file=NULL, upgrade=FALSE){
         ))
     }
     fds <- readRDS(fdsFile)
+    
+    # needs to be here due to our FraseR -> FRASER package change.
+    # can be removed later if the full pipeline is rerun
+    attributes(fds)$class <- structure("FraseRDataSet", package="FRASER")
+    
     e <- try(assays(fds), silent=TRUE)
     if(is.error(e)){
         if(grepl("DelayedMatrix .* representation .* Please update it ",
