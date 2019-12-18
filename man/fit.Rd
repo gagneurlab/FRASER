@@ -84,6 +84,8 @@ also possbile to directly fit the BB distrbution to the raw counts ("BB").
 \examples{
   # generate toy data
   fds <- makeExampleFraseRDataSet()
+  fds <- calculatePSIValues(fds)
+  fds <- filterExpression(fds) 
   
   # fit
   fds <- fit(fds, correction="PCA", q=3, type="psi5")

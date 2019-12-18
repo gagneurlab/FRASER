@@ -24,8 +24,7 @@
 #' @return FraseRDataSet
 #' @examples
 #'   # preprocessing
-#'   fds <- createTestFraseRSettings()
-#'   fds <- countRNAData(fds)
+#'   fds <- makeExampleFraseRDataSet()
 #'   fds <- calculatePSIValues(fds)
 #'   fds <- filterExpression(fds)
 #'

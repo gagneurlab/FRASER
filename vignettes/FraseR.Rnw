@@ -188,10 +188,9 @@ fitted \fds{} object. These plotting functions are described in section
 library(FRASER)
 
 # count data
-fds <- createTestFraseRSettings()
-# dontWriteHDF5(fds) <- TRUE
-
-fds <- countRNAData(fds)
+# fds <- createTestFraseRSettings()
+# fds <- countRNAData(fds)
+fds <- makeExampleFraseRDataSet()
 fds
 
 # compute stats
@@ -330,12 +329,16 @@ fds <- countRNAData(settings)
 fds
 @
 
-\subsection{Creating a \fds{} from existing count matrices}
+\subsubsection{Creating a \fds{} from existing count matrices}
 
 If the count matrices already exist, you can use these matrices directly 
 together with the sample annotation from above to create the \fds:
 
-<<create fds with counts, echo=TRUE, eval=FALSE>>=
+<<create fds with counts, echo=TRUE>>=
+# example sample annoation for precalculated count matrices
+sampleTable <- fread(system.file("extdata", "sampleTable_countTable.tsv", 
+                                 package="FRASER", mustWork=TRUE))
+head(sampleTable)
 
 # get raw counts 
 junctionCts   <- fread(system.file("extdata", "raw_junction_counts.tsv.gz",
@@ -347,9 +350,9 @@ spliceSiteCts <- fread(system.file("extdata", "raw_site_counts.tsv.gz",
 head(spliceSiteCts)
 
 # create FraseR object
-fds2 <- FraseRDataSet(colData=sampleTable, junctions=junctionCts,
+fds <- FraseRDataSet(colData=sampleTable, junctions=junctionCts,
         spliceSites=spliceSiteCts)
-fds2
+fds
 @
 
 \subsection{Data preprocessing and QC}
@@ -391,7 +394,7 @@ Furthemore one could filter for:
 \end{itemize}
 
 
-<<filter junctions, echo=TRUE>>=
+<<filter_junctions, echo=TRUE>>=
 fds <- filterExpression(fds, minDeltaPsi=0.0, filter=FALSE)
 
 plotFilterExpression(fds, bins=100)
@@ -407,7 +410,7 @@ fds_filtered
 # is otherwise too small
 @
 
-\section{Sample co-variation}
+\subsubsection{Sample co-variation}
 
 Since $\Psi$ values are ratios within a sample, one might think that there 
 should not be as much correlation structure as observed in gene expression data 
@@ -450,14 +453,14 @@ p-values and z-scores for all $\Psi$ types. For more details see section
 \ref{sec:details}.
 
 <<model fitting, echo=TRUE>>=
-# This is computational heavy and can take around 3 min
-fds <- FraseR(fds, q=10)
+# This is computational heavy on real size datasets and can take awhile
+fds <- FraseR(fds, q=3)
 @
 
 To check whether the correction worked, we can have a look at the correlation 
 heatmap using the normalized $\Psi$ values from the fit.
 
-<<covariation after fitting, echo=TRUE>>=
+<<covariation_after_fitting, echo=TRUE>>=
 plotCountCorHeatmap(fds, type="psi5", normalized=TRUE, logit=TRUE)
 @
 
@@ -538,7 +541,7 @@ confounders in the data. Currently the following methods are implemented:
 # Using an alternative way to correct splicing ratios
 # here: only 2 iteration to speed the calculation up
 # for the vignette, the default is 15 iterations
-fds <- fit(fds, q=5, type="psi5", correction="PCA-BB-Decoder", iterations=2)
+fds <- fit(fds, q=3, type="psi5", correction="PCA-BB-Decoder", iterations=2)
 @
 
 \subsubsection{Finding the dimension of the latent space}

@@ -2,20 +2,23 @@
 % Please edit documentation in R/methods-makeExampleObj.R
 \name{makeExampleFraseRDataSet}
 \alias{makeExampleFraseRDataSet}
+\alias{makeFittedExampleFraseRDataSet}
 \title{Create example data sets for FraseR}
 \usage{
-makeExampleFraseRDataSet()
+makeExampleFraseRDataSet(workingDir = tempdir())
+
+makeFittedExampleFraseRDataSet(workingDir = tempdir(), rerun = FALSE)
 }
 \value{
 FraseRDataSet
 }
 \description{
-Creates an example data set from a file or simulates a data set based
-on  random split read counts following a beta-binomial distribution with
-injected outliers.
+Creates an example data set from files with example counts. 
+\Rfunction{makeFittedExampleFraseRDataSet} additionally runs the FRASER 
+pipeline.
 }
 \examples{
   fds <- makeExampleFraseRDataSet()
   fds
-
+  
 }

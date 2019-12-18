@@ -84,7 +84,6 @@
 #' 
 #' @examples
 #'   fds <- countRNAData(createTestFraseRSettings())
-#'   fds <- countRNAData(createTestFraseRSettings(), 5)
 #'
 NULL
 

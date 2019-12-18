@@ -41,8 +41,7 @@ more control over each analysis step, one can call each function separately.
 }
 \examples{
   # preprocessing
-  fds <- createTestFraseRSettings()
-  fds <- countRNAData(fds)
+  fds <- makeExampleFraseRDataSet()
   fds <- calculatePSIValues(fds)
   fds <- filterExpression(fds)
 

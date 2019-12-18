@@ -9,7 +9,8 @@ annotateRanges(
   feature = "hgnc_symbol",
   featureName = feature,
   biotype = list("protein_coding"),
-  ensembl = NULL
+  ensembl = NULL,
+  GRCh = NULL
 )
 }
 \arguments{
@@ -23,7 +24,10 @@ annotated.}
 \item{biotype}{The biotype.}
 
 \item{ensembl}{The ensembl that should be used. If NULL, the default one is 
-used (hsapiens_gene_ensembl, GRCh37).}
+used (hsapiens_gene_ensembl, GRCh38).}
+
+\item{GRCh}{GRCh version to connect to if not the current GRCh38, 
+currently this can only be 37}
 }
 \value{
 FraseRDataSet
@@ -33,7 +37,7 @@ Annotates the given FraseRDataSet with the HGNC symbol with biomaRt
 }
 \examples{
 
-fds <- countRNAData(createTestFraseRSettings())
+fds <- makeExampleFraseRDataSet()
 fds <- annotateRanges(fds)
 
 rowRanges(fds, type="psi5")[,"hgnc_symbol"]

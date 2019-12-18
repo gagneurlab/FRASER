@@ -30,6 +30,6 @@ This function calculates the PSI values for each junction and splice site
 based on the FraseRDataSet object
 }
 \examples{
-  fds <- countRNAData(createTestFraseRSettings())
+  fds <- makeExampleFraseRDataSet()
   fds <- calculatePSIValues(fds)
 }

@@ -98,7 +98,9 @@ findEncodingDim <- function(i, fds, type, params, correction,
 #'
 #' @examples
 #'   # generate data
-#'   fds <- createTestFraseRDataSet()
+#'   fds <- makeExampleFraseRDataSet()
+#'   fds <- calculatePSIValues(fds)
+#'   fds <- filterExpression(fds) 
 #'   
 #'   # run hyperparameter optimization
 #'   fds <- optimHyperParams(fds, type="psi5", correction="PCA",

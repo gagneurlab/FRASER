@@ -48,7 +48,7 @@ This method can be used to filter out introns that are not reliably detected
 and to remove introns with no variablity between samples.
 }
 \examples{
-fds <- countRNAData(createTestFraseRSettings())
+fds <- makeExampleFraseRDataSet()
 fds <- calculatePSIValues(fds)
 fds <- filterExpression(fds)
 

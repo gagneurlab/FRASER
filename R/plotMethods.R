@@ -122,7 +122,7 @@
 #'             plotExpression plotCountCorHeatmap plotFilterExpression 
 #'             plotExpectedVsObservedPsi plotEncDimSearch
 #' @examples
-#' fds <- createTestFraseRDataSet()
+#' fds <- makeFittedExampleFraseRDataSet()
 #' 
 #' plotAberrantPerSample(fds, padjCutoff=NA, zScoreCutoff=0.5)
 #' 
@@ -659,6 +659,7 @@ plotCountCorHeatmap <- function(fds, type=c("psi5", "psi3", "psiSite"),
     # annotate with sample clusters
     if(is.null(sampleClustering)){
         # annotate samples with clusters from sample correlation heatmap
+        nClust <- min(nClust, nrow(cormatS))
         clusters <- as.factor(cutree(hclust(dist(cormatS)), k=nClust))
     } else if(!is.na(sampleClustering)){
         clusters <- sampleClustering

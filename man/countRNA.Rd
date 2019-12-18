@@ -210,6 +210,5 @@ given target (acceptor/donor) regions for a single sample.
 
 \examples{
   fds <- countRNAData(createTestFraseRSettings())
-  fds <- countRNAData(createTestFraseRSettings(), 5)
 
 }

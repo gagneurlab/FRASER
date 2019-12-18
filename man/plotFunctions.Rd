@@ -264,7 +264,7 @@ precision-recall curve). From this plot the optimum should be choosen for
 the \code{q} in fitting process.
 }
 \examples{
-fds <- createTestFraseRDataSet()
+fds <- makeFittedExampleFraseRDataSet()
 
 plotAberrantPerSample(fds, padjCutoff=NA, zScoreCutoff=0.5)
 

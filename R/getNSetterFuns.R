@@ -20,12 +20,20 @@
 #' 
 #' @examples 
 #' fds <- createTestFraseRDataSet()
+#' 
+#' # should assays be saved as hdf5? 
 #' dontWriteHDF5(fds)
 #' dontWriteHDF5 <- TRUE
-#' currentType(fds) <- "psi5"
 #' 
+#' # get/set the splice metric for which results should be retrieved 
+#' currentType(fds) <- "psi5"
+#' currentType(fds)
+#' 
+#' # get fitted parameters
 #' bestQ(fds)
+#' predictedMeans(fds)
 #' rho(fds)
+#' 
 #' # get statistics
 #' pVals(fds)
 #' padjVals(fds)

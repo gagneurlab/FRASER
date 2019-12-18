@@ -14,20 +14,22 @@
 #' @param featureName Name of the feature in the FraseRDataSet mcols.
 #' @param biotype The biotype.
 #' @param ensembl The ensembl that should be used. If NULL, the default one is 
-#' used (hsapiens_gene_ensembl, GRCh37).
+#' used (hsapiens_gene_ensembl, GRCh38).
+#' @param GRCh GRCh version to connect to if not the current GRCh38, 
+#' currently this can only be 37
 #' 
 #' @return FraseRDataSet
 #' 
 #' @examples
 #'
-#' fds <- countRNAData(createTestFraseRSettings())
+#' fds <- makeExampleFraseRDataSet()
 #' fds <- annotateRanges(fds)
 #'
 #' rowRanges(fds, type="psi5")[,"hgnc_symbol"]
 #'
 #' @export
 annotateRanges <- function(fds, feature="hgnc_symbol", featureName=feature,
-            biotype=list("protein_coding"), ensembl=NULL){
+            biotype=list("protein_coding"), ensembl=NULL, GRCh=NULL){
 
     # check input
     stopifnot(is(fds, "FraseRDataSet"))
@@ -36,7 +38,8 @@ annotateRanges <- function(fds, feature="hgnc_symbol", featureName=feature,
     if(is.null(ensembl)){
         tryCatch({
             ensemblOutput <- capture.output(ensembl <- useEnsembl(
-                    biomart="ensembl", dataset="hsapiens_gene_ensembl", GRCh=37
+                    biomart="ensembl", dataset="hsapiens_gene_ensembl", 
+                    GRCh=GRCh
             ))
         },
         error=function(e){

@@ -325,7 +325,7 @@ setReplaceMethod("nonSplicedReads", "FraseRDataSet", function(object, value){
 #'             junctions or splice sites
 #' @return A subsetted \code{FraseRDataSet} object
 #' @examples
-#'     fds <- countRNAData(createTestFraseRSettings())
+#'     fds <- makeExampleFraseRDataSet()
 #'     fds[1:10,1:10]
 #'     fds[,samples(fds) %in% c("sample1", "sample2")]
 #'     fds[1:10,by="ss"]
