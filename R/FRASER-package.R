@@ -18,7 +18,7 @@
 #'
 ### GRange/Experiment/bamFile packages
 #' @importFrom BiocGenerics updateObject counts counts<- strand strand<-
-#' @importFrom GenomicFeatures makeTxDbFromGFF intronsByTranscript
+#' @importFrom GenomicFeatures makeTxDbFromGFF intronsByTranscript genes
 #' @importFrom GenomicAlignments junctions readGAlignments summarizeJunctions
 #' @importFrom SummarizedExperiment assay assay<- assays assays<- assayNames
 #'          colData colData<- rowData rowRanges rowRanges<- SummarizedExperiment

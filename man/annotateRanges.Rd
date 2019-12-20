@@ -2,6 +2,7 @@
 % Please edit documentation in R/annotationOfRanges.R
 \name{annotateRanges}
 \alias{annotateRanges}
+\alias{annotateRangesWithTxDb}
 \title{Annotates the given FraseRDataSet with the HGNC symbol with biomaRt}
 \usage{
 annotateRanges(
@@ -10,7 +11,15 @@ annotateRanges(
   featureName = feature,
   biotype = list("protein_coding"),
   ensembl = NULL,
-  GRCh = NULL
+  GRCh = 37
+)
+
+annotateRangesWithTxDb(
+  fds,
+  feature = "SYMBOL",
+  featureName = "hgnc_symbol",
+  txdb = TxDb.Hsapiens.UCSC.hg19.knownGene,
+  orgDb = org.Hs.eg.db
 )
 }
 \arguments{
@@ -24,10 +33,15 @@ annotated.}
 \item{biotype}{The biotype.}
 
 \item{ensembl}{The ensembl that should be used. If NULL, the default one is 
-used (hsapiens_gene_ensembl, GRCh38).}
+used (hsapiens_gene_ensembl, GRCh37).}
 
-\item{GRCh}{GRCh version to connect to if not the current GRCh38, 
-currently this can only be 37}
+\item{GRCh}{GRCh version to connect to. If this is NULL, then the current 
+GRCh38 is used. Otherwise, this can only be 37 (default) at the moment 
+(see \code{\link{useEnsebml}}).}
+
+\item{txdb}{A TxDb object (default: TxDb.Hsapiens.UCSC.hg19.knownGene).}
+
+\item{orgDb}{An orgDb object (default: org.Hs.eg.db).}
 }
 \value{
 FraseRDataSet
@@ -38,7 +52,13 @@ Annotates the given FraseRDataSet with the HGNC symbol with biomaRt
 \examples{
 
 fds <- makeExampleFraseRDataSet()
-fds <- annotateRanges(fds)
+fds <- annotateRanges(fds, GRCh=NULL)
+
+require(TxDb.Hsapiens.UCSC.hg19.knownGene)
+txdb <- TxDb.Hsapiens.UCSC.hg19.knownGene
+require(org.Hs.eg.db)
+orgDb <- org.Hs.eg.db
+fds <- annotateRangesWithTxDb(fds, txdb=txdb, orgDb=orgDb)
 
 rowRanges(fds, type="psi5")[,"hgnc_symbol"]
 

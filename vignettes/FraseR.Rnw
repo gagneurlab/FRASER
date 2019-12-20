@@ -204,7 +204,12 @@ fds <- calculatePSIValues(fds)
 # use PCA to speed up the tutorial
 fds <- FraseR(fds, q=2, correction="PCA")
 
-fds <- annotateRanges(fds)
+# fds <- annotateRanges(fds) # uses biomart
+require(TxDb.Hsapiens.UCSC.hg19.knownGene)
+txdb <- TxDb.Hsapiens.UCSC.hg19.knownGene
+require(org.Hs.eg.db)
+orgDb <- org.Hs.eg.db
+fds <- annotateRangesWithTxDb(fds, txdb=txdb, orgDb=orgDb)
 
 # get results: usually, using p-value cutoff is recommended, but on the small 
 # example dataset, this would give no results, so we use z-scores here instead
@@ -477,8 +482,13 @@ cutoff or a cutoff on the $\Delta\Psi$ values between the observed and expected
 $\Psi$ values or both.
 
 <<result table, echo=TRUE>>=
-# annotate
-fds <- annotateRanges(fds)
+# annotate introns with the hgnc symbols of the corresponding gene
+require(TxDb.Hsapiens.UCSC.hg19.knownGene)
+txdb <- TxDb.Hsapiens.UCSC.hg19.knownGene
+require(org.Hs.eg.db)
+orgDb <- org.Hs.eg.db
+fds <- annotateRangesWithTxDb(fds, txdb=txdb, orgDb=orgDb)
+# fds <- annotateRanges(fds) # alternative way using biomart
 
 # retrive results
 res <- results(fds, padjCutoff=0.05, zScoreCutoff=NA, deltaPsiCutoff=0.3)

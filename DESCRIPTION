@@ -60,6 +60,8 @@ Suggests:
     rmarkdown,
     testthat,
     covr,
+    TxDb.Hsapiens.UCSC.hg19.knownGene,
+    org.Hs.eg.db,
 LinkingTo:
     Rcpp,
     RcppArmadillo

@@ -2,7 +2,7 @@
 #' Create example data sets for FraseR
 #'
 #' Creates an example data set from files with example counts. 
-#' \Rfunction{makeFittedExampleFraseRDataSet} additionally runs the FRASER 
+#' \code{makeFittedExampleFraseRDataSet} additionally runs the FRASER 
 #' pipeline.
 #' 
 #' @return FraseRDataSet
