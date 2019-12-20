@@ -1,7 +1,7 @@
 Package: FRASER
 Type: Package
 Title: Find RAre Splicing Events in RNA-Seq Data
-Version: 0.99.11
+Version: 0.99.12
 Date: 2019-10-05
 Author: Christian Mertes <mertes@in.tum.de>, Ines Scheller <scheller@in.tum.de>,
     Prof. Julien Gagneur <gagneur@in.tum.de>
@@ -17,6 +17,7 @@ Depends:
     Rsamtools,
     SummarizedExperiment (>= 1.6.3)
 Imports:
+    AnnotationDbi,
     BBmisc,
     Biobase,
     BiocGenerics,
@@ -62,7 +63,6 @@ Suggests:
     covr,
     TxDb.Hsapiens.UCSC.hg19.knownGene,
     org.Hs.eg.db,
-    AnnotationDbi,
 LinkingTo:
     Rcpp,
     RcppArmadillo
