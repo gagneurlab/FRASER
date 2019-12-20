@@ -32,6 +32,7 @@
 ### Annotation
 #'
 #' @importFrom biomaRt useEnsembl getBM
+#' @importFrom AnnotationDbi select
 #'
 #'
 ### Plotting

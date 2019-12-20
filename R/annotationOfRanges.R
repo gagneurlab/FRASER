@@ -18,8 +18,10 @@
 #' @param GRCh GRCh version to connect to. If this is NULL, then the current 
 #' GRCh38 is used. Otherwise, this can only be 37 (default) at the moment 
 #' (see \code{\link{useEnsebml}}).
-#' @param txdb A TxDb object (default: TxDb.Hsapiens.UCSC.hg19.knownGene).
-#' @param orgDb An orgDb object (default: org.Hs.eg.db).
+#' @param txdb A TxDb object. If this is NULL, then the default one is used, 
+#' currently this is TxDb.Hsapiens.UCSC.hg19.knownGene
+#' @param orgDb An orgDb object If this is NULL, then the default one is used, 
+#' currently this is org.Hs.eg.db
 #' 
 #' @return FraseRDataSet
 #' 
@@ -87,12 +89,27 @@ annotateRanges <- function(fds, feature="hgnc_symbol", featureName=feature,
 #' @export
 annotateRangesWithTxDb <- function(fds, feature="SYMBOL", 
                                     featureName="hgnc_symbol",
-                                    txdb=TxDb.Hsapiens.UCSC.hg19.knownGene, 
-                                    orgDb=org.Hs.eg.db){
+                                    txdb=NULL, orgDb=NULL){
  
     # check input
     stopifnot(is(fds, "FraseRDataSet"))
     if(length(fds) == 0) return(fds)
+    
+    if(is.null(txdb)){
+        if(requireNamespace("TxDb.Hsapiens.UCSC.hg19.knownGene")){
+            txdb <- TxDb.Hsapiens.UCSC.hg19.knownGene 
+        } else{
+            stop("Please provide a TxDb object as input.")
+        }
+        
+    }
+    if(is.null(orgDb)){
+        if(requireNamespace("org.Hs.eg.db")){
+            orgDb <- org.Hs.eg.db
+        } else{
+            stop("Please provide an OrgDb object to extract gene symbols")
+        }
+    }
     
     for(i in c("psi3", "psiSite")){
         # get GRanges object with the split reads which should be annotated

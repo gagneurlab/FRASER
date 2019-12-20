@@ -18,8 +18,8 @@ annotateRangesWithTxDb(
   fds,
   feature = "SYMBOL",
   featureName = "hgnc_symbol",
-  txdb = TxDb.Hsapiens.UCSC.hg19.knownGene,
-  orgDb = org.Hs.eg.db
+  txdb = NULL,
+  orgDb = NULL
 )
 }
 \arguments{
@@ -39,9 +39,11 @@ used (hsapiens_gene_ensembl, GRCh37).}
 GRCh38 is used. Otherwise, this can only be 37 (default) at the moment 
 (see \code{\link{useEnsebml}}).}
 
-\item{txdb}{A TxDb object (default: TxDb.Hsapiens.UCSC.hg19.knownGene).}
+\item{txdb}{A TxDb object. If this is NULL, then the default one is used, 
+currently this is TxDb.Hsapiens.UCSC.hg19.knownGene}
 
-\item{orgDb}{An orgDb object (default: org.Hs.eg.db).}
+\item{orgDb}{An orgDb object If this is NULL, then the default one is used, 
+currently this is org.Hs.eg.db}
 }
 \value{
 FraseRDataSet

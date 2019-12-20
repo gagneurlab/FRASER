@@ -9,6 +9,13 @@ makeExampleFraseRDataSet(workingDir = tempdir())
 
 makeFittedExampleFraseRDataSet(workingDir = tempdir(), rerun = FALSE)
 }
+\arguments{
+\item{workingDir}{directory where to store HDF5 and RDS files. Defaults to
+the current tempory R session folder.}
+
+\item{rerun}{Defaults to \code{FALSE}. If set to \code{TRUE} it reruns the
+full fit of the model.}
+}
 \value{
 FraseRDataSet
 }
