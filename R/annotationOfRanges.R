@@ -17,11 +17,11 @@
 #' used (hsapiens_gene_ensembl, GRCh37).
 #' @param GRCh GRCh version to connect to. If this is NULL, then the current 
 #' GRCh38 is used. Otherwise, this can only be 37 (default) at the moment 
-#' (see \code{\link{useEnsebml}}).
-#' @param txdb A TxDb object. If this is NULL, then the default one is used, 
-#' currently this is TxDb.Hsapiens.UCSC.hg19.knownGene
-#' @param orgDb An orgDb object If this is NULL, then the default one is used, 
-#' currently this is org.Hs.eg.db
+#' (see \code{useEnsembl}).
+#' @param txdb A \code{TxDb} object. If this is NULL, then the default one is used, 
+#' currently this is \code{TxDb.Hsapiens.UCSC.hg19.knownGene}.
+#' @param orgDb An \code{orgDb} object If this is NULL, then the default one is used, 
+#' currently this is \code{org.Hs.eg.db}.
 #' 
 #' @return FraseRDataSet
 #' 
