@@ -321,7 +321,7 @@ resulting \Rclass{FraseRDataSet} object contains two
 sites.
 
 <<counting reads, echo=TRUE>>=
-# example of how to use parallelization: use 10 cores or the maximal number of 
+# example of how to use parallelization: use 10 cores or the maximal number of
 # available cores if fewer than 10 are available and use Snow if on Windows
 if(.Platform$OS.type == "unix") {
     register(MulticoreParam(workers=min(10, multicoreWorkers())))
@@ -566,6 +566,7 @@ optimization step can take some time for the full dataset, we only show it here
 for a subset of the dataset:
 
 <<findBestQ, echo=TRUE>>=
+register(SerialParam())
 # hyperparameter opimization 
 fds <- optimHyperParams(fds, type="psi5")
                         
