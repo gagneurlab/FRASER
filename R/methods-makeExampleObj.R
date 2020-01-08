@@ -13,8 +13,11 @@
 #' @return FraseRDataSet
 #'
 #' @examples
+#'   # raw example dataset
 #'   fds <- makeExampleFraseRDataSet()
-#'   fds
+#'   
+#'   # example dataset after fit with p-values/z-scores
+#'   fds <- makeFittedExampleFraseRDataSet()
 #'   
 #' @rdname makeExampleFraseRDataSet
 #' @aliases makeExampleFraseRDataSet makeFittedExampleFraseRDataSet

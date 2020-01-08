@@ -98,13 +98,10 @@ findEncodingDim <- function(i, fds, type, params, correction,
 #'
 #' @examples
 #'   # generate data
-#'   fds <- makeExampleFraseRDataSet()
-#'   fds <- calculatePSIValues(fds)
-#'   fds <- filterExpression(fds) 
+#'   fds <- makeFittedExampleFraseRDataSet()
 #'   
 #'   # run hyperparameter optimization
-#'   fds <- optimHyperParams(fds, type="psi5", correction="PCA",
-#'           q_param=2:6, noise_param=0)
+#'   fds <- optimHyperParams(fds, type="psi5", correction="PCA")
 #'   
 #'   # get estimated optimal dimension of the latent space
 #'   bestQ(fds, type="psi5")

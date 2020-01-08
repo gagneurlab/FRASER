@@ -25,7 +25,10 @@ Creates an example data set from files with example counts.
 pipeline.
 }
 \examples{
+  # raw example dataset
   fds <- makeExampleFraseRDataSet()
-  fds
+  
+  # example dataset after fit with p-values/z-scores
+  fds <- makeFittedExampleFraseRDataSet()
   
 }
