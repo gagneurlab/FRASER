@@ -124,7 +124,8 @@
 #' @examples
 #' fds <- makeFittedExampleFraseRDataSet()
 #' 
-#' plotAberrantPerSample(fds, padjCutoff=NA, zScoreCutoff=0.5)
+#' plotAberrantPerSample(fds, padjCutoff=NA, zScoreCutoff=0.5, 
+#'                      deltaPsiCutoff=0.1)
 #' 
 #' plotVolcano(fds, "sample1", "psi5")
 #' 
