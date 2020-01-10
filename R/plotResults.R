@@ -47,7 +47,7 @@ plotSampleResults <- function(fds, sampleID=NULL, file=NULL,
     mainplot <- createMainPlotFraseR(fds, sampleID)
 
     #
-    htmlwidgets::saveWidget(mainplot[["plot"]], file=file)
+    saveWidget(mainplot[["plot"]], file=file)
     if(browseIt){
         browseURL(file)
     }
