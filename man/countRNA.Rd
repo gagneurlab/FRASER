@@ -187,25 +187,27 @@ a sample are set to zero.
 \item \code{countRNAData}: This method extracts and counts the split reads and
 non spliced reads from RNA bam files.
 
-\item \code{getSplitReadCountsForAllSamples}: This method creates a GRanges object containing the 
-split read counts from all specified samples.
+\item \code{getSplitReadCountsForAllSamples}: This method creates a GRanges 
+object containing the split read counts from all 
+specified samples.
 
-\item \code{getNonSplitReadCountsForAllSamples}: This method creates a GRanges object containing the 
-non split read counts at the exon-intron boundaries inferred 
-from the GRanges object containing the positions of all the 
-introns in this dataset.
+\item \code{getNonSplitReadCountsForAllSamples}: This method creates a GRanges 
+object containing the non split read counts at the 
+exon-intron boundaries inferred from the GRanges object 
+containing the positions of all the introns in this dataset.
 
-\item \code{addCountsToFraseRDataSet}: This method adds the split read and non split read
-counts to a existing FraseRDataSet containing the settings.
+\item \code{addCountsToFraseRDataSet}: This method adds the split read and 
+non split read counts to a existing FraseRDataSet 
+containing the settings.
 
-\item \code{countSplitReads}: This method counts all split reads in a bam file for a 
-single sample.
+\item \code{countSplitReads}: This method counts all split reads in a 
+bam file for a single sample.
 
-\item \code{mergeCounts}: This method merges counts for multiple samples into one 
-SummarizedExperiment object.
+\item \code{mergeCounts}: This method merges counts for multiple 
+samples into one SummarizedExperiment object.
 
-\item \code{countNonSplicedReads}: This method counts non spliced reads based on the 
-given target (acceptor/donor) regions for a single sample.
+\item \code{countNonSplicedReads}: This method counts non spliced reads based 
+on the given target (acceptor/donor) regions for a single sample.
 }}
 
 \examples{

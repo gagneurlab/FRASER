@@ -18,10 +18,10 @@
 #' @param GRCh GRCh version to connect to. If this is NULL, then the current 
 #' GRCh38 is used. Otherwise, this can only be 37 (default) at the moment 
 #' (see \code{useEnsembl}).
-#' @param txdb A \code{TxDb} object. If this is NULL, then the default one is used, 
-#' currently this is \code{TxDb.Hsapiens.UCSC.hg19.knownGene}.
-#' @param orgDb An \code{orgDb} object If this is NULL, then the default one is used, 
-#' currently this is \code{org.Hs.eg.db}.
+#' @param txdb A \code{TxDb} object. If this is NULL, then the default 
+#' one is used, currently this is \code{TxDb.Hsapiens.UCSC.hg19.knownGene}.
+#' @param orgDb An \code{orgDb} object If this is NULL, then the 
+#' default one is used, currently this is \code{org.Hs.eg.db}.
 #' 
 #' @return FraseRDataSet
 #' 
@@ -90,7 +90,7 @@ annotateRanges <- function(fds, feature="hgnc_symbol", featureName=feature,
 annotateRangesWithTxDb <- function(fds, feature="SYMBOL", 
                                     featureName="hgnc_symbol",
                                     txdb=NULL, orgDb=NULL){
- 
+    
     # check input
     stopifnot(is(fds, "FraseRDataSet"))
     if(length(fds) == 0) return(fds)
@@ -119,7 +119,7 @@ annotateRangesWithTxDb <- function(fds, feature="SYMBOL",
         anno <- genes(txdb)
         mcols(anno)[[featureName]] <- 
             select(orgDb, keys=mcols(anno)[,"gene_id"], columns=feature, 
-                   keytype="ENTREZID")[,feature]
+                    keytype="ENTREZID")[,feature]
         anno <- anno[!is.na(mcols(anno)[,featureName]),]
         anno <- anno[mcols(anno)[,featureName] != "",]
         if(any(strand(gr) == "*")){

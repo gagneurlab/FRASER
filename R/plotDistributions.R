@@ -51,7 +51,7 @@ plotJunctionDistribution <- function(fds, gr, type=gr$type, sampleIDs=NULL,
     data <- getPlotDistributionData(gr=gr, fds=fds, type=type, rmZeroCts)
 
     par(mfrow=c(ceiling(numPlots/mfrow),ifelse(numPlots < mfrow, numPlots, 
-                                               mfrow)), cex=cex)
+                                                mfrow)), cex=cex)
 
     # plot sample rank if requested
     if(!(length(plotRank) == 0 | isFALSE(plotRank))){
@@ -68,7 +68,7 @@ plotJunctionDistribution <- function(fds, gr, type=gr$type, sampleIDs=NULL,
     # plot values versus counts
     if(!(length(plotValVsCounts) == 0 | isFALSE(plotValVsCounts))){
         lapply(plotValVsCounts, plotValueVsCounts, gr=gr, fds=fds, data=NULL,
-               sampleIDs=sampleIDs, plotlog=TRUE, rmZeroCts=FALSE)
+                sampleIDs=sampleIDs, plotlog=TRUE, rmZeroCts=FALSE)
     }
     # plot qq plot
     if(isTRUE(qqplot)){
@@ -231,9 +231,9 @@ plotCountsAtSite <- function(gr, fds, type, sampleIDs=NULL, plotLegend=TRUE,
     # add legend if requested
     if(isScalarCharacter(plotLegend)){
         legend(plotLegend, c("Model fit", "+/- Variance", curPlotPar[,name]),
-               pch=20, lty=c(1,3, curPlotPar[,lty]),
-               col=c("firebrick",adjustcolor("firebrick", 0.5),
-                     rep(adjustcolor("black", 0.7), 3)))
+                pch=20, lty=c(1,3, curPlotPar[,lty]),
+                col=c("firebrick",adjustcolor("firebrick", 0.5),
+                        rep(adjustcolor("black", 0.7), 3)))
     }
 }
 
@@ -276,7 +276,7 @@ bbscewness <- function(size, a, b){
 #'
 #' @noRd
 plotSampleRank <- function(gr, fds, type, sampleIDs=NULL, delta=FALSE,
-                           plotLog=FALSE, rmZeroCts=FALSE, data=NULL, ...){
+                            plotLog=FALSE, rmZeroCts=FALSE, data=NULL, ...){
     # get data
     if(is.null(data)){
         data <- getPlotDistributionData(gr, fds, type, rmZeroCts)
@@ -289,10 +289,10 @@ plotSampleRank <- function(gr, fds, type, sampleIDs=NULL, delta=FALSE,
         ylab=paste0("delta_median( ", ylab, " )")
     }
     plot(sort(p),
-         main=getTitle("Sample rank", data$se,
-                       paste0(ifelse(delta, "delta ", ""), type)),
-         ylab=ylab, xlab="sample rank",
-         pch=16, col="gray"
+            main=getTitle("Sample rank", data$se,
+                            paste0(ifelse(delta, "delta ", ""), type)),
+            ylab=ylab, xlab="sample rank",
+            pch=16, col="gray"
     )
     if(!is.null(sampleIDs)){
         lapply(sampleIDs, addSamplePoints, x=rank(p), y=p)
@@ -353,7 +353,7 @@ addSamplePoints <- function(x, y, sample, pch=20, col="red", ...){
 #' @noRd
 getTitle <- function(plotMainTxt, gr, psiType){
     paste0(plotMainTxt, " for type: ", psiType,
-           "\nRange: ", seqnames(gr), ":", start(gr), "-", end(gr))
+            "\nRange: ", seqnames(gr), ":", start(gr), "-", end(gr))
 }
 
 #'
@@ -396,8 +396,8 @@ plotQQplot <- function(gr=NULL, fds=NULL, type=NULL, data=NULL, maxOutlier=2,
 
     # main plot area
     plot(NA, main=mainName, xlim=range(exp), ylim=ylim,
-         xlab=expression(-log[10] ~  "(expected P-value)"),
-         ylab=expression(-log[10] ~ "(observed P-value)"))
+            xlab=expression(-log[10] ~  "(expected P-value)"),
+            ylab=expression(-log[10] ~ "(observed P-value)"))
 
 
     # confidence band
@@ -425,7 +425,7 @@ plotQQplot <- function(gr=NULL, fds=NULL, type=NULL, data=NULL, maxOutlier=2,
     if(isTRUE(sample)){
         lo <- length(obs)
         plotPoint <- seq_len(lo) %in% unique(c(seq_len(min(lo, 100)), 
-                                               sort(sample(seq_len(lo),
+                                                sort(sample(seq_len(lo),
                 size = min(lo, 30000), 
                 prob=log10(1+rev(seq_len(lo))) /
                     sum(log10(1+rev(seq_len(lo))))))))
@@ -471,7 +471,7 @@ testPlotting <- function(){
         fds  <- loadFraseRDataSet(
             "/s/project/fraser/analysis/datasets", "kremer-bader-et-al")
         grdt <- as.data.table(metadata(fds)[[6]])[p.adj < 1 & 
-                                                      abs(deltaPsi) > 0.1]
+                                                    abs(deltaPsi) > 0.1]
         gra   <- makeGRangesFromDataFrame(
                     keep.extra.columns = TRUE,
                     grdt[order(p.adj)][

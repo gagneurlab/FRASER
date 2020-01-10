@@ -305,6 +305,9 @@ setMethod("nonSplicedReads", "FraseRDataSet", function(object){
 #' @param value A RangedSummarizedExperiment object containing the counts for 
 #' the non spliced reads overlapping splice sites in the fds.
 #' @return RangedSummarizedExperiment (getter) or FraseRDataSet (setter)
+#' @examples 
+#' fds <- createTestFraseRDataSet()
+#' nonSplicedReads(fds)
 #' @export
 #' @rdname nonSplicedReads
 setReplaceMethod("nonSplicedReads", "FraseRDataSet", function(object, value){
@@ -421,7 +424,7 @@ setMethod("assayNames", "FraseRDataSet", function(x) {
 
 
 #'
-#' Returns the assay corrensonding to the given name/index of the FraseRDataSet
+#' Returns the assay for the given name/index of the FraseRDataSet
 #'
 #' @param x FraseRDataSet
 #' @param ... Parameters passed on to SummarizedExperiment::assays() 

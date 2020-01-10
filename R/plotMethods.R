@@ -257,8 +257,8 @@ plotAberrantPerSample <- function(fds, main, type=c("psi3", "psi5", "psiSite"),
 #' @rdname plotFunctions
 #' @export
 plotExpression <- function(fds, type=c("psi5", "psi3", "psiSite"),
-                           site=NULL, result=NULL, colGroup=NULL, basePlot=TRUE,
-                           main=NULL, ...){
+                            site=NULL, result=NULL, colGroup=NULL, 
+                            basePlot=TRUE, main=NULL, ...){
     if(!is.null(result)){
         type <- as.character(result$type)
         site <- getIndexFromResultTable(fds, result)
@@ -384,7 +384,7 @@ plotQQ <- function(fds, type=NULL, idx=NULL, result=NULL, aggregate=FALSE,
     } else if(!(is.logical(aggregate) |
                 all(aggregate %in% colnames(mcols(fds))))){
         stop("Please provide TRUE/FALSE or a ",
-             "charactor matching a column name in mcols.")
+            "charactor matching a column name in mcols.")
     }
 
     if(isTRUE(global)){
@@ -496,13 +496,13 @@ plotQQ <- function(fds, type=NULL, idx=NULL, result=NULL, aggregate=FALSE,
 #' @rdname plotFunctions
 #' @export
 plotEncDimSearch <- function(fds, type=c("psi3", "psi5", "psiSite"), 
-                             plotType=c("auc", "loss")){
+                                plotType=c("auc", "loss")){
     type <- match.arg(type)
     plotType <- match.arg(plotType)
     data <- hyperParams(fds, type=type, all=TRUE)
     if (is.null(data)) {
         warning(paste("no hyperparameters were estimated for", type, 
-                      "\nPlease use `optimHyperParams` to compute them."))
+                        "\nPlease use `optimHyperParams` to compute them."))
         return(NULL)
     }
     if(!"nsubset" %in% colnames(data)){
@@ -637,7 +637,7 @@ plotCountCorHeatmap <- function(fds, type=c("psi5", "psi3", "psiSite"),
         fds <- fds[expRowsMax & expRowsMedian,,by=type]
         j2keepVa <- variableJunctions(fds, type, minDeltaPsi)
         j2keepDP <- rowQuantiles(kmat[expRowsMax & expRowsMedian,],
-                                 probs=0.75) >= 10
+                                    probs=0.75) >= 10
         j2keep <- j2keepDP & j2keepVa
         xmat_rc_2_plot <- xmat_rc[j2keep,]
         mostVarKeep <- subsetKMostVariableJunctions(fds[j2keep,,by=type],
@@ -685,7 +685,7 @@ plotCountCorHeatmap <- function(fds, type=c("psi5", "psi3", "psiSite"),
             rowMeans(xmat)
         }
         meanPsiBins <- cut(meanPsi, breaks = c(0, 0.33, 0.66, 1),
-                           include.lowest=TRUE)
+                            include.lowest=TRUE)
         if(isTRUE(plotMeanPsi)){
             if(!is.null(nrow(annotation_row))){
                 annotation_row$meanPsi <- meanPsiBins
@@ -715,7 +715,7 @@ plotCountCorHeatmap <- function(fds, type=c("psi5", "psi3", "psiSite"),
 
     if(is.null(main)){
         main <- ifelse(normalized, "Normalized row-centered ", 
-                       "Raw row-centered ")
+                        "Raw row-centered ")
         if(plotType == "sampleCorrelation"){
             if(isTRUE(logit)){
                 main <- paste0(main, "Logit(PSI) correlation (", type, ")")
@@ -725,7 +725,7 @@ plotCountCorHeatmap <- function(fds, type=c("psi5", "psi3", "psiSite"),
         } else {
             if(isTRUE(logit)){
                 main <- paste0(main, "Logit(PSI) data (", type, ", top ", topJ, 
-                               ")")
+                                ")")
             } else {
                 main <- paste0(main, "PSI data (", type, ", top ", topJ, ")")
             }
@@ -733,9 +733,9 @@ plotCountCorHeatmap <- function(fds, type=c("psi5", "psi3", "psiSite"),
     }
 
     pheatmap(cormat, show_rownames=show_rownames, show_colnames=show_colnames,
-             main=main, annotation_col=annotation_col, breaks=breaks,
-             annotation_row=annotation_row, ..., border_color=border_color,
-             color=colorRampPalette(colors=rev(brewer.pal(11, "RdBu")))(50)
+            main=main, annotation_col=annotation_col, breaks=breaks,
+            annotation_row=annotation_row, ..., border_color=border_color,
+            color=colorRampPalette(colors=rev(brewer.pal(11, "RdBu")))(50)
     )
 }
 
@@ -808,7 +808,7 @@ plotLoss <- function(fds, type){
     
     # summaries
     ggplot(dt2plot[Aggregation != "sd"], aes(x=Iteration, y=Loss, col=Step, 
-                                             lty=Aggregation)) +
+                                                lty=Aggregation)) +
         geom_ribbon(data=dt2plot[Aggregation == "mean",], aes(
             ymin = dt2plot[Aggregation == "mean", Loss] - 
                 dt2plot[Aggregation == "sd", Loss],

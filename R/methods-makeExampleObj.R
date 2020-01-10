@@ -25,19 +25,20 @@
 makeExampleFraseRDataSet <- function(workingDir=tempdir()){
     # example sample annoation
     sampleTable <- fread(system.file(
-        "extdata", "sampleTable_countTable.tsv", package="FRASER", mustWork=TRUE))
+        "extdata", "sampleTable_countTable.tsv", package="FRASER", 
+        mustWork=TRUE))
     
     # get raw counts 
-    junctionCts   <- fread(system.file("extdata", "raw_junction_counts.tsv.gz",
-                                       package="FRASER", mustWork=TRUE))
+    junctionCts <- fread(system.file("extdata", "raw_junction_counts.tsv.gz",
+                                        package="FRASER", mustWork=TRUE))
     
     spliceSiteCts <- fread(system.file("extdata", "raw_site_counts.tsv.gz",
-                                       package="FRASER", mustWork=TRUE))
+                                        package="FRASER", mustWork=TRUE))
     
     # create FraseR object
     fds <- FraseRDataSet(colData=sampleTable, junctions=junctionCts,
-                         spliceSites=spliceSiteCts, workingDir=workingDir,
-                         name="Example_Dataset")
+                            spliceSites=spliceSiteCts, workingDir=workingDir,
+                            name="Example_Dataset")
     return(fds)
 }
 
@@ -46,12 +47,12 @@ makeExampleFraseRDataSet <- function(workingDir=tempdir()){
 makeFittedExampleFraseRDataSet <- function(workingDir=tempdir(), rerun=FALSE){
     # check if file exists already
     hdf5Files <- file.path(workingDir, "savedObjects", "Example_Dataset", 
-                           "fds-object.RDS")
+                            "fds-object.RDS")
     if(all(file.exists(hdf5Files))){
         if(isFALSE(rerun)){
             fds <- loadFraseRDataSet(workingDir, name="Example_Dataset")
             if(all(paste0(c("zScores", "pajdBetaBinomial", "predictedMeans"),
-                          "_", rep(psiTypes, 3)) %in% assayNames(fds))){
+                            "_", rep(psiTypes, 3)) %in% assayNames(fds))){
                 message(date(), ": Use existing cache data.")
                 return(fds)
             }

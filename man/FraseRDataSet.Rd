@@ -34,11 +34,13 @@ annotation (colData) or count tables (junctions/spliceSites).
     
     # example sample annoation
     sampleTable <- fread(system.file(
-        "extdata", "sampleTable_countTable.tsv", package="FRASER", mustWork=TRUE))
+        "extdata", "sampleTable_countTable.tsv", package="FRASER", 
+        mustWork=TRUE))
         
     # get raw counts 
-    junctionCts   <- fread(system.file("extdata", "raw_junction_counts.tsv.gz",
-                                package="FRASER", mustWork=TRUE))
+    junctionCts   <- fread(system.file("extdata", 
+                                         "raw_junction_counts.tsv.gz",
+                                         package="FRASER", mustWork=TRUE))
                                 
     spliceSiteCts <- fread(system.file("extdata", "raw_site_counts.tsv.gz",
                                        package="FRASER", mustWork=TRUE))
