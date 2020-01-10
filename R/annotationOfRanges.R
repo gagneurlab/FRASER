@@ -97,7 +97,8 @@ annotateRangesWithTxDb <- function(fds, feature="SYMBOL",
     
     if(is.null(txdb)){
         if(requireNamespace("TxDb.Hsapiens.UCSC.hg19.knownGene")){
-            txdb <- TxDb.Hsapiens.UCSC.hg19.knownGene 
+            txdb <- 
+        TxDb.Hsapiens.UCSC.hg19.knownGene::TxDb.Hsapiens.UCSC.hg19.knownGene 
         } else{
             stop("Please provide a TxDb object as input.")
         }
@@ -105,7 +106,7 @@ annotateRangesWithTxDb <- function(fds, feature="SYMBOL",
     }
     if(is.null(orgDb)){
         if(requireNamespace("org.Hs.eg.db")){
-            orgDb <- org.Hs.eg.db
+            orgDb <- org.Hs.eg.db::org.Hs.eg.db
         } else{
             stop("Please provide an OrgDb object to extract gene symbols")
         }
