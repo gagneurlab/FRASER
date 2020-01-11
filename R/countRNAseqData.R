@@ -578,7 +578,7 @@ getNonSplicedCountCacheFile <- function(sampleID, settings){
     
     # cache folder
     cachedir <- file.path(workingDir(settings), "cache", "nonSplicedCounts", 
-                          nameNoSpace(name(fds)))
+                          nameNoSpace(name(settings)))
     if(!dir.exists(cachedir)){
         dir.create(cachedir, recursive=TRUE)
     }
