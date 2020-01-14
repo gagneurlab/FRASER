@@ -100,6 +100,7 @@
 #'          annotate geom_histogram scale_fill_manual xlim scale_colour_manual
 #'          element_blank
 #' @importFrom ggpubr ggarrange
+#' @importFrom htmlwidgets saveWidget
 #'
 #' @importFrom tibble as_tibble
 #'

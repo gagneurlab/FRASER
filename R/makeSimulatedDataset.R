@@ -494,6 +494,7 @@ injectOutliers <- function(fds, type=c("psi5", "psi3", "psiSite"),
     
     
     # sample primary injection
+    primary <- NULL
     primaryInjection <- merge(as.data.table(list_index), dt,
             sort=FALSE, by.x="row", by.y="idxGroup", allow.cartesian=TRUE)
     primaryInjection[,primary:=idxInGroup==sample(idxInGroup,1),by="row,col"]

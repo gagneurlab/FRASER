@@ -1,7 +1,7 @@
 Package: FRASER
 Type: Package
 Title: Find RAre Splicing Events in RNA-Seq Data
-Version: 0.99.14
+Version: 0.99.15
 Date: 2019-10-05
 Author: Christian Mertes <mertes@in.tum.de>, Ines Scheller <scheller@in.tum.de>,
     Prof. Julien Gagneur <gagneur@in.tum.de>
@@ -11,7 +11,6 @@ Description: Detection of rare aberrant splicing events in transcriptome
     rare diseases where RNA-seq is performed to identify splicing defects.
 License: MIT + file LICENSE
 Depends:
-    R (>= 3.5),
     BiocParallel,
     data.table,
     Rsamtools,
@@ -30,6 +29,7 @@ Imports:
     GenomicAlignments,
     GenomicFeatures,
     GenomicRanges,
+    htmlwidgets,
     IRanges,
     graphics,
     grDevices,

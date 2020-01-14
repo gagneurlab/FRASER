@@ -101,8 +101,8 @@ plotCountsAtSite <- function(gr, fds, type, sample=NULL, plotLog=TRUE){
     }
     rcname <- paste0("rawCounts", toupper(checkReadType(fds, type)))
     rocname <- paste0("rawOtherCounts_",
-                      unlist(regmatches(type, gregexpr("psi(3|5|Site)", type, 
-                                                       perl=TRUE)))
+                        unlist(regmatches(type, gregexpr("psi(3|5|Site)", type, 
+                                                        perl=TRUE)))
     )
 
     se2plot <- se[from(findOverlaps(granges(se), gr, type="equal"))]
@@ -122,15 +122,15 @@ plotCountsAtSite <- function(gr, fds, type, sample=NULL, plotLog=TRUE){
 
     heatscatter(rcx, rocy,
                 main=paste("Heatscatter of raw counts for type: ", type,
-                           "\nRange: ", seqnames(se2plot), ":",
-                           start(se2plot), "-", end(se2plot)
+                            "\nRange: ", seqnames(se2plot), ":",
+                            start(se2plot), "-", end(se2plot)
                 ),
                 xlab=paste0(logpre, "raw counts", logsuf),
                 ylab=paste0(logpre, "raw other counts", logsuf)
     )
     if(!is.null(sample)){
         lapply(sample, addSamplePoints, fds=fds,
-               x=rcx, y=rocy, pch=20, col="red"
+                x=rcx, y=rocy, pch=20, col="red"
         )
     }
 }

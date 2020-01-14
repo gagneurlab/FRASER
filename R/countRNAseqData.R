@@ -147,8 +147,9 @@ countRNAData <- function(fds, NcpuPerSample=3, junctionMap=NULL, minAnchor=5,
     return(fds)
 }
 
-#' @describeIn countRNA This method creates a GRanges object containing the 
-#'             split read counts from all specified samples.  
+#' @describeIn countRNA This method creates a GRanges 
+#'             object containing the split read counts from all 
+#'             specified samples.  
 #' @return \code{\link{getSplitReadCountsForAllSamples}} returns a GRanges 
 #' object.
 #' @export
@@ -244,10 +245,10 @@ getSplitReadCountsForAllSamples <- function(fds, NcpuPerSample=3,
     return(counts)
 }
 
-#' @describeIn countRNA This method creates a GRanges object containing the 
-#'              non split read counts at the exon-intron boundaries inferred 
-#'              from the GRanges object containing the positions of all the 
-#'              introns in this dataset.  
+#' @describeIn countRNA This method creates a GRanges 
+#'              object containing the non split read counts at the 
+#'              exon-intron boundaries inferred from the GRanges object 
+#'              containing the positions of all the introns in this dataset.  
 #' @return \code{\link{getNonSplitReadCountsForAllSamples}} returns a 
 #'          GRanges object.
 #' @export
@@ -318,8 +319,9 @@ getNonSplitReadCountsForAllSamples <- function(fds, splitCounts,
 }
 
 
-#' @describeIn countRNA This method adds the split read and non split read  
-#'              counts to a existing FraseRDataSet containing the settings.  
+#' @describeIn countRNA This method adds the split read and 
+#'              non split read counts to a existing FraseRDataSet 
+#'              containing the settings.  
 #' @return \code{\link{addCountsToFraseRDataSet}} returns a FraseRDataSet.
 #' @export
 addCountsToFraseRDataSet <- function(fds, splitCounts, 
@@ -395,8 +397,8 @@ getSplitCountCacheFile <- function(sampleID, settings){
 }
 
 
-#' @describeIn countRNA This method counts all split reads in a bam file for a 
-#'     single sample.
+#' @describeIn countRNA This method counts all split reads in a 
+#'     bam file for a single sample.
 #' @return \code{\link{countSplitReads}} returns a GRanges object.
 #' @export
 countSplitReads <- function(sampleID, fds, NcpuPerSample=1, genome=NULL, 
@@ -513,8 +515,8 @@ mergeBamParams <- function(bamParam, which, override=FALSE){
 }
 
 
-#' @describeIn countRNA This method merges counts for multiple samples into one 
-#'                      SummarizedExperiment object.
+#' @describeIn countRNA This method merges counts for multiple 
+#'                      samples into one SummarizedExperiment object.
 #' @return \code{\link{mergeCounts}} returns a GRanges object.
 #' @export
 mergeCounts <- function(countList, junctionMap=NULL, assumeEqual=FALSE,
@@ -605,8 +607,8 @@ GRanges2SAF <- function(gr, minAnchor=1){
 }
 
 
-#' @describeIn countRNA This method counts non spliced reads based on the 
-#'     given target (acceptor/donor) regions for a single sample.
+#' @describeIn countRNA This method counts non spliced reads based 
+#'     on the given target (acceptor/donor) regions for a single sample.
 #' @return \code{\link{countNonSplicedReads}} returns a GRanges object.
 #' @export
 countNonSplicedReads <- function(sampleID, splitCounts, fds,

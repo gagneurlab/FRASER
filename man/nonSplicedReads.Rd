@@ -29,3 +29,7 @@ RangedSummarizedExperiment (getter) or FraseRDataSet (setter)
 Getter/setter for the non spliced reads object within the FraseRDataSet 
 object
 }
+\examples{
+fds <- createTestFraseRDataSet()
+nonSplicedReads(fds)
+}
