@@ -22,7 +22,7 @@ setClass("FraseRDataSet",
         name            = "Data Analysis",
         bamParam        = ScanBamParam(mapqFilter=0),
         strandSpecific  = FALSE,
-        workingDir      = file.path(Sys.getenv("HOME"), "FraseR"),
+        workingDir      = file.path(tempdir(), "FraseR"),
         nonSplicedReads = SummarizedExperiment(rowRanges=GRanges())
     )
 )

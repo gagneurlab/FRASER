@@ -296,7 +296,7 @@ sampleTable[,bamFile:=bamFiles]
 
 # create FraseR object
 settings <- FraseRDataSet(colData=sampleTable, 
-        workingDir=file.path(Sys.getenv("HOME"), "FRASER"))
+        workingDir=tempdir())
 
 # show the FraseRSettings object
 settings
@@ -356,7 +356,7 @@ head(spliceSiteCts)
 
 # create FraseR object
 fds <- FraseRDataSet(colData=sampleTable, junctions=junctionCts,
-        spliceSites=spliceSiteCts)
+        spliceSites=spliceSiteCts, workingDir=tempdir())
 fds
 @
 
