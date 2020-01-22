@@ -17,7 +17,7 @@
 #'   fds <- makeExampleFraseRDataSet()
 #'   
 #'   # example dataset after fit with p-values/z-scores
-#'   fds <- makeFittedExampleFraseRDataSet()
+#'   # fds <- makeFittedExampleFraseRDataSet()
 #'   
 #' @rdname makeExampleFraseRDataSet
 #' @aliases makeExampleFraseRDataSet makeFittedExampleFraseRDataSet

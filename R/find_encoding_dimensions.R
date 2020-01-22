@@ -98,7 +98,7 @@ findEncodingDim <- function(i, fds, type, params, correction,
 #'
 #' @examples
 #'   # generate data
-#'   fds <- makeFittedExampleFraseRDataSet()
+#'   fds <- createTestFraseRDataSet()
 #'   
 #'   # run hyperparameter optimization
 #'   register(SerialParam())

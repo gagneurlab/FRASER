@@ -17,7 +17,7 @@
 #' 
 #' @examples
 #'   # preprocessing
-#'   fds <- makeFittedExampleFraseRDataSet()
+#'   fds <- createTestFraseRDataSet()
 #'   
 #'   # nomial p values
 #'   fds <- calculatePvalues(fds, type="psi5")

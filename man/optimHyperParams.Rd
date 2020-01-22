@@ -60,7 +60,7 @@ ratios while maximizing the precision-recall curve.
 }
 \examples{
   # generate data
-  fds <- makeFittedExampleFraseRDataSet()
+  fds <- createTestFraseRDataSet()
   
   # run hyperparameter optimization
   register(SerialParam())

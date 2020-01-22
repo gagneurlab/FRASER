@@ -122,7 +122,7 @@
 #'             plotExpression plotCountCorHeatmap plotFilterExpression 
 #'             plotExpectedVsObservedPsi plotEncDimSearch
 #' @examples
-#' fds <- makeFittedExampleFraseRDataSet()
+#' fds <- createTestFraseRDataSet()
 #' 
 #' plotAberrantPerSample(fds, padjCutoff=NA, zScoreCutoff=0.5)
 #' 

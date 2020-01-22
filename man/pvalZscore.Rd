@@ -64,7 +64,7 @@ p-values per donor/acceptor site for multiple testing.
 
 \examples{
   # preprocessing
-  fds <- makeFittedExampleFraseRDataSet()
+  fds <- createTestFraseRDataSet()
   
   # nomial p values
   fds <- calculatePvalues(fds, type="psi5")
