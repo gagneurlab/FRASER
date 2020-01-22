@@ -37,7 +37,7 @@ getSplitReadCountsForAllSamples(
 
 getNonSplitReadCountsForAllSamples(
   fds,
-  splitCounts,
+  splitCountRanges,
   NcpuPerSample = 3,
   minAnchor = 5,
   recount = FALSE,
@@ -59,14 +59,16 @@ countSplitReads(
 
 mergeCounts(
   countList,
+  fds,
   junctionMap = NULL,
   assumeEqual = FALSE,
+  spliceSiteCoords = NULL,
   BPPARAM = SerialParam()
 )
 
 countNonSplicedReads(
   sampleID,
-  splitCounts,
+  splitCountRanges,
   fds,
   NcpuPerSample = 3,
   minAnchor = 5,
@@ -114,16 +116,20 @@ reads are not recounted), unless the option recount=TRUE is
 used. If this file doesn't exist or if recount=TRUE, then it 
 will be created after counting has finished.}
 
-\item{splitCounts}{The merged GRanges object containing the position and 
-counts of all the introns in the dataset for all samples.}
+\item{splitCountRanges}{The merged GRanges object containing the positions 
+of all the introns in the dataset over all samples.}
 
 \item{longRead}{If TRUE, then the isLongRead option of 
 Rsubread::featureCounts is used when counting the non spliced reads 
 overlapping splice sites.}
 
-\item{nonSplitCounts}{The merged GRanges object containing the position and 
-non split read counts of all splice sites present in the 
-dataset for all samples.}
+\item{splitCounts}{The SummarizedExperiment object containing the 
+position and counts of all the introns in the dataset 
+for all samples.}
+
+\item{nonSplitCounts}{The SummarizedExperiment object containing the 
+position and non split read counts of all splice sites 
+present in the dataset for all samples.}
 
 \item{sampleID}{The ID of the sample to be counted.}
 
@@ -152,7 +158,7 @@ object.
 
 \code{\link{countSplitReads}} returns a GRanges object.
 
-\code{\link{mergeCounts}} returns a GRanges object.
+\code{\link{mergeCounts}} returns a SummarizedExperiment object.
 
 \code{\link{countNonSplicedReads}} returns a GRanges object.
 }

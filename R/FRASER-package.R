@@ -53,9 +53,9 @@
 #' @importFrom data.table data.table as.data.table is.data.table := fread
 #'          setnames
 #' @importFrom tidyr %>%
-#' @importFrom HDF5Array writeHDF5Array path
+#' @importFrom HDF5Array writeHDF5Array path HDF5Array
 #' @importFrom rhdf5 h5ls H5Fopen H5Fclose H5Pclose H5Dget_create_plist
-#'          H5Pget_layout H5Pget_chunk
+#'          H5Pget_layout H5Pget_chunk 
 #'
 ### P-Value calculation
 #'
@@ -85,7 +85,7 @@
 #' @importFrom GenomeInfoDb keepStandardChromosomes seqlevels<- seqlevels
 #'          seqlengths seqlengths<- seqlevelsStyle<- seqlevelsStyle seqnames 
 #'          seqinfo
-#' @importFrom DelayedArray rowMaxs rowMeans path<-
+#' @importFrom DelayedArray rowMaxs rowMeans path<- cbind
 #' @importFrom DelayedMatrixStats colSds rowMedians rowSds colMeans2 rowMeans2
 #'          rowQuantiles
 #' @importFrom matrixStats colMaxs colMedians colMins colAnys
