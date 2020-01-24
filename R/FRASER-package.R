@@ -53,7 +53,7 @@
 #' @importFrom data.table data.table as.data.table is.data.table := fread
 #'          setnames
 #' @importFrom tidyr %>%
-#' @importFrom HDF5Array writeHDF5Array path HDF5Array 
+#' @importFrom HDF5Array writeHDF5Array path HDF5Array HDF5Array-class
 #'          saveHDF5SummarizedExperiment
 #' @importFrom rhdf5 h5ls H5Fopen H5Fclose H5Pclose H5Dget_create_plist
 #'          H5Pget_layout H5Pget_chunk 
