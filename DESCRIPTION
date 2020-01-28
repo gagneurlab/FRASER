@@ -94,9 +94,7 @@ Collate:
     find_encoding_dimensions.R
     getURLs.R
     helper-functions.R
-    plotResults.R
     saveHDF5Objects.R
-    plotDistributions.R
     RcppExports.R
     autoencoder.R
     updateD.R
