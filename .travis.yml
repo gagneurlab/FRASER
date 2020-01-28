@@ -54,10 +54,9 @@ script:
   - R CMD build --no-build-vignettes .
   - R CMD BiocCheck --no-check-vignettes *tar.gz
   - R CMD check --no-vignettes --timings *tar.gz
+  - cd vignettes && R CMD Sweave --engine=knitr::knitr --pdf FraseR.Rnw
   - R -e 'devtools::run_examples()'
   - R -e 'devtools::test()'
-  - cd vignettes && R CMD Sweave --engine=knitr::knitr --pdf FraseR.Rnw
-
 
 after_success:
   - test $TRAVIS_BUILD_STAGE_NAME = "Test" && 

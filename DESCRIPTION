@@ -29,7 +29,6 @@ Imports:
     GenomicAlignments,
     GenomicFeatures,
     GenomicRanges,
-    htmlwidgets,
     IRanges,
     graphics,
     grDevices,

@@ -73,13 +73,13 @@
 #'         calculated first based on the positions of the junctions defined 
 #'         from the split reads.
 #' @param longRead If TRUE, then the isLongRead option of 
-#' Rsubread::featureCounts is used when counting the non spliced reads 
-#' overlapping splice sites.
+#'         Rsubread::featureCounts is used when counting the non spliced reads 
+#'         overlapping splice sites.
 #' @param countList A list of GRanges objects containing the counts that should
-#'     be merged into one object.
+#'         be merged into one object.
 #' @param assumeEqual Logical indicating whether all objects in 
-#'     \code{countList} can be assumed to contain counts for the same ranges. 
-#'     If FALSE, merging of the ranges is performed.
+#'         \code{countList} can be assumed to contain counts for the same ranges. 
+#'         If FALSE, merging of the ranges is performed.
 #' @param ... Further parameters passed on to Rsubread::featureCounts.
 #' 
 #' @name countRNA
@@ -90,9 +90,11 @@
 #'
 NULL
 
+
 #' @describeIn countRNA This method extracts and counts the split reads and
 #'             non spliced reads from RNA bam files.
 #' @return \code{\link{countRNAData}} returns a FraseRDataSet.
+#' 
 #' @export
 countRNAData <- function(fds, NcpuPerSample=3, junctionMap=NULL, minAnchor=5,
                         recount=FALSE, BPPARAM=bpparam(), genome=NULL,
@@ -155,6 +157,7 @@ countRNAData <- function(fds, NcpuPerSample=3, junctionMap=NULL, minAnchor=5,
 #'             specified samples.  
 #' @return \code{\link{getSplitReadCountsForAllSamples}} returns a GRanges 
 #' object.
+#' 
 #' @export
 getSplitReadCountsForAllSamples <- function(fds, NcpuPerSample=3, 
                                             junctionMap=NULL, recount=FALSE, 
@@ -364,8 +367,7 @@ getNonSplitReadCountsForAllSamples <- function(fds, splitCountRanges,
 #'              containing the settings.  
 #' @return \code{\link{addCountsToFraseRDataSet}} returns a FraseRDataSet.
 #' @export
-addCountsToFraseRDataSet <- function(fds, splitCounts, 
-                                        nonSplitCounts){
+addCountsToFraseRDataSet <- function(fds, splitCounts, nonSplitCounts){
     
     # create final FraseR dataset
     fds <- new("FraseRDataSet",
@@ -545,13 +547,10 @@ mergeCounts <- function(countList, fds, junctionMap=NULL, assumeEqual=FALSE,
         ranges <- spliceSiteCoords
         mcols(ranges)$count <- NULL
         names(ranges) <- NULL
-        mcols(ranges)$type <- factor(ranges$type,
-                                        levels = c("Acceptor", "Donor")
-        )
+        mcols(ranges)$type <- factor(ranges$type, levels=c("Acceptor", "Donor"))
         
         message(paste(date(), ": Fast merging of counts ..."))
         sample_counts <- countList
-        # sample_counts <- lapply(countList, h5read, "counts")
     } else {
         countList <- uniformSeqInfo(countList)
         countgr <- GRangesList(countList)
@@ -566,55 +565,37 @@ mergeCounts <- function(countList, fds, junctionMap=NULL, assumeEqual=FALSE,
         message(paste(date(), ": count ranges need to be merged ..."))
         # merge each sample counts into the combined range object
         sample_counts <- bplapply(countList, ranges = ranges, BPPARAM=BPPARAM,
-                                FUN = function(gr, ranges){
-                                    
-                                    # init with 0 since we did not find any read
-                                    # for this sample supporting a given site
-                                    sample_count <- integer(length(ranges))
-                                    
-                                    # get overlap and add counts to the 
-                                    # corresponding ranges
-                                    overlaps <- findOverlaps(gr, ranges, 
-                                                            type = "equal")
-                                    sample_count[overlaps@to] <- mcols(gr)$count
-                                    
-                                    return(sample_count)
-                                }
+                FUN = function(gr, ranges){
+                        
+                        # init with 0 since we did not find any read
+                        # for this sample supporting a given site
+                        sample_count <- integer(length(ranges))
+                        
+                        # get overlap and add counts to the 
+                        # corresponding ranges
+                        overlaps <- findOverlaps(gr, ranges, type="equal")
+                        sample_count[overlaps@to] <- mcols(gr)$count
+                        
+                        return(sample_count)
+                }
         )
     }
     
     # merge it with the type column and add it to the range object
-    counts <- do.call(DelayedArray::cbind, sample_counts)
+    counts <- do.call(cbind, sample_counts)
     colnames(counts) <- sample_names
     
-    # create summarized object for non split reads
-    h5 <- saveAsHDF5(fds, ifelse(isFALSE(assumeEqual), "rawCountsJ", 
-                                    "rawCountsSS"),
-                        as.matrix(counts[,samples(fds)]) )
+    # create assay for summarized object
+    aName <- ifelse(assumeEqual, "rawCountsSS", "rawCountsJ")
+    h5 <- saveAsHDF5(fds, aName, as.matrix(counts[,samples(fds)]))
     colnames(h5) <- samples(fds)
-    if(isFALSE(assumeEqual)){
-        final_counts <- SummarizedExperiment(
-            colData=colData(fds),
-            assays=list(rawCountsJ=h5),
-            rowRanges=ranges
-        )
-    } 
-    else{
-        final_counts <- SummarizedExperiment(
-            colData=colData(fds),
-            assays=list(rawCountsSS=h5),
-            rowRanges=ranges
-        )
-    }
-    
-    rm(h5)
-    rm(counts)
-    rm(sample_counts)
-    gc()
+    aList <- list(a=h5)
+    names(aList) <- aName
     
     # return the object
+    final_counts <- SummarizedExperiment(
+            colData=colData(fds), assays=aList, rowRanges=ranges)
     return(final_counts)
-    
 }
 
 
@@ -683,9 +664,8 @@ GRanges2SAF <- function(gr, minAnchor=1){
 #' @return \code{\link{countNonSplicedReads}} returns a GRanges object.
 #' @export
 countNonSplicedReads <- function(sampleID, splitCountRanges, fds,
-                                NcpuPerSample=3, minAnchor=5, recount=FALSE,
-                                spliceSiteCoords=NULL, 
-                                longRead=TRUE){
+                    NcpuPerSample=3, minAnchor=5, recount=FALSE,
+                    spliceSiteCoords=NULL, longRead=TRUE){
     
     if(is.null(spliceSiteCoords) | !is(spliceSiteCoords, "GRanges")){
         
@@ -732,30 +712,26 @@ countNonSplicedReads <- function(sampleID, splitCountRanges, fds,
     tmp_ssc <- checkSeqLevelStyle(spliceSiteCoords, fds, sampleID, TRUE)
     anno <- GRanges2SAF(tmp_ssc, minAnchor=minAnchor)
     rsubreadCounts <- featureCounts(files=bamFile, annot.ext=anno,
-                                    minOverlap=minAnchor*2, 
-                                    allowMultiOverlap=TRUE,
-                                    checkFragLength=FALSE,
-                                    minMQS=bamMapqFilter(scanBamParam(fds)),
-                                    strandSpecific=as.integer(
-                                        strandSpecific(fds)),
-                                    
-                                    # activating long read mode
-                                    isLongRead=longRead,
-                                    
-                                    # multi-mapping reads
-                                    countMultiMappingReads=TRUE,
-                                    
-                                    # for counting only non spliced reads we 
-                                    # skip this information
-                                    isPairedEnd=FALSE,
-                                    
-                                    # this is important, otherwise it will sort 
-                                    # it by name
-                                    autosort=FALSE,
-                                    nthreads=NcpuPerSample,
-                                    tmpDir=file.path(
-                                        file_path_as_absolute(workingDir(fds)), 
-                                        "cache") 
+            minOverlap=minAnchor*2, 
+            allowMultiOverlap=TRUE,
+            checkFragLength=FALSE,
+            minMQS=bamMapqFilter(scanBamParam(fds)),
+            strandSpecific=as.integer(strandSpecific(fds)),
+            
+            # activating long read mode
+            isLongRead=longRead,
+            
+            # multi-mapping reads
+            countMultiMappingReads=TRUE,
+            
+            # for counting only non spliced reads we 
+            # skip this information
+            isPairedEnd=FALSE,
+            
+            # this is important, otherwise it will sort it by name
+            autosort=FALSE,
+            nthreads=NcpuPerSample,
+            tmpDir=file.path(file_path_as_absolute(workingDir(fds)), "cache")
     )
     
     # extract results
