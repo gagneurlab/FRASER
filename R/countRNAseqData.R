@@ -96,7 +96,7 @@ NULL
 #' @return \code{\link{countRNAData}} returns a FraseRDataSet.
 #' 
 #' @export
-countRNAData <- function(fds, NcpuPerSample=3, junctionMap=NULL, minAnchor=5,
+countRNAData <- function(fds, NcpuPerSample=1, junctionMap=NULL, minAnchor=5,
                         recount=FALSE, BPPARAM=bpparam(), genome=NULL,
                         countDir=file.path(workingDir(fds), "savedObjects", 
                                             nameNoSpace(name(fds))),

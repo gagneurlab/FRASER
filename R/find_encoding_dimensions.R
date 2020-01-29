@@ -115,7 +115,7 @@ optimHyperParams <- function(fds, type, correction="PCA",
                     q_param=seq(2, min(40, ncol(fds)), by=3),
                     noise_param=0, minDeltaPsi=0.1,
                     iterations=5, setSubset=15000, injectFreq=1e-2,
-                    BPPARAM=bpparam(), internalThreads=3, plot=TRUE){
+                    BPPARAM=bpparam(), internalThreads=1, plot=TRUE){
     if(isFALSE(needsHyperOpt(correction))){
         message(date(), ": For correction '", correction, "' no hyper paramter",
                 "optimization is needed.")
