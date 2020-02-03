@@ -133,7 +133,7 @@ then visualized with a genome browser.
 }
 
 \fraser{} uses the follwing splicing metrics as described by 
-Pervouchin et al\cite{Pervouchin}: we compute for each sample, 
+Pervouchine et al\cite{Pervouchine2012}: we compute for each sample, 
 for donor D (5' splice site) and acceptor A (3' splice site) the $\Psi_5$ and 
 $\Psi_3$ values, respectively, as:
 
@@ -196,7 +196,9 @@ fds
 # compute stats
 fds <- calculatePSIValues(fds)
 
-# skipped here because not meaningful on the small example dataset
+# filtering of lowly expressed junctions: This step is skipped here because 
+# it is not meaningful on the small example dataset. See the section on 
+# filtering below for more details
 # fds <- filterExpression(fds, minExpressionInOneSample=20,
 #         minDeltaPsi=0.0, filter=TRUE)
 
@@ -204,12 +206,15 @@ fds <- calculatePSIValues(fds)
 # use PCA to speed up the tutorial
 fds <- FraseR(fds, q=2, correction="PCA")
 
-# fds <- annotateRanges(fds) # uses biomart
+# we provide two ways to anntoate introns with the corresponding gene symbols:
+# the first way uses TxDb-objects provided by the user as shown here
 require(TxDb.Hsapiens.UCSC.hg19.knownGene)
 txdb <- TxDb.Hsapiens.UCSC.hg19.knownGene
 require(org.Hs.eg.db)
 orgDb <- org.Hs.eg.db
 fds <- annotateRangesWithTxDb(fds, txdb=txdb, orgDb=orgDb)
+# alternatively, we also provide a way to use biomart for the annotation:
+# fds <- annotateRanges(fds) # uses biomart
 
 # get results: usually, using p-value cutoff is recommended, but on the small 
 # example dataset, this would give no results, so we use z-scores here instead
@@ -364,10 +369,11 @@ fds
 \label{sec:DataPreprocessing}
 
 As with gene expression analysis, a good quality control of the raw data is 
-crucial. For some hints please refere to the gene expression slides.
+crucial. For some hints please refere to the [gene expression slides](https://docs.google.com/presentation/d/1a7KZ6FXwVmGqF-FMAnz0QTk07WgzRWAbFhSNrUBspIQ/edit?pli=1#slide=id.g64b01c344e_4_51).
 
 At the time of writing this vignette, we recommend that the RNA-seq data should 
-be aligned with a splice-aware aligner like STAR\cite{STAR} or GEM\cite{GEM}. 
+be aligned with a splice-aware aligner like STAR\cite{Dobin2013} or 
+GEM\cite{MarcoSola2012}. 
 To gain better results, at least 20 samples should be sequenced and they should 
 be processed with the same protocol and origin from the same tissue.
 
@@ -660,6 +666,8 @@ plotQQ(fds, result=res[1])
 # global qq-plot (on gene level since aggregate=TRUE)
 plotQQ(fds, aggregate=TRUE, global=TRUE)
 @
+
+\bibliography{bibliography}
 
 \section{Session Info}
 
