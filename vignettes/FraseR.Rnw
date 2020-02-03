@@ -369,7 +369,8 @@ fds
 \label{sec:DataPreprocessing}
 
 As with gene expression analysis, a good quality control of the raw data is 
-crucial. For some hints please refere to the [gene expression slides](https://docs.google.com/presentation/d/1a7KZ6FXwVmGqF-FMAnz0QTk07WgzRWAbFhSNrUBspIQ/edit?pli=1#slide=id.g64b01c344e_4_51).
+crucial. For some hints please refere to 
+[these slides](https://docs.google.com/presentation/d/1a7KZ6FXwVmGqF-FMAnz0QTk07WgzRWAbFhSNrUBspIQ/edit?pli=1).
 
 At the time of writing this vignette, we recommend that the RNA-seq data should 
 be aligned with a splice-aware aligner like STAR\cite{Dobin2013} or 
