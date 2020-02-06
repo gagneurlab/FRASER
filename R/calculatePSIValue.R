@@ -23,14 +23,14 @@
 #'   fds <- makeExampleFraseRDataSet()
 #'   fds <- calculatePSIValues(fds)
 calculatePSIValues <- function(fds, types=psiTypes, overwriteCts=FALSE, 
-                               BPPARAM=bpparam()){
+                                BPPARAM=bpparam()){
     # check input
     stopifnot(is(fds, "FraseRDataSet"))
     
     # calculate PSI value for each sample
     for(psiType in unique(vapply(types, whichReadType, fds=fds, ""))){
         fds <- calculatePSIValuePrimeSite(fds, psiType=psiType,
-                                          overwriteCts=overwriteCts, BPPARAM=BPPARAM)
+                                overwriteCts=overwriteCts, BPPARAM=BPPARAM)
     }
     
     # calculate the delta psi value
@@ -74,7 +74,7 @@ calculatePSIValuePrimeSite <- function(fds, psiType, overwriteCts, BPPARAM){
     psiValues <- bplapply(samples(fds), countData=countData,
             overwriteCts=overwriteCts, BPPARAM=BPPARAM,
         FUN=function(sample, countData, overwriteCts){
-                              
+            
             # add sample specific counts to the data.table (K)
             sample <- as.character(sample)
             countData[,k:=list(K(fds, type="psi5")[,sample])]
@@ -107,8 +107,8 @@ calculatePSIValuePrimeSite <- function(fds, psiType, overwriteCts, BPPARAM){
             # write other counts and psi values to h5 file
             # get defind chunk sizes
             chunkDims <- c(
-                  min(nrow(countData), options()[['FraseR-hdf5-chunk-nrow']]),
-                  min(4, options()[['FraseR-hdf5-chunk-ncol']]))
+                min(nrow(countData), options()[['FraseR-hdf5-chunk-nrow']]),
+                min(4, options()[['FraseR-hdf5-chunk-ncol']]))
             cacheFile <- getOtherCountsCacheFile(sample, fds)
             if(file.exists(cacheFile)){
                 unlink(cacheFile)
@@ -212,8 +212,8 @@ calculateSitePSIValue <- function(fds, overwriteCts, BPPARAM){
                     min(2, options()[['FraseR-hdf5-chunk-ncol']]))
             cacheFile <- getOtherCountsCacheFile(sample, fds)
             writeHDF5Array(as.matrix(sdata[,.(os, psiValue)]), 
-                             filepath=cacheFile, name="oSite_psiSite", 
-                             chunkdim=chunkDims, level=7, verbose=FALSE)
+                            filepath=cacheFile, name="oSite_psiSite", 
+                            chunkdim=chunkDims, level=7, verbose=FALSE)
             
             # get counts as DelayedMatrix
             HDF5Array(filepath=cacheFile, name="oSite_psiSite")
