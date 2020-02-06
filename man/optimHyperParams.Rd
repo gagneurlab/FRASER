@@ -15,7 +15,7 @@ optimHyperParams(
   setSubset = 15000,
   injectFreq = 0.01,
   BPPARAM = bpparam(),
-  internalThreads = 3,
+  internalThreads = 1,
   plot = TRUE
 )
 }

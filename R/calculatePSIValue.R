@@ -135,10 +135,16 @@ calculatePSIValuePrimeSite <- function(fds, psiType, overwriteCts, BPPARAM){
     if(isTRUE(overwriteCts)){
         assay(fds, type="j", "rawOtherCounts_psi5") <-
             saveAsHDF5(fds, "rawOtherCounts_psi5", 
-                        do.call(cbind, lapply(psiValues, function(x) x[,1])) )
+                        do.call(cbind, lapply(psiValues, 
+                                                function(x){ 
+                                                    as.integer(x[,1])
+                                                })) )
         assay(fds, type="j", "rawOtherCounts_psi3") <-
             saveAsHDF5(fds, "rawOtherCounts_psi3", 
-                        do.call(cbind, lapply(psiValues, function(x) x[,2])) )
+                        do.call(cbind, lapply(psiValues, 
+                                                function(x){
+                                                    as.integer(x[,2])
+                                                })) )
     }
     
     return(fds)
@@ -218,11 +224,14 @@ calculateSitePSIValue <- function(fds, overwriteCts, BPPARAM){
     # merge it and assign it to our object
     assay(fds, type="ss", psiName) <- 
         saveAsHDF5(fds, psiName, 
-                    do.call(cbind, lapply(psiSiteValues, function(x) x[,1])) )
+                    do.call(cbind, lapply(psiSiteValues, function(x) x[,2])) )
     if(isTRUE(overwriteCts)){
         assay(fds, type="ss", psiROCName) <- 
             saveAsHDF5(fds, psiROCName, 
-                    do.call(cbind, lapply(psiSiteValues, function(x) x[,2])) )
+                    do.call(cbind, lapply(psiSiteValues, 
+                                            function(x) {
+                                                as.integer(x[,1])
+                                            })) )
     }
     
     return(fds)

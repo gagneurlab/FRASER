@@ -13,7 +13,7 @@
 \usage{
 countRNAData(
   fds,
-  NcpuPerSample = 3,
+  NcpuPerSample = 1,
   junctionMap = NULL,
   minAnchor = 5,
   recount = FALSE,
