@@ -154,6 +154,10 @@ options("FraseR-hdf5-chunk-ncol"=20)
 #' @noRd
 saveAsHDF5 <- function(fds, name, object=NULL, rewrite=FALSE){
     if(is.null(object)) object <- assay(fds, name)
+    
+    if(isTRUE(dontWriteHDF5(fds))){
+        return(object)
+    }
 
     # get defind chunk sizes
     chunkDims <- c(
@@ -179,8 +183,12 @@ saveAsHDF5 <- function(fds, name, object=NULL, rewrite=FALSE){
     if(verbose(fds) > 2) {
         message(date(), ": Preparing data for HDF5 conversion: ", name)
     }
-    aMat <- as.matrix(object)
-    #aMat <- as(object, "matrix") # this command breaks the code in some cases
+    # aMat <- ifelse(!is(object, "DelayedMatrix"), as.matrix(object), object)
+    if(is(object, "DelayedMatrix")){
+        aMat <- object
+    } else{
+        aMat <- as.matrix(object)
+    }
     if(verbose(fds) > 1) {
         message(date(), ": Writing data: ", name, " to file: ", h5File)
     }

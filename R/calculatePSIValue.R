@@ -108,12 +108,12 @@ calculatePSIValuePrimeSite <- function(fds, psiType, overwriteCts, BPPARAM){
             # get defind chunk sizes
             chunkDims <- c(
                 min(nrow(countData), options()[['FraseR-hdf5-chunk-nrow']]),
-                min(4, options()[['FraseR-hdf5-chunk-ncol']]))
+                1)
             cacheFile <- getOtherCountsCacheFile(sample, fds)
             if(file.exists(cacheFile)){
                 unlink(cacheFile)
             }
-            writeHDF5Array(as.matrix(countData[,.(o5,o3,psi3,psi5)]), 
+            writeHDF5Array(as.matrix(countData[,.(o5,o3,psi5,psi3)]), 
                             filepath=cacheFile, name="o5_o3_psi5_psi3", 
                             chunkdim=chunkDims, level=7, verbose=FALSE)
             
@@ -125,26 +125,22 @@ calculatePSIValuePrimeSite <- function(fds, psiType, overwriteCts, BPPARAM){
     names(psiValues) <- samples(fds)
     
     # merge it and assign it to our object
-    assay(fds, type="j", "psi5") <- 
-        saveAsHDF5(fds, "psi5", 
-                    do.call(cbind, lapply(psiValues, function(x) x[,4])) )
-    assay(fds, type="j", "psi3") <- 
-        saveAsHDF5(fds, "psi3", 
-                    do.call(cbind, lapply(psiValues, function(x) x[,3])) )
+    psi5 <- do.call(cbind, mapply('[', psiValues, TRUE, 3, drop=FALSE))
+    assay(fds, type="j", "psi5") <- saveAsHDF5(fds, "psi5", psi5, rewrite=TRUE)
+    
+    psi3 <-do.call(cbind, mapply('[', psiValues, TRUE, 4, drop=FALSE))
+    assay(fds, type="j", "psi3") <- saveAsHDF5(fds, "psi3", psi3, rewrite=TRUE)
     
     if(isTRUE(overwriteCts)){
-        assay(fds, type="j", "rawOtherCounts_psi5") <-
-            saveAsHDF5(fds, "rawOtherCounts_psi5", 
-                        do.call(cbind, lapply(psiValues, 
-                                                function(x){ 
-                                                    as.integer(x[,1])
-                                                })) )
+        o5 <- do.call(cbind, bplapply(psiValues, BPPARAM=BPPARAM,
+                                function(x){ as.integer(x[,1,drop=FALSE]) }))
+        assay(fds, type="j", "rawOtherCounts_psi5") <- 
+            saveAsHDF5(fds, "rawOtherCounts_psi5", o5, rewrite=TRUE)
+        
+        o3 <- do.call(cbind, bplapply(psiValues, BPPARAM=BPPARAM,
+                                function(x){ as.integer(x[,2,drop=FALSE]) }))
         assay(fds, type="j", "rawOtherCounts_psi3") <-
-            saveAsHDF5(fds, "rawOtherCounts_psi3", 
-                        do.call(cbind, lapply(psiValues, 
-                                                function(x){
-                                                    as.integer(x[,2])
-                                                })) )
+            saveAsHDF5(fds, "rawOtherCounts_psi3", o3, rewrite=TRUE)
     }
     
     return(fds)
@@ -209,7 +205,7 @@ calculateSitePSIValue <- function(fds, overwriteCts, BPPARAM){
             # get defind chunk sizes
             chunkDims <- c(
                     min(nrow(sdata), options()[['FraseR-hdf5-chunk-nrow']]),
-                    min(2, options()[['FraseR-hdf5-chunk-ncol']]))
+                    2)
             cacheFile <- getOtherCountsCacheFile(sample, fds)
             writeHDF5Array(as.matrix(sdata[,.(os, psiValue)]), 
                             filepath=cacheFile, name="oSite_psiSite", 
@@ -222,16 +218,16 @@ calculateSitePSIValue <- function(fds, overwriteCts, BPPARAM){
     names(psiSiteValues) <- samples(fds)
     
     # merge it and assign it to our object
-    assay(fds, type="ss", psiName) <- 
-        saveAsHDF5(fds, psiName, 
-                    do.call(cbind, lapply(psiSiteValues, function(x) x[,2])) )
+    psiSite <- do.call(cbind, mapply('[', psiSiteValues, TRUE, 2, drop=FALSE))
+    assay(fds, type="ss", psiName) <- saveAsHDF5(fds, psiName, psiSite, 
+                                                 rewrite=TRUE)
     if(isTRUE(overwriteCts)){
-        assay(fds, type="ss", psiROCName) <- 
-            saveAsHDF5(fds, psiROCName, 
-                    do.call(cbind, lapply(psiSiteValues, 
-                                            function(x) {
-                                                as.integer(x[,1])
-                                            })) )
+        oSite <- do.call(cbind, bplapply(psiSiteValues, BPPARAM=BPPARAM, 
+                                         function(x) {
+                                             as.integer(x[,1,drop=FALSE])
+                                         }))
+        assay(fds, type="ss", psiROCName) <- saveAsHDF5(fds, psiROCName, oSite, 
+                                                        rewrite=TRUE)
     }
     
     return(fds)
@@ -252,7 +248,8 @@ calculateDeltaPsiValue <- function(fds, psiType, assayName){
     deltaPsi  <- psiVal - rowmedian
     
     # use as.matrix to rewrite it as a new hdf5 array
-    assays(fds, type=psiType)[[assayName]] <- deltaPsi
+    assays(fds, type=psiType)[[assayName]] <- saveAsHDF5(fds, assayName, 
+                                                         deltaPsi)
     
     return(fds)
 }
