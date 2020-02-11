@@ -1,7 +1,7 @@
 #'
 #' Loading/Saving FraseRDataSets
 #'
-#' This is a convinient function to load and save a FraseRDataSet object.
+#' This is a convenient function to load and save a FraseRDataSet object.
 #' It looks and saves the FraseRDataSet objects and HDF5 files on disk under
 #' the given working dir. Internally it uses HDF5 files for all assays.
 #'
