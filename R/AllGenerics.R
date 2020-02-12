@@ -449,7 +449,8 @@ FraseRDataSet.assays.replace <-
     if(isTRUE(HDF5)){
         for(i in seq_along(value)){
             if(!class(value[[i]]) %in% c("HDF5Matrix", "DelayedMatrix") ||
-               tryCatch(!is.character(path(psi5)), error=function(e){TRUE})){
+                tryCatch(!is.character(path(psi5)), error=function(e){TRUE})){
+                
                 aname <- names(value)[i]
                 h5obj <- saveAsHDF5(x, aname, object=value[[i]])
                 value[[i]] <- h5obj

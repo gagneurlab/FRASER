@@ -156,7 +156,7 @@ saveAsHDF5 <- function(fds, name, object=NULL, rewrite=FALSE){
     if(is.null(object)) object <- assay(fds, name)
     
     if(isTRUE(dontWriteHDF5(fds))){
-        return(object)
+        return(as.matrix(object))
     }
 
     # get defind chunk sizes
