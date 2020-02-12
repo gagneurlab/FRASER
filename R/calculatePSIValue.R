@@ -125,22 +125,22 @@ calculatePSIValuePrimeSite <- function(fds, psiType, overwriteCts, BPPARAM){
     names(psiValues) <- samples(fds)
     
     # merge it and assign it to our object
-    psi5 <- do.call(cbind, mapply('[', psiValues, TRUE, 3, drop=FALSE))
-    assay(fds, type="j", "psi5") <- saveAsHDF5(fds, "psi5", psi5, rewrite=TRUE)
-    
-    psi3 <-do.call(cbind, mapply('[', psiValues, TRUE, 4, drop=FALSE))
-    assay(fds, type="j", "psi3") <- saveAsHDF5(fds, "psi3", psi3, rewrite=TRUE)
+    assay(fds, type="j", "psi5") <- 
+        do.call(cbind, mapply('[', psiValues, TRUE, 3, drop=FALSE))
+    assay(fds, type="j", "psi3") <- 
+        do.call(cbind, mapply('[', psiValues, TRUE, 4, drop=FALSE))
     
     if(isTRUE(overwriteCts)){
-        o5 <- do.call(cbind, bplapply(psiValues, BPPARAM=BPPARAM,
-                                function(x){ as.integer(x[,1,drop=FALSE]) }))
         assay(fds, type="j", "rawOtherCounts_psi5") <- 
-            saveAsHDF5(fds, "rawOtherCounts_psi5", o5, rewrite=TRUE)
-        
-        o3 <- do.call(cbind, bplapply(psiValues, BPPARAM=BPPARAM,
-                                function(x){ as.integer(x[,2,drop=FALSE]) }))
-        assay(fds, type="j", "rawOtherCounts_psi3") <-
-            saveAsHDF5(fds, "rawOtherCounts_psi3", o3, rewrite=TRUE)
+            do.call(cbind, bplapply(psiValues, BPPARAM=BPPARAM,
+                                    function(x){ 
+                                        as.integer(x[,1,drop=FALSE]) 
+                                    }))
+        assay(fds, type="j", "rawOtherCounts_psi3") <- 
+            do.call(cbind, bplapply(psiValues, BPPARAM=BPPARAM,
+                                    function(x){ 
+                                        as.integer(x[,2,drop=FALSE]) 
+                                    }))
     }
     
     return(fds)
@@ -218,16 +218,14 @@ calculateSitePSIValue <- function(fds, overwriteCts, BPPARAM){
     names(psiSiteValues) <- samples(fds)
     
     # merge it and assign it to our object
-    psiSite <- do.call(cbind, mapply('[', psiSiteValues, TRUE, 2, drop=FALSE))
-    assay(fds, type="ss", psiName) <- saveAsHDF5(fds, psiName, psiSite, 
-                                                 rewrite=TRUE)
+    assay(fds, type="ss", psiName) <- 
+        do.call(cbind, mapply('[', psiSiteValues, TRUE, 2, drop=FALSE))
     if(isTRUE(overwriteCts)){
-        oSite <- do.call(cbind, bplapply(psiSiteValues, BPPARAM=BPPARAM, 
-                                         function(x) {
-                                             as.integer(x[,1,drop=FALSE])
-                                         }))
-        assay(fds, type="ss", psiROCName) <- saveAsHDF5(fds, psiROCName, oSite, 
-                                                        rewrite=TRUE)
+        assay(fds, type="ss", psiROCName) <- 
+            do.call(cbind, bplapply(psiSiteValues, BPPARAM=BPPARAM, 
+                                    function(x) {
+                                        as.integer(x[,1,drop=FALSE])
+                                    }))
     }
     
     return(fds)
@@ -249,7 +247,7 @@ calculateDeltaPsiValue <- function(fds, psiType, assayName){
     
     # use as.matrix to rewrite it as a new hdf5 array
     assays(fds, type=psiType)[[assayName]] <- saveAsHDF5(fds, assayName, 
-                                                         deltaPsi)
+                                                        deltaPsi)
     
     return(fds)
 }

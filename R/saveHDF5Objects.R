@@ -175,7 +175,8 @@ saveAsHDF5 <- function(fds, name, object=NULL, rewrite=FALSE){
     if(file.exists(h5FileTmp)) unlink(h5FileTmp)
 
     # dont rewrite it if already there
-    if(!rewrite && "DelayedMatrix" %in% is(object) && path(object) == h5File){
+    if(!rewrite && "DelayedMatrix" %in% is(object) && 
+            tryCatch(path(object) == h5File, error=function(e){FALSE})){
         return(object)
     }
 
