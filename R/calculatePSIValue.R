@@ -133,14 +133,10 @@ calculatePSIValuePrimeSite <- function(fds, psiType, overwriteCts, BPPARAM){
     if(isTRUE(overwriteCts)){
         assay(fds, type="j", "rawOtherCounts_psi5") <- 
             do.call(cbind, bplapply(psiValues, BPPARAM=BPPARAM,
-                                    function(x){ 
-                                        as.integer(x[,1,drop=FALSE]) 
-                                    }))
+                                    function(x){ x[,1,drop=FALSE] }))
         assay(fds, type="j", "rawOtherCounts_psi3") <- 
             do.call(cbind, bplapply(psiValues, BPPARAM=BPPARAM,
-                                    function(x){ 
-                                        as.integer(x[,2,drop=FALSE]) 
-                                    }))
+                                    function(x){ x[,2,drop=FALSE] }))
     }
     
     return(fds)
@@ -223,9 +219,7 @@ calculateSitePSIValue <- function(fds, overwriteCts, BPPARAM){
     if(isTRUE(overwriteCts)){
         assay(fds, type="ss", psiROCName) <- 
             do.call(cbind, bplapply(psiSiteValues, BPPARAM=BPPARAM, 
-                                    function(x) {
-                                        as.integer(x[,1,drop=FALSE])
-                                    }))
+                                    function(x) { x[,1,drop=FALSE] }))
     }
     
     return(fds)
