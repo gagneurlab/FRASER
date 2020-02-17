@@ -33,6 +33,9 @@ calculatePSIValues <- function(fds, types=psiTypes, overwriteCts=FALSE,
                                 overwriteCts=overwriteCts, BPPARAM=BPPARAM)
     }
     
+    # save Fraser object to disk
+    fds <- saveFraseRDataSet(fds)
+  
     # calculate the delta psi value
     for(psiType in types){
         assayName <- paste0("delta_", psiType)
