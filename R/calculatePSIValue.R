@@ -35,7 +35,7 @@ calculatePSIValues <- function(fds, types=psiTypes, overwriteCts=FALSE,
     
     # save Fraser object to disk
     fds <- saveFraseRDataSet(fds)
-  
+    
     # calculate the delta psi value
     for(psiType in types){
         assayName <- paste0("delta_", psiType)
@@ -91,7 +91,7 @@ calculatePSIValuePrimeSite <- function(fds, psiType, overwriteCts, BPPARAM){
                     !all(paste0("rawOtherCounts_psi", c(5, 3)) %in% 
                         assayNames(fds)) ) && 
                     nrow(h5) == nrow(K(fds, type="psi5"))){
-                  
+                    
                     return(h5)
                 }
                 unlink(cacheFile)
@@ -197,10 +197,10 @@ calculateSitePSIValue <- function(fds, overwriteCts, BPPARAM){
             if(verbose(fds) > 3){
                 message("sample: ", sample)
             }
-          
+            
             # get sample
             sample <- as.character(sample)
-          
+            
             # get counts and psiSite values from cache file if it exists
             cacheFile <- getOtherCountsCacheFile(sample, fds)
             if(file.exists(cacheFile) && 
@@ -208,7 +208,7 @@ calculateSitePSIValue <- function(fds, overwriteCts, BPPARAM){
                 h5 <- HDF5Array(filepath=cacheFile, name=psiH5datasetName)
                 if((isFALSE(overwriteCts) | !psiROCName %in% assayNames(fds)) 
                     && nrow(h5) == nrow(K(fds, type="psiSite"))){
-                  
+                    
                     return(h5)
                 }
             }
