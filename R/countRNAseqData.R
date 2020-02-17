@@ -78,15 +78,15 @@
 #' @param countList A list of GRanges objects containing the counts that should
 #'         be merged into one object.
 #' @param assumeEqual Logical indicating whether all objects in 
-#'         \code{countList} can be assumed to contain counts for the same ranges. 
-#'         If FALSE, merging of the ranges is performed.
+#'         \code{countList} can be assumed to contain counts for the same 
+#'         ranges. If FALSE, merging of the ranges is performed.
 #' @param ... Further parameters passed on to Rsubread::featureCounts.
 #' 
 #' @name countRNA
 #' @rdname countRNA
 #' 
 #' @examples
-#'   fds <- countRNAData(createTestFraseRSettings())
+#'   fds <- countRNAData(fds=createTestFraseRSettings())
 #'
 NULL
 

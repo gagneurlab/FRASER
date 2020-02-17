@@ -7,17 +7,30 @@
 \alias{padjVals,}
 \alias{rho,}
 \alias{bestQ}
+\alias{featureExclusionMask}
+\alias{featureExclusionMask,}
+\alias{`featureExclusionMask<-`}
+\alias{featureExclusionMask<-}
 \alias{rho}
 \alias{zScores}
 \alias{pVals}
 \alias{padjVals}
 \alias{predictedMeans}
 \alias{deltaPsiValue}
+\alias{currentType}
+\alias{currentType<-}
+\alias{pseudocount}
 \alias{hyperParams}
 \alias{dontWriteHDF5}
 \alias{dontWriteHDF5<-}
+\alias{verbose}
+\alias{verbose<-}
 \title{Getter/Setter functions}
 \usage{
+featureExclusionMask(fds, type = currentType(fds))
+
+featureExclusionMask(fds, type = currentType(fds)) <- value
+
 rho(fds, type = currentType(fds))
 
 zScores(fds, type = currentType(fds), byGroup = FALSE, ...)
@@ -30,6 +43,12 @@ predictedMeans(fds, type = currentType(fds))
 
 deltaPsiValue(fds, type = currentType(fds))
 
+currentType(fds)
+
+currentType(fds) <- value
+
+pseudocount(value = NULL)
+
 hyperParams(fds, type = currentType(fds), all = FALSE)
 
 bestQ(fds, type = currentType(fds))
@@ -37,11 +56,17 @@ bestQ(fds, type = currentType(fds))
 dontWriteHDF5(fds)
 
 dontWriteHDF5(fds) <- value
+
+verbose(fds)
+
+verbose(fds) <- value
 }
 \arguments{
 \item{fds}{An FraseRDataSet object.}
 
 \item{type}{The type of psi (psi5, psi3 or psiSite)}
+
+\item{value}{The new value to be assigned.}
 
 \item{byGroup}{If TRUE, aggregation by donor/acceptor site will be done.}
 
@@ -52,8 +77,6 @@ dontWriteHDF5(fds) <- value
 \item{all}{Logical value indicating whether \code{hyperParams(fds)} should 
 return the results of all evaluated parameter combinations or only 
 for the optimal parameter combination.}
-
-\item{value}{The new value to be assigned.}
 }
 \value{
 A (delayed) matrix or vector dependent on the type of data retrieved.
@@ -64,6 +87,16 @@ the values within the FraseR model.
 }
 \section{Functions}{
 \itemize{
+\item \code{featureExclusionMask}: Retrieves a logical vector indicating
+for each junction whether it is included or excluded during the fitting
+procedure.
+
+\item \code{featureExclusionMask<-}: To remove certain junctions from 
+being used in the train step of the encoding dimension we can set the 
+\code{featureExclusion} vector to \code{FALSE}. This can be helpfull 
+if we have local linkage between features which we do not want to 
+model by the autoencoder.
+
 \item \code{rho}: Returns the fitted rho values for the 
 beta-binomial distribution
 
@@ -79,6 +112,15 @@ values.
 \item \code{deltaPsiValue}: Returns the difference between the 
 observed and the fitted psi values.
 
+\item \code{currentType}: Returns the psi type that is used 
+within several methods in the FraseR package.
+
+\item \code{currentType<-}: Sets the psi type that is to be used 
+within several methods in the FraseR package.
+
+\item \code{pseudocount}: Sets and returns the pseudo count used 
+within the FraseR fitting procedure.
+
 \item \code{hyperParams}: This returns the results of the 
 hyperparameter optimization NULL if the hyperparameter 
 opimization was not run yet.
@@ -93,6 +135,13 @@ assays should be stored as hdf5 files.
 
 \item \code{dontWriteHDF5<-}: Sets whether the assays should be stored 
 as hdf5 files.
+
+\item \code{verbose}: Dependend on the level of verbosity 
+the algorithm reports more or less to the user. 0 means being quiet 
+and 10 means everything.
+
+\item \code{verbose<-}: Sets the verbosity level to a value 
+between 0 and 10. 0 means being quiet and 10 means reporting everything.
 }}
 
 \examples{
@@ -116,4 +165,16 @@ pVals(fds)
 padjVals(fds)
 zScores(fds)
 
+# set and get pseudocount
+pseudocount(4L)
+pseudocount()
+
+# retrieve or set a mask to exclude certain junctions in the fitting step
+featureExclusionMask(fds, type="psiSite") <- sample(
+        c(FALSE, TRUE), nrow(mcols(fds, type="psiSite")), replace=TRUE)
+featureExclusionMask(fds, type="psiSite")
+
+# controlling the verbosity level of the output of some algorithms
+verbose(fds) <- 2
+verbose(fds)
 }

@@ -189,9 +189,8 @@ fitted \fds{} object. These plotting functions are described in section
 library(FRASER)
 
 # count data
-# fds <- createTestFraseRSettings()
-# fds <- countRNAData(fds)
-fds <- makeExampleFraseRDataSet()
+fds <- createTestFraseRSettings()
+fds <- countRNAData(fds)
 fds
 
 # compute stats
@@ -567,6 +566,23 @@ plotExpression(fds, type="psi5", result=sampleRes[1])
 plotExpectedVsObservedPsi(fds, result=sampleRes[1])
 @
 
+\subsection{Saving and loading a \fds{}}
+
+A \fds{} object can be easily saved and reloaded at any time as follows:
+
+<<save_load, echo=TRUE>>=
+# saving a fds
+workingDir(fds) <- tempdir()
+name(fds) <- "ExampleAnalysis"
+saveFraseRDataSet(fds, dir=workingDir(fds), name=name(fds))
+# two ways of loading a fds by either specifying the directory and anaysis name
+# or directly giving the path the to fds-object.RDS file
+fds <- loadFraseRDataSet(dir=workingDir(fds), name=name(fds))
+fds <- loadFraseRDataSet(file=file.path(workingDir(fds), "savedObjects", 
+                                        "ExampleAnalysis", "fds-object.RDS"))
+
+@
+
 \section{More details on \fraser{}}
 \label{sec:details}
 
@@ -693,8 +709,8 @@ the \fraser{} package provides two additional functions to visualize the
 results:
 
 \Rfunction{plotAberrantPerSample} displays the number of aberrant events per
-sample and \Rfunction{plotQQ} gives a quantile-quantile plot either for a single
-junction/splice site or globally.
+sample based on the given cutoff values and \Rfunction{plotQQ} gives a 
+quantile-quantile plot either for a single junction/splice site or globally.
 
 <<result_visualization, echo=TRUE>>=
 plotAberrantPerSample(fds)

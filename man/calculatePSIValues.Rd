@@ -30,6 +30,6 @@ This function calculates the PSI values for each junction and splice site
 based on the FraseRDataSet object
 }
 \examples{
-  fds <- makeExampleFraseRDataSet()
+  fds <- createTestFraseRDataSet()
   fds <- calculatePSIValues(fds)
 }

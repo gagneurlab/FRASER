@@ -6,9 +6,8 @@
 \usage{
 fit(
   fds,
-  correction = c("PCA", "PCA-regression", "PCA-BB-Decoder", "FraseR", "FraseR-weighted",
-    "PCA-BB-full", "PCA-reg-full", "FraseR-5DecoderBatches", "FraseR-1DecoderBatches",
-    "fullFraseR", "PCA-BB-Decoder-no-weights", "BB"),
+  correction = c("PCA", "PCA-BB-Decoder", "AE", "AE-weighted", "PCA-BB-full", "fullAE",
+    "PCA-regression", "PCA-reg-full", "PCA-BB-Decoder-no-weights", "BB"),
   q,
   type = "psi3",
   rhoRange = c(1e-08, 1 - 1e-08),
@@ -76,16 +75,15 @@ distribution to the introns.
 }
 \details{
 Available methods to correct for the confounders are currently: a denoising 
-autoencoder with a BB loss ("FraseR"), PCA ("PCA"), a hybrid approach where 
-PCA is used to fit the latent space and then the decoder of the autoencoder 
-is fit using the BB loss ("PCA-BB-Decoder"). Although not recommended, it is 
-also possbile to directly fit the BB distrbution to the raw counts ("BB").
+autoencoder with a BB loss ("AE" and "AE-weighted"), PCA ("PCA"), a hybrid 
+approach where PCA is used to fit the latent space and then the decoder of 
+the autoencoder is fit using the BB loss ("PCA-BB-Decoder"). Although not 
+recommended, it is also possible to directly fit the BB distrbution to the 
+raw counts ("BB").
 }
 \examples{
   # generate toy data
-  fds <- makeExampleFraseRDataSet()
-  fds <- calculatePSIValues(fds)
-  fds <- filterExpression(fds) 
+  fds <- createTestFraseRDataSet()
   
   # fit
   fds <- fit(fds, correction="PCA", q=3, type="psi5")
