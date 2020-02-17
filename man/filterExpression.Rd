@@ -12,7 +12,7 @@ filterExpression(
   minDeltaPsi = 0,
   filter = TRUE,
   BPPARAM = bpparam(),
-  delayed = FALSE
+  delayed = TRUE
 )
 }
 \arguments{

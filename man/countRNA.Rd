@@ -137,8 +137,8 @@ present in the dataset for all samples.}
 be merged into one object.}
 
 \item{assumeEqual}{Logical indicating whether all objects in 
-\code{countList} can be assumed to contain counts for the same ranges. 
-If FALSE, merging of the ranges is performed.}
+\code{countList} can be assumed to contain counts for the same 
+ranges. If FALSE, merging of the ranges is performed.}
 
 \item{spliceSiteCoords}{A GRanges object containing the positions of the 
 splice sites. If it is NULL, then splice sites coordinates are 

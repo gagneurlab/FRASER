@@ -47,9 +47,9 @@ filterExpression <- function(fds, minExpressionInOneSample=20, quantile=0.05,
     f1 <- function(cts, ...){
             rowMaxs(cts) }
     f2 <- function(cts, ctsN5, quantile, ...){
-            rowQuantiles(ctsN5, probs=quantile) }
+            rowQuantiles(ctsN5, probs=quantile, drop=FALSE)[,1] }
     f3 <- function(cts, ctsN3, quantile, ...) {
-            rowQuantiles(ctsN3, probs=quantile) }
+            rowQuantiles(ctsN3, probs=quantile, drop=FALSE)[,1] }
     f4 <- function(cts, ctsN3, ...) {
             psi <- cts/ctsN3
             rowMaxs(abs(psi - rowMeans2(psi, na.rm=TRUE)), na.rm=TRUE) }
