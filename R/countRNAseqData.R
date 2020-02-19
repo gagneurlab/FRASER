@@ -558,9 +558,9 @@ mergeCounts <- function(countList, fds, junctionMap=NULL, assumeEqual=FALSE,
         if(!"SeqLevelStyle" %in% colnames(colData(fds))){
             colData(fds)[,"SeqLevelStyle"] <- 
                 vapply(bamFile(fds), FUN.VALUE=character(1), 
-                        FUN=function(bamFile){
-                            seqlevelsStyle(BamFile(bamFile, yieldSize = 2e6))
-                        } )
+                    FUN=function(bamfile){
+                        seqlevelsStyle(BamFile(bamfile, yieldSize = 2e6))[1]
+                    } )
         }
         countList <- mapply(countList, samples(fds), 
                             FUN=function(gr, sampleID){
