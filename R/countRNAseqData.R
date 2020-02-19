@@ -554,6 +554,22 @@ mergeCounts <- function(countList, fds, junctionMap=NULL, assumeEqual=FALSE,
         message(paste(date(), ": Fast merging of counts ..."))
         sample_counts <- countList
     } else {
+        
+        if(!"SeqLevelStyle" %in% colnames(colData(fds))){
+            colData(fds)[,"SeqLevelStyle"] <- 
+                vapply(bamFile(fds), FUN.VALUE=character(1), 
+                       FUN=function(bamFile){
+                           seqlevelsStyle(BamFile(bamFile, yieldSize = 2e6))
+                        }
+                       )
+        }
+        countList <- mapply(countList, samples(fds), 
+                            FUN=function(gr, sampleID){
+                                checkSeqLevelStyle(gr, fds, sampleID, 
+                                                   sampleSpecific=FALSE)
+                                }
+                            )
+        
         countList <- uniformSeqInfo(countList)
         countgr <- GRangesList(countList)
         if(!is.null(junctionMap)){
