@@ -78,15 +78,15 @@
 #' @param countList A list of GRanges objects containing the counts that should
 #'         be merged into one object.
 #' @param assumeEqual Logical indicating whether all objects in 
-#'         \code{countList} can be assumed to contain counts for the same 
-#'         ranges. If FALSE, merging of the ranges is performed.
+#'         \code{countList} can be assumed to contain counts for the same ranges. 
+#'         If FALSE, merging of the ranges is performed.
 #' @param ... Further parameters passed on to Rsubread::featureCounts.
 #' 
 #' @name countRNA
 #' @rdname countRNA
 #' 
 #' @examples
-#'   fds <- countRNAData(fds=createTestFraseRSettings())
+#'   fds <- countRNAData(createTestFraseRSettings())
 #'
 NULL
 
@@ -558,15 +558,14 @@ mergeCounts <- function(countList, fds, junctionMap=NULL, assumeEqual=FALSE,
         if(!"SeqLevelStyle" %in% colnames(colData(fds))){
             colData(fds)[,"SeqLevelStyle"] <- 
                 vapply(bamFile(fds), FUN.VALUE=character(1), 
-                       FUN=function(bamFile){
-                           seqlevelsStyle(BamFile(bamFile, yieldSize = 2e6))
-                        }
-                       )
+                        FUN=function(bamFile){
+                            seqlevelsStyle(BamFile(bamFile, yieldSize = 2e6))
+                        } )
         }
         countList <- mapply(countList, samples(fds), 
                             FUN=function(gr, sampleID){
                                 checkSeqLevelStyle(gr, fds, sampleID, 
-                                                   sampleSpecific=FALSE)
+                                                    sampleSpecific=FALSE)
                                 }
                             )
         
