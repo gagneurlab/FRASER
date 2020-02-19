@@ -26,7 +26,7 @@
 #'          makeGRangesFromDataFrame
 #' @importFrom IRanges subsetByOverlaps from to IRanges ranges
 #' @importFrom Rsamtools ScanBamParam scanBamHeader bamMapqFilter
-#'          bamWhich bamWhich<-
+#'          bamWhich bamWhich<- BamFile
 #' @importFrom Rsubread featureCounts
 #'
 ### Annotation
