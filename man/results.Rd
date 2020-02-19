@@ -3,7 +3,8 @@
 \name{results}
 \alias{results}
 \alias{results,FraseRDataSet-method}
-\title{Extracting results}
+\alias{aberrant}
+\title{Extracting results and aberrant splicing events}
 \usage{
 results(x, ...)
 
@@ -17,20 +18,33 @@ results(x, ...)
   psiType = c("psi3", "psi5", "psiSite"),
   BPPARAM = bpparam()
 )
+
+aberrant(
+  fds,
+  type = currentType(fds),
+  padjCutoff = 0.05,
+  deltaPsiCutoff = 0.3,
+  zScoreCutoff = NA,
+  by = c("none", "sample", "feature"),
+  aggregate = FALSE,
+  ...
+)
 }
 \arguments{
 \item{x}{FraseRDataSet}
 
-\item{...}{Further parameters that are passed on.}
+\item{...}{Further arguments can be passed to the method. If "zscores", 
+"padjVals" or "dPsi" is given, the values of those arguments
+are used to define the aberrant events.}
 
 \item{sampleIDs}{A vector of sample IDs for which results should be 
 retrieved}
 
-\item{padjCutoff}{The FDR cutoff to be applied.}
+\item{padjCutoff}{The FDR cutoff to be applied or NA if not requested.}
 
-\item{zScoreCutoff}{The z-score cutoff to be applied.}
+\item{zScoreCutoff}{The z-score cutoff to be applied or NA if not requested.}
 
-\item{deltaPsiCutoff}{The cutoff on delta psi.}
+\item{deltaPsiCutoff}{The cutoff on delta psi or NA if not requested.}
 
 \item{minCount}{The minimum count value of the total coverage of an intron 
 to be considered as significant.
@@ -39,15 +53,31 @@ result}
 \item{psiType}{The psi types for which the results should be retrieved.}
 
 \item{BPPARAM}{The BiocParallel parameter.}
+
+\item{fds}{FraseRDataSet}
+
+\item{type}{Splicing type (psi5, psi3 or psiSite)}
+
+\item{by}{By default \code{none} which means no grouping. But if 
+\code{sample} or \code{feature} is specified the sum by 
+sample or feature is returned}
+
+\item{aggregate}{If TRUE the returned object is based on the grouped 
+features}
 }
 \value{
 GRanges object
 
-GRanges object containing significant results.
+For \code{results}: GRanges object containing significant results.
+    For \code{aberrant}: Either a of logical values of size 
+    introns/genes x samples if "by" is NA or a vector with the 
+    number of aberrant events per sample or feature depending on 
+    the vaule of "by"
 }
 \description{
 The result function extracts the results from the given analysis object
-based on the given options and cutoffs.
+based on the given options and cutoffs. The aberrant function extracts 
+aberrant splicing events based on the given cutoffs.
 }
 \examples{
 # get data, fit and compute p-values and z-scores
@@ -58,4 +88,20 @@ fds <- createTestFraseRDataSet()
 res <- results(fds, padjCutoff=0.15, zScoreCutoff=NA, deltaPsiCutoff=0.1)
 res
 
+# get aberrant events per sample: on the example data, nothing is aberrant
+# based on the adjusted p-value
+aberrant(fds, type="psi5", by="sample")
+
+# use zScoreCutoff instead
+aberrant(fds, type="psi5", by="sample", zScoreCutoff=2, padjCutoff=NA)
+
+# get aberrant events per gene (first annotate gene symbols)
+fds <- annotateRanges(fds)
+aberrant(fds, type="psi5", by="feature", zScoreCutoff=2, padjCutoff=NA,
+        aggregate=TRUE)
+aberrant(fds, type="psi5", zScoreCutoff=2, padjCutoff=NA, aggregate=TRUE)
+        
+# find aberrant junctions/splice sites
+aberrant(fds, type="psi5", by="none")
+aberrant(fds, type="psi5")
 }

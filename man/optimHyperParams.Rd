@@ -15,7 +15,7 @@ optimHyperParams(
   setSubset = 15000,
   injectFreq = 0.01,
   BPPARAM = bpparam(),
-  internalThreads = 3,
+  internalThreads = 1,
   plot = TRUE
 )
 }
@@ -63,7 +63,6 @@ ratios while maximizing the precision-recall curve.
   fds <- createTestFraseRDataSet()
   
   # run hyperparameter optimization
-  register(SerialParam())
   fds <- optimHyperParams(fds, type="psi5", correction="PCA")
   
   # get estimated optimal dimension of the latent space

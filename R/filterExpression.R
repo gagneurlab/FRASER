@@ -23,8 +23,7 @@
 #' @return FraseRDataSet
 #' 
 #' @examples
-#' fds <- makeExampleFraseRDataSet()
-#' fds <- calculatePSIValues(fds)
+#' fds <- createTestFraseRDataSet()
 #' fds <- filterExpression(fds)
 #'
 #' @export

@@ -53,7 +53,7 @@ Annotates the given FraseRDataSet with the HGNC symbol with biomaRt
 }
 \examples{
 
-fds <- makeExampleFraseRDataSet()
+fds <- createTestFraseRDataSet()
 fds <- annotateRanges(fds, GRCh=NULL)
 
 require(TxDb.Hsapiens.UCSC.hg19.knownGene)

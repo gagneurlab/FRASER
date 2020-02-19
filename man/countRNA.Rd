@@ -13,7 +13,7 @@
 \usage{
 countRNAData(
   fds,
-  NcpuPerSample = 3,
+  NcpuPerSample = 1,
   junctionMap = NULL,
   minAnchor = 5,
   recount = FALSE,
@@ -137,8 +137,8 @@ present in the dataset for all samples.}
 be merged into one object.}
 
 \item{assumeEqual}{Logical indicating whether all objects in 
-\code{countList} can be assumed to contain counts for the same ranges. 
-If FALSE, merging of the ranges is performed.}
+\code{countList} can be assumed to contain counts for the same 
+ranges. If FALSE, merging of the ranges is performed.}
 
 \item{spliceSiteCoords}{A GRanges object containing the positions of the 
 splice sites. If it is NULL, then splice sites coordinates are 
@@ -217,6 +217,6 @@ on the given target (acceptor/donor) regions for a single sample.
 }}
 
 \examples{
-  fds <- countRNAData(createTestFraseRSettings())
+  fds <- countRNAData(fds=createTestFraseRSettings())
 
 }
