@@ -434,7 +434,7 @@ uniformSeqInfo <- function(grls){
     }
 
     ans <- lapply(grls, function(x){
-        seqlevels(x)  <- tmpSeqlevels[,seqlevel]
+        seqlevels(x, pruning.mode="coarse")  <- tmpSeqlevels[,seqlevel]
         seqlengths(x) <- tmpSeqlevels[,seqlength]
         x
     })
