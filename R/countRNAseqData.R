@@ -562,6 +562,12 @@ mergeCounts <- function(countList, fds, junctionMap=NULL, assumeEqual=FALSE,
                         seqlevelsStyle(BamFile(bamfile, yieldSize = 2e6))[1]
                     } )
         }
+        if(length(unique(colData(fds)[,"SeqLevelStyle"])) > 1 ){
+            warning("The bamFiles or the samples in the dataset use multiple\n",
+                "styles of naming chromosomes (seqlevelstyle). Samples are\n", 
+                "mapped to the most common style to enable the subsequent\n", 
+                "analysis. ")
+        }
         countList <- mapply(countList, samples(fds), 
                             FUN=function(gr, sampleID){
                                 checkSeqLevelStyle(gr, fds, sampleID, 
