@@ -38,7 +38,7 @@ fds1 <- makeSimulatedFraserDataSet()
 fds1
 
 # A generic dataset with specificed sample size and injection method
-fds2 <- makeSimulatedFraserDataSet(m=100, j=500, q=5)
+fds2 <- makeSimulatedFraserDataSet(m=10, j=100, q=3)
 fds2
 
 }

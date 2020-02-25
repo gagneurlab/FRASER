@@ -15,19 +15,33 @@
 #' @param biotype The biotype.
 #' @param ensembl The ensembl that should be used. If NULL, the default one is 
 #' used (hsapiens_gene_ensembl, GRCh37).
+#' @param GRCh GRCh version to connect to. If this is NULL, then the current 
+#' GRCh38 is used. Otherwise, this can only be 37 (default) at the moment 
+#' (see \code{useEnsembl}).
+#' @param txdb A \code{TxDb} object. If this is NULL, then the default 
+#' one is used, currently this is \code{TxDb.Hsapiens.UCSC.hg19.knownGene}.
+#' @param orgDb An \code{orgDb} object If this is NULL, then the 
+#' default one is used, currently this is \code{org.Hs.eg.db}.
 #' 
 #' @return FraseRDataSet
 #' 
 #' @examples
 #'
-#' fds <- countRNAData(createTestFraseRSettings())
-#' fds <- annotateRanges(fds)
+#' fds <- createTestFraseRDataSet()
+#' fds <- annotateRanges(fds, GRCh=NULL)
+#' 
+#' require(TxDb.Hsapiens.UCSC.hg19.knownGene)
+#' txdb <- TxDb.Hsapiens.UCSC.hg19.knownGene
+#' require(org.Hs.eg.db)
+#' orgDb <- org.Hs.eg.db
+#' fds <- annotateRangesWithTxDb(fds, txdb=txdb, orgDb=orgDb)
 #'
 #' rowRanges(fds, type="psi5")[,"hgnc_symbol"]
 #'
+#' @rdname annotateRanges
 #' @export
 annotateRanges <- function(fds, feature="hgnc_symbol", featureName=feature,
-            biotype=list("protein_coding"), ensembl=NULL){
+            biotype=list("protein_coding"), ensembl=NULL, GRCh=37){
 
     # check input
     stopifnot(is(fds, "FraseRDataSet"))
@@ -36,7 +50,8 @@ annotateRanges <- function(fds, feature="hgnc_symbol", featureName=feature,
     if(is.null(ensembl)){
         tryCatch({
             ensemblOutput <- capture.output(ensembl <- useEnsembl(
-                    biomart="ensembl", dataset="hsapiens_gene_ensembl", GRCh=37
+                    biomart="ensembl", dataset="hsapiens_gene_ensembl", 
+                    GRCh=GRCh
             ))
         },
         error=function(e){
@@ -70,6 +85,55 @@ annotateRanges <- function(fds, feature="hgnc_symbol", featureName=feature,
     return(fds)
 }
 
+#' @rdname annotateRanges
+#' @export
+annotateRangesWithTxDb <- function(fds, feature="SYMBOL", 
+                                    featureName="hgnc_symbol",
+                                    txdb=NULL, orgDb=NULL){
+    
+    # check input
+    stopifnot(is(fds, "FraseRDataSet"))
+    if(length(fds) == 0) return(fds)
+    
+    if(is.null(txdb)){
+        if(requireNamespace("TxDb.Hsapiens.UCSC.hg19.knownGene")){
+            txdb <- 
+        TxDb.Hsapiens.UCSC.hg19.knownGene::TxDb.Hsapiens.UCSC.hg19.knownGene 
+        } else{
+            stop("Please provide a TxDb object as input.")
+        }
+        
+    }
+    if(is.null(orgDb)){
+        if(requireNamespace("org.Hs.eg.db")){
+            orgDb <- org.Hs.eg.db::org.Hs.eg.db
+        } else{
+            stop("Please provide an OrgDb object to extract gene symbols")
+        }
+    }
+    
+    for(i in c("psi3", "psiSite")){
+        # get GRanges object with the split reads which should be annotated
+        gr <- rowRanges(fds, type=i)
+        
+        # get the annotation to compare to
+        anno <- genes(txdb)
+        mcols(anno)[[featureName]] <- 
+            select(orgDb, keys=mcols(anno)[,"gene_id"], columns=feature, 
+                    keytype="ENTREZID")[,feature]
+        anno <- anno[!is.na(mcols(anno)[,featureName]),]
+        anno <- anno[mcols(anno)[,featureName] != "",]
+        if(any(strand(gr) == "*")){
+            strand(anno) <- "*"
+        }
+        
+        # retrieve the feature of interest for the split reads
+        mcols(fds, type=i)[[featureName]] <- 
+            getAnnotationFeature(gr, featureName, anno)
+    }
+    
+    return(fds)   
+}
 
 #'
 #' use biomart to extract the current feature annotation

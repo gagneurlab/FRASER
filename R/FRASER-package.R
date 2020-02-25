@@ -18,7 +18,7 @@
 #'
 ### GRange/Experiment/bamFile packages
 #' @importFrom BiocGenerics updateObject counts counts<- strand strand<-
-#' @importFrom GenomicFeatures makeTxDbFromGFF intronsByTranscript
+#' @importFrom GenomicFeatures makeTxDbFromGFF intronsByTranscript genes
 #' @importFrom GenomicAlignments junctions readGAlignments summarizeJunctions
 #' @importFrom SummarizedExperiment assay assay<- assays assays<- assayNames
 #'          colData colData<- rowData rowRanges rowRanges<- SummarizedExperiment
@@ -26,12 +26,13 @@
 #'          makeGRangesFromDataFrame
 #' @importFrom IRanges subsetByOverlaps from to IRanges ranges
 #' @importFrom Rsamtools ScanBamParam scanBamHeader bamMapqFilter
-#'          bamWhich bamWhich<-
+#'          bamWhich bamWhich<- BamFile
 #' @importFrom Rsubread featureCounts
 #'
 ### Annotation
 #'
 #' @importFrom biomaRt useEnsembl getBM
+#' @importFrom AnnotationDbi select
 #'
 #'
 ### Plotting
@@ -52,9 +53,10 @@
 #' @importFrom data.table data.table as.data.table is.data.table := fread
 #'          setnames
 #' @importFrom tidyr %>%
-#' @importFrom HDF5Array writeHDF5Array path
+#' @importFrom HDF5Array writeHDF5Array path HDF5Array 
+#'          saveHDF5SummarizedExperiment
 #' @importFrom rhdf5 h5ls H5Fopen H5Fclose H5Pclose H5Dget_create_plist
-#'          H5Pget_layout H5Pget_chunk
+#'          H5Pget_layout H5Pget_chunk 
 #'
 ### P-Value calculation
 #'
@@ -84,7 +86,7 @@
 #' @importFrom GenomeInfoDb keepStandardChromosomes seqlevels<- seqlevels
 #'          seqlengths seqlengths<- seqlevelsStyle<- seqlevelsStyle seqnames 
 #'          seqinfo
-#' @importFrom DelayedArray rowMaxs rowMeans path<-
+#' @importFrom DelayedArray rowMaxs rowMeans path<- cbind
 #' @importFrom DelayedMatrixStats colSds rowMedians rowSds colMeans2 rowMeans2
 #'          rowQuantiles
 #' @importFrom matrixStats colMaxs colMedians colMins colAnys

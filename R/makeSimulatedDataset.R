@@ -20,7 +20,7 @@
 #' fds1
 #'
 #' # A generic dataset with specificed sample size and injection method
-#' fds2 <- makeSimulatedFraserDataSet(m=100, j=500, q=5)
+#' fds2 <- makeSimulatedFraserDataSet(m=10, j=100, q=3)
 #' fds2
 #'
 #' @rdname makeSimulatedFraserDataSet
@@ -427,7 +427,7 @@ makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=1000, q=10,
 #' 
 #' @examples 
 #' # A generic dataset
-#' fds <- makeSimulatedFraserDataSet()
+#' fds <- makeSimulatedFraserDataSet(m=10, j=100, q=3)
 #' fds <- injectOutliers(fds, minDpsi=0.2, freq=1E-3)
 #' @export
 injectOutliers <- function(fds, type=c("psi5", "psi3", "psiSite"),
@@ -494,6 +494,7 @@ injectOutliers <- function(fds, type=c("psi5", "psi3", "psiSite"),
     
     
     # sample primary injection
+    primary <- NULL
     primaryInjection <- merge(as.data.table(list_index), dt,
             sort=FALSE, by.x="row", by.y="idxGroup", allow.cartesian=TRUE)
     primaryInjection[,primary:=idxInGroup==sample(idxInGroup,1),by="row,col"]

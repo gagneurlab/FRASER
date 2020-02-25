@@ -1,7 +1,7 @@
 Package: FRASER
 Type: Package
 Title: Find RAre Splicing Events in RNA-Seq Data
-Version: 0.99.10
+Version: 0.99.17
 Date: 2019-10-05
 Author: Christian Mertes <mertes@in.tum.de>, Ines Scheller <scheller@in.tum.de>,
     Prof. Julien Gagneur <gagneur@in.tum.de>
@@ -11,12 +11,12 @@ Description: Detection of rare aberrant splicing events in transcriptome
     rare diseases where RNA-seq is performed to identify splicing defects.
 License: MIT + file LICENSE
 Depends:
-    R (>= 3.5),
     BiocParallel,
     data.table,
     Rsamtools,
     SummarizedExperiment (>= 1.6.3)
 Imports:
+    AnnotationDbi,
     BBmisc,
     Biobase,
     BiocGenerics,
@@ -60,6 +60,8 @@ Suggests:
     rmarkdown,
     testthat,
     covr,
+    TxDb.Hsapiens.UCSC.hg19.knownGene,
+    org.Hs.eg.db,
 LinkingTo:
     Rcpp,
     RcppArmadillo
@@ -91,9 +93,7 @@ Collate:
     find_encoding_dimensions.R
     getURLs.R
     helper-functions.R
-    plotResults.R
     saveHDF5Objects.R
-    plotDistributions.R
     RcppExports.R
     autoencoder.R
     updateD.R

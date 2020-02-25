@@ -12,13 +12,14 @@ addons:
       - libxml2-dev
       - tk-dev
       - libgit2-dev
+      - libmagick++-dev
 
 r:
   - bioc-devel
   - bioc-release
   - 3.6.0
 #  - 3.5.3
-  - 3.5.0
+#  - 3.5.0
 
 stages:
   - Setup Cache
@@ -39,9 +40,9 @@ jobs:
 #    - stage: Setup Cache
 #      r: 3.5.3
 #      script: true
-    - stage: Setup Cache
-      r: 3.5.0
-      script: true
+#    - stage: Setup Cache
+#      r: 3.5.0
+#      script: true
 
 before_install:
   - tlmgr install index marginfix bera nowidow parnotes
@@ -49,15 +50,15 @@ before_install:
 install:
   - R --version
   - Rscript setupEnv.R
+  - R -e "install.packages('magick')"
 
 script:
   - R CMD build --no-build-vignettes .
   - R CMD BiocCheck --no-check-vignettes *tar.gz
   - R CMD check --no-vignettes --timings *tar.gz
+  - cd vignettes && R CMD Sweave --engine=knitr::knitr --pdf FraseR.Rnw
   - R -e 'devtools::run_examples()'
   - R -e 'devtools::test()'
-  - cd vignettes && R CMD Sweave --engine=knitr::knitr --pdf FraseR.Rnw
-
 
 after_success:
   - test $TRAVIS_BUILD_STAGE_NAME = "Test" && 

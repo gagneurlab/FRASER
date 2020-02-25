@@ -2,7 +2,7 @@
 % Please edit documentation in R/AllGenerics.R
 \name{assays,FraseRDataSet-method}
 \alias{assays,FraseRDataSet-method}
-\title{Returns the assay corrensonding to the given name/index of the FraseRDataSet}
+\title{Returns the assay for the given name/index of the FraseRDataSet}
 \usage{
 \S4method{assays}{FraseRDataSet}(x, ..., withDimnames = TRUE)
 }
@@ -17,5 +17,5 @@
 (Delayed) matrix.
 }
 \description{
-Returns the assay corrensonding to the given name/index of the FraseRDataSet
+Returns the assay for the given name/index of the FraseRDataSet
 }

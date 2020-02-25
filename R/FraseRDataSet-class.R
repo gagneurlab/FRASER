@@ -22,7 +22,7 @@ setClass("FraseRDataSet",
         name            = "Data Analysis",
         bamParam        = ScanBamParam(mapqFilter=0),
         strandSpecific  = FALSE,
-        workingDir      = file.path(Sys.getenv("HOME"), "FraseR"),
+        workingDir      = file.path(tempdir(), "FraseR"),
         nonSplicedReads = SummarizedExperiment(rowRanges=GRanges())
     )
 )
@@ -226,8 +226,22 @@ setMethod("show", "FraseRDataSet", function(object) {
 #' @author Christian Mertes \email{mertes@@in.tum.de}
 #' @export
 #' @examples
-#'     fraser <- FraseRDataSet()
-#'     fraser <- countRNAData(createTestFraseRSettings())
+#'   fraser <- FraseRDataSet()
+#'   
+#'   # example sample annoation
+#'   sampleTable <- fread(system.file("extdata",
+#'           "sampleTable_countTable.tsv", package="FRASER", mustWork=TRUE))
+#'  
+#'   # get raw counts 
+#'   junctionCts   <- fread(system.file("extdata", 
+#'           "raw_junction_counts.tsv.gz", package="FRASER", mustWork=TRUE))
+#'   spliceSiteCts <- fread(system.file("extdata", 
+#'           "raw_site_counts.tsv.gz", package="FRASER", mustWork=TRUE))
+#'   
+#'   # create FraseR object
+#'   fds <- FraseRDataSet(colData=sampleTable, junctions=junctionCts,
+#'           spliceSites=spliceSiteCts, name="Example Dataset")
+#'   
 FraseRDataSet <- function(colData=NULL, junctions=NULL, spliceSites=NULL, ...) {
     if(!is.null(colData)){
         if(is.data.table(colData)){

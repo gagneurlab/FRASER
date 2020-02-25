@@ -13,7 +13,7 @@
 \usage{
 countRNAData(
   fds,
-  NcpuPerSample = 3,
+  NcpuPerSample = 1,
   junctionMap = NULL,
   minAnchor = 5,
   recount = FALSE,
@@ -37,7 +37,7 @@ getSplitReadCountsForAllSamples(
 
 getNonSplitReadCountsForAllSamples(
   fds,
-  splitCounts,
+  splitCountRanges,
   NcpuPerSample = 3,
   minAnchor = 5,
   recount = FALSE,
@@ -59,14 +59,16 @@ countSplitReads(
 
 mergeCounts(
   countList,
+  fds,
   junctionMap = NULL,
   assumeEqual = FALSE,
+  spliceSiteCoords = NULL,
   BPPARAM = SerialParam()
 )
 
 countNonSplicedReads(
   sampleID,
-  splitCounts,
+  splitCountRanges,
   fds,
   NcpuPerSample = 3,
   minAnchor = 5,
@@ -114,16 +116,20 @@ reads are not recounted), unless the option recount=TRUE is
 used. If this file doesn't exist or if recount=TRUE, then it 
 will be created after counting has finished.}
 
-\item{splitCounts}{The merged GRanges object containing the position and 
-counts of all the introns in the dataset for all samples.}
+\item{splitCountRanges}{The merged GRanges object containing the positions 
+of all the introns in the dataset over all samples.}
 
 \item{longRead}{If TRUE, then the isLongRead option of 
 Rsubread::featureCounts is used when counting the non spliced reads 
 overlapping splice sites.}
 
-\item{nonSplitCounts}{The merged GRanges object containing the position and 
-non split read counts of all splice sites present in the 
-dataset for all samples.}
+\item{splitCounts}{The SummarizedExperiment object containing the 
+position and counts of all the introns in the dataset 
+for all samples.}
+
+\item{nonSplitCounts}{The SummarizedExperiment object containing the 
+position and non split read counts of all splice sites 
+present in the dataset for all samples.}
 
 \item{sampleID}{The ID of the sample to be counted.}
 
@@ -131,8 +137,8 @@ dataset for all samples.}
 be merged into one object.}
 
 \item{assumeEqual}{Logical indicating whether all objects in 
-\code{countList} can be assumed to contain counts for the same ranges. 
-If FALSE, merging of the ranges is performed.}
+\code{countList} can be assumed to contain counts for the same 
+ranges. If FALSE, merging of the ranges is performed.}
 
 \item{spliceSiteCoords}{A GRanges object containing the positions of the 
 splice sites. If it is NULL, then splice sites coordinates are 
@@ -152,7 +158,7 @@ object.
 
 \code{\link{countSplitReads}} returns a GRanges object.
 
-\code{\link{mergeCounts}} returns a GRanges object.
+\code{\link{mergeCounts}} returns a SummarizedExperiment object.
 
 \code{\link{countNonSplicedReads}} returns a GRanges object.
 }
@@ -187,29 +193,30 @@ a sample are set to zero.
 \item \code{countRNAData}: This method extracts and counts the split reads and
 non spliced reads from RNA bam files.
 
-\item \code{getSplitReadCountsForAllSamples}: This method creates a GRanges object containing the 
-split read counts from all specified samples.
+\item \code{getSplitReadCountsForAllSamples}: This method creates a GRanges 
+object containing the split read counts from all 
+specified samples.
 
-\item \code{getNonSplitReadCountsForAllSamples}: This method creates a GRanges object containing the 
-non split read counts at the exon-intron boundaries inferred 
-from the GRanges object containing the positions of all the 
-introns in this dataset.
+\item \code{getNonSplitReadCountsForAllSamples}: This method creates a GRanges 
+object containing the non split read counts at the 
+exon-intron boundaries inferred from the GRanges object 
+containing the positions of all the introns in this dataset.
 
-\item \code{addCountsToFraseRDataSet}: This method adds the split read and non split read
-counts to a existing FraseRDataSet containing the settings.
+\item \code{addCountsToFraseRDataSet}: This method adds the split read and 
+non split read counts to a existing FraseRDataSet 
+containing the settings.
 
-\item \code{countSplitReads}: This method counts all split reads in a bam file for a 
-single sample.
+\item \code{countSplitReads}: This method counts all split reads in a 
+bam file for a single sample.
 
-\item \code{mergeCounts}: This method merges counts for multiple samples into one 
-SummarizedExperiment object.
+\item \code{mergeCounts}: This method merges counts for multiple 
+samples into one SummarizedExperiment object.
 
-\item \code{countNonSplicedReads}: This method counts non spliced reads based on the 
-given target (acceptor/donor) regions for a single sample.
+\item \code{countNonSplicedReads}: This method counts non spliced reads based 
+on the given target (acceptor/donor) regions for a single sample.
 }}
 
 \examples{
   fds <- countRNAData(createTestFraseRSettings())
-  fds <- countRNAData(createTestFraseRSettings(), 5)
 
 }

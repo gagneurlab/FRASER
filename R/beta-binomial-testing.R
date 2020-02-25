@@ -3,11 +3,11 @@
 #' calculates the pvalue per type (psi3,psi5,spliceSite) with beta-binomial
 #'
 #' @examples
-#' fds <- countRNAData(createTestFraseRSettings())
+#' fds <- createTestFraseRDataSet()
 #' fds <- calculatePSIValues(fds)
 #' debug(FraseR:::betabinVglmTest)
 #' fds <- pvalueByBetaBinomialPerType(fds, "testPval", "psi5",
-#'         FraseR:::betabinVglmTest)
+#'         FRASER:::betabinVglmTest)
 #'
 #' @noRd
 pvalueByBetaBinomialPerType <- function(fds, aname, psiType, pvalFun,
@@ -251,37 +251,4 @@ table2character <- function(table){
     vapply(seq_along(table), function(idx) paste(
         "\t", table[idx], "x", names(table)[idx]
     ), FUN.VALUE="")
-}
-
-
-testing <- function(){
-    ocMat <- cMat
-
-    ccMat <- ocMat
-    rcMat <- rowSums(ccMat)
-    targetQ <- 0.75
-    targetDepth <- quantile(rowSums(ccMat), targetQ)
-
-    sizeFactor <- targetDepth / rcMat
-
-    ncMat <- ceiling(ccMat * sizeFactor)+1
-
-    cMat <- ncMat[2:101,]
-    y <- cMat[,1]
-    N <- rowSums(cMat)
-
-    plot(-log10((seq_along(pval))/length(pval)), -log10(sort(pval)))
-    abline(0,1)
-    grid()
-}
-
-
-#' @noRd
-cpp_truncNll_db <- function(par, H, k, n, rho){
-    truncNLL_db(par=par, H=H, k=k, n=n, rho=rho)
-}
-
-#' @noRd
-cpp_truncGrad_db <- function(par, H, k, n, rho){
-    truncGrad_db(par=par, H=H, k=k, n=n, rho=rho)
 }

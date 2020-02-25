@@ -14,17 +14,6 @@ test_that("Getter/Setter hyper params", {
     # expect_equal(as.vector(counts(test_rangeFDS, type="ss")), test_rawCountsSS)
 })
 
-test_that("test minAnchor", {
-    #fds <- createTestFraseRSettings()
-    #features <- makeGRangesFromDataFrame(data.table(GeneID=1:5, Chr="chr19",
-    #        Start=c(7592514, 7592749, 7594598, 7595171, 7595320),
-    #        End=c(7592515, 7592750, 7594599, 7595172, 7595321), Strand="*"))
-    #expect_equal(c(9, 10, 0, 0, 9), as.vector(countNonSplicedReads(
-    #        "sample3", features, fds, minAnchor=5, recount=TRUE)$count))
-    #expect_equal(c(5, 10, 0, 0, 8), as.vector(countNonSplicedReads(
-    #    "sample3", features, fds, minAnchor=15, recount=TRUE)$count))
-})
-
 test_that("Test psi values", {
     attach(test_generate_count_example())
 

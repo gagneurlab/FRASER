@@ -23,8 +23,7 @@
 #' @return FraseRDataSet
 #' 
 #' @examples
-#' fds <- countRNAData(createTestFraseRSettings())
-#' fds <- calculatePSIValues(fds)
+#' fds <- createTestFraseRDataSet()
 #' fds <- filterExpression(fds)
 #'
 #' @export

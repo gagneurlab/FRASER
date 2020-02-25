@@ -20,7 +20,7 @@
 #' @return FraseRDataSet
 #' @export
 #' @examples
-#'   fds <- countRNAData(createTestFraseRSettings())
+#'   fds <- createTestFraseRDataSet()
 #'   fds <- calculatePSIValues(fds)
 calculatePSIValues <- function(fds, types=psiTypes, overwriteCts=FALSE, 
                     BPPARAM=bpparam()){

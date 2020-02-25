@@ -2,6 +2,7 @@
 % Please edit documentation in R/annotationOfRanges.R
 \name{annotateRanges}
 \alias{annotateRanges}
+\alias{annotateRangesWithTxDb}
 \title{Annotates the given FraseRDataSet with the HGNC symbol with biomaRt}
 \usage{
 annotateRanges(
@@ -9,7 +10,16 @@ annotateRanges(
   feature = "hgnc_symbol",
   featureName = feature,
   biotype = list("protein_coding"),
-  ensembl = NULL
+  ensembl = NULL,
+  GRCh = 37
+)
+
+annotateRangesWithTxDb(
+  fds,
+  feature = "SYMBOL",
+  featureName = "hgnc_symbol",
+  txdb = NULL,
+  orgDb = NULL
 )
 }
 \arguments{
@@ -24,6 +34,16 @@ annotated.}
 
 \item{ensembl}{The ensembl that should be used. If NULL, the default one is 
 used (hsapiens_gene_ensembl, GRCh37).}
+
+\item{GRCh}{GRCh version to connect to. If this is NULL, then the current 
+GRCh38 is used. Otherwise, this can only be 37 (default) at the moment 
+(see \code{useEnsembl}).}
+
+\item{txdb}{A \code{TxDb} object. If this is NULL, then the default 
+one is used, currently this is \code{TxDb.Hsapiens.UCSC.hg19.knownGene}.}
+
+\item{orgDb}{An \code{orgDb} object If this is NULL, then the 
+default one is used, currently this is \code{org.Hs.eg.db}.}
 }
 \value{
 FraseRDataSet
@@ -33,8 +53,14 @@ Annotates the given FraseRDataSet with the HGNC symbol with biomaRt
 }
 \examples{
 
-fds <- countRNAData(createTestFraseRSettings())
-fds <- annotateRanges(fds)
+fds <- createTestFraseRDataSet()
+fds <- annotateRanges(fds, GRCh=NULL)
+
+require(TxDb.Hsapiens.UCSC.hg19.knownGene)
+txdb <- TxDb.Hsapiens.UCSC.hg19.knownGene
+require(org.Hs.eg.db)
+orgDb <- org.Hs.eg.db
+fds <- annotateRangesWithTxDb(fds, txdb=txdb, orgDb=orgDb)
 
 rowRanges(fds, type="psi5")[,"hgnc_symbol"]
 

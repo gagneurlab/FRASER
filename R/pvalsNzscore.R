@@ -17,10 +17,7 @@
 #' 
 #' @examples
 #'   # preprocessing
-#'   fds <- createTestFraseRSettings()
-#'   fds <- countRNAData(fds)
-#'   fds <- calculatePSIValues(fds)
-#'   fds <- fit(fds, q=5, correction="PCA", type="psi5")
+#'   fds <- createTestFraseRDataSet()
 #'   
 #'   # nomial p values
 #'   fds <- calculatePvalues(fds, type="psi5")

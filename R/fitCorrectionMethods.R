@@ -5,10 +5,11 @@
 #' distribution to the introns.
 #' 
 #' Available methods to correct for the confounders are currently: a denoising 
-#' autoencoder with a BB loss ("FraseR"), PCA ("PCA"), a hybrid approach where 
-#' PCA is used to fit the latent space and then the decoder of the autoencoder 
-#' is fit using the BB loss ("PCA-BB-Decoder"). Although not recommended, it is 
-#' also possbile to directly fit the BB distrbution to the raw counts ("BB"). 
+#' autoencoder with a BB loss ("AE" and "AE-weighted"), PCA ("PCA"), a hybrid 
+#' approach where PCA is used to fit the latent space and then the decoder of 
+#' the autoencoder is fit using the BB loss ("PCA-BB-Decoder"). Although not 
+#' recommended, it is also possible to directly fit the BB distrbution to the 
+#' raw counts ("BB"). 
 #'
 #' @inheritParams countRNA
 #' @param correction The method that should be used to correct for confounders. 
@@ -41,18 +42,16 @@
 #' 
 #' @examples 
 #'   # generate toy data
-#'   fds <- makeExampleFraseRDataSet()
+#'   fds <- createTestFraseRDataSet()
 #'   
 #'   # fit
 #'   fds <- fit(fds, correction="PCA", q=3, type="psi5")
 #'   
 #' @export
-fit <- function(fds, correction=c("PCA", "PCA-regression", "PCA-BB-Decoder", 
-                        "FraseR",
-                        "FraseR-weighted", "PCA-BB-full", "PCA-reg-full",
-                        "FraseR-5DecoderBatches", "FraseR-1DecoderBatches",
-                        "fullFraseR", "PCA-BB-Decoder-no-weights",
-                        "BB"),
+fit <- function(fds, correction=c("PCA", "PCA-BB-Decoder", "AE", "AE-weighted", 
+                                "PCA-BB-full", "fullAE", "PCA-regression", 
+                                "PCA-reg-full", "PCA-BB-Decoder-no-weights", 
+                                "BB"),
                 q, type="psi3", rhoRange=c(1e-8, 1-1e-8), 
                 weighted=FALSE, noiseAlpha=1, convergence=1e-5, 
                 iterations=15, initialize=TRUE, control=list(), 
@@ -75,7 +74,7 @@ fit <- function(fds, correction=c("PCA", "PCA-regression", "PCA-BB-Decoder",
     message(date(), ": Running fit with correction method: ", correction)
     fds <- switch(
         method,
-        FraseR      = fitFraserAE(
+        "AE"      = fitFraserAE(
             fds = fds, 
             q = q,
             type = type,
@@ -92,43 +91,7 @@ fit <- function(fds, correction=c("PCA", "PCA-regression", "PCA-BB-Decoder",
             subset = TRUE,
             nrDecoderBatches = 1
         ),
-        "FraseR-5DecoderBatches" = fitFraserAE(
-            fds = fds,
-            q = q,
-            type = type,
-            noiseAlpha = noiseAlpha,
-            rhoRange = rhoRange,
-            lambda = 0,
-            convergence = convergence,
-            iterations = iterations,
-            initialize = initialize,
-            nSubset = nSubset,
-            control = control,
-            BPPARAM = BPPARAM,
-            verbose = verbose,
-            subset = TRUE,
-            nrDecoderBatches = 5,
-            weighted = FALSE
-        ),
-        "FraseR-1DecoderBatches" = fitFraserAE(
-            fds = fds,
-            q = q,
-            type = type,
-            noiseAlpha = noiseAlpha,
-            rhoRange = rhoRange,
-            lambda = 0,
-            convergence = convergence,
-            iterations = iterations,
-            initialize = initialize,
-            nSubset = nSubset,
-            control = control,
-            BPPARAM = BPPARAM,
-            verbose = verbose,
-            subset = TRUE,
-            nrDecoderBatches = 1,
-            weighted = FALSE
-        ),
-        "FraseR-weighted" = fitFraserAE(
+        "AE-weighted" = fitFraserAE(
             fds = fds,
             q = q,
             type = type,
@@ -212,7 +175,7 @@ fit <- function(fds, correction=c("PCA", "PCA-regression", "PCA-BB-Decoder",
             minDeltaPsi = minDeltaPsi,
             useLM = TRUE
         ),
-        fullFraseR  = fitFraserAE(
+        fullAE  = fitFraserAE(
             fds = fds,
             q = q,
             type = type,

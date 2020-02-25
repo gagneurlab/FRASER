@@ -46,6 +46,6 @@ Inject artificial outliers in an existing fds
 }
 \examples{
 # A generic dataset
-fds <- makeSimulatedFraserDataSet()
+fds <- makeSimulatedFraserDataSet(m=10, j=100, q=3)
 fds <- injectOutliers(fds, minDpsi=0.2, freq=1E-3)
 }

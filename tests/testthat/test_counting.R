@@ -20,9 +20,9 @@ test_that("test minAnchor", {
             Start=c(7592514, 7592749, 7594598, 7595171, 7595320),
             End=c(7592515, 7592750, 7594599, 7595172, 7595321), Strand="*"))
     expect_equivalent(c(9, 9, 10, 10, 0, 0, 0, 0, 9, 9), countNonSplicedReads(
-            "sample3", features, fds, minAnchor=5, recount=TRUE)$count)
+            "sample3", features, fds, minAnchor=5, recount=TRUE)[,1])
     expect_equivalent(c(6, 5, 10, 10, 0, 0, 0, 0, 9, 8), countNonSplicedReads(
-        "sample3", features, fds, minAnchor=15, recount=TRUE)$count)
+        "sample3", features, fds, minAnchor=15, recount=TRUE)[,1])
 })
 
 test_that("Test psi values", {

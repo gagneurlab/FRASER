@@ -2,7 +2,7 @@
 % Please edit documentation in R/AllGenerics.R
 \name{length,FraseRDataSet-method}
 \alias{length,FraseRDataSet-method}
-\title{retrive the length of the object (aka number of junctions)}
+\title{retrieve the length of the object (aka number of junctions)}
 \usage{
 \S4method{length}{FraseRDataSet}(x)
 }
@@ -13,5 +13,5 @@
 Length of the object.
 }
 \description{
-retrive the length of the object (aka number of junctions)
+retrieve the length of the object (aka number of junctions)
 }
