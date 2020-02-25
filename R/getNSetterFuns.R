@@ -610,7 +610,7 @@ getPlottingDT <- function(fds, axis=c("row", "col"), type=NULL, result=NULL,
 
     # add aberrant information to it
     aberrantVec <- aberrant(fds, ..., padjVals=dt[,.(padj)],
-        dPsi=dt[,.(deltaPsi)], zscores=dt[,.(zscore)])
+        dPsi=dt[,.(deltaPsi)], zscores=dt[,.(zscore)], n=dt[,.(n)])
     dt[,aberrant:=aberrantVec]
 
     # return object

@@ -929,7 +929,7 @@ mapSeqlevels <- function(fds, style="UCSC", ...){
 #' @export
 #'
 aberrant <- function(fds, type=currentType(fds), padjCutoff=0.05,
-                    deltaPsiCutoff=0.3, zScoreCutoff=NA,
+                    deltaPsiCutoff=0.3, zScoreCutoff=NA, minCoverage=5,
                     by=c("none", "sample", "feature"), aggregate=FALSE, ...){
 
     checkNaAndRange(zScoreCutoff,   min=0, max=Inf, na.ok=TRUE)
@@ -938,6 +938,11 @@ aberrant <- function(fds, type=currentType(fds), padjCutoff=0.05,
     by <- match.arg(by)
 
     dots <- list(...)
+    if("n" %in% names(dots)){
+        n <- dots[['n']]
+    } else {
+        n <- N(fds, type=type)
+    }
     if("zscores" %in% names(dots)){
         zscores <- dots[['zscores']]
     } else {
@@ -952,7 +957,8 @@ aberrant <- function(fds, type=currentType(fds), padjCutoff=0.05,
         dpsi <- dots[['dPsi']]
     } else {
         dpsi <- deltaPsiValue(fds, type=type)
-    }
+    } 
+    
     
     # create cutoff matrix
     goodCutoff <- matrix(TRUE, nrow=nrow(zscores), ncol=ncol(zscores),
@@ -965,6 +971,9 @@ aberrant <- function(fds, type=currentType(fds), padjCutoff=0.05,
     }
     
     # check each cutoff if in use (not NA)
+    if(!is.na(minCoverage)){
+        goodCutoff <- goodCutoff & as.matrix(n >= minCoverage)
+    }
     if(!is.na(zScoreCutoff)){
         goodCutoff <- goodCutoff & as.matrix(abs(zscores) > zScoreCutoff)
     }
@@ -974,6 +983,7 @@ aberrant <- function(fds, type=currentType(fds), padjCutoff=0.05,
     if(!is.na(padjCutoff)){
         goodCutoff <- goodCutoff & as.matrix(padj < padjCutoff)
     }
+    goodCutoff[is.na(goodCutoff)] <- FALSE
     
     # check if we should go for aggregation
     # TODO to speed it up we only use any hit within a feature
