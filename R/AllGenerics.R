@@ -672,7 +672,7 @@ FraseR.results <- function(x, sampleIDs, fdrCutoff, zscoreCutoff, dPsiCutoff,
                 colnames(deltaPsiVals) <- sc
             }
             
-            # create reult table
+            # create result table
             sampleRes <- lapply(sc,
                     resultsSingleSample, gr=gr, pvals=pvals, padjs=padjs,
                     zscores=zscores, psiType=type, psivals=psivals,
@@ -741,10 +741,14 @@ FraseR.results <- function(x, sampleIDs, fdrCutoff, zscoreCutoff, dPsiCutoff,
 #' # get data, fit and compute p-values and z-scores
 #' fds <- createTestFraseRDataSet()
 #' 
-#' # extract results: for this example dataset, padjust cutoff of 0.15 used to
+#' # extract results: for this example dataset, z score cutoff of 2 is used to
 #' # get at least one result and show the output
-#' res <- results(fds, padjCutoff=0.15, zScoreCutoff=NA, deltaPsiCutoff=0.1)
+#' res <- results(fds, padjCutoff=NA, zScoreCutoff=3, deltaPsiCutoff=0.05)
 #' res
+#' 
+#' # aggregate the results by genes (gene symbols need to be annotated first 
+#' # using annotateRanges() function)
+#' resultsByGenes(res)
 #'
 #' # get aberrant events per sample: on the example data, nothing is aberrant
 #' # based on the adjusted p-value
@@ -773,6 +777,8 @@ setMethod("results", "FraseRDataSet", function(x, sampleIDs=samples(x),
             BPPARAM=BPPARAM)
 })
 
+#' @rdname results
+#' @export
 resultsByGenes <- function(res, geneColumn="hgncSymbol", method="BY"){
     # sort by pvalue
     res <- res[order(res$pValue)]

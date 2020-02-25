@@ -3,6 +3,7 @@
 \name{results}
 \alias{results}
 \alias{results,FraseRDataSet-method}
+\alias{resultsByGenes}
 \alias{aberrant}
 \title{Extracting results and aberrant splicing events}
 \usage{
@@ -18,6 +19,8 @@ results(x, ...)
   psiType = c("psi3", "psi5", "psiSite"),
   BPPARAM = bpparam()
 )
+
+resultsByGenes(res, geneColumn = "hgncSymbol", method = "BY")
 
 aberrant(
   fds,
@@ -83,10 +86,14 @@ aberrant splicing events based on the given cutoffs.
 # get data, fit and compute p-values and z-scores
 fds <- createTestFraseRDataSet()
 
-# extract results: for this example dataset, padjust cutoff of 0.15 used to
+# extract results: for this example dataset, z score cutoff of 2 is used to
 # get at least one result and show the output
-res <- results(fds, padjCutoff=0.15, zScoreCutoff=NA, deltaPsiCutoff=0.1)
+res <- results(fds, padjCutoff=NA, zScoreCutoff=3, deltaPsiCutoff=0.05)
 res
+
+# aggregate the results by genes (gene symbols need to be annotated first 
+# using annotateRanges() function)
+resultsByGenes(res)
 
 # get aberrant events per sample: on the example data, nothing is aberrant
 # based on the adjusted p-value
