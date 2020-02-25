@@ -57,6 +57,14 @@ result}
 
 \item{BPPARAM}{The BiocParallel parameter.}
 
+\item{res}{Result as created with \code{results()}}
+
+\item{geneColumn}{The name of the column in \code{mcols(res)} that contains 
+the gene symbols.}
+
+\item{method}{The p.adjust method that is being used to adjust p values per
+sample.}
+
 \item{fds}{FraseRDataSet}
 
 \item{type}{Splicing type (psi5, psi3 or psiSite)}

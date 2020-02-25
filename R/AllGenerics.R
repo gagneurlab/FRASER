@@ -720,6 +720,11 @@ FraseR.results <- function(x, sampleIDs, fdrCutoff, zscoreCutoff, dPsiCutoff,
 #' result
 #' @param psiType The psi types for which the results should be retrieved.
 #' @param BPPARAM The BiocParallel parameter.
+#' @param res Result as created with \code{results()}
+#' @param geneColumn The name of the column in \code{mcols(res)} that contains 
+#'     the gene symbols.   
+#' @param method The p.adjust method that is being used to adjust p values per
+#'     sample.
 #' @param type Splicing type (psi5, psi3 or psiSite)
 #' @param by By default \code{none} which means no grouping. But if 
 #'              \code{sample} or \code{feature} is specified the sum by 
