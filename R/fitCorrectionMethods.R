@@ -310,7 +310,7 @@ fitPCA <- function(fds, q, psiType, rhoRange=c(1e-5, 1-1e-5), noiseAlpha=NULL,
     metadata(fds)[[paste0('loss_', psiType)]] <- lossED(
             fds, byRows=TRUE, noiseAlpha=noiseAlpha)
     # store corrected logit psi
-    predictedMeans(fds, psiType) <- t(predictMu(fds))
+    predictedMeans(fds, psiType, withDimnames=FALSE) <- t(predictMu(fds))
 
     return(fds)
 }

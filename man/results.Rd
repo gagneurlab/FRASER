@@ -28,6 +28,7 @@ aberrant(
   padjCutoff = 0.05,
   deltaPsiCutoff = 0.3,
   zScoreCutoff = NA,
+  minCoverage = 5,
   by = c("none", "sample", "feature"),
   aggregate = FALSE,
   ...

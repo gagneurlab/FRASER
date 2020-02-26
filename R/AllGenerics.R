@@ -387,14 +387,14 @@ setMethod("assayNames", "FraseRDataSet", function(x) {
 #'
 #' @return (Delayed) matrix.
 #' @export
-setMethod("assays", "FraseRDataSet", function(x, ..., withDimnames=TRUE){
+setMethod("assays", "FraseRDataSet", function(x, withDimnames=TRUE, ...){
     return(c(
-        assays(asSE(x), ..., withDimnames=withDimnames),
-        assays(nonSplicedReads(x), ..., withDimnames=withDimnames)
+        assays(asSE(x), withDimnames=withDimnames, ...),
+        assays(nonSplicedReads(x), withDimnames=withDimnames, ...)
     ))
 })
 FraseRDataSet.assays.replace <-
-            function(x, ..., HDF5=TRUE, type=NULL, withDimnames=TRUE, value){
+            function(x, withDimnames=TRUE, HDF5=TRUE, type=NULL, ..., value){
     if(any(names(value) == "")) stop("Name of an assay can not be empty!")
     if(any(duplicated(names(value)))) stop("Assay names need to be unique!")
     if(is.null(type)){
@@ -427,7 +427,7 @@ FraseRDataSet.assays.replace <-
     # assign new assays
     value <- jslots
     x <- callNextMethod()
-    assays(nonSplicedReads(x), ..., withDimnames=withDimnames) <- sslots
+    assays(nonSplicedReads(x), withDimnames=withDimnames, ...) <- sslots
 
     # validate and return
     validObject(x)

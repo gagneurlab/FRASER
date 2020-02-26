@@ -575,11 +575,12 @@ A \fds{} object can be easily saved and reloaded at any time as follows:
 workingDir(fds) <- tempdir()
 name(fds) <- "ExampleAnalysis"
 saveFraseRDataSet(fds, dir=workingDir(fds), name=name(fds))
+
 # two ways of loading a fds by either specifying the directory and anaysis name
 # or directly giving the path the to fds-object.RDS file
 fds <- loadFraseRDataSet(dir=workingDir(fds), name=name(fds))
-fds <- loadFraseRDataSet(file=file.path(workingDir(fds), "savedObjects", 
-                                        "ExampleAnalysis", "fds-object.RDS"))
+fds <- loadFraseRDataSet(file=file.path(workingDir(fds), 
+    "savedObjects", "ExampleAnalysis", "fds-object.RDS"))
 
 @
 

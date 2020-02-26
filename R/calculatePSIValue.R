@@ -111,20 +111,18 @@ calculatePSIValuePrimeSite <- function(fds, psiType, overwriteCts, BPPARAM){
     names(psiValues) <- samples(fds)
 
     # merge it to a DataFrame and assign it to our object
-    assay(fds, type="j", "psi5") <- vapply(psiValues, "[[", "psi5", 
-                                            FUN.VALUE=numeric(nrow(
-                                                mcols(fds, type="psi5"))) )
-    assay(fds, type="j", "psi3") <- vapply(psiValues, "[[", "psi3",
-                                            FUN.VALUE=numeric(nrow(
-                                                mcols(fds, type="psi3"))))
+    assay(fds, type="j", "psi5", withDimnames=FALSE) <- vapply(psiValues, 
+            "[[", "psi5", FUN.VALUE=numeric(nrow(mcols(fds, type="psi5"))))
+    assay(fds, type="j", "psi3", withDimnames=FALSE) <- vapply(psiValues, 
+            "[[", "psi3", FUN.VALUE=numeric(nrow(mcols(fds, type="psi3"))))
 
     if(isTRUE(overwriteCts)){
-        assay(fds, type="j", "rawOtherCounts_psi5") <-
-            vapply(psiValues, "[[", "o5", 
-                    FUN.VALUE=numeric(nrow(mcols(fds, type="psi5"))) )
-        assay(fds, type="j", "rawOtherCounts_psi3") <-
-            vapply(psiValues, "[[", "o3", 
-                    FUN.VALUE=numeric(nrow(mcols(fds, type="psi3"))))
+        assay(fds, type="j", "rawOtherCounts_psi5", withDimnames=FALSE) <-
+                vapply(psiValues, "[[", "o5", 
+                        FUN.VALUE=numeric(nrow(mcols(fds, type="psi5"))))
+        assay(fds, type="j", "rawOtherCounts_psi3", withDimnames=FALSE) <-
+                vapply(psiValues, "[[", "o3", 
+                        FUN.VALUE=numeric(nrow(mcols(fds, type="psi3"))))
     }
 
     return(fds)
@@ -194,13 +192,13 @@ calculateSitePSIValue <- function(fds, overwriteCts, BPPARAM){
     names(psiSiteValues) <- samples(fds)
 
     # merge it to a DataFrame and assign it to our object
-    assay(fds, type="ss", psiName) <- 
-        vapply(psiSiteValues, "[[", "psiSite", 
-                FUN.VALUE=numeric(nrow(mcols(fds, type="psiSite"))) )
-    if(isTRUE(overwriteCts)){
-        assay(fds, type="ss", psiROCName) <- 
-            vapply(psiSiteValues, "[[", "so",
+    assay(fds, type="ss", psiName, withDimnames=FALSE) <- 
+            vapply(psiSiteValues, "[[", "psiSite", 
                     FUN.VALUE=numeric(nrow(mcols(fds, type="psiSite"))))
+    if(isTRUE(overwriteCts)){
+        assay(fds, type="ss", psiROCName, withDimnames=FALSE) <- 
+                vapply(psiSiteValues, "[[", "so",
+                        FUN.VALUE=numeric(nrow(mcols(fds, type="psiSite"))))
     }
 
     return(fds)
@@ -221,7 +219,7 @@ calculateDeltaPsiValue <- function(fds, psiType, assayName){
     deltaPsi  <- psiVal - rowmedian
 
     # use as.matrix to rewrite it as a new hdf5 array
-    assays(fds, type=psiType)[[assayName]] <- deltaPsi
+    assay(fds, assayName, type=psiType, withDimnames=FALSE) <- deltaPsi
 
     return(fds)
 }

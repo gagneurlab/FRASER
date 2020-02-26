@@ -54,7 +54,7 @@ calculateZscore <- function(fds, type=currentType(fds), correction="FraseR"){
     # z = ( x - mean ) / sd
     zscores <- (logitfc - rowMeans(logitfc)) / rowSds(logitfc)
 
-    zScores(fds) <- zscores
+    zScores(fds, withDimnames=FALSE) <- zscores
 
     return(fds)
 }
@@ -121,7 +121,7 @@ calculatePvalues <- function(fds, type=currentType(fds),
         fwer_pval <- bplapply(seq_col(pvals), adjust_FWER_PValues,
                 pvals=pvals, index, BPPARAM=BPPARAM)
         fwer_pvals <- do.call(cbind, fwer_pval)
-        pVals(fds, dist="BetaBinomial") <- fwer_pvals
+        pVals(fds, dist="BetaBinomial", withDimnames=FALSE) <- fwer_pvals
     }
     
     if("binomial" %in% distributions){
@@ -134,7 +134,7 @@ calculatePvalues <- function(fds, type=currentType(fds),
         fwer_pval <- bplapply(seq_col(pvals), adjust_FWER_PValues,
                 pvals=pvals, index, BPPARAM=BPPARAM)
         fwer_pvals <- do.call(cbind, fwer_pval)
-        pVals(fds, dist="Binomial") <- fwer_pvals
+        pVals(fds, dist="Binomial", withDimnames=FALSE) <- fwer_pvals
     }
     
     if("normal" %in% distributions){
@@ -147,7 +147,7 @@ calculatePvalues <- function(fds, type=currentType(fds),
         fwer_pval <- bplapply(seq_col(pvals), adjust_FWER_PValues,
                 pvals=pvals, index, BPPARAM=BPPARAM)
         fwer_pvals <- do.call(cbind, fwer_pval)
-        pVals(fds, dist="Normal") <- fwer_pvals
+        pVals(fds, dist="Normal", withDimnames=FALSE) <- fwer_pvals
     }
     
     fds
@@ -209,7 +209,7 @@ calculatePadjValues <- function(fds, type=currentType(fds), method="BY"){
         padj <- apply(pvals[idx,], 2, p.adjust, method=method)
         padjDT <- data.table(cbind(i=unique(index), padj), key="i")[J(index)]
         padjDT[,i:=NULL]
-        padjVals(fds, dist=i) <- as.matrix(padjDT)
+        padjVals(fds, dist=i, withDimnames=FALSE) <- as.matrix(padjDT)
     }
     
     return(fds)
