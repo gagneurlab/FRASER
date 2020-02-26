@@ -128,5 +128,3 @@ globalVariables(c(".", "J", ".N", ".asDataFrame", "End", "FN", "HTML", "Start",
         "psiType", "psiValue", "seqlength", "seqlevel", "Step", "traceNr",
         "V1", "value", "zscore"),
         package="FRASER")
-
-options("FRASER.pseudoCount"=1)

@@ -104,4 +104,5 @@ Collate:
     makeSimulatedDataset.R
     fitCorrectionMethods.R
     plotMethods.R
+    zzz.R
 VignetteBuilder: knitr

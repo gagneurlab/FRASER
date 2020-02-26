@@ -132,7 +132,8 @@ saveFraseRDataSet <- function(fds, dir=NULL, name=NULL, rewrite=FALSE) {
     name(fds) <- name
     for(aname in assayNames(fds)){
         assay <- assay(fds, aname)
-        assay(fds, aname) <- saveAsHDF5(fds, aname, assay, rewrite=rewrite)
+        assay(fds, aname, withDimnames=FALSE) <- saveAsHDF5(
+                fds, aname, assay, rewrite=rewrite)
     }
 
     rdsFile <- file.path(outDir, "fds-object.RDS")
@@ -142,12 +143,6 @@ saveFraseRDataSet <- function(fds, dir=NULL, name=NULL, rewrite=FALSE) {
     return(fds)
 }
 
-#'
-#' Defaults for HDF5 global options
-#' To save the underlying assays
-#' @noRd
-options("FraseR-hdf5-chunk-nrow"=30000)
-options("FraseR-hdf5-chunk-ncol"=20)
 
 #'
 #' saves the given assay as HDF5 array on disk
