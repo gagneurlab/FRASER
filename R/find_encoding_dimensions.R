@@ -93,6 +93,10 @@ findEncodingDim <- function(i, fds, type, params, correction,
 #' @param plot If \code{TRUE}, a plot of the area under the curve and the 
 #' model loss for each evaluated parameter combination will be displayed after 
 #' the hyperparameter optimization finishes.
+#' @param delayed If FALSE, count matrices will be loaded into memory (faster 
+#' calculations), otherwise the function works on the delayedMatrix 
+#' representations (more memory efficient). The default value depends on the 
+#' number of samples in the fds-object. 
 #' 
 #' @return FraseRDataSet
 #'
@@ -115,7 +119,8 @@ optimHyperParams <- function(fds, type, correction="PCA",
                     q_param=seq(2, min(40, ncol(fds)), by=3),
                     noise_param=0, minDeltaPsi=0.1,
                     iterations=5, setSubset=15000, injectFreq=1e-2,
-                    BPPARAM=bpparam(), internalThreads=1, plot=TRUE){
+                    BPPARAM=bpparam(), internalThreads=1, plot=TRUE, 
+                    delayed=ifelse(ncol(fds) <= 300, FALSE, TRUE)){
     if(isFALSE(needsHyperOpt(correction))){
         message(date(), ": For correction '", correction, "' no hyper paramter",
                 "optimization is needed.")
@@ -128,16 +133,18 @@ optimHyperParams <- function(fds, type, correction="PCA",
     # put the most important stuff into memory
     #
     currentType(fds) <- type
-    counts(fds, type=type, side="other", HDF5=FALSE) <-
-            as.matrix(counts(fds, type=type, side="other"))
-    counts(fds, type=type, side="ofInterest", HDF5=FALSE) <-
-            as.matrix(counts(fds, type=type, side="ofInterest"))
+    if(isFALSE(delayed)){
+        counts(fds, type=type, side="other", HDF5=FALSE) <-
+                as.matrix(counts(fds, type=type, side="other"))
+        counts(fds, type=type, side="ofInterest", HDF5=FALSE) <-
+                as.matrix(counts(fds, type=type, side="ofInterest"))
+    }
 
     #
     # remove non variable and low abundance junctions
     #
     j2keepVa <- variableJunctions(fds, type, minDeltaPsi)
-    j2keepDP <- rowQuantiles(K(fds, type), probs=0.75) >= 10
+    j2keepDP <- rowQuantiles(K(fds, type), probs=0.75, drop=FALSE)[,1] >= 10
     j2keep <- j2keepDP & j2keepVa
     message("dPsi filter:", pasteTable(j2keep))
     # TODO fds <- fds[j2keep,,by=type]

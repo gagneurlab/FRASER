@@ -369,8 +369,7 @@ variableJunctions <- function(fds, type, minDeltaPsi=0.1){
 }
 
 subsetKMostVariableJunctions <- function(fds, type, n){
-    curX <- as.matrix(x(fds, type=type, all=TRUE, center=FALSE, 
-                        noiseAlpha=NULL))
+    curX <- x(fds, type=type, all=TRUE, center=FALSE, noiseAlpha=NULL)
     xsd <- colSds(curX)
     nMostVarJuncs <- which(xsd >= sort(xsd, TRUE)[min(length(xsd), n*2)])
     ans <- logical(length(xsd))

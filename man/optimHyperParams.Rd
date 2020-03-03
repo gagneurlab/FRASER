@@ -16,7 +16,8 @@ optimHyperParams(
   injectFreq = 0.01,
   BPPARAM = bpparam(),
   internalThreads = 1,
-  plot = TRUE
+  plot = TRUE,
+  delayed = ifelse(ncol(fds) <= 300, FALSE, TRUE)
 )
 }
 \arguments{
@@ -50,6 +51,11 @@ data.}
 \item{plot}{If \code{TRUE}, a plot of the area under the curve and the 
 model loss for each evaluated parameter combination will be displayed after 
 the hyperparameter optimization finishes.}
+
+\item{delayed}{If FALSE, count matrices will be loaded into memory (faster 
+calculations), otherwise the function works on the delayedMatrix 
+representations (more memory efficient). The default value depends on the 
+number of samples in the fds-object.}
 }
 \value{
 FraseRDataSet
