@@ -1,8 +1,7 @@
-#'
-#' Filtering FraseRDataSets
+#' @title Filtering FraseRDataSets
 #' 
-#' This method can be used to filter out introns that are not reliably detected 
-#' and to remove introns with no variablity between samples.
+#' @description This method can be used to filter out introns that are not 
+#' reliably detected and to remove introns with no variablity between samples.
 #' 
 #' @inheritParams countRNA
 #' @param minExpressionInOneSample The minimal read count in at least one 
@@ -18,20 +17,58 @@
 #' information of whether an intron passed the filters is only stored in the 
 #' mcols.
 #' @param delayed If FALSE, count matrices will be loaded into memory, 
-#' otherwise the function works on the delayedMatrix representations.
+#' otherwise the function works on the delayedMatrix representations. The 
+#' default value depends on the number of samples in the fds-object. 
 #'
-#' @return FraseRDataSet
+#' @return A FraseRDataSet with information about which junctions passed the
+#' filters. If \code{filter=TRUE}, the filtered FraseRDataSet is returned.
 #' 
 #' @examples
 #' fds <- makeExampleFraseRDataSet()
 #' fds <- calculatePSIValues(fds)
-#' fds <- filterExpression(fds)
+#' fds <- filterExpressionAndVariability(fds)
 #'
+#' @name filtering
+#' @rdname filtering
+#' 
+NULL
+
+#' @describeIn filtering This functions filters out both introns with low 
+#' read support and introns that are not variable across samples. 
+#' @export
+filterExpressionAndVariability <- function(fds, minExpressionInOneSample=20, 
+                                quantile=0.05, quantileMinExpression=1, 
+                                minDeltaPsi=0, filter=TRUE, 
+                                delayed=ifelse(ncol(fds) <= 300, FALSE, TRUE),
+                                BPPARAM=bpparam()){
+    # filter introns with low read support and corresponding splice sites
+    fds <- filterExpression(fds, 
+                     minExpressionInOneSample=minExpressionInOneSample, 
+                     quantile=quantile, 
+                     quantileMinExpression=quantileMinExpression, 
+                     filter=filter, delayed=delayed,
+                     BPPARAM=BPPARAM)
+    
+    # filter introns that are not variable across samples
+    fds <- filterVariability(fds, minDeltaPsi=minDeltaPsi, filter=filter, 
+                      delayed=delayed, BPPARAM=BPPARAM)
+    
+    # return fds
+    message(date(), ": Filtering done!")
+    return(fds)
+    
+}
+
+#' @describeIn filtering This function filters out introns and corresponding 
+#' splice sites that have low read support in all samples.
 #' @export
 filterExpression <- function(fds, minExpressionInOneSample=20, quantile=0.05,
-                    quantileMinExpression=1, minDeltaPsi=0, filter=TRUE,
-                    BPPARAM=bpparam(), delayed=TRUE){
+                    quantileMinExpression=1, filter=TRUE, 
+                    delayed=ifelse(ncol(fds) <= 300, FALSE, TRUE),
+                    BPPARAM=bpparam()){
 
+    message(date(), ": Filtering out introns with low read support ...")
+    
     # extract counts
     cts  <- K(fds, type="j")
     ctsN5 <- N(fds, type="psi5")
@@ -50,15 +87,8 @@ filterExpression <- function(fds, minExpressionInOneSample=20, quantile=0.05,
             rowQuantiles(ctsN5, probs=quantile, drop=FALSE)[,1] }
     f3 <- function(cts, ctsN3, quantile, ...) {
             rowQuantiles(ctsN3, probs=quantile, drop=FALSE)[,1] }
-    f4 <- function(cts, ctsN3, ...) {
-            psi <- cts/ctsN3
-            rowMaxs(abs(psi - rowMeans2(psi, na.rm=TRUE)), na.rm=TRUE) }
-    f5 <- function(cts, ctsN5, ...) {
-            psi <- cts/ctsN5
-            rowMaxs(abs(psi - rowMeans2(psi, na.rm=TRUE)), na.rm=TRUE) }
 
-    funs <- c(maxCount=f1, quantileValue5=f2, quantileValue3=f3,
-            maxDPsi3=f4, maxDPsi5=f5)
+    funs <- c(maxCount=f1, quantileValue5=f2, quantileValue3=f3)
 
     # run it in parallel
     cutoffs <- bplapply(funs, function(f, ...) f(...), BPPARAM=BPPARAM,
@@ -71,9 +101,7 @@ filterExpression <- function(fds, minExpressionInOneSample=20, quantile=0.05,
     mcols(fds, type="j")[['passed']] <-
             cutoffs$maxCount >= minExpressionInOneSample &
             (cutoffs$quantileValue5    >= quantileMinExpression |
-                cutoffs$quantileValue3 >= quantileMinExpression) &
-            (cutoffs$maxDPsi3     >= minDeltaPsi |
-                cutoffs$maxDPsi5 >= minDeltaPsi)
+                cutoffs$quantileValue3 >= quantileMinExpression) 
 
     # filter if requested
     if(isTRUE(filter)){
@@ -84,6 +112,61 @@ filterExpression <- function(fds, minExpressionInOneSample=20, quantile=0.05,
         fds <- fds[mcols(fds, type="j")[['passed']], by="psi5"]
     }
 
+    validObject(fds)
+    return(fds)
+}
+
+#' @describeIn filtering This function filters out introns and corresponding 
+#' splice sites which do not show variablity across samples.
+#' @export
+filterVariability <- function(fds, minDeltaPsi=0, filter=TRUE, 
+                                delayed=ifelse(ncol(fds) <= 300, FALSE, TRUE),
+                                BPPARAM=bpparam()){
+    
+    message(date(), ": Filtering out non-variable introns ...")
+    
+    # extract counts
+    cts  <- K(fds, type="j")
+    ctsN5 <- N(fds, type="psi5")
+    ctsN3 <- N(fds, type="psi3")
+    
+    if(isFALSE(delayed)){
+        cts <- as.matrix(cts)
+        ctsN5 <- as.matrix(ctsN5)
+        ctsN3 <- as.matrix(ctsN3)
+    }
+    
+    # cutoff functions
+    f1 <- function(cts, ctsN3, ...) {
+        psi <- cts/ctsN3
+        rowMaxs(abs(psi - rowMeans2(psi, na.rm=TRUE)), na.rm=TRUE) }
+    f2 <- function(cts, ctsN5, ...) {
+        psi <- cts/ctsN5
+        rowMaxs(abs(psi - rowMeans2(psi, na.rm=TRUE)), na.rm=TRUE) }
+    
+    funs <- c(maxDPsi3=f1, maxDPsi5=f2)
+    
+    # run it in parallel
+    cutoffs <- bplapply(funs, function(f, ...) f(...), BPPARAM=BPPARAM,
+                        cts=cts, ctsN3=ctsN3, ctsN5=ctsN5)
+    
+    # add annotation to object
+    for(n in names(cutoffs)){
+        mcols(fds, type="j")[n] <- cutoffs[[n]]
+    }
+    mcols(fds, type="j")[['passed']] <-
+        (cutoffs$maxDPsi3     >= minDeltaPsi |
+             cutoffs$maxDPsi5 >= minDeltaPsi)
+    
+    # filter if requested
+    if(isTRUE(filter)){
+        numFilt <- sum(mcols(fds, type="j")[['passed']])
+        message(paste0("Keeping ", numFilt, " junctions out of ", length(fds),
+                       ". This is ", signif(numFilt/length(fds)*100, 3),
+                       "% of the junctions"))
+        fds <- fds[mcols(fds, type="j")[['passed']], by="psi5"]
+    }
+    
     validObject(fds)
     return(fds)
 }

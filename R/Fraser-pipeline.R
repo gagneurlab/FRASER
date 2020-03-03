@@ -26,7 +26,7 @@
 #'   # preprocessing
 #'   fds <- makeExampleFraseRDataSet()
 #'   fds <- calculatePSIValues(fds)
-#'   fds <- filterExpression(fds)
+#'   fds <- filterExpressionAndVariability(fds)
 #'
 #'   # Run analysis pipeline
 #'   fds <- FraseR(fds, q=2)

@@ -43,7 +43,7 @@
 #'   # generate toy data
 #'   fds <- makeExampleFraseRDataSet()
 #'   fds <- calculatePSIValues(fds)
-#'   fds <- filterExpression(fds) 
+#'   fds <- filterExpressionAndVariability(fds) 
 #'   
 #'   # fit
 #'   fds <- fit(fds, correction="PCA", q=3, type="psi5")
