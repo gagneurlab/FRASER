@@ -199,7 +199,7 @@ fds <- calculatePSIValues(fds)
 # filtering of lowly expressed junctions: This step is skipped here because 
 # it is not meaningful on the small example dataset. See the section on 
 # filtering below for more details
-# fds <- filterExpression(fds, minExpressionInOneSample=20,
+# fds <- filterExpressionAndVariability(fds, minExpressionInOneSample=20,
 #         minDeltaPsi=0.0, filter=TRUE)
 
 
@@ -407,7 +407,7 @@ Furthemore one could filter for:
 
 
 <<filter_junctions, echo=TRUE>>=
-fds <- filterExpression(fds, minDeltaPsi=0.0, filter=FALSE)
+fds <- filterExpressionAndVariability(fds, minDeltaPsi=0.0, filter=FALSE)
 
 plotFilterExpression(fds, bins=100)
 @
