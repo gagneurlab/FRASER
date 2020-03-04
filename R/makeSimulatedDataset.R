@@ -121,16 +121,18 @@ makeSimulatedFraserDataSet_BetaBinomial <- function(m=200, j=10000, q=10,
             encodingDimension=q, evaluationLoss=1, evalMethod='simulation')
 
     # Store "other" counts
-    counts(fds, type="psi3", side="other") <-    n - k
-    counts(fds, type="psi5", side="other") <-    n - k
-    counts(fds, type="psiSite", side="other") <- n
+    counts(fds, type="psi3", side="other", withDimnames=FALSE) <-    n - k
+    counts(fds, type="psi5", side="other", withDimnames=FALSE) <-    n - k
+    counts(fds, type="psiSite", side="other", withDimnames=FALSE) <- n
 
     # store information about the simulation in the fds
     # (same values for psi3 and psi5)
     for(type in c("psi3", "psi5")){
-        setAssayMatrix(fds=fds, name="truePSI", type=type)      <- mu_psi
-        setAssayMatrix(fds=fds, name="trueLogitPSI", type=type) <- y_psi
-        mcols(fds, type=type)[,"trueRho"]                       <- rho_psi
+        setAssayMatrix(fds=fds, name="truePSI", type=type, 
+                        withDimnames=FALSE) <- mu_psi
+        setAssayMatrix(fds=fds, name="trueLogitPSI", type=type,
+                        withDimnames=FALSE) <- y_psi
+        mcols(fds, type=type)[,"trueRho"]  <- rho_psi
 
         # needed so that subsetting the fds works later
         mcols(fds, type=type)[["startID"]] <- 
@@ -140,9 +142,11 @@ makeSimulatedFraserDataSet_BetaBinomial <- function(m=200, j=10000, q=10,
     }
 
     # store info for SE
-    setAssayMatrix(fds=fds, name="truePSI", type="psiSite")      <- mu_se
-    setAssayMatrix(fds=fds, name="trueLogitPSI", type="psiSite") <- y_se
-    mcols(fds, type="psiSite")[,"trueRho"]                       <- rho_se
+    setAssayMatrix(fds=fds, name="truePSI", type="psiSite", 
+                    withDimnames=FALSE) <- mu_se
+    setAssayMatrix(fds=fds, name="trueLogitPSI", type="psiSite", 
+                    withDimnames=FALSE) <- y_se
+    mcols(fds, type="psiSite")[,"trueRho"] <- rho_se
 
     # needed so that subsetting the fds works later
     siteIDs <- seq_row(mcols(fds, type="psiSite"))
@@ -366,18 +370,20 @@ makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=1000, q=10,
 
 
     # store other counts (n-k) for psi3=psi5 and SE (other=n)
-    counts(fds, type="psi3", side="other")    <- psi_n - k
-    counts(fds, type="psi5", side="other")    <- psi_n - k
-    counts(fds, type="psiSite", side="other") <- se_n
+    counts(fds, type="psi3", side="other", withDimnames=FALSE)    <- psi_n - k
+    counts(fds, type="psi5", side="other", withDimnames=FALSE)    <- psi_n - k
+    counts(fds, type="psiSite", side="other", withDimnames=FALSE) <- se_n
 
     for(type in c("psi3", "psi5")){
         # store information about the simulation in the fds 
         # (same values for psi3 and psi5)
-        setAssayMatrix(fds=fds, name="truePSI", type=type)      <- psi_mu
-        setAssayMatrix(fds=fds, name="trueLogitPSI", type=type) <- 
-            qlogis(psi_mu)
-        setAssayMatrix(fds=fds, name="trueAlpha", type=type)    <- psi_alpha
-        mcols(fds, type=type)[,"trueRho"]                       <- psi_rho
+        setAssayMatrix(fds=fds, name="truePSI", type=type,
+                        withDimnames=FALSE) <- psi_mu
+        setAssayMatrix(fds=fds, name="trueLogitPSI", type=type,
+                        withDimnames=FALSE) <- qlogis(psi_mu)
+        setAssayMatrix(fds=fds, name="trueAlpha", type=type,
+                        withDimnames=FALSE) <- psi_alpha
+        mcols(fds, type=type)[,"trueRho"]  <- psi_rho
 
         # needed so that subsetting the fds works later
         mcols(fds, type=type)[["startID"]] <- 
@@ -387,11 +393,13 @@ makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=1000, q=10,
     }
 
     # store info for SE
-    setAssayMatrix(fds=fds, name="truePSI", type="psiSite")      <- se_mu
-    setAssayMatrix(fds=fds, name="trueLogitPSI", type="psiSite") <- 
-        qlogis(se_mu)
-    setAssayMatrix(fds=fds, name="trueAlpha", type="psiSite")    <- se_alpha
-    mcols(fds, type="psiSite")[,"trueRho"]                       <- se_rho
+    setAssayMatrix(fds=fds, name="truePSI", type="psiSite",
+                    withDimnames=FALSE) <- se_mu
+    setAssayMatrix(fds=fds, name="trueLogitPSI", type="psiSite",
+                    withDimnames=FALSE) <- qlogis(se_mu)
+    setAssayMatrix(fds=fds, name="trueAlpha", type="psiSite",
+                    withDimnames=FALSE) <- se_alpha
+    mcols(fds, type="psiSite")[,"trueRho"] <- se_rho
 
     # needed so that subsetting the fds works later
     mcols(fds, type="psiSite")[["startID"]]      <- 
@@ -634,26 +642,33 @@ injectOutliers <- function(fds, type=c("psi5", "psi3", "psiSite"),
     
     # copy original k and o
     if(type == "psiSite"){
-        setAssayMatrix(fds, type="psiSite", "originalCounts") <-
-            counts(fds, type="psiSite", side="ofInterest")
-        setAssayMatrix(fds, type="psiSite", "originalOtherCounts") <-
-            counts(fds, type="psiSite", side="other")
+        setAssayMatrix(fds, type="psiSite", "originalCounts", 
+                    withDimnames=FALSE) <- 
+                                counts(fds, type="psiSite", side="ofInterest")
+        setAssayMatrix(fds, type="psiSite", "originalOtherCounts",
+                    withDimnames=FALSE) <-
+                                counts(fds, type="psiSite", side="other")
     } else {
-        setAssayMatrix(fds, type=type, "originalCounts") <-
-            counts(fds, type=type, side="ofInterest")
-        setAssayMatrix(fds, type="psi5", "originalOtherCounts") <-
-            counts(fds, type="psi5", side="other")
-        setAssayMatrix(fds, type="psi3", "originalOtherCounts") <-
-            counts(fds, type="psi3", side="other")
+        setAssayMatrix(fds, type=type, "originalCounts",
+                    withDimnames=FALSE) <- 
+                                    counts(fds, type=type, side="ofInterest")
+        setAssayMatrix(fds, type="psi5", "originalOtherCounts",
+                    withDimnames=FALSE) <- 
+                                    counts(fds, type="psi5", side="other")
+        setAssayMatrix(fds, type="psi3", "originalOtherCounts",
+                    withDimnames=FALSE) <-
+                                    counts(fds, type="psi3", side="other")
     }
     
     # store new k and o counts including the outlier counts
-    counts(fds, type=type, side="ofInterest") <- k
-    counts(fds, type=type, side="other") <- o
+    counts(fds, type=type, side="ofInterest", withDimnames=FALSE) <- k
+    counts(fds, type=type, side="other", withDimnames=FALSE) <- o
     
     # store positions of true outliers and their true delta PSI value
-    setAssayMatrix(fds=fds, name="trueOutliers", type=type) <- indexOut
-    setAssayMatrix(fds=fds, name="trueDeltaPSI", type=type) <- indexDeltaPsi
+    setAssayMatrix(fds=fds, name="trueOutliers", type=type,
+                    withDimnames=FALSE) <- indexOut
+    setAssayMatrix(fds=fds, name="trueDeltaPSI", type=type,
+                    withDimnames=FALSE) <- indexDeltaPsi
     
     return(fds)
 }
