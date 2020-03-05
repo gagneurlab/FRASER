@@ -15,10 +15,10 @@
 plotVolcano(
   fds,
   sampleID,
-  type,
+  type = c("psi3", "psi5", "psiSite"),
   basePlot = TRUE,
   aggregate = FALSE,
-  main = paste0("Volcano plot: ", sampleID),
+  main = NULL,
   deltaPsiCutoff = 0.3,
   padjCutoff = 0.1,
   ...
