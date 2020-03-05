@@ -193,7 +193,8 @@ plotVolcano <- function(fds, sampleID, type=c("psi3", "psi5", "psiSite"),
     }
     
     if(isFALSE(basePlot)){
-        g <- g + xlab(paste("delta", ggplotLabelPsi(type)[[1]])) +
+        g <- g + xlab(paste("delta", 
+                            ggplotLabelPsi(type, asCharacter=TRUE)[[1]])) +
             ylab("-log[10](P value)")
         if(is.null(main)){
             main <- paste0("Volcano plot: ", sampleID, ", ", 
