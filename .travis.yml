@@ -16,10 +16,8 @@ addons:
 
 r:
   - bioc-devel
-  - bioc-release
-  - 3.6.0
-#  - 3.5.3
-#  - 3.5.0
+#  - bioc-release
+#  - 4.0.0
 
 stages:
   - Setup Cache
@@ -31,17 +29,11 @@ jobs:
     - stage: Setup Cache
       r: bioc-devel
       script: true
-    - stage: Setup Cache
-      r: bioc-release
-      script: true
-    - stage: Setup Cache
-      r: 3.6.0
-      script: true
 #    - stage: Setup Cache
-#      r: 3.5.3
+#      r: bioc-release
 #      script: true
 #    - stage: Setup Cache
-#      r: 3.5.0
+#      r: 4.0.0
 #      script: true
 
 before_install:
