@@ -341,6 +341,12 @@ fitPCA <- function(fds, q, psiType, rhoRange=c(1e-5, 1-1e-5), noiseAlpha=NULL,
         b(fds) <- colMeans2(x)
     }
 
+    # use delayed matrix representation of counts again
+    counts(fds, type=psiType, side="other", HDF5=TRUE) <- 
+        counts(fds, type=psiType, side="other")
+    counts(fds, type=psiType, side="ofInterest", HDF5=TRUE) <- 
+        counts(fds, type=psiType, side="ofInterest")
+    
     # fit rho
     message(date(), ": Fitting rho ...")
     fds <- updateRho(fds, type=psiType, rhoRange=rhoRange,

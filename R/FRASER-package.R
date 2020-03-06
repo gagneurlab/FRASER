@@ -17,7 +17,7 @@
 #' @importFrom pcaMethods pca loadings
 #'
 ### GRange/Experiment/bamFile packages
-#' @importFrom BiocGenerics updateObject counts counts<- strand strand<-
+#' @importFrom BiocGenerics updateObject counts counts<- strand strand<- which
 #' @importFrom GenomicFeatures makeTxDbFromGFF intronsByTranscript genes
 #' @importFrom GenomicAlignments junctions readGAlignments summarizeJunctions
 #' @importFrom SummarizedExperiment assay assay<- assays assays<- assayNames
@@ -62,7 +62,7 @@
 #'
 #' @importFrom stats sd rbinom fisher.test na.omit p.adjust ppoints qbeta rnorm
 #'          predict cor cutree dbinom dist hclust lm optim optimize pbinom
-#'          plogis qlogis rlnorm rnbinom pnorm
+#'          rlnorm rnbinom pnorm
 #' @importFrom VGAM rbetabinom vglm Coef pbetabinom pbetabinom.ab betabinomial
 #'          dbetabinom.ab dbetabinom
 #'
@@ -86,7 +86,7 @@
 #' @importFrom GenomeInfoDb keepStandardChromosomes seqlevels<- seqlevels
 #'          seqlengths seqlengths<- seqlevelsStyle<- seqlevelsStyle seqnames 
 #'          seqinfo
-#' @importFrom DelayedArray rowMaxs rowMeans path<- cbind
+#' @importFrom DelayedArray rowMaxs rowMeans path<- cbind plogis qlogis
 #' @importFrom DelayedMatrixStats colSds rowMedians rowSds colMeans2 rowMeans2
 #'          rowQuantiles
 #' @importFrom matrixStats colMaxs colMedians colMins colAnys

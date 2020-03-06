@@ -106,7 +106,7 @@ x <- function(fds, type=currentType(fds), all=FALSE,
     N <- N(fds, type=type)
 
     # compute logit ratio with pseudocounts
-    x <- as.matrix(t((K + pseudocount())/(N + (2*pseudocount()))))
+    x <- t((K + pseudocount())/(N + (2*pseudocount())))
     x <- qlogis(x)
     
     if(any(is.infinite(x))){
