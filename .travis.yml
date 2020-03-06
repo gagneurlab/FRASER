@@ -29,6 +29,8 @@ jobs:
     - stage: Setup Cache
       r: bioc-devel
       script: true
+    - stage: Test
+      r: bioc-devel
 #    - stage: Setup Cache
 #      r: bioc-release
 #      script: true
