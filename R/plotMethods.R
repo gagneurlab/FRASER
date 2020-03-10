@@ -565,10 +565,10 @@ plotFilterExpression <- function(fds, bins=200, legend.position=c(0.8, 0.8)){
     # check if file with removed counts exists and add them when it exists
     outputDir <- file.path(workingDir(fds), "savedObjects", nameNoSpace(fds))
     filteredLowCountsFile <- grep("filtered_maxExpr<", 
-                                  list.files(outputDir), value=TRUE)
+                                    list.files(outputDir), value=TRUE)
     if(file.exists(file.path(outputDir, filteredLowCountsFile))){
         previousyRemovedJcts <- readRDS(file.path(outputDir,
-                                                  filteredLowCountsFile))
+                                                    filteredLowCountsFile))
         dt <- rbind(dt, previousyRemovedJcts)
     }
     
@@ -598,12 +598,12 @@ plotFilterVariability <- function(fds, bins=200, legend.position=c(0.8, 0.8)){
     # get plotting data
     dt <- data.table(
         value=pmax(mcols(fds, type="j")[['maxDPsi3']], 
-                  mcols(fds, type="j")[['maxDPsi5']]),
+                    mcols(fds, type="j")[['maxDPsi5']]),
         passed=mcols(fds, type="j")[['passed']])
     
     # check if file with removed counts exists and add them when it exists
     nonVarDir <- file.path(workingDir(fds), "savedObjects", nameNoSpace(fds),
-                           "nonVariableJunctions")
+                            "nonVariableJunctions")
 
     if(dir.exists(nonVarDir)){
         nV_stored <- loadHDF5SummarizedExperiment(dir=nonVarDir) 
@@ -615,7 +615,7 @@ plotFilterVariability <- function(fds, bins=200, legend.position=c(0.8, 0.8)){
     }
     
     dt[,passed:=factor(passed, levels=c(TRUE, FALSE))]
-    colors <- brewer.pal(3, "Dark2")[1:2]
+    colors <- brewer.pal(3, "Dark2")[seq_len(2)]
     ggplot(dt, aes(value, fill=passed)) +
         geom_histogram(bins=bins) +
         scale_y_log10() + 

@@ -210,6 +210,8 @@ calculateSitePSIValue <- function(fds, overwriteCts, BPPARAM){
                     && nrow(h5) == nrow(K(fds, type="psiSite"))){
                     
                     return(h5)
+                } else{
+                    h5delete(cacheFile, name=psiH5datasetName)
                 }
             }
             

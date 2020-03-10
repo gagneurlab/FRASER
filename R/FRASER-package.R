@@ -57,7 +57,7 @@
 #' @importFrom HDF5Array writeHDF5Array path HDF5Array 
 #'          saveHDF5SummarizedExperiment loadHDF5SummarizedExperiment
 #' @importFrom rhdf5 h5ls H5Fopen H5Fclose H5Pclose H5Dget_create_plist
-#'          H5Pget_layout H5Pget_chunk 
+#'          H5Pget_layout H5Pget_chunk h5delete
 #'
 ### P-Value calculation
 #'

@@ -43,15 +43,15 @@ filterExpressionAndVariability <- function(fds, minExpressionInOneSample=20,
                                 BPPARAM=bpparam()){
     # filter introns with low read support and corresponding splice sites
     fds <- filterExpression(fds, 
-                     minExpressionInOneSample=minExpressionInOneSample, 
-                     quantile=quantile, 
-                     quantileMinExpression=quantileMinExpression, 
-                     filter=filter, delayed=delayed,
-                     BPPARAM=BPPARAM)
+                    minExpressionInOneSample=minExpressionInOneSample, 
+                    quantile=quantile, 
+                    quantileMinExpression=quantileMinExpression, 
+                    filter=filter, delayed=delayed,
+                    BPPARAM=BPPARAM)
     
     # filter introns that are not variable across samples
     fds <- filterVariability(fds, minDeltaPsi=minDeltaPsi, filter=filter, 
-                      delayed=delayed, BPPARAM=BPPARAM)
+                    delayed=delayed, BPPARAM=BPPARAM)
     
     # return fds
     message(date(), ": Filtering done!")
@@ -180,7 +180,7 @@ applyExpressionFilters <- function(fds, minExpressionInOneSample,
     # quantileFilter as SE obj
     junctionsToReport <- maxCount >= minExpressionInOneSample & 
                         !(quantileValue5 >= quantileMinExpression |
-                                 quantileValue3 >= quantileMinExpression) 
+                                quantileValue3 >= quantileMinExpression) 
     outputDir <- file.path(workingDir(fds), "savedObjects", nameNoSpace(fds))
     
     if(any(junctionsToReport)){
@@ -188,8 +188,8 @@ applyExpressionFilters <- function(fds, minExpressionInOneSample,
         rareJunctions <- asSE(fds[junctionsToReport, by="j"])
         for(aname in assayNames(rareJunctions)){
             if(!(aname %in% c("rawCountsJ", "rawOtherCounts_psi5", 
-                              "rawOtherCounts_psi3", "psi5", "psi3", 
-                              "delta_psi5", "delta_psi3"))){
+                                "rawOtherCounts_psi3", "psi5", "psi3", 
+                                "delta_psi5", "delta_psi3"))){
                 assay(rareJunctions, aname) <- NULL
             }
         }
@@ -206,14 +206,14 @@ applyExpressionFilters <- function(fds, minExpressionInOneSample,
             rJ_stored <- loadHDF5SummarizedExperiment(dir=rareJctsDir)
             toReport <- mcols(rJ_stored)$maxCount >= minExpressionInOneSample & 
                 !(mcols(rJ_stored)$quantileValue5 >= quantileMinExpression |
-                      mcols(rJ_stored)$quantileValue3 >= quantileMinExpression) 
+                    mcols(rJ_stored)$quantileValue3 >= quantileMinExpression) 
             
             rJ_tmp <- rbind(rJ_stored[toReport,], rareJunctions)
             
             for(aname in assayNames(rJ_tmp)){
                 assay(rJ_tmp, aname) <- 
                     rbind(as.matrix(assay(rareJunctions, aname)), 
-                          as.matrix(assay(rJ_stored[toReport,], aname)) )
+                            as.matrix(assay(rJ_stored[toReport,], aname)) )
             }
             rareJunctions <- rJ_tmp
             rm(rJ_tmp)
@@ -238,19 +238,19 @@ applyExpressionFilters <- function(fds, minExpressionInOneSample,
             passed=FALSE)
         
         filteredLowCountsFile <- grep("filtered_maxExpr<", 
-                                      list.files(outputDir), value=TRUE)
+                                        list.files(outputDir), value=TRUE)
         
         if(file.exists(file.path(outputDir, filteredLowCountsFile))){
             
             # get previously filtered junctions 
             previouslyRemovedJcts <- readRDS(file.path(outputDir, 
-                                                       filteredLowCountsFile))
+                                                        filteredLowCountsFile))
             removedCtsMeans <- rbind(previouslyRemovedJcts, removedCtsMeans)
             
             # get previous cutoff values
             fileCutoffs <- regmatches(filteredLowCountsFile, 
-                                              gregexpr("[0-9]+", 
-                                                      filteredLowCountsFile))
+                                                gregexpr("[0-9]+", 
+                                                    filteredLowCountsFile))
             minExpressionInFile <- fileCutoffs[[1]][1]
             quantileExpressionInFile <- fileCutoffs[[1]][2]
             
@@ -258,18 +258,18 @@ applyExpressionFilters <- function(fds, minExpressionInOneSample,
             if(!((minExpressionInOneSample >= minExpressionInFile) & 
                (quantileMinExpression >= quantileExpressionInFile))){
                 
-                warning("Introns were already filtered previously (e.g. in the", 
-                        "counting step or a filtering step) for ",
+                warning("Introns were already filtered previously (e.g. in ", 
+                        "the counting step or a filtering step) for ",
                         "minExpressionInOneSample=", minExpressionInFile, 
                         " and quantileMinExpression=", 
-                        quantileExpressionInFile, " which is conflicting with ",
-                        " the currently requested cutoffs. Introns that ",
-                        "should be kept according to minExpressionInOneSample=", 
-                        minExpressionInOneSample, " and quantileMinExpression=", 
+                        quantileExpressionInFile, " which is conflicting ",
+                        "with the currently requested cutoffs. Introns that ",
+                        "should be kept according to ",
+                        "minExpressionInOneSample=", minExpressionInOneSample, 
+                        " and quantileMinExpression=", 
                         quantileMinExpression, " cannot be recovered. ", 
                         "To include them, you might have to rerun the ",
                         "counting step with the appropriate parameters.")
-                
             } 
             
             # remove previous file
@@ -278,7 +278,7 @@ applyExpressionFilters <- function(fds, minExpressionInOneSample,
         
         # store mean expression of filtered junctions for plotting
         filename <- paste0("filtered_maxExpr<", minExpressionInOneSample, 
-                           "_quantMin<", quantileMinExpression, ".RDS")
+                            "_quantMin<", quantileMinExpression, ".RDS")
         saveRDS(removedCtsMeans, file=file.path(outputDir, filename) )
     }
     
@@ -309,8 +309,8 @@ applyVariabilityFilters <- function(fds, minDeltaPsi){
         nonVariableJunctions <- asSE(fds[filtered, by="j"])
         for(aname in assayNames(nonVariableJunctions)){
             if(!(aname %in% c("rawCountsJ", "rawOtherCounts_psi5", 
-                              "rawOtherCounts_psi3", "psi5", "psi3", 
-                              "delta_psi5", "delta_psi3"))){
+                                "rawOtherCounts_psi3", "psi5", "psi3", 
+                                "delta_psi5", "delta_psi3"))){
                 assay(nonVariableJunctions, aname) <- NULL
             }
         }
@@ -328,12 +328,11 @@ applyVariabilityFilters <- function(fds, minDeltaPsi){
             toReport <- mcols(nV_stored)$maxDPsi5 < minDeltaPsi &
                         mcols(nV_stored)$maxDPsi3 < minDeltaPsi
             
-            nVJunctions <- rbind(nonVariableJunctions,
-                                                nV_stored[toReport,])
+            nVJunctions <- rbind(nonVariableJunctions, nV_stored[toReport,])
             for(aname in assayNames(nVJunctions)){
                 assay(nVJunctions, aname) <- 
                 rbind(as.matrix(assay(nonVariableJunctions, aname)), 
-                     as.matrix(assay(nV_stored[toReport,], aname)) )
+                        as.matrix(assay(nV_stored[toReport,], aname)) )
             }
             nonVariableJunctions <- nVJunctions
             rm(nVJunctions)
@@ -374,13 +373,13 @@ filterLowExpression <- function(fds, splitCounts, minExpressionInOneSample,
     
     # store meanExpression of introns not passing the filter for later plotting
     removedCtsMeans <- data.table(
-        value=exp(rowMeans(log(cts[!passed,] + 1))),
+        value=exp(rowMeans(log(cts[!passed,,drop=FALSE] + 1))),
         passed=FALSE)
     if(!dir.exists(outputDir)){
         dir.create(outputDir, recursive=TRUE)
     }
     filename <- paste0("filtered_maxExpr<", minExpressionInOneSample, 
-                       "_quantMin<0.RDS")
+                        "_quantMin<0.RDS")
     saveRDS(removedCtsMeans, file=file.path(outputDir, filename) )
     
     # apply filtering and return object
@@ -392,6 +391,4 @@ filterLowExpression <- function(fds, splitCounts, minExpressionInOneSample,
     
     validObject(splitCounts)
     return(splitCounts)
-    
-    
 }

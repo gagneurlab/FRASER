@@ -9,7 +9,8 @@ test_generate_count_example <- function(recount=FALSE){
         name(test_fdsSample3) <- "onlySample3"
 
         # count the sample
-        test_fdsSample3 <- countRNAData(test_fdsSample3)
+        test_fdsSample3 <- countRNAData(test_fdsSample3, filter=FALSE, 
+                                        recount=recount)
         test_fdsSample3 <- calculatePSIValues(test_fdsSample3)
     }
 

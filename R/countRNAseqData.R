@@ -195,7 +195,7 @@ getSplitReadCountsForAllSamples <- function(fds, NcpuPerSample=1,
                     "remove this folder: \n", outDir)
             # create summarized object for counts
             h5 <- saveAsHDF5(fds, "rawCountsJ", 
-                            assay(splitCounts)[,samples(fds)])
+                            assay(splitCounts)[,samples(fds),drop=FALSE])
             colnames(h5) <- samples(fds)
             final_splitCounts <- SummarizedExperiment(
                 colData=colData(fds),
@@ -303,7 +303,7 @@ getNonSplitReadCountsForAllSamples <- function(fds, splitCountRanges,
                     "the non-split reads again, use the option recount=TRUE ",
                     "or remove this folder: \n", outDir)
             h5 <- saveAsHDF5(fds, "rawCountsSS",
-                                assay(siteCounts)[,samples(fds)])
+                                assay(siteCounts)[,samples(fds), drop=FALSE])
             colnames(h5) <- samples(fds)
             final_nonSplicedCounts <- SummarizedExperiment(
                 colData=colData(fds),
