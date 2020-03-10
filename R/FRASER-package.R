@@ -22,6 +22,7 @@
 #' @importFrom GenomicAlignments junctions readGAlignments summarizeJunctions
 #' @importFrom SummarizedExperiment assay assay<- assays assays<- assayNames
 #'          colData colData<- rowData rowRanges rowRanges<- SummarizedExperiment
+#'          rbind
 #' @importFrom GenomicRanges findOverlaps granges GRanges GRangesList
 #'          makeGRangesFromDataFrame
 #' @importFrom IRanges subsetByOverlaps from to IRanges ranges
@@ -51,10 +52,10 @@
 ### Data handling
 #'
 #' @importFrom data.table data.table as.data.table is.data.table := fread
-#'          setnames
+#'          setnames 
 #' @importFrom tidyr %>%
 #' @importFrom HDF5Array writeHDF5Array path HDF5Array 
-#'          saveHDF5SummarizedExperiment
+#'          saveHDF5SummarizedExperiment loadHDF5SummarizedExperiment
 #' @importFrom rhdf5 h5ls H5Fopen H5Fclose H5Pclose H5Dget_create_plist
 #'          H5Pget_layout H5Pget_chunk 
 #'

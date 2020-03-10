@@ -271,7 +271,8 @@ lossED <- function(fds, lambda=0, byRows=FALSE,
 
     y <- predictY(fds, noiseAlpha=noiseAlpha)
 
-    return(fullNLL(y, rho, K, N, D, lambda, byRows=byRows))
+    return(fullNLL(y, rho, as.matrix(K), as.matrix(N), D, lambda, 
+                    byRows=byRows))
 }
 
 # lossED <- function(fds){

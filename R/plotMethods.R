@@ -106,7 +106,13 @@
 #'
 #' \code{plotFilterExpression}: The distribution of FPKM values. If the 
 #' FraseRDataSet object contains the \code{passedFilter} column, it will plot 
-#' both FPKM distributions for the expressed genes and for the filtered genes.
+#' both FPKM distributions for the expressed introns and for the filtered 
+#' introns.
+#' 
+#' \code{plotFilterVariability}: The distribution of maximal delta Psi values. 
+#' If the FraseRDataSet object contains the \code{passedFilter} column, 
+#' it will plot both maximal delta Psi distributions for the variable 
+#' introns and for the filtered (i.e. non-variable) introns.
 #'
 #' \code{plotEncDimSearch}: Visualization of the hyperparameter optimization.
 #' It plots the encoding dimension against the achieved loss (area under the
@@ -547,12 +553,25 @@ plotEncDimSearch <- function(fds, type=c("psi3", "psi5", "psiSite"),
 #' @rdname plotFunctions
 #' @export
 plotFilterExpression <- function(fds, bins=200, legend.position=c(0.8, 0.8)){
+    
+    # get mean count for all junctions in the fds object
     cts    <- K(fds, "psi5")
     rowlgm <- exp(rowMeans(log(cts + 1)))
 
     dt <- data.table(
             value=rowlgm,
             passed=mcols(fds, type="j")[['passed']])
+    
+    # check if file with removed counts exists and add them when it exists
+    outputDir <- file.path(workingDir(fds), "savedObjects", nameNoSpace(fds))
+    filteredLowCountsFile <- grep("filtered_maxExpr<", 
+                                  list.files(outputDir), value=TRUE)
+    if(file.exists(file.path(outputDir, filteredLowCountsFile))){
+        previousyRemovedJcts <- readRDS(file.path(outputDir,
+                                                  filteredLowCountsFile))
+        dt <- rbind(dt, previousyRemovedJcts)
+    }
+    
     colors <- brewer.pal(3, "Dark2")[2:1]
     ggplot(dt, aes(value, fill=passed)) +
         geom_histogram(bins=bins) +
@@ -563,6 +582,48 @@ plotFilterExpression <- function(fds, bins=200, legend.position=c(0.8, 0.8)){
         xlab("Mean Junction Expression") +
         ylab("Count") +
         ggtitle("Expression filtering") +
+        theme_bw() +
+        theme(legend.position=legend.position)
+}
+
+#'
+#' Plot filter variability
+#'
+#' Histogram of minimal delta psi per junction
+#'
+#' @rdname plotFunctions
+#' @export
+plotFilterVariability <- function(fds, bins=200, legend.position=c(0.8, 0.8)){
+    
+    # get plotting data
+    dt <- data.table(
+        value=pmax(mcols(fds, type="j")[['maxDPsi3']], 
+                  mcols(fds, type="j")[['maxDPsi5']]),
+        passed=mcols(fds, type="j")[['passed']])
+    
+    # check if file with removed counts exists and add them when it exists
+    nonVarDir <- file.path(workingDir(fds), "savedObjects", nameNoSpace(fds),
+                           "nonVariableJunctions")
+
+    if(dir.exists(nonVarDir)){
+        nV_stored <- loadHDF5SummarizedExperiment(dir=nonVarDir) 
+        nonVar_dt <- data.table(
+            value=pmax(mcols(nV_stored)[['maxDPsi3']], 
+                        mcols(nV_stored)[['maxDPsi5']]),
+            passed=FALSE)
+        dt <- rbind(dt, nonVar_dt)
+    }
+    
+    dt[,passed:=factor(passed, levels=c(TRUE, FALSE))]
+    colors <- brewer.pal(3, "Dark2")[1:2]
+    ggplot(dt, aes(value, fill=passed)) +
+        geom_histogram(bins=bins) +
+        scale_y_log10() + 
+        scale_fill_manual(values=colors, name="Passed",
+                          labels=c("True", "False")) +
+        xlab(bquote("Maximal Junction" ~ Delta*Psi[5] ~ "or" ~ Delta*Psi[3])) +
+        ylab("Count") +
+        ggtitle("Variability filtering") +
         theme_bw() +
         theme(legend.position=legend.position)
 }

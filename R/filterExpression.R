@@ -67,13 +67,15 @@ filterExpression <- function(fds, minExpressionInOneSample=20, quantile=0.05,
                     delayed=ifelse(ncol(fds) <= 300, FALSE, TRUE),
                     BPPARAM=bpparam()){
 
+    stopifnot(is(fds, "FraseRDataSet"))
+    
     message(date(), ": Filtering out introns with low read support ...")
     
     # extract counts
     cts  <- K(fds, type="j")
     ctsN5 <- N(fds, type="psi5")
     ctsN3 <- N(fds, type="psi3")
-
+    
     if(isFALSE(delayed)){
         cts <- as.matrix(cts)
         ctsN5 <- as.matrix(ctsN5)
@@ -98,18 +100,16 @@ filterExpression <- function(fds, minExpressionInOneSample=20, quantile=0.05,
     for(n in names(cutoffs)){
         mcols(fds, type="j")[n] <- cutoffs[[n]]
     }
+    
     mcols(fds, type="j")[['passed']] <-
             cutoffs$maxCount >= minExpressionInOneSample &
-            (cutoffs$quantileValue5    >= quantileMinExpression |
+            (cutoffs$quantileValue5 >= quantileMinExpression |
                 cutoffs$quantileValue3 >= quantileMinExpression) 
-
+    
     # filter if requested
     if(isTRUE(filter)){
-        numFilt <- sum(mcols(fds, type="j")[['passed']])
-        message(paste0("Keeping ", numFilt, " junctions out of ", length(fds),
-                ". This is ", signif(numFilt/length(fds)*100, 3),
-                "% of the junctions"))
-        fds <- fds[mcols(fds, type="j")[['passed']], by="psi5"]
+        fds <- applyExpressionFilters(fds, minExpressionInOneSample, 
+                                quantileMinExpression)
     }
 
     validObject(fds)
@@ -160,13 +160,238 @@ filterVariability <- function(fds, minDeltaPsi=0, filter=TRUE,
     
     # filter if requested
     if(isTRUE(filter)){
-        numFilt <- sum(mcols(fds, type="j")[['passed']])
-        message(paste0("Keeping ", numFilt, " junctions out of ", length(fds),
-                       ". This is ", signif(numFilt/length(fds)*100, 3),
-                       "% of the junctions"))
-        fds <- fds[mcols(fds, type="j")[['passed']], by="psi5"]
+        fds <- applyVariabilityFilters(fds, minDeltaPsi)
     }
     
     validObject(fds)
     return(fds)
+}
+
+#' Applies previously calculated filters for expression filters
+#' @noRd
+applyExpressionFilters <- function(fds, minExpressionInOneSample, 
+                                   quantileMinExpression){
+    
+    maxCount       <- mcols(fds, type="j")[['maxCount']]
+    quantileValue5 <- mcols(fds, type="j")[['quantileValue5']]
+    quantileValue3 <- mcols(fds, type="j")[['quantileValue3']]
+    
+    # report rare junctions that passed minExpression filter but not 
+    # quantileFilter as SE obj
+    junctionsToReport <- maxCount >= minExpressionInOneSample & 
+                        !(quantileValue5 >= quantileMinExpression |
+                                 quantileValue3 >= quantileMinExpression) 
+    outputDir <- file.path(workingDir(fds), "savedObjects", nameNoSpace(fds))
+    
+    if(any(junctionsToReport)){
+        # get SE object of junctions to report
+        rareJunctions <- asSE(fds[junctionsToReport, by="j"])
+        for(aname in assayNames(rareJunctions)){
+            if(!(aname %in% c("rawCountsJ", "rawOtherCounts_psi5", 
+                              "rawOtherCounts_psi3", "psi5", "psi3", 
+                              "delta_psi5", "delta_psi3"))){
+                assay(rareJunctions, aname) <- NULL
+            }
+        }
+        rareJunctions <- saveHDF5SummarizedExperiment(rareJunctions, 
+                                            dir=file.path(tempdir(), "tmp_rJ"), 
+                                            replace=TRUE)
+        
+        # check if folder already exists from previous filtering
+        rareJctsDir <- file.path(outputDir, "rareJunctions")
+        if(dir.exists(rareJctsDir)){
+            warning("Filtering has already been applied previously. Introns ", 
+                    "that were already filtered out but should be kept now ",
+                    "cannot be restored.")
+            rJ_stored <- loadHDF5SummarizedExperiment(dir=rareJctsDir)
+            toReport <- mcols(rJ_stored)$maxCount >= minExpressionInOneSample & 
+                !(mcols(rJ_stored)$quantileValue5 >= quantileMinExpression |
+                      mcols(rJ_stored)$quantileValue3 >= quantileMinExpression) 
+            
+            rJ_tmp <- rbind(rJ_stored[toReport,], rareJunctions)
+            
+            for(aname in assayNames(rJ_tmp)){
+                assay(rJ_tmp, aname) <- 
+                    rbind(as.matrix(assay(rareJunctions, aname)), 
+                          as.matrix(assay(rJ_stored[toReport,], aname)) )
+            }
+            rareJunctions <- rJ_tmp
+            rm(rJ_tmp)
+        } 
+        
+        rareJunctions <- saveHDF5SummarizedExperiment(rareJunctions, 
+                                                dir=rareJctsDir, replace=TRUE)
+    }
+    
+    # get mean expression of filtered junctions
+    jctToRemove <- !(maxCount >= minExpressionInOneSample &
+                    (quantileValue5 >= quantileMinExpression |
+                        quantileValue3 >= quantileMinExpression) )
+    
+    # if any junctions get filtered out by this cutoff, save their mean count
+    outputDir <- file.path(workingDir(fds), "savedObjects", nameNoSpace(fds))
+    if(any(jctToRemove)){
+        
+        removedCtsMeans <- data.table(
+            value=exp(rowMeans(log(
+                K(fds, type="j")[jctToRemove,,drop=FALSE] + 1))),
+            passed=FALSE)
+        
+        filteredLowCountsFile <- grep("filtered_maxExpr<", 
+                                      list.files(outputDir), value=TRUE)
+        
+        if(file.exists(file.path(outputDir, filteredLowCountsFile))){
+            
+            # get previously filtered junctions 
+            previouslyRemovedJcts <- readRDS(file.path(outputDir, 
+                                                       filteredLowCountsFile))
+            removedCtsMeans <- rbind(previouslyRemovedJcts, removedCtsMeans)
+            
+            # get previous cutoff values
+            fileCutoffs <- regmatches(filteredLowCountsFile, 
+                                              gregexpr("[0-9]+", 
+                                                      filteredLowCountsFile))
+            minExpressionInFile <- fileCutoffs[[1]][1]
+            quantileExpressionInFile <- fileCutoffs[[1]][2]
+            
+            # give warning depending on the requested cutoff values
+            if(!((minExpressionInOneSample >= minExpressionInFile) & 
+               (quantileMinExpression >= quantileExpressionInFile))){
+                
+                warning("Introns were already filtered previously (e.g. in the", 
+                        "counting step or a filtering step) for ",
+                        "minExpressionInOneSample=", minExpressionInFile, 
+                        " and quantileMinExpression=", 
+                        quantileExpressionInFile, " which is conflicting with ",
+                        " the currently requested cutoffs. Introns that ",
+                        "should be kept according to minExpressionInOneSample=", 
+                        minExpressionInOneSample, " and quantileMinExpression=", 
+                        quantileMinExpression, " cannot be recovered. ", 
+                        "To include them, you might have to rerun the ",
+                        "counting step with the appropriate parameters.")
+                
+            } 
+            
+            # remove previous file
+            file.remove(file.path(outputDir, filteredLowCountsFile))
+        }
+        
+        # store mean expression of filtered junctions for plotting
+        filename <- paste0("filtered_maxExpr<", minExpressionInOneSample, 
+                           "_quantMin<", quantileMinExpression, ".RDS")
+        saveRDS(removedCtsMeans, file=file.path(outputDir, filename) )
+    }
+    
+    # apply filter
+    numFilt <- sum(mcols(fds, type="j")[['passed']])
+    message(paste0("Keeping ", numFilt, " junctions out of ", length(fds),
+                   ". This is ", signif(numFilt/length(fds)*100, 3),
+                   "% of the junctions"))
+    fds <- fds[mcols(fds, type="j")[['passed']], by="psi5"]
+    
+    return(fds)
+    
+}
+
+#' Applies previously calculated variablilty filters
+#' @noRd
+applyVariabilityFilters <- function(fds, minDeltaPsi){
+    
+    #
+    maxDPsi3 <- mcols(fds, type="j")[['maxDPsi3']]
+    maxDPsi5 <- mcols(fds, type="j")[['maxDPsi5']]
+    
+    # store information of non-variable junctions
+    filtered <- !(maxDPsi3 >= minDeltaPsi | maxDPsi5 >= minDeltaPsi)
+    outputDir <- file.path(workingDir(fds), "savedObjects", nameNoSpace(fds))
+    if(any(filtered)){
+        # get SE object of junctions to report
+        nonVariableJunctions <- asSE(fds[filtered, by="j"])
+        for(aname in assayNames(nonVariableJunctions)){
+            if(!(aname %in% c("rawCountsJ", "rawOtherCounts_psi5", 
+                              "rawOtherCounts_psi3", "psi5", "psi3", 
+                              "delta_psi5", "delta_psi3"))){
+                assay(nonVariableJunctions, aname) <- NULL
+            }
+        }
+        nonVariableJunctions <- saveHDF5SummarizedExperiment(replace=TRUE,
+                                        nonVariableJunctions,
+                                        dir=file.path(tempdir(), "tmp_nvJ"))
+        
+        # check if folder already exists from previous filtering
+        nonVarJctsDir <- file.path(outputDir, "nonVariableJunctions")
+        if(dir.exists(nonVarJctsDir)){
+            warning("Filtering has already been applied previously. Introns ", 
+                    "that were already filtered out but should be kept now ",
+                    "cannot be restored.")
+            nV_stored <- loadHDF5SummarizedExperiment(dir=nonVarJctsDir) 
+            toReport <- mcols(nV_stored)$maxDPsi5 < minDeltaPsi &
+                        mcols(nV_stored)$maxDPsi3 < minDeltaPsi
+            
+            nVJunctions <- rbind(nonVariableJunctions,
+                                                nV_stored[toReport,])
+            for(aname in assayNames(nVJunctions)){
+                assay(nVJunctions, aname) <- 
+                rbind(as.matrix(assay(nonVariableJunctions, aname)), 
+                     as.matrix(assay(nV_stored[toReport,], aname)) )
+            }
+            nonVariableJunctions <- nVJunctions
+            rm(nVJunctions)
+        } 
+        
+        nonVariableJunctions <- saveHDF5SummarizedExperiment(dir=nonVarJctsDir,
+                                        x=nonVariableJunctions, replace=TRUE)
+        
+    }
+    
+    # apply filtering
+    numFilt <- sum(mcols(fds, type="j")[['passed']])
+    message(paste0("Keeping ", numFilt, " junctions out of ", length(fds),
+                   ". This is ", signif(numFilt/length(fds)*100, 3),
+                   "% of the junctions"))
+    fds <- fds[mcols(fds, type="j")[['passed']], by="psi5"]
+    return(fds)
+        
+}
+
+#' filters out introns with low read support in all samples directly from the
+#' split counts SE object
+#' @noRd
+filterLowExpression <- function(fds, splitCounts, minExpressionInOneSample,
+                                outputDir){
+    
+    stopifnot(is(splitCounts, "SummarizedExperiment"))
+    
+    message(date(), ": Removing introns with read count <= ", 
+            minExpressionInOneSample, " in all samples...")
+    
+    # extract counts
+    cts  <- assay(splitCounts)
+    
+    # cutoff function
+    maxCount <- rowMaxs(cts)
+    passed <- maxCount >= minExpressionInOneSample 
+    
+    # store meanExpression of introns not passing the filter for later plotting
+    removedCtsMeans <- data.table(
+        value=exp(rowMeans(log(cts[!passed,] + 1))),
+        passed=FALSE)
+    if(!dir.exists(outputDir)){
+        dir.create(outputDir, recursive=TRUE)
+    }
+    filename <- paste0("filtered_maxExpr<", minExpressionInOneSample, 
+                       "_quantMin<0.RDS")
+    saveRDS(removedCtsMeans, file=file.path(outputDir, filename) )
+    
+    # apply filtering and return object
+    splitCounts <- splitCounts[passed,]
+    
+    # set correct hdf5 file
+    h5 <- saveAsHDF5(fds, "rawCountsJ", assay(splitCounts), rewrite=TRUE)
+    assay(splitCounts, "rawCountsJ") <- h5
+    
+    validObject(splitCounts)
+    return(splitCounts)
+    
+    
 }

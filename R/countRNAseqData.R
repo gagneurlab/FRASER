@@ -43,6 +43,11 @@
 #'             non spliced reads. Default to 5
 #' @param recount if TRUE the cache is ignored and the bam file is recounted.
 #' @param genome the genome
+#' @param filter If TRUE, introns with low read support in all samples are
+#' filtered out after counting of the split reads is finished. This helps to 
+#' speed up the subsequent steps.  
+#' @param minExpressionInOneSample The minimal split read count in at least one 
+#' sample that is required for an intron to pass the filter.
 #' @param BPPARAM the BiocParallel parameters for the parallelization
 #' @param countDir The directory in which the tsv containing the position and 
 #'                 counts of the junctions should be placed.
@@ -96,8 +101,9 @@ NULL
 #' @return \code{\link{countRNAData}} returns a FraseRDataSet.
 #' 
 #' @export
-countRNAData <- function(fds, NcpuPerSample=1, junctionMap=NULL, minAnchor=5,
-                        recount=FALSE, BPPARAM=bpparam(), genome=NULL,
+countRNAData <- function(fds, NcpuPerSample=1, minAnchor=5, recount=FALSE,
+                        BPPARAM=bpparam(), genome=NULL, junctionMap=NULL,
+                        filter=TRUE, minExpressionInOneSample=20,
                         countDir=file.path(workingDir(fds), "savedObjects", 
                                             nameNoSpace(name(fds))),
                         ...){
@@ -129,8 +135,15 @@ countRNAData <- function(fds, NcpuPerSample=1, junctionMap=NULL, minAnchor=5,
                                                 recount=recount, 
                                                 BPPARAM=BPPARAM, 
                                                 genome=genome,
-                                                outFile=file.path(countDir, 
-                                                        "splitCounts.tsv.gz"))
+                                                outDir=file.path(countDir, 
+                                                        "splitCounts"))
+    
+    if(isTRUE(filter)){
+        splitCounts <- filterLowExpression(fds, splitCounts, 
+                                    minExpressionInOneSample,
+                                    file.path(workingDir(fds), "savedObjects", 
+                                                nameNoSpace(name(fds))))
+    }
     
     # count non spliced reads for every samples
     nonSplicedCounts <- getNonSplitReadCountsForAllSamples(fds=fds, 
@@ -140,8 +153,8 @@ countRNAData <- function(fds, NcpuPerSample=1, junctionMap=NULL, minAnchor=5,
                                                 minAnchor=minAnchor,
                                                 recount=recount, 
                                                 BPPARAM=BPPARAM,
-                                                outFile=file.path(countDir, 
-                                                    "nonSplitCounts.tsv.gz"),
+                                                outDir=file.path(countDir, 
+                                                    "nonSplitCounts"),
                                                 ...)
     
     # create final FraseR dataset
@@ -159,36 +172,35 @@ countRNAData <- function(fds, NcpuPerSample=1, junctionMap=NULL, minAnchor=5,
 #' object.
 #' 
 #' @export
-getSplitReadCountsForAllSamples <- function(fds, NcpuPerSample=3, 
+getSplitReadCountsForAllSamples <- function(fds, NcpuPerSample=1, 
                                             junctionMap=NULL, recount=FALSE, 
                                             BPPARAM=bpparam(), genome=NULL, 
                                             countFiles=NULL,
-                                            outFile=file.path(workingDir(fds), 
+                                            outDir=file.path(workingDir(fds), 
                                                         "savedObjects", 
                                                         nameNoSpace(name(fds)),
-                                                        "splitCounts.tsv.gz")){
+                                                        "splitCounts")){
     
     # check if outFile with mergedCounts already exists
     # if so, don't recalculate the split counts
-    if(file.exists(outFile) && isFALSE(recount)){
+    if(dir.exists(outDir) && isFALSE(recount)){
         
-        counts <- makeGRangesFromDataFrame(fread(outFile), 
-                                            keep.extra.columns=TRUE)
+        splitCounts <- loadHDF5SummarizedExperiment(dir=outDir)
         
         # if counts for all samples are present in the tsv, return those counts
-        if(all(samples(fds) %in% colnames(mcols(counts)))){
-            message(date(), ": File with the merged split read counts exists ", 
-                    "already and will be used. If you want to count the split ",
-                    "reads again, use the option recount=TRUE or remove this ",
-                    "file: \n", outFile)
+        if(all(samples(fds) %in% colnames(splitCounts))){
+            message(date(), ": Folder with the merged split read counts ", 
+                    "exists already and will be used. If you want to count ", 
+                    "the split reads again, use the option recount=TRUE or ",
+                    "remove this folder: \n", outDir)
             # create summarized object for counts
             h5 <- saveAsHDF5(fds, "rawCountsJ", 
-                                as.matrix(mcols(counts)[samples(fds)]))
+                            assay(splitCounts)[,samples(fds)])
             colnames(h5) <- samples(fds)
             final_splitCounts <- SummarizedExperiment(
                 colData=colData(fds),
                 assays=list(rawCountsJ=h5),
-                rowRanges=counts[,!colnames(mcols(counts)) %in% samples(fds)]
+                rowRanges=granges(splitCounts)
             )
             rm(h5)
             gc()
@@ -257,15 +269,11 @@ getSplitReadCountsForAllSamples <- function(fds, NcpuPerSample=3,
     rowRanges(counts) <- annotateSpliceSite(rowRanges(counts))
     
     # save summarized experiment
-    outDir <- file.path(dirname(outFile), "splitCounts")
     if(!dir.exists(outDir)){
         dir.create(outDir, recursive=TRUE)
     }
     message(date(), ": Writing split counts to folder: ", outDir)
     saveHDF5SummarizedExperiment(counts, dir=outDir, replace=TRUE)
-    
-    # write tsv
-    # writeCountsToTsv(assay(counts), file=outFile)
     
     return(counts)
 }
@@ -278,31 +286,29 @@ getSplitReadCountsForAllSamples <- function(fds, NcpuPerSample=3,
 #'          GRanges object.
 #' @export
 getNonSplitReadCountsForAllSamples <- function(fds, splitCountRanges, 
-                    NcpuPerSample=3, minAnchor=5, recount=FALSE, 
-                    BPPARAM=bpparam(), longRead=TRUE, outFile=file.path(
+                    NcpuPerSample=1, minAnchor=5, recount=FALSE, 
+                    BPPARAM=bpparam(), longRead=TRUE, outDir=file.path(
                             workingDir(fds), "savedObjects", 
-                            nameNoSpace(name(fds)), "nonSplitCounts.tsv.gz")){
+                            nameNoSpace(name(fds)), "nonSplitCounts")){
     
     # check if outFile with mergedCounts already exists
     # if so, don't recalculate the non split counts
-    if(file.exists(outFile) && isFALSE(recount)){
-        siteCounts <- makeGRangesFromDataFrame(fread(outFile), 
-                keep.extra.columns=TRUE)
+    if(file.exists(outDir) && isFALSE(recount)){
+        siteCounts <- loadHDF5SummarizedExperiment(dir=outDir)
         
         # if counts for all samples are present in the tsv, return those counts
-        if(all(samples(fds) %in% colnames(mcols(siteCounts)))){
-            message(date(), ": File with the merged non-split read counts ", 
+        if(all(samples(fds) %in% colnames(siteCounts))){
+            message(date(), ": Folder with the merged non-split read counts ", 
                     "exists already and will be used. If you want to count ",
                     "the non-split reads again, use the option recount=TRUE ",
-                    "or remove this file: \n", outFile)
+                    "or remove this folder: \n", outDir)
             h5 <- saveAsHDF5(fds, "rawCountsSS",
-                                as.matrix(mcols(siteCounts)[samples(fds)]))
+                                assay(siteCounts)[,samples(fds)])
             colnames(h5) <- samples(fds)
             final_nonSplicedCounts <- SummarizedExperiment(
                 colData=colData(fds),
                 assays=list(rawCountsSS=h5),
-                rowRanges=siteCounts[,!colnames(mcols(siteCounts)) %in% 
-                                            samples(fds)]
+                rowRanges=granges(siteCounts)
             )
             rm(h5)
             gc()
@@ -347,15 +353,11 @@ getNonSplitReadCountsForAllSamples <- function(fds, splitCountRanges,
     gc()
     
     # save summarized experiment
-    outDir <- file.path(dirname(outFile), "nonSplitCounts")
     if(!dir.exists(outDir)){
         dir.create(outDir, recursive=TRUE)
     }
     message(date(), ": Writing non-split counts to folder: ", outDir)
     saveHDF5SummarizedExperiment(siteCounts, dir=outDir, replace=TRUE)
-    
-    # write tsv
-    # writeCountsToTsv(assay(siteCounts), file=outFile)
     
     return(siteCounts)
     
@@ -664,7 +666,7 @@ GRanges2SAF <- function(gr, minAnchor=1){
 #' @return \code{\link{countNonSplicedReads}} returns a GRanges object.
 #' @export
 countNonSplicedReads <- function(sampleID, splitCountRanges, fds,
-                    NcpuPerSample=3, minAnchor=5, recount=FALSE,
+                    NcpuPerSample=1, minAnchor=5, recount=FALSE,
                     spliceSiteCoords=NULL, longRead=TRUE){
     
     if(is.null(spliceSiteCoords) | !is(spliceSiteCoords, "GRanges")){

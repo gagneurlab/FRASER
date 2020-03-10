@@ -10,6 +10,7 @@
 \alias{plotFilterExpression}
 \alias{plotExpectedVsObservedPsi}
 \alias{plotEncDimSearch}
+\alias{plotFilterVariability}
 \title{Visualization functions for FraseR}
 \usage{
 plotVolcano(
@@ -80,6 +81,8 @@ plotEncDimSearch(
 )
 
 plotFilterExpression(fds, bins = 200, legend.position = c(0.8, 0.8))
+
+plotFilterVariability(fds, bins = 200, legend.position = c(0.8, 0.8))
 
 plotCountCorHeatmap(
   fds,
@@ -208,6 +211,8 @@ Plots the quantile-quantile plot
 
 Histogram of the geometric mean per junction based on the filter status
 
+Histogram of minimal delta psi per junction
+
 Count correlation heatmap function
 }
 \details{
@@ -256,7 +261,13 @@ are log transformed and row centered. The ... arguments are passed to the
 
 \code{plotFilterExpression}: The distribution of FPKM values. If the 
 FraseRDataSet object contains the \code{passedFilter} column, it will plot 
-both FPKM distributions for the expressed genes and for the filtered genes.
+both FPKM distributions for the expressed introns and for the filtered 
+introns.
+
+\code{plotFilterVariability}: The distribution of maximal delta Psi values. 
+If the FraseRDataSet object contains the \code{passedFilter} column, 
+it will plot both maximal delta Psi distributions for the variable 
+introns and for the filtered (i.e. non-variable) introns.
 
 \code{plotEncDimSearch}: Visualization of the hyperparameter optimization.
 It plots the encoding dimension against the achieved loss (area under the

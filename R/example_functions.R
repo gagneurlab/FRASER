@@ -77,7 +77,7 @@ createTestFraseRDataSet <- function(workingDir=tempdir(), rerun=FALSE){
     fds <- createTestFraseRSettings(workingDir)
     
     # count data
-    fds <- countRNAData(fds)
+    fds <- countRNAData(fds, minExpressionInOneSample=5)
     
     # filter expression
     fds <- calculatePSIValues(fds)
