@@ -229,7 +229,6 @@ applyExpressionFilters <- function(fds, minExpressionInOneSample,
                         quantileValue3 >= quantileMinExpression) )
     
     # if any junctions get filtered out by this cutoff, save their mean count
-    outputDir <- file.path(workingDir(fds), "savedObjects", nameNoSpace(fds))
     if(any(jctToRemove)){
         
         removedCtsMeans <- data.table(
@@ -240,7 +239,8 @@ applyExpressionFilters <- function(fds, minExpressionInOneSample,
         filteredLowCountsFile <- grep("filtered_maxExpr<", 
                                         list.files(outputDir), value=TRUE)
         
-        if(file.exists(file.path(outputDir, filteredLowCountsFile))){
+        if(length(filteredLowCountsFile) > 0 && 
+           file.exists(file.path(outputDir, filteredLowCountsFile))){
             
             # get previously filtered junctions 
             previouslyRemovedJcts <- readRDS(file.path(outputDir, 
