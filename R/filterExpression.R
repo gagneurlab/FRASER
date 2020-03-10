@@ -156,7 +156,7 @@ filterVariability <- function(fds, minDeltaPsi=0, filter=TRUE,
     }
     mcols(fds, type="j")[['passed']] <-
         (cutoffs$maxDPsi3     >= minDeltaPsi |
-             cutoffs$maxDPsi5 >= minDeltaPsi)
+            cutoffs$maxDPsi5 >= minDeltaPsi)
     
     # filter if requested
     if(isTRUE(filter)){
@@ -170,7 +170,7 @@ filterVariability <- function(fds, minDeltaPsi=0, filter=TRUE,
 #' Applies previously calculated filters for expression filters
 #' @noRd
 applyExpressionFilters <- function(fds, minExpressionInOneSample, 
-                                   quantileMinExpression){
+                                    quantileMinExpression){
     
     maxCount       <- mcols(fds, type="j")[['maxCount']]
     quantileValue5 <- mcols(fds, type="j")[['quantileValue5']]
@@ -256,7 +256,7 @@ applyExpressionFilters <- function(fds, minExpressionInOneSample,
             
             # give warning depending on the requested cutoff values
             if(!((minExpressionInOneSample >= minExpressionInFile) & 
-               (quantileMinExpression >= quantileExpressionInFile))){
+                (quantileMinExpression >= quantileExpressionInFile))){
                 
                 warning("Introns were already filtered previously (e.g. in ", 
                         "the counting step or a filtering step) for ",
@@ -285,8 +285,8 @@ applyExpressionFilters <- function(fds, minExpressionInOneSample,
     # apply filter
     numFilt <- sum(mcols(fds, type="j")[['passed']])
     message(paste0("Keeping ", numFilt, " junctions out of ", length(fds),
-                   ". This is ", signif(numFilt/length(fds)*100, 3),
-                   "% of the junctions"))
+                    ". This is ", signif(numFilt/length(fds)*100, 3),
+                    "% of the junctions"))
     fds <- fds[mcols(fds, type="j")[['passed']], by="psi5"]
     
     return(fds)
@@ -346,8 +346,8 @@ applyVariabilityFilters <- function(fds, minDeltaPsi){
     # apply filtering
     numFilt <- sum(mcols(fds, type="j")[['passed']])
     message(paste0("Keeping ", numFilt, " junctions out of ", length(fds),
-                   ". This is ", signif(numFilt/length(fds)*100, 3),
-                   "% of the junctions"))
+                    ". This is ", signif(numFilt/length(fds)*100, 3),
+                    "% of the junctions"))
     fds <- fds[mcols(fds, type="j")[['passed']], by="psi5"]
     return(fds)
         
