@@ -118,6 +118,14 @@ for tsv(.gz) or RDS files containing GRranges objects. The
 order of the individual sample files should correspond to 
 the order of the samples in the fds.}
 
+\item{outDir}{The full path to the output folder containing the merged 
+counts. If the given folder already exists and stores a 
+SummarizedExperiment object, the counts from this folder will 
+be read in and used in the following (i.e. the 
+reads are not recounted), unless the option recount=TRUE is 
+used. If this folder doesn't exist or if recount=TRUE, then it 
+will be created after counting has finished.}
+
 \item{splitCountRanges}{The merged GRanges object containing the positions 
 of all the introns in the dataset over all samples.}
 
@@ -146,13 +154,6 @@ ranges. If FALSE, merging of the ranges is performed.}
 splice sites. If it is NULL, then splice sites coordinates are 
 calculated first based on the positions of the junctions defined 
 from the split reads.}
-
-\item{outFile}{The full path to the output tsv file containing the merged 
-counts. If the given file already exists, this counts from 
-this file will be read in and used in the following (i.e. the 
-reads are not recounted), unless the option recount=TRUE is 
-used. If this file doesn't exist or if recount=TRUE, then it 
-will be created after counting has finished.}
 }
 \value{
 \code{\link{countRNAData}} returns a FraseRDataSet.

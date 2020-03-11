@@ -58,11 +58,12 @@
 #'                  for tsv(.gz) or RDS files containing GRranges objects. The 
 #'                  order of the individual sample files should correspond to 
 #'                  the order of the samples in the fds.
-#' @param outFile The full path to the output tsv file containing the merged 
-#'               counts. If the given file already exists, this counts from 
-#'               this file will be read in and used in the following (i.e. the 
+#' @param outDir The full path to the output folder containing the merged 
+#'               counts. If the given folder already exists and stores a 
+#'               SummarizedExperiment object, the counts from this folder will 
+#'               be read in and used in the following (i.e. the 
 #'               reads are not recounted), unless the option recount=TRUE is 
-#'               used. If this file doesn't exist or if recount=TRUE, then it 
+#'               used. If this folder doesn't exist or if recount=TRUE, then it 
 #'               will be created after counting has finished.
 #' @param splitCountRanges The merged GRanges object containing the positions 
 #'              of all the introns in the dataset over all samples.
@@ -180,7 +181,7 @@ getSplitReadCountsForAllSamples <- function(fds, NcpuPerSample=1,
                                                         nameNoSpace(name(fds)),
                                                         "splitCounts")){
     
-    # check if outFile with mergedCounts already exists
+    # check if outDir with mergedCounts already exists
     # if so, don't recalculate the split counts
     if(dir.exists(outDir) && isFALSE(recount)){
         
@@ -290,7 +291,7 @@ getNonSplitReadCountsForAllSamples <- function(fds, splitCountRanges,
                             workingDir(fds), "savedObjects", 
                             nameNoSpace(name(fds)), "nonSplitCounts")){
     
-    # check if outFile with mergedCounts already exists
+    # check if outDir with mergedCounts already exists
     # if so, don't recalculate the non split counts
     if(file.exists(outDir) && isFALSE(recount)){
         siteCounts <- loadHDF5SummarizedExperiment(dir=outDir)
