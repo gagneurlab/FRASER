@@ -7,3 +7,5 @@
 #' 
 #' @export
 psiTypes <- c("psi5", "psi3", "psiSite")
+names(psiTypes) <- psiTypes
+

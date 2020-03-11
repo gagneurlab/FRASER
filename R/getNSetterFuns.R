@@ -39,33 +39,24 @@
 #' padjVals(fds)
 #' zScores(fds)
 #' 
-NULL
-
-#'
-#' Feature exclusion
-#'
-#' To remove certain junctions from being used in the train step of the
-#' encoding dimension we can set the \code{featureExclusion} vector to
-#' \code{FALSE}. This can be helpfull if we have local linkage between
-#' features which we do not want to model by the autoencoder.
-#'
-#' @param fds A FraseRDataSet object
-#' @param type The psi type.
-#' @param value A logical vector of the length of the features. If
-#'             \code{TRUE}, the corresponding feature will be excluded
-#'             from the encoding dimension fit.
-#' @return The exclusion vector
-#'
-#' @rdname featureExclusionMask
-#' @aliases featureExclusionMask, `featureExclusionMask<-`
-#'
-#' @examples
-#' fds <- createTestFraseRDataSet()
+#' # set and get pseudocount
+#' pseudocount(4L)
+#' pseudocount()
 #' 
+#' # retrieve or set a mask to exclude certain junctions in the fitting step
 #' featureExclusionMask(fds, type="psiSite") <- sample(
 #'         c(FALSE, TRUE), nrow(mcols(fds, type="psiSite")), replace=TRUE)
 #' featureExclusionMask(fds, type="psiSite")
-#'
+#' 
+#' # controlling the verbosity level of the output of some algorithms
+#' verbose(fds) <- 2
+#' verbose(fds)
+NULL
+
+#' @describeIn getter_setter_functions Retrieves a logical vector indicating
+#' for each junction whether it is included or excluded during the fitting
+#' procedure.
+#' @aliases featureExclusionMask, `featureExclusionMask<-`
 #' @export featureExclusionMask
 featureExclusionMask <- function(fds, type=currentType(fds)){
     ans <- rep(TRUE, nrow(mcols(fds, type=type)))
@@ -76,7 +67,11 @@ featureExclusionMask <- function(fds, type=currentType(fds)){
     return(ans)
 }
 
-#' @rdname featureExclusionMask
+#' @describeIn getter_setter_functions To remove certain junctions from 
+#' being used in the train step of the encoding dimension we can set the 
+#' \code{featureExclusion} vector to \code{FALSE}. This can be helpfull 
+#' if we have local linkage between features which we do not want to 
+#' model by the autoencoder.
 #' @export "featureExclusionMask<-"
 `featureExclusionMask<-` <- function(fds, type=currentType(fds), value){
     if(isScalarLogical(value)){
@@ -295,32 +290,15 @@ deltaPsiValue <- function(fds, type=currentType(fds)){
 }
 
 
-#'
-#' Set/get psi type
-#'
-#' Set and returns the psi type that is to be used within several methods in 
-#' the FraseR package.
-#'
-#' @param fds FraseRDataSet
-#' @param value If given, is sets the psi type. It is required to be a scalar 
-#' character.
-#' @return character() (getter) or FraseRDataSet(setter)
-#' @examples
-#'   # get data
-#'   fds <- makeSimulatedFraserDataSet(m=50, j=1000)
-#' 
-#'   # set
-#'   currentType(fds) <- "psi5"
-#'
-#'   # get
-#'   currentType(fds)
-#'
+#' @describeIn getter_setter_functions Returns the psi type that is used 
+#' within several methods in the FraseR package.
 #' @export
 currentType <- function(fds){
     return(metadata(fds)[['currentType']])
 }
 
-#' @rdname currentType
+#' @describeIn getter_setter_functions Sets the psi type that is to be used 
+#' within several methods in the FraseR package.
 #' @export 
 `currentType<-` <- function(fds, value){
     stopifnot(isScalarCharacter(whichPSIType(value)))
@@ -328,21 +306,8 @@ currentType <- function(fds){
     return(fds)
 }
 
-#'
-#' Set/get global pseudo count option
-#'
-#' Set and returns the pseudo count used within the FraseR fitting procedure.
-#'
-#' @param value If given, is sets the psuedocount. It requires a positive
-#'                number and rounds it to the next integer.
-#' @return numeric scalar
-#' @examples
-#' # set
-#' pseudocount(4L)
-#'
-#' # get
-#' pseudocount()
-#'
+#' @describeIn getter_setter_functions Sets and returns the pseudo count used 
+#' within the FraseR fitting procedure.
 #' @export
 pseudocount <- function(value=NULL){
     # return if not provided
@@ -618,7 +583,7 @@ getPlottingDT <- function(fds, axis=c("row", "col"), type=NULL, result=NULL,
 
     # add aberrant information to it
     aberrantVec <- aberrant(fds, ..., padjVals=dt[,.(padj)],
-        dPsi=dt[,.(deltaPsi)], zscores=dt[,.(zscore)])
+        dPsi=dt[,.(deltaPsi)], zscores=dt[,.(zscore)], n=dt[,.(n)])
     dt[,aberrant:=aberrantVec]
 
     # return object
@@ -626,25 +591,9 @@ getPlottingDT <- function(fds, axis=c("row", "col"), type=NULL, result=NULL,
 }
 
 
-#'
-#' Verbosity level of the FraseR package
-#'
-#' Dependend on the level of verbosity the algorithm reports more or less to
-#' the user. 0 means being quiet and 10 means everything.
-#'
-#' @param fds FraseRDataSet
-#' @param value The level of verbosity, between 0 and 10. TRUE/FALSE are also 
-#' accepted.
-#'
-#' @rdname verbose
-#' @return numeric(1) (getter) or FraseRDataSet (setter)
-#' @examples
-#' fds <- createTestFraseRSettings()
-#' verbose(fds)
-#'
-#' verbose(fds) <- 2
-#' verbose(fds)
-#'
+#' @describeIn getter_setter_functions Dependend on the level of verbosity 
+#' the algorithm reports more or less to the user. 0 means being quiet 
+#' and 10 means everything.
 #' @export
 verbose <- function(fds){
     if("verbosity" %in% names(metadata(fds))){
@@ -653,7 +602,8 @@ verbose <- function(fds){
     return(0)
 }
 
-#' @rdname verbose
+#' @describeIn getter_setter_functions Sets the verbosity level to a value 
+#' between 0 and 10. 0 means being quiet and 10 means reporting everything.
 #' @export
 `verbose<-` <- function(fds, value){
     verbose <- value

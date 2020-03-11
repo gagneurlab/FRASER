@@ -21,7 +21,7 @@
 #'   
 #' @rdname makeExampleFraseRDataSet
 #' @aliases makeExampleFraseRDataSet makeFittedExampleFraseRDataSet
-#' @export
+#' @noRd
 makeExampleFraseRDataSet <- function(workingDir=tempdir()){
     # example sample annoation
     sampleTable <- fread(system.file(
@@ -43,7 +43,7 @@ makeExampleFraseRDataSet <- function(workingDir=tempdir()){
 }
 
 #' @rdname makeExampleFraseRDataSet
-#' @export
+#' @noRd
 makeFittedExampleFraseRDataSet <- function(workingDir=tempdir(), rerun=FALSE){
     # check if file exists already
     hdf5Files <- file.path(workingDir, "savedObjects", "Example_Dataset", 

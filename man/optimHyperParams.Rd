@@ -69,7 +69,6 @@ ratios while maximizing the precision-recall curve.
   fds <- createTestFraseRDataSet()
   
   # run hyperparameter optimization
-  register(SerialParam())
   fds <- optimHyperParams(fds, type="psi5", correction="PCA")
   
   # get estimated optimal dimension of the latent space

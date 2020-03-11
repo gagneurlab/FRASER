@@ -8,11 +8,11 @@ updateRho <- function(fds, type, rhoRange, BPPARAM, verbose){
     n <- N(fds)
     y <- predictY(fds, noiseAlpha=currentNoiseAlpha(fds))
     
-    fitparameters <- bplapply(seq_len(nrow(k)), estRho,
-                                k=k, n=n, y=y, rhoRange=rhoRange,
-                                BPPARAM=BPPARAM, nll=truncNLL_rho)
+    fitparameters <- bplapply(seq_len(nrow(k)), estRho, nll=truncNLL_rho,
+            k=k, n=n, y=y, rhoRange=rhoRange, BPPARAM=BPPARAM)
     
-    rho(fds) <- vapply(fitparameters, "[[", double(1), "minimum")
+    rho(fds) <- vapply(fitparameters, "[[", 
+            double(1), "minimum")
     
     if(isTRUE(verbose)){
         print(summary(rho(fds)))
@@ -44,8 +44,8 @@ negLogLikelihoodRho <- function(rho, ki, ni, mui){
     
     #mean negative log likelihood with pseudocounts
     mean(alpha + beta - alphaK - betaNK - lgamma(ni+1+2*eps) + 
-            lgamma(ki+1+eps) + lgamma(ni-ki+1+eps) + lgamma(r + ni + 2*eps) - 
-            lgamma(r))
+             lgamma(ki+1+eps) + lgamma(ni-ki+1+eps) + lgamma(r + ni + 2*eps) - 
+             lgamma(r))
 }
 
 trunc_negLogLikelihoodRho <- function(rho, ki, ni, mui){

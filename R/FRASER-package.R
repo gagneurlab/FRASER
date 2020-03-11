@@ -27,7 +27,7 @@
 #'          makeGRangesFromDataFrame
 #' @importFrom IRanges subsetByOverlaps from to IRanges ranges
 #' @importFrom Rsamtools ScanBamParam scanBamHeader bamMapqFilter
-#'          bamWhich bamWhich<-
+#'          bamWhich bamWhich<- BamFile
 #' @importFrom Rsubread featureCounts
 #'
 ### Annotation
@@ -129,5 +129,3 @@ globalVariables(c(".", "J", ".N", ".asDataFrame", "End", "FN", "HTML", "Start",
         "psiType", "psiValue", "seqlength", "seqlevel", "Step", "traceNr",
         "V1", "value", "zscore"),
         package="FRASER")
-
-options("FRASER.pseudoCount"=1)

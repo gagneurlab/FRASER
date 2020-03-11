@@ -13,7 +13,7 @@
 #' @noRd
 #' @return FraseRDataSet
 #' @examples
-#'   fds <- makeExampleFraseRDataSet()
+#'   fds <- createTestFraseRDataSet()
 #'   fds <- calculatePSIValues(fds)
 #'   fds <- calculateZScores(fds)
 calculateZScores <- function(fds, type=psiTypes){

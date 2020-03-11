@@ -9,83 +9,128 @@ asFDS <- function(x){
     return(as(x, "FraseRDataSet"))
 }
 
-
-#' @rdname samples
+#'
+#'  Getter/Setter methods for the FraseRDataSet
+#'
+#' The following methods are getter and setter methods to extract or set
+#' certain values of a FraseRDataSet object. 
+#' 
+#' \code{samples} sets or gets the sample IDs; \code{condition} ;
+#' \code{}
+#' \code{nonSplicedReads} return a RangedSummarizedExperiment object 
+#' containing the counts for the non spliced reads overlapping splice 
+#' sites in the fds.
+#' \code{}
+#'
+#' @param object A FraseRDataSet object.
+#' @param value The new value that should replace the current one.
+#' @param x A FraseRDataSet object.
+#' @param type The psi type (psi3, psi5 or psiSite)
+#' @return Getter method return the respective current value.
+#' @examples
+#' fds <- createTestFraseRDataSet()
+#' samples(fds)
+#' samples(fds) <- 1:dim(fds)[2]
+#' condition(fds)
+#' condition(fds) <- 1:dim(fds)[2]
+#' bamFile(fds) # file.paths or objects of class BamFile
+#' bamFile(fds) <- file.path("bamfiles", samples(fds), "rna-seq.bam")
+#' name(fds)
+#' name(fds) <- "My Analysis"
+#' workingDir(fds)
+#' workingDir(fds) <- tempdir()
+#' strandSpecific(fds)
+#' strandSpecific(fds) <- TRUE
+#' scanBamParam(fds)
+#' scanBamParam(fds) <- ScanBamParam(mapqFilter=30)
+#' nonSplicedReads(fds)
+#' rowRanges(fds)
+#' rowRanges(fds, type="psiSite")
+#' mcols(fds, type="psi5")
+#' mcols(fds, type="psiSite")
+#' seqlevels(fds)
+#' seqlevels(mapSeqlevels(fds, style="UCSC"))
+#' seqlevels(mapSeqlevels(fds, style="Ensembl"))
+#' seqlevels(mapSeqlevels(fds, style="dbSNP"))
+#' 
+#' @author Christian Mertes \email{mertes@@in.tum.de}
+#'
+#' @rdname fds-methods
 #' @export
 setGeneric("samples",           
             function(object) standardGeneric("samples"))
 
-#' @rdname samples
+#' @rdname fds-methods
 #' @export
 setGeneric("samples<-",         signature = "object", 
             function(object, value) standardGeneric("samples<-"))
 
-#' @rdname condition
+#' @rdname fds-methods
 #' @export
 setGeneric("condition",         
             function(object) standardGeneric("condition"))
 
-#' @rdname condition
+#' @rdname fds-methods
 #' @export
 setGeneric("condition<-",       signature = "object", 
             function(object, value) standardGeneric("condition<-"))
 
-#' @rdname bamFile
+#' @rdname fds-methods
 #' @export
 setGeneric("bamFile",           
             function(object) standardGeneric("bamFile"))
 
-#' @rdname bamFile
+#' @rdname fds-methods
 #' @export
 setGeneric("bamFile<-",         signature = "object", 
             function(object, value) standardGeneric("bamFile<-"))
 
-#' @rdname name
+#' @rdname fds-methods
 #' @export
 setGeneric("name",              
             function(object) standardGeneric("name"))
 
-#' @rdname name
+#' @rdname fds-methods
 #' @export
 setGeneric("name<-",            signature = "object", 
             function(object, value) standardGeneric("name<-"))
 
-#' @rdname strandSpecific
+#' @rdname fds-methods
 #' @export
 setGeneric("strandSpecific",    
             function(object) standardGeneric("strandSpecific"))
 
-#' @rdname strandSpecific
+#' @rdname fds-methods
 #' @export
 setGeneric("strandSpecific<-",  signature = "object", 
             function(object, value) standardGeneric("strandSpecific<-"))
 
-#' @rdname workingDir
+#' @rdname fds-methods
 #' @export
 setGeneric("workingDir",        
             function(object) standardGeneric("workingDir"))
 
-#' @rdname workingDir
+#' @rdname fds-methods
 #' @export
 setGeneric("workingDir<-",      signature = "object", 
             function(object, value) standardGeneric("workingDir<-"))
 
-#' @rdname scanBamParam
+#' @rdname fds-methods
 #' @export
 setGeneric("scanBamParam",      
             function(object) standardGeneric("scanBamParam"))
 
-#' @rdname scanBamParam
+#' @rdname fds-methods
 #' @export
 setGeneric("scanBamParam<-",    signature = "object", 
             function(object, value) standardGeneric("scanBamParam<-"))
 
-#' @rdname nonSplicedReads
+#' @rdname fds-methods
 #' @export
 setGeneric("nonSplicedReads",   
             function(object) standardGeneric("nonSplicedReads"))
 
-#' @rdname nonSplicedReads
+#' @rdname fds-methods
 #' @export
 setGeneric("nonSplicedReads<-", signature = "object", 
             function(object, value) standardGeneric("nonSplicedReads<-"))
@@ -96,25 +141,14 @@ setGeneric("nonSplicedReads<-", signature = "object",
 setGeneric("results", function(x, ...) standardGeneric("results"))
 
 
-#'
-#'  Getter/Setter for the sampleIDs
-#'
-#' @param object A FraseRDataSet object.
-#' @param value The new sample IDs.
-#' @return A \code{vector} with all sample IDs
-#' @examples
-#' fds <- createTestFraseRSettings()
-#' samples(fds)
-#' samples(fds) <- 1:dim(fds)[2]
-#' @author Christian Mertes \email{mertes@@in.tum.de}
-#'
-#' @rdname samples
+
+#' @rdname fds-methods
 #' @export
 setMethod("samples", "FraseRDataSet", function(object) {
     return(colData(object)[,"sampleID"])
 })
 
-#' @rdname samples
+#' @rdname fds-methods
 #' @export
 setReplaceMethod("samples", "FraseRDataSet", function(object, value) {
     colData(object)[,"sampleID"] <- as.character(value)
@@ -124,20 +158,8 @@ setReplaceMethod("samples", "FraseRDataSet", function(object, value) {
 })
 
 
-#'
-#'  Get the condition for each sample
-#'
-#' @param object A FraseRDataSet object.
-#' @param value A vector with the conditions that should be assigned.
-#' @return A \code{vector} with the condition per sample
-#'     If the condition column is not set sequence of numbers is returned.
-#' @examples
-#' fds <- createTestFraseRSettings()
-#' condition(fds)
-#' condition(fds) <- 1:dim(fds)[2]
-#' @author Christian Mertes \email{mertes@@in.tum.de}
 #' @export
-#' @rdname condition
+#' @rdname fds-methods
 setMethod("condition", "FraseRDataSet", function(object) {
     if("condition" %in% colnames(colData(object))){
         return(colData(object)[,"condition"])
@@ -146,7 +168,7 @@ setMethod("condition", "FraseRDataSet", function(object) {
 })
 
 #' @export
-#' @rdname condition
+#' @rdname fds-methods
 setReplaceMethod("condition", "FraseRDataSet", function(object, value) {
     colData(object)[,"condition"] <- value
     validObject(object)
@@ -154,20 +176,8 @@ setReplaceMethod("condition", "FraseRDataSet", function(object, value) {
 })
 
 
-#'
-#'  Get/Set the bamFile
-#'
-#' @param object A FraseRDataSet object.
-#' @param value The new values (file.paths or objects of class BamFile) for the 
-#' bamfiles. 
-#' @return A \code{vector} with the bamFile for each sample
-#' @examples
-#' settings <- createTestFraseRSettings()
-#' bamFile(settings)
-#' bamFile(settings) <- file.path("bamfiles", samples(settings), "rna-seq.bam")
-#' @author Christian Mertes \email{mertes@@in.tum.de}
 #' @export
-#' @rdname bamFile
+#' @rdname fds-methods
 setMethod("bamFile", "FraseRDataSet", function(object) {
     bamFile <- colData(object)[,"bamFile"]
     if(all(vapply(bamFile, is, class2="BamFile", FUN.VALUE=logical(1)))){
@@ -177,7 +187,7 @@ setMethod("bamFile", "FraseRDataSet", function(object) {
 })
 
 #' @export
-#' @rdname bamFile
+#' @rdname fds-methods
 setReplaceMethod("bamFile", "FraseRDataSet", function(object, value) {
     colData(object)[,"bamFile"] <- value
     validObject(object)
@@ -185,25 +195,14 @@ setReplaceMethod("bamFile", "FraseRDataSet", function(object, value) {
 })
 
 
-#'
-#'  Get/Set the name of the analysis
-#'
-#' @param object A FraseRDataSet object.
-#' @param value The new name of the analysis.
-#' @return A character string representing the name of the analysis
-#' @examples
-#' settings <- createTestFraseRSettings()
-#' name(settings)
-#' name(settings) <- "My Analysis"
-#' @author Christian Mertes \email{mertes@@in.tum.de}
 #' @export
-#' @rdname name
+#' @rdname fds-methods
 setMethod("name", "FraseRDataSet", function(object) {
     return(slot(object, "name"))
 })
 
 #' @export
-#' @rdname name
+#' @rdname fds-methods
 setReplaceMethod("name", "FraseRDataSet", function(object, value) {
     slot(object, "name") <- value
     validObject(object)
@@ -211,26 +210,15 @@ setReplaceMethod("name", "FraseRDataSet", function(object, value) {
 })
 
 
-#'
-#'  Get/Set the working directory from the FraseRDataSet object
-#'
-#' @param object A FraseRDataSet object.
-#' @param value The new working directory.
-#' @return A path
-#' @examples
-#' settings <- createTestFraseRSettings()
-#' workingDir(settings)
-#' workingDir(settings) <- tempdir()
-#'
 #' @author Christian Mertes \email{mertes@@in.tum.de}
 #' @export
-#' @rdname workingDir
+#' @rdname fds-methods
 setMethod("workingDir", "FraseRDataSet", function(object) {
     return(slot(object, "workingDir"))
 })
 
 #' @export
-#' @rdname workingDir
+#' @rdname fds-methods
 setReplaceMethod("workingDir", "FraseRDataSet", function(object, value) {
     slot(object, "workingDir") <- value
     validObject(object)
@@ -238,25 +226,15 @@ setReplaceMethod("workingDir", "FraseRDataSet", function(object, value) {
 })
 
 
-#'
-#'  Get/Set if the analysis is strand specific or not
-#'
-#' @param object A FraseRDataSet object.
-#' @param value The new value for the strand specificity of the analysis.
-#' @return A logical value if the analysis is strand specific
-#' @examples
-#' settings <- createTestFraseRSettings()
-#' strandSpecific(settings)
-#' strandSpecific(settings) <- TRUE
 #' @author Christian Mertes \email{mertes@@in.tum.de}
 #' @export
-#' @rdname strandSpecific
+#' @rdname fds-methods
 setMethod("strandSpecific", "FraseRDataSet", function(object) {
     return(slot(object, "strandSpecific"))
 })
 
 #' @export
-#' @rdname strandSpecific
+#' @rdname fds-methods
 setReplaceMethod("strandSpecific", "FraseRDataSet", function(object, value) {
     slot(object, "strandSpecific") <- value
     validObject(object)
@@ -264,26 +242,14 @@ setReplaceMethod("strandSpecific", "FraseRDataSet", function(object, value) {
 })
 
 
-#'
-#' Get/Set the ScanBamParam object from the FraseRDataSet object
-#'
-#' @param object A FraseRDataSet object.
-#' @param value The new ScanBamParam.
-#' @return A ScanBamParam object
-#' @examples
-#' settings <- createTestFraseRSettings()
-#' scanBamParam(settings)
-#' scanBamParam(settings) <- ScanBamParam(mapqFilter=30)
-#'
-#' @author Christian Mertes \email{mertes@@in.tum.de}
 #' @export
-#' @rdname scanBamParam
+#' @rdname fds-methods
 setMethod("scanBamParam", "FraseRDataSet", function(object) {
     return(slot(object, "bamParam"))
 })
 
 #' @export
-#' @rdname scanBamParam
+#' @rdname fds-methods
 setReplaceMethod("scanBamParam", "FraseRDataSet", function(object, value) {
     slot(object, "bamParam") <- value
     validObject(object)
@@ -292,24 +258,13 @@ setReplaceMethod("scanBamParam", "FraseRDataSet", function(object, value) {
 
 
 #' @export
-#' @rdname nonSplicedReads
+#' @rdname fds-methods
 setMethod("nonSplicedReads", "FraseRDataSet", function(object){
     return(slot(object, "nonSplicedReads"))
 })
 
-#'
-#' Getter/setter for the non spliced reads object within the FraseRDataSet 
-#' object
-#' 
-#' @param object A FraseRDataSet object.
-#' @param value A RangedSummarizedExperiment object containing the counts for 
-#' the non spliced reads overlapping splice sites in the fds.
-#' @return RangedSummarizedExperiment (getter) or FraseRDataSet (setter)
-#' @examples 
-#' fds <- createTestFraseRDataSet()
-#' nonSplicedReads(fds)
 #' @export
-#' @rdname nonSplicedReads
+#' @rdname fds-methods
 setReplaceMethod("nonSplicedReads", "FraseRDataSet", function(object, value){
     slot(object, "nonSplicedReads") <- value
     validObject(object)
@@ -328,8 +283,8 @@ setReplaceMethod("nonSplicedReads", "FraseRDataSet", function(object, value){
 #'             junctions or splice sites
 #' @return A subsetted \code{FraseRDataSet} object
 #' @examples
-#'     fds <- makeExampleFraseRDataSet()
-#'     fds[1:10,1:10]
+#'     fds <- createTestFraseRDataSet()
+#'     fds[1:10,2:3]
 #'     fds[,samples(fds) %in% c("sample1", "sample2")]
 #'     fds[1:10,by="ss"]
 #'
@@ -432,14 +387,14 @@ setMethod("assayNames", "FraseRDataSet", function(x) {
 #'
 #' @return (Delayed) matrix.
 #' @export
-setMethod("assays", "FraseRDataSet", function(x, ..., withDimnames=TRUE){
+setMethod("assays", "FraseRDataSet", function(x, withDimnames=TRUE, ...){
     return(c(
-        assays(asSE(x), ..., withDimnames=withDimnames),
-        assays(nonSplicedReads(x), ..., withDimnames=withDimnames)
+        assays(asSE(x), withDimnames=withDimnames, ...),
+        assays(nonSplicedReads(x), withDimnames=withDimnames, ...)
     ))
 })
 FraseRDataSet.assays.replace <-
-            function(x, ..., HDF5=TRUE, type=NULL, withDimnames=TRUE, value){
+            function(x, withDimnames=TRUE, HDF5=TRUE, type=NULL, ..., value){
     if(any(names(value) == "")) stop("Name of an assay can not be empty!")
     if(any(duplicated(names(value)))) stop("Assay names need to be unique!")
     if(is.null(type)){
@@ -474,7 +429,7 @@ FraseRDataSet.assays.replace <-
     # assign new assays
     value <- jslots
     x <- callNextMethod()
-    assays(nonSplicedReads(x), ..., withDimnames=withDimnames) <- sslots
+    assays(nonSplicedReads(x), withDimnames=withDimnames, ...) <- sslots
 
     # validate and return
     validObject(x)
@@ -491,7 +446,7 @@ setReplaceMethod("assays", c("FraseRDataSet", "DelayedMatrix"),
 )
 
 #'
-#' retrive the length of the object (aka number of junctions)
+#' retrieve the length of the object (aka number of junctions)
 #' 
 #' @param x FraseRDataSet
 #'
@@ -499,19 +454,7 @@ setReplaceMethod("assays", c("FraseRDataSet", "DelayedMatrix"),
 #' @export
 setMethod("length", "FraseRDataSet", function(x) callNextMethod())
 
-#'
-#' getter and setter for mcols
-#' 
-#' @param x FraseRDataSet
-#' @param type The psi type.
-#' @param ... Further parameters passed to mcols
-#' 
-#' @return mcols
-#' @examples 
-#'   fds <- createTestFraseRDataSet()
-#'   
-#'   mcols(fds, type="psi5")
-#'   mcols(fds, type="psiSite")
+#' @rdname fds-methods 
 #' @export
 FraseR.mcols.get <- function(x, type=NULL, ...){
     type <- checkReadType(x, type)
@@ -534,21 +477,8 @@ FraseR.mcols.replace <- function(x, type=NULL, ..., value){
 setMethod("mcols", "FraseRDataSet", FraseR.mcols.get)
 setReplaceMethod("mcols", "FraseRDataSet", FraseR.mcols.replace)
 
-#'
-#' Getter and setter for rowRanges
-#' 
-#' @param x FraseRDataSet
-#' @param type The psi type.
-#' @param ... Parameters passed on to rowRanges()
-#' 
-#' @return GRanges object
-#' @examples 
-#'   fds <- createTestFraseRDataSet()
-#'   
-#'   rowRanges(fds)
-#'   rowRanges(fds, type="psiSite")
-#' 
-#' @return FraseRDataSet
+#' @rdname fds-methods
+#' @export
 FraseR.rowRanges.get <- function(x, type=NULL, ...){
     type <- checkReadType(x, type)
     if(type=="j")  return(callNextMethod())
@@ -744,7 +674,7 @@ FraseR.results <- function(x, sampleIDs, fdrCutoff, zscoreCutoff, dPsiCutoff,
                 colnames(deltaPsiVals) <- sc
             }
             
-            # create reult table
+            # create result table
             sampleRes <- lapply(sc,
                     resultsSingleSample, gr=gr, pvals=pvals, padjs=padjs,
                     zscores=zscores, psiType=type, psivals=psivals,
@@ -774,36 +704,75 @@ FraseR.results <- function(x, sampleIDs, fdrCutoff, zscoreCutoff, dPsiCutoff,
 }
 
 #'
-#' Extracting results
+#' Extracting results and aberrant splicing events
 #'
 #' The result function extracts the results from the given analysis object
-#' based on the given options and cutoffs.
+#' based on the given options and cutoffs. The aberrant function extracts 
+#' aberrant splicing events based on the given cutoffs.
 #'
 #' @param x FraseRDataSet
+#' @param fds FraseRDataSet
 #' @param sampleIDs A vector of sample IDs for which results should be 
 #' retrieved
-#' @param padjCutoff The FDR cutoff to be applied.
-#' @param zScoreCutoff The z-score cutoff to be applied.
-#' @param deltaPsiCutoff The cutoff on delta psi.
+#' @param padjCutoff The FDR cutoff to be applied or NA if not requested.
+#' @param zScoreCutoff The z-score cutoff to be applied or NA if not requested.
+#' @param deltaPsiCutoff The cutoff on delta psi or NA if not requested.
 #' @param minCount The minimum count value of the total coverage of an intron 
 #' to be considered as significant.
 #' result
 #' @param psiType The psi types for which the results should be retrieved.
 #' @param BPPARAM The BiocParallel parameter.
-#' @param ... Further parameters that are passed on.
+#' @param res Result as created with \code{results()}
+#' @param geneColumn The name of the column in \code{mcols(res)} that contains 
+#'     the gene symbols.   
+#' @param method The p.adjust method that is being used to adjust p values per
+#'     sample.
+#' @param type Splicing type (psi5, psi3 or psiSite)
+#' @param by By default \code{none} which means no grouping. But if 
+#'              \code{sample} or \code{feature} is specified the sum by 
+#'              sample or feature is returned
+#' @param aggregate If TRUE the returned object is based on the grouped 
+#'              features
+#' @param ... Further arguments can be passed to the method. If "zscores", 
+#'              "padjVals" or "dPsi" is given, the values of those arguments
+#'              are used to define the aberrant events.
 #'
-#' @return GRanges object containing significant results.
+#' @return For \code{results}: GRanges object containing significant results.
+#'     For \code{aberrant}: Either a of logical values of size 
+#'     introns/genes x samples if "by" is NA or a vector with the 
+#'     number of aberrant events per sample or feature depending on 
+#'     the vaule of "by"
 #' 
 #' @rdname results
 #' @examples
 #' # get data, fit and compute p-values and z-scores
 #' fds <- createTestFraseRDataSet()
 #' 
-#' # extract results: for this example dataset, padjust cutoff of 0.15 used to
+#' # extract results: for this example dataset, z score cutoff of 2 is used to
 #' # get at least one result and show the output
-#' res <- results(fds, padjCutoff=0.15, zScoreCutoff=NA, deltaPsiCutoff=0.1)
+#' res <- results(fds, padjCutoff=NA, zScoreCutoff=3, deltaPsiCutoff=0.05)
 #' res
+#' 
+#' # aggregate the results by genes (gene symbols need to be annotated first 
+#' # using annotateRanges() function)
+#' resultsByGenes(res)
 #'
+#' # get aberrant events per sample: on the example data, nothing is aberrant
+#' # based on the adjusted p-value
+#' aberrant(fds, type="psi5", by="sample")
+#' 
+#' # use zScoreCutoff instead
+#' aberrant(fds, type="psi5", by="sample", zScoreCutoff=2, padjCutoff=NA)
+#' 
+#' # get aberrant events per gene (first annotate gene symbols)
+#' fds <- annotateRanges(fds)
+#' aberrant(fds, type="psi5", by="feature", zScoreCutoff=2, padjCutoff=NA,
+#'         aggregate=TRUE)
+#' aberrant(fds, type="psi5", zScoreCutoff=2, padjCutoff=NA, aggregate=TRUE)
+#'         
+#' # find aberrant junctions/splice sites
+#' aberrant(fds, type="psi5", by="none")
+#' aberrant(fds, type="psi5")
 #' @export
 setMethod("results", "FraseRDataSet", function(x, sampleIDs=samples(x),
                     padjCutoff=0.05, zScoreCutoff=NA, deltaPsiCutoff=0.3,
@@ -815,6 +784,8 @@ setMethod("results", "FraseRDataSet", function(x, sampleIDs=samples(x),
             BPPARAM=BPPARAM)
 })
 
+#' @rdname results
+#' @export
 resultsByGenes <- function(res, geneColumn="hgncSymbol", method="BY"){
     # sort by pvalue
     res <- res[order(res$pValue)]
@@ -856,18 +827,10 @@ resultsByGenes <- function(res, geneColumn="hgncSymbol", method="BY"){
 #'
 #' @param fds FraseRDataSet
 #' @param style The style of the chromosome names.
-#' @param ... Further parameters passed to GenomeInfoDb::mapSeqlevels().
+#' @param ... Further parameters. For mapSeqLevels: further parameters 
+#'     passed to GenomeInfoDb::mapSeqlevels().
 #' 
-#' @return FraseRDataSet
-#' @examples
-#'
-#' fds <- createTestFraseRDataSet()
-#' 
-#' seqlevels(fds)
-#' seqlevels(mapSeqlevels(fds, style="UCSC"))
-#' seqlevels(mapSeqlevels(fds, style="Ensembl"))
-#' seqlevels(mapSeqlevels(fds, style="dbSNP"))
-#'
+#' @rdname fds-methods
 #' @export
 mapSeqlevels <- function(fds, style="UCSC", ...){
 
@@ -888,53 +851,10 @@ mapSeqlevels <- function(fds, style="UCSC", ...){
 }
 
 
-#'
-#' Aberrant splicing events
-#'
-#' Use cutoffs to define splicing outlier events.
-#'
-#' @param fds FraseRDataSet object
-#' @param type Splicing type
-#' @param padjCutoff Adjusted p value cutoff to be used or NA if not requested
-#' @param deltaPsiCutoff Delta PSI cutoff to be used or NA if not requested
-#' @param zScoreCutoff Z score cutoff to be used or NA if not requested
-#' @param by By default \code{none} which means no grouping. But if 
-#'              \code{sample} or \code{feature} is specified the sum by 
-#'              sample or feature is returned
-#' @param aggregate If TRUE the returned object is based on the grouped 
-#'              features
-#' @param ... Further arguments can be passed to the method. If "zscores", 
-#'              "padjVals" or "dPsi" is given, the values of those arguments
-#'              are used to define the aberrant events.
-#' @return Either a of logical values of size introns/genes x samples if "by" 
-#'              is NA or a vector with the number of aberrant events per 
-#'              sample or feature depending on the vaule of "by"
-#' 
-#' @examples
-#' # get data
-#' fds <- createTestFraseRDataSet()
-#' 
-#' # get aberrant events per sample: on the example data, nothing is aberrant
-#' # based on the adjusted p-value
-#' aberrant(fds, type="psi5", by="sample")
-#' 
-#' # use zScoreCutoff instead
-#' aberrant(fds, type="psi5", by="sample", zScoreCutoff=2, padjCutoff=NA)
-#' 
-#' # get aberrant events per gene (first annotate gene symbols)
-#' fds <- annotateRanges(fds)
-#' aberrant(fds, type="psi5", by="feature", zScoreCutoff=2, padjCutoff=NA,
-#'         aggregate=TRUE)
-#' aberrant(fds, type="psi5", zScoreCutoff=2, padjCutoff=NA, aggregate=TRUE)
-#'         
-#' # find aberrant junctions/splice sites
-#' aberrant(fds, type="psi5", by="none")
-#' aberrant(fds, type="psi5")
-#'
+#' @rdname results
 #' @export
-#'
 aberrant <- function(fds, type=currentType(fds), padjCutoff=0.05,
-                    deltaPsiCutoff=0.3, zScoreCutoff=NA,
+                    deltaPsiCutoff=0.3, zScoreCutoff=NA, minCoverage=5,
                     by=c("none", "sample", "feature"), aggregate=FALSE, ...){
 
     checkNaAndRange(zScoreCutoff,   min=0, max=Inf, na.ok=TRUE)
@@ -943,6 +863,11 @@ aberrant <- function(fds, type=currentType(fds), padjCutoff=0.05,
     by <- match.arg(by)
 
     dots <- list(...)
+    if("n" %in% names(dots)){
+        n <- dots[['n']]
+    } else {
+        n <- N(fds, type=type)
+    }
     if("zscores" %in% names(dots)){
         zscores <- dots[['zscores']]
     } else {
@@ -957,7 +882,8 @@ aberrant <- function(fds, type=currentType(fds), padjCutoff=0.05,
         dpsi <- dots[['dPsi']]
     } else {
         dpsi <- deltaPsiValue(fds, type=type)
-    }
+    } 
+    
     
     # create cutoff matrix
     goodCutoff <- matrix(TRUE, nrow=nrow(zscores), ncol=ncol(zscores),
@@ -970,6 +896,9 @@ aberrant <- function(fds, type=currentType(fds), padjCutoff=0.05,
     }
     
     # check each cutoff if in use (not NA)
+    if(!is.na(minCoverage)){
+        goodCutoff <- goodCutoff & as.matrix(n >= minCoverage)
+    }
     if(!is.na(zScoreCutoff)){
         goodCutoff <- goodCutoff & as.matrix(abs(zscores) > zScoreCutoff)
     }
@@ -979,6 +908,7 @@ aberrant <- function(fds, type=currentType(fds), padjCutoff=0.05,
     if(!is.na(padjCutoff)){
         goodCutoff <- goodCutoff & as.matrix(padj < padjCutoff)
     }
+    goodCutoff[is.na(goodCutoff)] <- FALSE
     
     # check if we should go for aggregation
     # TODO to speed it up we only use any hit within a feature

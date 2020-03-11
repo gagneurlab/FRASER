@@ -4,14 +4,14 @@
 \alias{assays,FraseRDataSet-method}
 \title{Returns the assay for the given name/index of the FraseRDataSet}
 \usage{
-\S4method{assays}{FraseRDataSet}(x, ..., withDimnames = TRUE)
+\S4method{assays}{FraseRDataSet}(x, withDimnames = TRUE, ...)
 }
 \arguments{
 \item{x}{FraseRDataSet}
 
-\item{...}{Parameters passed on to SummarizedExperiment::assays()}
-
 \item{withDimnames}{Passed on to SummarizedExperiment::assays()}
+
+\item{...}{Parameters passed on to SummarizedExperiment::assays()}
 }
 \value{
 (Delayed) matrix.

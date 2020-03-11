@@ -421,12 +421,19 @@ uniformSeqInfo <- function(grls){
         seqlength = unlist(lapply(grls, seqlengths))
     )[order(seqlevel)])
 
-    if(any(duplicated(tmpSeqlevels[,seqlevel]))){
-        stop("There are non uniq chromosomes in this dataset!")
+    chromosomeNames <- tmpSeqlevels[,seqlevel]
+    if(any(duplicated(chromosomeNames))){
+        nonUniqueChromosomes <- chromosomeNames[duplicated(chromosomeNames)]
+        warning("There are non unique chromosomes in this dataset (", 
+                nonUniqueChromosomes, ")!\n This means that these chromosomes ",
+                "are associated with > 1 chromosome length!\n These ",
+                "chromosomes will be removed from the dataset as mapping ",
+                "between intron\n positions between samples is not possible.")
+        tmpSeqlevels <- tmpSeqlevels[seqlevel != nonUniqueChromosomes]
     }
 
     ans <- lapply(grls, function(x){
-        seqlevels(x)  <- tmpSeqlevels[,seqlevel]
+        seqlevels(x, pruning.mode="coarse")  <- tmpSeqlevels[,seqlevel]
         seqlengths(x) <- tmpSeqlevels[,seqlength]
         x
     })

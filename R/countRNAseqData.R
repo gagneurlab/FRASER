@@ -422,7 +422,6 @@ getSplitCountCacheFile <- function(sampleID, settings){
 #' @export
 countSplitReads <- function(sampleID, fds, NcpuPerSample=1, genome=NULL, 
                             recount=FALSE){
-    message(date(), ": Count split reads for sample: ", sampleID)
     bamFile <- bamFile(fds[,samples(fds) == sampleID])[[1]]
     
     # check cache if available
@@ -437,10 +436,13 @@ countSplitReads <- function(sampleID, fds, NcpuPerSample=1, genome=NULL,
             cache <- cache[from]
         }
         if(length(cache) > 0){
+            message(date(), ": Using existing split read counts for sample: ", 
+                    sampleID)
             return(checkSeqLevelStyle(cache, fds, sampleID,
                                         sampleSpecific=FALSE))
         }
     }
+    message(date(), ": Count split reads for sample: ", sampleID)
     
     # parallelize over chromosomes
     chromosomes <- extractChromosomes(bamFile)
@@ -554,6 +556,27 @@ mergeCounts <- function(countList, fds, junctionMap=NULL, assumeEqual=FALSE,
         message(paste(date(), ": Fast merging of counts ..."))
         sample_counts <- countList
     } else {
+        
+        if(!"SeqLevelStyle" %in% colnames(colData(fds))){
+            colData(fds)[,"SeqLevelStyle"] <- 
+                vapply(bamFile(fds), FUN.VALUE=character(1), 
+                    FUN=function(bamfile){
+                        seqlevelsStyle(BamFile(bamfile, yieldSize = 2e6))[1]
+                    } )
+        }
+        if(length(unique(colData(fds)[,"SeqLevelStyle"])) > 1 ){
+            warning("The bamFiles or the samples in the dataset use multiple\n",
+                "styles of naming chromosomes (seqlevelstyle). Samples are\n", 
+                "mapped to the most common style to enable the subsequent\n", 
+                "analysis. ")
+        }
+        countList <- mapply(countList, samples(fds), 
+                            FUN=function(gr, sampleID){
+                                checkSeqLevelStyle(gr, fds, sampleID, 
+                                                    sampleSpecific=FALSE)
+                                }
+                            )
+        
         countList <- uniformSeqInfo(countList)
         countgr <- GRangesList(countList)
         if(!is.null(junctionMap)){
@@ -682,7 +705,6 @@ countNonSplicedReads <- function(sampleID, splitCountRanges, fds,
     }
     
     
-    message(date(), ": Count non spliced reads for sample: ", sampleID)
     bamFile <- bamFile(fds[,samples(fds) == sampleID])[[1]]
     
     # check cache if available
@@ -701,6 +723,9 @@ countNonSplicedReads <- function(sampleID, splitCountRanges, fds,
         
         # we have all sites of interest cached
         if(length(spliceSiteCoords) == nrow(cache)){
+            message(date(), 
+                    ": Using existing non spliced read counts for sample: ", 
+                    sampleID)
             return(cache)
         } else {
             message(paste("The cache file does not contain the needed",
@@ -709,6 +734,8 @@ countNonSplicedReads <- function(sampleID, splitCountRanges, fds,
             ))
         }
     }
+    
+    message(date(), ": Count non spliced reads for sample: ", sampleID)
     
     # extract the counts with Rsubread
     tmp_ssc <- checkSeqLevelStyle(spliceSiteCoords, fds, sampleID, TRUE)

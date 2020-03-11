@@ -24,8 +24,7 @@
 #' filters. If \code{filter=TRUE}, the filtered FraseRDataSet is returned.
 #' 
 #' @examples
-#' fds <- makeExampleFraseRDataSet()
-#' fds <- calculatePSIValues(fds)
+#' fds <- createTestFraseRDataSet()
 #' fds <- filterExpressionAndVariability(fds)
 #'
 #' @name filtering

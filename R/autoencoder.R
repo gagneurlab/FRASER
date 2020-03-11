@@ -215,12 +215,12 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, minDeltaPsi=0.1,
     # add correction factors
     predictedMeans <- t(predictMu(copy_fds))
     stopifnot(identical(dim(K(copy_fds)), dim(predictedMeans)))
-    predictedMeans(copy_fds, type) <- predictedMeans
+    predictedMeans(copy_fds, type, withDimnames=FALSE) <- predictedMeans
 
     # store weights if weighted version
     if(isTRUE(weighted)){
         weights <- weights(copy_fds, type)
-        weights(copy_fds, type) <- weights
+        weights(copy_fds, type, withDimnames=FALSE) <- weights
     }
 
     # validate object

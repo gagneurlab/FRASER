@@ -83,8 +83,7 @@ splice sites which do not show variablity across samples.
 }}
 
 \examples{
-fds <- makeExampleFraseRDataSet()
-fds <- calculatePSIValues(fds)
+fds <- createTestFraseRDataSet()
 fds <- filterExpressionAndVariability(fds)
 
 }
