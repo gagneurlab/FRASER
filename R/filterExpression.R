@@ -223,65 +223,6 @@ applyExpressionFilters <- function(fds, minExpressionInOneSample,
                                                 dir=rareJctsDir, replace=TRUE)
     }
     
-    # get mean expression of filtered junctions
-    jctToRemove <- !(maxCount >= minExpressionInOneSample &
-                    (quantileValue5 >= quantileMinExpression |
-                        quantileValue3 >= quantileMinExpression) )
-    
-    # if any junctions get filtered out by this cutoff, save their mean count
-    if(any(jctToRemove)){
-        
-        removedCtsMeans <- data.table(
-            value=exp(rowMeans(log(
-                K(fds, type="j")[jctToRemove,,drop=FALSE] + 1))),
-            passed=FALSE)
-        
-        filteredLowCountsFile <- grep("filtered_maxExpr<", 
-                                        list.files(outputDir), value=TRUE)
-        
-        if(length(filteredLowCountsFile) > 0 && 
-            file.exists(file.path(outputDir, filteredLowCountsFile))){
-            
-            # get previously filtered junctions 
-            previouslyRemovedJcts <- readRDS(file.path(outputDir, 
-                                                        filteredLowCountsFile))
-            removedCtsMeans <- rbind(previouslyRemovedJcts, removedCtsMeans)
-            
-            # get previous cutoff values
-            fileCutoffs <- regmatches(filteredLowCountsFile, 
-                                                gregexpr("[0-9]+", 
-                                                    filteredLowCountsFile))
-            minExpressionInFile <- fileCutoffs[[1]][1]
-            quantileExpressionInFile <- fileCutoffs[[1]][2]
-            
-            # give warning depending on the requested cutoff values
-            if(!((minExpressionInOneSample >= minExpressionInFile) & 
-                (quantileMinExpression >= quantileExpressionInFile))){
-                
-                warning("Introns were already filtered previously (e.g. in ", 
-                        "the counting step or a filtering step) for ",
-                        "minExpressionInOneSample=", minExpressionInFile, 
-                        " and quantileMinExpression=", 
-                        quantileExpressionInFile, " which is conflicting ",
-                        "with the currently requested cutoffs. Introns that ",
-                        "should be kept according to ",
-                        "minExpressionInOneSample=", minExpressionInOneSample, 
-                        " and quantileMinExpression=", 
-                        quantileMinExpression, " cannot be recovered. ", 
-                        "To include them, you might have to rerun the ",
-                        "counting step with the appropriate parameters.")
-            } 
-            
-            # remove previous file
-            file.remove(file.path(outputDir, filteredLowCountsFile))
-        }
-        
-        # store mean expression of filtered junctions for plotting
-        filename <- paste0("filtered_maxExpr<", minExpressionInOneSample, 
-                            "_quantMin<", quantileMinExpression, ".RDS")
-        saveRDS(removedCtsMeans, file=file.path(outputDir, filename) )
-    }
-    
     # apply filter
     numFilt <- sum(mcols(fds, type="j")[['passed']])
     message(paste0("Keeping ", numFilt, " junctions out of ", length(fds),
@@ -351,44 +292,4 @@ applyVariabilityFilters <- function(fds, minDeltaPsi){
     fds <- fds[mcols(fds, type="j")[['passed']], by="psi5"]
     return(fds)
         
-}
-
-#' filters out introns with low read support in all samples directly from the
-#' split counts SE object
-#' @noRd
-filterLowExpression <- function(fds, splitCounts, minExpressionInOneSample,
-                                outputDir){
-    
-    stopifnot(is(splitCounts, "SummarizedExperiment"))
-    
-    message(date(), ": Removing introns with read count <= ", 
-            minExpressionInOneSample, " in all samples...")
-    
-    # extract counts
-    cts  <- assay(splitCounts)
-    
-    # cutoff function
-    maxCount <- rowMaxs(cts)
-    passed <- maxCount >= minExpressionInOneSample 
-    
-    # store meanExpression of introns not passing the filter for later plotting
-    removedCtsMeans <- data.table(
-        value=exp(rowMeans(log(cts[!passed,,drop=FALSE] + 1))),
-        passed=FALSE)
-    if(!dir.exists(outputDir)){
-        dir.create(outputDir, recursive=TRUE)
-    }
-    filename <- paste0("filtered_maxExpr<", minExpressionInOneSample, 
-                        "_quantMin<0.RDS")
-    saveRDS(removedCtsMeans, file=file.path(outputDir, filename) )
-    
-    # apply filtering and return object
-    splitCounts <- splitCounts[passed,]
-    
-    # set correct hdf5 file
-    h5 <- saveAsHDF5(fds, "rawCountsJ", assay(splitCounts), rewrite=TRUE)
-    assay(splitCounts, "rawCountsJ") <- h5
-    
-    validObject(splitCounts)
-    return(splitCounts)
 }

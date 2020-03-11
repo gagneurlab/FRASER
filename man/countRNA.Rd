@@ -98,9 +98,9 @@ non spliced reads. Default to 5}
 \item{junctionMap}{A object or file containing a map of
 all junctions of interest across all samples}
 
-\item{filter}{If TRUE, introns with low read support in all samples are
-filtered out after counting of the split reads is finished. This helps to 
-speed up the subsequent steps.}
+\item{filter}{If TRUE, splice sites of introns with low read support in 
+all samples are not considered when calculating the non-split reads. This 
+helps to speed up the subsequent steps.}
 
 \item{minExpressionInOneSample}{The minimal split read count in at least one 
 sample that is required for an intron to pass the filter.}

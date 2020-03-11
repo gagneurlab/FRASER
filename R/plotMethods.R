@@ -561,24 +561,15 @@ plotFilterExpression <- function(fds, bins=200, legend.position=c(0.8, 0.8)){
     dt <- data.table(
             value=rowlgm,
             passed=mcols(fds, type="j")[['passed']])
+    dt[,passed:=factor(passed, levels=c(TRUE, FALSE))]
     
-    # check if file with removed counts exists and add them when it exists
-    outputDir <- file.path(workingDir(fds), "savedObjects", nameNoSpace(fds))
-    filteredLowCountsFile <- grep("filtered_maxExpr<", 
-                                    list.files(outputDir), value=TRUE)
-    if(file.exists(file.path(outputDir, filteredLowCountsFile))){
-        previousyRemovedJcts <- readRDS(file.path(outputDir,
-                                                    filteredLowCountsFile))
-        dt <- rbind(dt, previousyRemovedJcts)
-    }
-    
-    colors <- brewer.pal(3, "Dark2")[2:1]
+    colors <- brewer.pal(3, "Dark2")[seq_len(2)]
     ggplot(dt, aes(value, fill=passed)) +
         geom_histogram(bins=bins) +
         scale_x_log10() +
         scale_y_log10() +
         scale_fill_manual(values=colors, name="Passed",
-                labels=c("False", "True")) +
+                labels=c("True", "False")) +
         xlab("Mean Junction Expression") +
         ylab("Count") +
         ggtitle("Expression filtering") +

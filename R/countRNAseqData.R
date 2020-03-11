@@ -43,9 +43,9 @@
 #'             non spliced reads. Default to 5
 #' @param recount if TRUE the cache is ignored and the bam file is recounted.
 #' @param genome the genome
-#' @param filter If TRUE, introns with low read support in all samples are
-#' filtered out after counting of the split reads is finished. This helps to 
-#' speed up the subsequent steps.  
+#' @param filter If TRUE, splice sites of introns with low read support in 
+#' all samples are not considered when calculating the non-split reads. This 
+#' helps to speed up the subsequent steps.  
 #' @param minExpressionInOneSample The minimal split read count in at least one 
 #' sample that is required for an intron to pass the filter.
 #' @param BPPARAM the BiocParallel parameters for the parallelization
@@ -138,17 +138,16 @@ countRNAData <- function(fds, NcpuPerSample=1, minAnchor=5, recount=FALSE,
                                                 outDir=file.path(countDir, 
                                                         "splitCounts"))
     
-    if(isTRUE(filter)){
-        splitCounts <- filterLowExpression(fds, splitCounts, 
-                                    minExpressionInOneSample,
-                                    file.path(workingDir(fds), "savedObjects", 
-                                                nameNoSpace(name(fds))))
-    }
+    # extract granges from splitCounts, filtered if requested
+    splitCountRanges <- extractSplitCountRanges(splitCounts=splitCounts, 
+                                                filter=filter, 
+                                                minExpressionInOneSample=
+                                                    minExpressionInOneSample)
     
     # count non spliced reads for every samples
     nonSplicedCounts <- getNonSplitReadCountsForAllSamples(fds=fds, 
                                                 splitCountRanges=
-                                                    rowRanges(splitCounts), 
+                                                    splitCountRanges, 
                                                 NcpuPerSample=NcpuPerSample, 
                                                 minAnchor=minAnchor,
                                                 recount=recount, 
@@ -915,4 +914,25 @@ writeCountsToTsv <- function(counts, file="counts.tsv.gz"){
     }
     message(date(), ": Writing counts to file: ", file)
     fwrite(as.data.table(counts), file=file, sep = "\t")
+}
+
+#' extracts the granges of the split counts. If filtering is requested, only 
+#' the ranges of introns with sufficient read support are returned.
+#' @noRd
+extractSplitCountRanges <- function(splitCounts, filter=FALSE, 
+                                    minExpressionInOneSample=20){
+    if(isTRUE(filter)){
+        message(date(), ": Identifying introns with read count <= ", 
+                minExpressionInOneSample, " in all samples...")
+        
+        # extract counts and define cutoff function
+        maxCount <- rowMaxs(assay(splitCounts, "rawCountsJ"))
+        passed <- maxCount >= minExpressionInOneSample 
+        
+        # extract granges after filtering
+        return(rowRanges(splitCounts[passed,]))
+        
+    } else{
+        return(rowRanges(splitCounts))
+    }
 }
