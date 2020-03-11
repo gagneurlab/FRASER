@@ -120,8 +120,8 @@ calculatePvalues <- function(fds, type=currentType(fds),
                 k=k, n=n, mu=mu, rho=rho, BPPARAM=BPPARAM)
         pval <- do.call(rbind, pval_list)
         dval <- matrix(nrow=nrow(k), ncol=ncol(k), 
-                       dbbinom(as.matrix(k), as.matrix(n), 
-                               as.matrix(alpha), as.matrix(beta)))
+                        dbbinom(as.matrix(k), as.matrix(n), 
+                                as.matrix(alpha), as.matrix(beta)))
         pvals <- 2 * pmin(pval, 1 - pval + dval, 0.5)
         fwer_pval <- bplapply(seq_col(pvals), adjust_FWER_PValues,
                 pvals=pvals, index, BPPARAM=BPPARAM)

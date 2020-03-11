@@ -240,7 +240,7 @@ applyExpressionFilters <- function(fds, minExpressionInOneSample,
                                         list.files(outputDir), value=TRUE)
         
         if(length(filteredLowCountsFile) > 0 && 
-           file.exists(file.path(outputDir, filteredLowCountsFile))){
+            file.exists(file.path(outputDir, filteredLowCountsFile))){
             
             # get previously filtered junctions 
             previouslyRemovedJcts <- readRDS(file.path(outputDir, 

@@ -620,7 +620,7 @@ plotFilterVariability <- function(fds, bins=200, legend.position=c(0.8, 0.8)){
         geom_histogram(bins=bins) +
         scale_y_log10() + 
         scale_fill_manual(values=colors, name="Passed",
-                          labels=c("True", "False")) +
+                            labels=c("True", "False")) +
         xlab(bquote("Maximal Junction" ~ Delta*Psi[5] ~ "or" ~ Delta*Psi[3])) +
         ylab("Count") +
         ggtitle("Variability filtering") +
