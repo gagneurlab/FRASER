@@ -303,9 +303,10 @@ fitPCA <- function(fds, q, psiType, rhoRange=c(1e-5, 1-1e-5), noiseAlpha=NULL,
     }
 
     # use delayed matrix representation of counts again
-    counts(fds, type=psiType, side="other", HDF5=TRUE) <- 
+    counts(fds, type=psiType, side="other", HDF5=TRUE, withDimnames=FALSE) <- 
         counts(fds, type=psiType, side="other")
-    counts(fds, type=psiType, side="ofInterest", HDF5=TRUE) <- 
+    counts(fds, type=psiType, side="ofInterest", HDF5=TRUE, 
+            withDimnames=FALSE) <- 
         counts(fds, type=psiType, side="ofInterest")
     
     # fit rho
