@@ -44,8 +44,8 @@ negLogLikelihoodRho <- function(rho, ki, ni, mui){
     
     #mean negative log likelihood with pseudocounts
     mean(alpha + beta - alphaK - betaNK - lgamma(ni+1+2*eps) + 
-             lgamma(ki+1+eps) + lgamma(ni-ki+1+eps) + lgamma(r + ni + 2*eps) - 
-             lgamma(r))
+            lgamma(ki+1+eps) + lgamma(ni-ki+1+eps) + lgamma(r + ni + 2*eps) - 
+            lgamma(r))
 }
 
 trunc_negLogLikelihoodRho <- function(rho, ki, ni, mui){

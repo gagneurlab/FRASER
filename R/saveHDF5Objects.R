@@ -194,7 +194,8 @@ saveAsHDF5 <- function(fds, name, object=NULL, rewrite=FALSE){
     # override old h5 file if present and move tmp to correct place
     if(file.exists(h5File)) unlink(h5File)
     renameFile(h5FileTmp, h5File)
-    path(h5) <- h5File
+    # path(h5) <- h5File
+    h5 <- HDF5Array(h5File, name)
 
     return(h5)
 }

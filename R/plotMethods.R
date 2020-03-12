@@ -175,7 +175,9 @@ plotVolcano <- function(fds, sampleID, type=c("psi3", "psi5", "psiSite"),
             "delta Psi: ", round(deltaPsi, 2), "<br>",
             "Type: ", type))) +
         geom_point(aes(alpha=ifelse(aberrant == TRUE, 1, 0.8))) +
-        xlab(as.expression(bquote(paste(Delta, .(ggplotLabelPsi(type)[[1]]))))) +
+        xlab(as.expression(
+                bquote(paste(Delta, .(ggplotLabelPsi(type)[[1]]) ))
+            )) +
         ylab(expression(paste(-log[10], "(P value)"))) +
         theme_bw() +
         theme(legend.position="none") +
