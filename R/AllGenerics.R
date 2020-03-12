@@ -854,7 +854,7 @@ mapSeqlevels <- function(fds, style="UCSC", ...){
 #' @rdname results
 #' @export
 aberrant <- function(fds, type=currentType(fds), padjCutoff=0.05,
-                    deltaPsiCutoff=0.3, zScoreCutoff=NA, minCoverage=5,
+                    deltaPsiCutoff=0.3, zScoreCutoff=NA, minCount=5,
                     by=c("none", "sample", "feature"), aggregate=FALSE, ...){
 
     checkNaAndRange(zScoreCutoff,   min=0, max=Inf, na.ok=TRUE)
@@ -896,8 +896,8 @@ aberrant <- function(fds, type=currentType(fds), padjCutoff=0.05,
     }
     
     # check each cutoff if in use (not NA)
-    if(!is.na(minCoverage)){
-        goodCutoff <- goodCutoff & as.matrix(n >= minCoverage)
+    if(!is.na(minCount)){
+        goodCutoff <- goodCutoff & as.matrix(n >= minCount)
     }
     if(!is.na(zScoreCutoff)){
         goodCutoff <- goodCutoff & as.matrix(abs(zscores) > zScoreCutoff)

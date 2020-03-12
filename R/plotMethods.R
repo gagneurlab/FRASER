@@ -159,7 +159,7 @@ plotVolcano <- function(fds, sampleID, type=c("psi3", "psi5", "psiSite"),
                     basePlot=TRUE, aggregate=FALSE,
                     main=NULL,
                     deltaPsiCutoff=0.3, padjCutoff=0.1, ...){
-  
+    
     type <- match.arg(type)
 
     dt <- getPlottingDT(fds, axis="col", type=type, idx=sampleID,
@@ -371,8 +371,8 @@ plotExpectedVsObservedPsi <- function(fds, type=c("psi5", "psi3", "psiSite"),
         ylab <- bquote("Observed " ~ .(ggplotLabelPsi(type)[[1]]))
         xlab <- bquote("Predicted " ~ .(ggplotLabelPsi(type)[[1]]))
     } else{
-      ylab <- paste("Observed", ggplotLabelPsi(type, asCharacter=TRUE)[[1]])
-      xlab <- paste("Predicted", ggplotLabelPsi(type, asCharacter=TRUE)[[1]])
+        ylab <- paste("Observed", ggplotLabelPsi(type, asCharacter=TRUE)[[1]])
+        xlab <- paste("Predicted", ggplotLabelPsi(type, asCharacter=TRUE)[[1]])
     }
     
     g <- ggplot(dt, aes(y=obsPsi, x=predPsi)) +
@@ -439,8 +439,8 @@ plotQQ <- function(fds, type=NULL, idx=NULL, result=NULL, aggregate=FALSE,
                         " (site ", .(as.character(dt[,unique(idx)])), ")"))))
             } else{
                 main <- paste0(ggplotLabelPsi(type, asCharacter=TRUE)[[1]],
-                               " Q-Q plot: ", featureID, 
-                               " (site ", dt[,unique(idx)], ")")
+                                " Q-Q plot: ", featureID, 
+                                " (site ", dt[,unique(idx)], ")")
             }
         }
     }
@@ -480,12 +480,12 @@ plotQQ <- function(fds, type=NULL, idx=NULL, result=NULL, aggregate=FALSE,
     
     if(isTRUE(basePlot)){
         g <- g +
-          xlab(expression(-log[10]~"(expected P)")) +
-          ylab(expression(-log[10]~"(observed P)"))
+            xlab(expression(-log[10]~"(expected P)")) +
+            ylab(expression(-log[10]~"(observed P)"))
     } else{
         g <- g +
-          xlab("-log[10] (expected P)") +
-          ylab("-log[10] (observed P)")
+            xlab("-log[10] (expected P)") +
+            ylab("-log[10] (observed P)")
     }
 
     # Set color scale for global/local
@@ -866,11 +866,11 @@ ggplotLabelPsi <- function(type, asCharacter=FALSE){
             FUN.VALUE=c(bquote(psi[3])))
     } else{
         vapply(type, FUN=function(x)
-          switch (x,
-                  psi5 = "psi[5]",
-                  psi3 = "psi[3]",
-                  psiSite = "theta"),
-          FUN.VALUE=character(1))
+            switch (x,
+                    psi5 = "psi[5]",
+                    psi3 = "psi[3]",
+                    psiSite = "theta"),
+            FUN.VALUE=character(1))
     }
 }
 
