@@ -127,5 +127,5 @@ globalVariables(c(".", "J", ".N", ".asDataFrame", "End", "FN", "HTML", "Start",
         "model", "mu", "n", ",nsubset", "o3", "o5", "obsPsi", "os", "pa",
         "padj", "passed", "pByFeature", "pointNr", "predPsi", "psi3", "psi5",
         "psiType", "psiValue", "seqlength", "seqlevel", "Step", "traceNr",
-        "V1", "value", "zscore"),
+        "V1", "value", "zscore", "maxDTheta"),
         package="FRASER")

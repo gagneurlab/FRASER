@@ -149,7 +149,7 @@ filterVariability <- function(fds, minDeltaPsi=0, filter=TRUE,
     f3 <- function(ctsSE, ctsNSE, ...) {
         theta <- ctsSE/ctsNSE
         dTheta <- rowMaxs(abs(theta - rowMeans2(theta, na.rm=TRUE)), 
-                          na.rm=TRUE) }
+                            na.rm=TRUE) }
         
     
     funs <- c(maxDPsi3=f1, maxDPsi5=f2, maxDTheta=f3)
@@ -173,10 +173,10 @@ filterVariability <- function(fds, minDeltaPsi=0, filter=TRUE,
     ss_dt <- as.data.table(rowRanges(fds, type="ss"))
     mcols(fds, type="j")["maxDThetaDonor"] <- 
         merge(intron_dt, ss_dt, by.x="startID", by.y="spliceSiteID", 
-                all.x=T, sort=FALSE)[,maxDTheta]
+                all.x=TRUE, sort=FALSE)[,maxDTheta]
     mcols(fds, type="j")["maxDThetaAcceptor"] <- 
         merge(intron_dt, ss_dt, by.x="endID", by.y="spliceSiteID", 
-                all.x=T, sort=FALSE)[,maxDTheta]
+                all.x=TRUE, sort=FALSE)[,maxDTheta]
 
     # check which introns pass the filter
     mcols(fds, type="j")[['passed']] <-
@@ -272,7 +272,7 @@ applyVariabilityFilters <- function(fds, minDeltaPsi){
     
     # store information of non-variable junctions
     filtered <- (pmax(maxDPsi3, maxDPsi5, maxDThetaDonor, maxDThetaAcceptor) 
-                  < minDeltaPsi)
+                    < minDeltaPsi)
     outputDir <- file.path(workingDir(fds), "savedObjects", nameNoSpace(fds))
     if(any(filtered)){
         # get SE object of junctions to report
