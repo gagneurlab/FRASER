@@ -125,14 +125,18 @@ filterVariability <- function(fds, minDeltaPsi=0, filter=TRUE,
     message(date(), ": Filtering out non-variable introns ...")
     
     # extract counts
-    cts  <- K(fds, type="j")
-    ctsN5 <- N(fds, type="psi5")
-    ctsN3 <- N(fds, type="psi3")
+    cts    <- K(fds, type="j")
+    ctsSE  <- K(fds, type="ss")
+    ctsN5  <- N(fds, type="psi5")
+    ctsN3  <- N(fds, type="psi3")
+    ctsNSE <- N(fds, type="psiSite")
     
     if(isFALSE(delayed)){
         cts <- as.matrix(cts)
         ctsN5 <- as.matrix(ctsN5)
         ctsN3 <- as.matrix(ctsN3)
+        ctsSE <- as.matrix(ctsSE)
+        ctsNSE <- as.matrix(ctsNSE)
     }
     
     # cutoff functions
@@ -142,20 +146,43 @@ filterVariability <- function(fds, minDeltaPsi=0, filter=TRUE,
     f2 <- function(cts, ctsN5, ...) {
         psi <- cts/ctsN5
         rowMaxs(abs(psi - rowMeans2(psi, na.rm=TRUE)), na.rm=TRUE) }
+    f3 <- function(ctsSE, ctsNSE, ...) {
+        theta <- ctsSE/ctsNSE
+        dTheta <- rowMaxs(abs(theta - rowMeans2(theta, na.rm=TRUE)), 
+                          na.rm=TRUE) }
+        
     
-    funs <- c(maxDPsi3=f1, maxDPsi5=f2)
+    funs <- c(maxDPsi3=f1, maxDPsi5=f2, maxDTheta=f3)
     
     # run it in parallel
     cutoffs <- bplapply(funs, function(f, ...) f(...), BPPARAM=BPPARAM,
-                        cts=cts, ctsN3=ctsN3, ctsN5=ctsN5)
+                        cts=cts, ctsN3=ctsN3, ctsN5=ctsN5, 
+                        ctsSE=ctsSE, ctsNSE=ctsNSE)
     
     # add annotation to object
     for(n in names(cutoffs)){
-        mcols(fds, type="j")[n] <- cutoffs[[n]]
+        if(n == "maxDTheta"){
+            mcols(fds, type="ss")[n] <- cutoffs[[n]]
+        } else{ 
+            mcols(fds, type="j")[n] <- cutoffs[[n]]
+        }
     }
+    
+    # add annotation of theta on splice sites of introns to mcols
+    intron_dt <- as.data.table(rowRanges(fds, type="j"))
+    ss_dt <- as.data.table(rowRanges(fds, type="ss"))
+    mcols(fds, type="j")["maxDThetaDonor"] <- 
+        merge(intron_dt, ss_dt, by.x="startID", by.y="spliceSiteID", 
+                all.x=T, sort=FALSE)[,maxDTheta]
+    mcols(fds, type="j")["maxDThetaAcceptor"] <- 
+        merge(intron_dt, ss_dt, by.x="endID", by.y="spliceSiteID", 
+                all.x=T, sort=FALSE)[,maxDTheta]
+
+    # check which introns pass the filter
     mcols(fds, type="j")[['passed']] <-
-        (cutoffs$maxDPsi3     >= minDeltaPsi |
-            cutoffs$maxDPsi5 >= minDeltaPsi)
+        pmax(cutoffs$maxDPsi3, cutoffs$maxDPsi5, 
+                mcols(fds, type="j")$maxDThetaDonor, 
+                mcols(fds, type="j")$maxDThetaAcceptor) >= minDeltaPsi 
     
     # filter if requested
     if(isTRUE(filter)){
@@ -240,9 +267,12 @@ applyVariabilityFilters <- function(fds, minDeltaPsi){
     #
     maxDPsi3 <- mcols(fds, type="j")[['maxDPsi3']]
     maxDPsi5 <- mcols(fds, type="j")[['maxDPsi5']]
+    maxDThetaDonor    <- mcols(fds, type="j")[['maxDThetaDonor']]
+    maxDThetaAcceptor <- mcols(fds, type="j")[['maxDThetaAcceptor']]
     
     # store information of non-variable junctions
-    filtered <- !(maxDPsi3 >= minDeltaPsi | maxDPsi5 >= minDeltaPsi)
+    filtered <- (pmax(maxDPsi3, maxDPsi5, maxDThetaDonor, maxDThetaAcceptor) 
+                  < minDeltaPsi)
     outputDir <- file.path(workingDir(fds), "savedObjects", nameNoSpace(fds))
     if(any(filtered)){
         # get SE object of junctions to report
@@ -284,7 +314,7 @@ applyVariabilityFilters <- function(fds, minDeltaPsi){
     }
     
     # apply filtering
-    numFilt <- sum(mcols(fds, type="j")[['passed']])
+    numFilt <- sum(!filtered)
     message(paste0("Keeping ", numFilt, " junctions out of ", length(fds),
                     ". This is ", signif(numFilt/length(fds)*100, 3),
                     "% of the junctions"))
