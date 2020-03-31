@@ -12,6 +12,7 @@
 #'   \item plotExpectedVsObservedPsi()
 #'   \item plotCountCorHeatmap()
 #'   \item plotFilterExpression()
+#'   \item plotFilterVariability()
 #'   \item plotEncDimSearch()
 #' }
 #'
@@ -39,6 +40,12 @@
 #' @param plotType The type of plot that should be shown for plotEncDimSearch. 
 #'              Has to be either \code{"auc"} for a plot of the area under the 
 #'              curve (AUC) or \code{"loss"} for the model loss.
+#' @param onlyVariableIntrons Logical value indicating whether to show only 
+#'              introns that also pass the variability filter. Defaults to 
+#'              FALSE.
+#' @param onlyExpressedIntrons Logical value indicating whether to show only 
+#'              introns that also pass the expression filter. Defaults to 
+#'              FALSE.
 #### Graphical parameters
 #' @param main Title for the plot, if missing a default title will be used.
 #' @param colGroup Group of samples that should be colored.
@@ -586,7 +593,14 @@ plotEncDimSearch <- function(fds, type=c("psi3", "psi5", "psiSite"),
 #'
 #' @rdname plotFunctions
 #' @export
-plotFilterExpression <- function(fds, bins=200, legend.position=c(0.8, 0.8)){
+plotFilterExpression <- function(fds, bins=200, legend.position=c(0.8, 0.8),
+                                    onlyVariableIntrons=FALSE){
+    
+    # check that expression filter has been calculated
+    if(!("passedExpression" %in% colnames(mcols(fds, type="j")))){
+        stop("Please calculate the expression filter values first with the ",
+             "filterExpression function.")
+    }
     
     # get mean count for all junctions in the fds object
     cts    <- K(fds, "psi5")
@@ -594,7 +608,10 @@ plotFilterExpression <- function(fds, bins=200, legend.position=c(0.8, 0.8)){
 
     dt <- data.table(
             value=rowlgm,
-            passed=mcols(fds, type="j")[['passed']])
+            passed=mcols(fds, type="j")[['passedExpression']])
+    if(isTRUE(onlyVariableIntrons)){
+        dt[,passed:=mcols(fds, type="j")[['passed']]]
+    }
     dt[,passed:=factor(passed, levels=c(TRUE, FALSE))]
     
     colors <- brewer.pal(3, "Dark2")[seq_len(2)]
@@ -618,13 +635,25 @@ plotFilterExpression <- function(fds, bins=200, legend.position=c(0.8, 0.8)){
 #'
 #' @rdname plotFunctions
 #' @export
-plotFilterVariability <- function(fds, bins=200, legend.position=c(0.8, 0.8)){
+plotFilterVariability <- function(fds, bins=200, legend.position=c(0.8, 0.8),
+                                    onlyExpressedIntrons=FALSE){
+    
+    # check that expression filter has been calculated
+    if(!("passedVariability" %in% colnames(mcols(fds, type="j")))){
+        stop("Please calculate the expression filter values first with the ",
+             "filterVariability function.")
+    }
     
     # get plotting data
     dt <- data.table(
         value=pmax(mcols(fds, type="j")[['maxDPsi3']], 
-                    mcols(fds, type="j")[['maxDPsi5']]),
-        passed=mcols(fds, type="j")[['passed']])
+                    mcols(fds, type="j")[['maxDPsi5']],
+                    mcols(fds, type="j")[['maxDThetaDonor']],
+                    mcols(fds, type="j")[['maxDThetaAcceptor']]),
+        passed=mcols(fds, type="j")[['passedVariability']])
+    if(isTRUE(onlyExpressedIntrons)){
+        dt[,passed:=mcols(fds, type="j")[['passed']]]
+    }
     
     # check if file with removed counts exists and add them when it exists
     nonVarDir <- file.path(workingDir(fds), "savedObjects", nameNoSpace(fds),
@@ -634,7 +663,9 @@ plotFilterVariability <- function(fds, bins=200, legend.position=c(0.8, 0.8)){
         nV_stored <- loadHDF5SummarizedExperiment(dir=nonVarDir) 
         nonVar_dt <- data.table(
             value=pmax(mcols(nV_stored)[['maxDPsi3']], 
-                        mcols(nV_stored)[['maxDPsi5']]),
+                        mcols(nV_stored)[['maxDPsi5']],
+                        mcols(nV_stored)[['maxDThetaDonor']],
+                        mcols(nV_stored)[['maxDThetaAcceptor']]),
             passed=FALSE)
         dt <- rbind(dt, nonVar_dt)
     }
