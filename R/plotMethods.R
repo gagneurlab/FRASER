@@ -599,7 +599,7 @@ plotFilterExpression <- function(fds, bins=200, legend.position=c(0.8, 0.8),
     # check that expression filter has been calculated
     if(!("passedExpression" %in% colnames(mcols(fds, type="j")))){
         stop("Please calculate the expression filter values first with the ",
-             "filterExpression function.")
+                "filterExpression function.")
     }
     
     # get mean count for all junctions in the fds object
@@ -641,7 +641,7 @@ plotFilterVariability <- function(fds, bins=200, legend.position=c(0.8, 0.8),
     # check that expression filter has been calculated
     if(!("passedVariability" %in% colnames(mcols(fds, type="j")))){
         stop("Please calculate the expression filter values first with the ",
-             "filterVariability function.")
+                "filterVariability function.")
     }
     
     # get plotting data
