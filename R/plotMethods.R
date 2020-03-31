@@ -859,6 +859,7 @@ qlogisWithCap <- function(x){
 #'
 #' @noRd
 ggplotLabelPsi <- function(type, asCharacter=FALSE){
+    type <- as.character(type)
     if(isFALSE(asCharacter)){
         vapply(type, FUN=function(x)
             switch (x,
