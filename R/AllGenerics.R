@@ -378,7 +378,7 @@ setMethod("assayNames", "FraseRDataSet", function(x) {
 })
 
 
-FraseRDataSet.assays.replace_r40 <-
+FraseRDataSet.assays.replace_pre <-
             function(x, withDimnames=TRUE, HDF5=TRUE, type=NULL, ..., value){
     if(any(names(value) == "")) stop("Name of an assay can not be empty!")
     if(any(duplicated(names(value)))) stop("Assay names need to be unique!")
@@ -412,11 +412,23 @@ FraseRDataSet.assays.replace_r40 <-
         sslots <- c(sslots, value[!(nj | ns) & type=="ss"])
     }
 
-    # assign new assays
-    value <- jslots
-    x <- callNextMethod()
+    # assign new assays only for non split
+    # and do the rest in the specific functions
     assays(nonSplicedReads(x), withDimnames=withDimnames, ...) <- sslots
+    
+    return(list(x=x, value=jslots))
+}
 
+FraseRDataSet.assays.replace_r40 <- function(x, withDimnames=TRUE, HDF5=TRUE, 
+                type=NULL, ..., value){
+    ans <- FraseRDataSet.assays.replace_pre(x, withDimnames=withDimnames, 
+            HDF5=HDF5, type=type, ..., value=value)
+    
+    # retrieve adapted objects and set final assays on main SE object
+    value <- ans[['value']]
+    x <- ans[['x']]
+    x <- callNextMethod()
+    
     # validate and return
     validObject(x)
     return(x)
@@ -424,8 +436,17 @@ FraseRDataSet.assays.replace_r40 <-
 
 FraseRDataSet.assays.replace_r36 <- function(x, ..., HDF5=TRUE, type=NULL, 
                 withDimnames=TRUE, value){
-    FraseRDataSet.assays.replace(x, withDimnames=withDimnames, HDF5=HDF5, 
-            type=type, ..., value=value)
+    ans <- FraseRDataSet.assays.replace_pre(x, withDimnames=withDimnames, 
+            HDF5=HDF5, type=type, ..., value=value)
+    
+    # retrieve adapted objects and set final assays on main SE object
+    value <- ans[['value']]
+    x <- ans[['x']]
+    x <- callNextMethod()
+    
+    # validate and return
+    validObject(x)
+    return(x)
 }
 
 FraseRDataSet.assays.set_r40 <- function(x, withDimnames=TRUE, ...){
