@@ -1,6 +1,6 @@
 # FRASER - Find RAre Splicing Events in RNA-seq
 
-FRASER is a tool to detect aberrant splicing events in RNA-seq data. The method is currently avaiable as a preprint on [bioRxiv](https://www.biorxiv.org/content/10.1101/2019.12.18.866830v1).
+FRASER is a tool to detect aberrant splicing events in RNA-seq data. The method is currently available as a preprint on [bioRxiv](https://www.biorxiv.org/content/10.1101/2019.12.18.866830v1).
 
 [![Build Status](https://travis-ci.com/gagneurlab/FRASER.svg?branch=master)](https://travis-ci.com/gagneurlab/FRASER)
                                                                              

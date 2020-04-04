@@ -80,9 +80,19 @@ plotEncDimSearch(
   plotType = c("auc", "loss")
 )
 
-plotFilterExpression(fds, bins = 200, legend.position = c(0.8, 0.8))
+plotFilterExpression(
+  fds,
+  bins = 200,
+  legend.position = c(0.8, 0.8),
+  onlyVariableIntrons = FALSE
+)
 
-plotFilterVariability(fds, bins = 200, legend.position = c(0.8, 0.8))
+plotFilterVariability(
+  fds,
+  bins = 200,
+  legend.position = c(0.8, 0.8),
+  onlyExpressedIntrons = FALSE
+)
 
 plotCountCorHeatmap(
   fds,
@@ -158,6 +168,14 @@ junction-sample correlation heatmap.}
 \item{legend.position}{Set legend position (x and y coordinate), defaults to
 the top right corner.}
 
+\item{onlyVariableIntrons}{Logical value indicating whether to show only 
+introns that also pass the variability filter. Defaults to 
+FALSE.}
+
+\item{onlyExpressedIntrons}{Logical value indicating whether to show only 
+introns that also pass the expression filter. Defaults to 
+FALSE.}
+
 \item{logit}{If TRUE, the default, psi values are plotted in logit space.}
 
 \item{topN, topJ}{Top x most variable junctions that should be used in the
@@ -225,6 +243,7 @@ This is the list of all plotting function provided by FraseR:
   \item plotExpectedVsObservedPsi()
   \item plotCountCorHeatmap()
   \item plotFilterExpression()
+  \item plotFilterVariability()
   \item plotEncDimSearch()
 }
 

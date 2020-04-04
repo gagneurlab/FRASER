@@ -100,10 +100,18 @@ filterExpression <- function(fds, minExpressionInOneSample=20, quantile=0.05,
         mcols(fds, type="j")[n] <- cutoffs[[n]]
     }
     
-    mcols(fds, type="j")[['passed']] <-
+    mcols(fds, type="j")[['passedExpression']] <-
             cutoffs$maxCount >= minExpressionInOneSample &
             (cutoffs$quantileValue5 >= quantileMinExpression |
                 cutoffs$quantileValue3 >= quantileMinExpression) 
+    if("passedVariability" %in% colnames(mcols(fds, type="j"))){
+        mcols(fds, type="j")[['passed']] <-  
+            mcols(fds, type="j")[['passedExpression']] & 
+            mcols(fds, type="j")[['passedVariability']]
+    } else{
+        mcols(fds, type="j")[['passed']] <-  
+            mcols(fds, type="j")[['passedExpression']]
+    }
     
     # filter if requested
     if(isTRUE(filter)){
@@ -179,10 +187,22 @@ filterVariability <- function(fds, minDeltaPsi=0, filter=TRUE,
                 all.x=TRUE, sort=FALSE)[,maxDTheta]
 
     # check which introns pass the filter
-    mcols(fds, type="j")[['passed']] <-
+    mcols(fds, type="j")[['passedVariability']] <-
         pmax(cutoffs$maxDPsi3, cutoffs$maxDPsi5, 
                 mcols(fds, type="j")$maxDThetaDonor, 
                 mcols(fds, type="j")$maxDThetaAcceptor) >= minDeltaPsi 
+    if(any(is.na(mcols(fds, type="j")[['passedVariability']]))){
+        mcols(fds, type="j")$passedVariability[
+            is.na(mcols(fds, type="j")[['passedVariability']])] <- FALSE
+    }
+    if("passedExpression" %in% colnames(mcols(fds, type="j"))){
+        mcols(fds, type="j")[['passed']] <-  
+            mcols(fds, type="j")[['passedExpression']] & 
+            mcols(fds, type="j")[['passedVariability']]
+    } else{
+        mcols(fds, type="j")[['passed']] <-  
+            mcols(fds, type="j")[['passedVariability']]
+    }
     
     # filter if requested
     if(isTRUE(filter)){
@@ -250,11 +270,11 @@ applyExpressionFilters <- function(fds, minExpressionInOneSample,
     }
     
     # apply filter
-    numFilt <- sum(mcols(fds, type="j")[['passed']])
+    numFilt <- sum(mcols(fds, type="j")[['passedExpression']])
     message(paste0("Keeping ", numFilt, " junctions out of ", length(fds),
                     ". This is ", signif(numFilt/length(fds)*100, 3),
                     "% of the junctions"))
-    fds <- fds[mcols(fds, type="j")[['passed']], by="psi5"]
+    fds <- fds[mcols(fds, type="j")[['passedExpression']], by="psi5"]
     
     return(fds)
     
@@ -265,14 +285,16 @@ applyExpressionFilters <- function(fds, minExpressionInOneSample,
 applyVariabilityFilters <- function(fds, minDeltaPsi){
     
     #
-    maxDPsi3 <- mcols(fds, type="j")[['maxDPsi3']]
-    maxDPsi5 <- mcols(fds, type="j")[['maxDPsi5']]
-    maxDThetaDonor    <- mcols(fds, type="j")[['maxDThetaDonor']]
-    maxDThetaAcceptor <- mcols(fds, type="j")[['maxDThetaAcceptor']]
+    passedVariability <-  mcols(fds, type="j")[['passedVariability']]
+    # maxDPsi3 <- mcols(fds, type="j")[['maxDPsi3']]
+    # maxDPsi5 <- mcols(fds, type="j")[['maxDPsi5']]
+    # maxDThetaDonor    <- mcols(fds, type="j")[['maxDThetaDonor']]
+    # maxDThetaAcceptor <- mcols(fds, type="j")[['maxDThetaAcceptor']]
     
     # store information of non-variable junctions
-    filtered <- (pmax(maxDPsi3, maxDPsi5, maxDThetaDonor, maxDThetaAcceptor) 
-                    < minDeltaPsi)
+    filtered <- !passedVariability
+    # filtered <- (pmax(maxDPsi3, maxDPsi5, maxDThetaDonor, maxDThetaAcceptor) 
+    #                 < minDeltaPsi)
     outputDir <- file.path(workingDir(fds), "savedObjects", nameNoSpace(fds))
     if(any(filtered)){
         # get SE object of junctions to report
@@ -296,7 +318,9 @@ applyVariabilityFilters <- function(fds, minDeltaPsi){
                     "cannot be restored.")
             nV_stored <- loadHDF5SummarizedExperiment(dir=nonVarJctsDir) 
             toReport <- mcols(nV_stored)$maxDPsi5 < minDeltaPsi &
-                        mcols(nV_stored)$maxDPsi3 < minDeltaPsi
+                        mcols(nV_stored)$maxDPsi3 < minDeltaPsi &
+                        mcols(nV_stored)$maxDThetaDonor < minDeltaPsi &
+                        mcols(nV_stored)$maxDThetaAcceptor < minDeltaPsi
             
             nVJunctions <- rbind(nonVariableJunctions, nV_stored[toReport,])
             for(aname in assayNames(nVJunctions)){
@@ -314,11 +338,11 @@ applyVariabilityFilters <- function(fds, minDeltaPsi){
     }
     
     # apply filtering
-    numFilt <- sum(!filtered)
+    numFilt <- sum(passedVariability)
     message(paste0("Keeping ", numFilt, " junctions out of ", length(fds),
                     ". This is ", signif(numFilt/length(fds)*100, 3),
                     "% of the junctions"))
-    fds <- fds[mcols(fds, type="j")[['passed']], by="psi5"]
+    fds <- fds[mcols(fds, type="j")[['passedVariability']], by="psi5"]
     return(fds)
         
 }
