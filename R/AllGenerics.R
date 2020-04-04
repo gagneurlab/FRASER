@@ -424,7 +424,7 @@ FraseRDataSet.assays.replace_r40 <-
 
 FraseRDataSet.assays.replace_r36 <- function(x, ..., HDF5=TRUE, type=NULL, 
                 withDimnames=TRUE, value){
-    FraseRDataSet.assays.replace(x, withDimnames=withDimnames, HDF5=HDF5, 
+    FraseRDataSet.assays.replace_r40(x, withDimnames=withDimnames, HDF5=HDF5, 
             type=type, ..., value=value)
 }
 
