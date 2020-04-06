@@ -11,10 +11,11 @@ Description: Detection of rare aberrant splicing events in transcriptome
     rare diseases where RNA-seq is performed to identify splicing defects.
 License: MIT + file LICENSE
 Depends:
+    R (>= 3.6.0),
     BiocParallel,
     data.table,
     Rsamtools,
-    SummarizedExperiment (>= 1.17.2)
+    SummarizedExperiment
 Imports:
     AnnotationDbi,
     BBmisc,

@@ -378,22 +378,7 @@ setMethod("assayNames", "FraseRDataSet", function(x) {
 })
 
 
-#'
-#' Returns the assay for the given name/index of the FraseRDataSet
-#'
-#' @param x FraseRDataSet
-#' @param ... Parameters passed on to SummarizedExperiment::assays() 
-#' @param withDimnames Passed on to SummarizedExperiment::assays() 
-#'
-#' @return (Delayed) matrix.
-#' @export
-setMethod("assays", "FraseRDataSet", function(x, withDimnames=TRUE, ...){
-    return(c(
-        assays(asSE(x), withDimnames=withDimnames, ...),
-        assays(nonSplicedReads(x), withDimnames=withDimnames, ...)
-    ))
-})
-FraseRDataSet.assays.replace <-
+FraseRDataSet.assays.replace_pre <-
             function(x, withDimnames=TRUE, HDF5=TRUE, type=NULL, ..., value){
     if(any(names(value) == "")) stop("Name of an assay can not be empty!")
     if(any(duplicated(names(value)))) stop("Assay names need to be unique!")
@@ -427,24 +412,88 @@ FraseRDataSet.assays.replace <-
         sslots <- c(sslots, value[!(nj | ns) & type=="ss"])
     }
 
-    # assign new assays
-    value <- jslots
-    x <- callNextMethod()
+    # assign new assays only for non split
+    # and do the rest in the specific functions
     assays(nonSplicedReads(x), withDimnames=withDimnames, ...) <- sslots
+    
+    return(list(x=x, value=jslots))
+}
 
+FraseRDataSet.assays.replace_r40 <- function(x, withDimnames=TRUE, HDF5=TRUE, 
+                type=NULL, ..., value){
+    ans <- FraseRDataSet.assays.replace_pre(x, withDimnames=withDimnames, 
+            HDF5=HDF5, type=type, ..., value=value)
+    
+    # retrieve adapted objects and set final assays on main SE object
+    value <- ans[['value']]
+    x <- ans[['x']]
+    x <- callNextMethod()
+    
     # validate and return
     validObject(x)
     return(x)
 }
+
+FraseRDataSet.assays.replace_r36 <- function(x, ..., HDF5=TRUE, type=NULL, 
+                withDimnames=TRUE, value){
+    ans <- FraseRDataSet.assays.replace_pre(x, withDimnames=withDimnames, 
+            HDF5=HDF5, type=type, ..., value=value)
+    
+    # retrieve adapted objects and set final assays on main SE object
+    value <- ans[['value']]
+    x <- ans[['x']]
+    x <- callNextMethod()
+    
+    # validate and return
+    validObject(x)
+    return(x)
+}
+
+FraseRDataSet.assays.set_r40 <- function(x, withDimnames=TRUE, ...){
+    return(c(
+        assays(asSE(x), withDimnames=withDimnames, ...),
+        assays(nonSplicedReads(x), withDimnames=withDimnames, ...)
+    ))
+}
+
+FraseRDataSet.assays.set_r36 <- function(x, ..., withDimnames=TRUE){
+    FraseRDataSet.assays.set_r40(x=x, ..., withDimnames=withDimnames)
+}
+
+if(compareVersion(package.version("SummarizedExperiment"), "1.17-2") < 0){
+    FraseRDataSet.assays.set <- FraseRDataSet.assays.set_r36
+    FraseRDataSet.assays.replace <- FraseRDataSet.assays.replace_r36
+} else {
+    FraseRDataSet.assays.set <- FraseRDataSet.assays.set_r40
+    FraseRDataSet.assays.replace <- FraseRDataSet.assays.replace_r40
+}
+
+#'
+#' Returns the assay for the given name/index of the FraseRDataSet
+#'
+#' @param x FraseRDataSet
+#' @param ... Parameters passed on to SummarizedExperiment::assays() 
+#' @param withDimnames Passed on to SummarizedExperiment::assays() 
+#'
+#' @return (Delayed) matrix.
+#' @export
+setMethod("assays", "FraseRDataSet", FraseRDataSet.assays.set)
+
+#' @rdname assays-FraseRDataSet-method
+#' @export
 setReplaceMethod("assays", c("FraseRDataSet", "SimpleList"),
-        FraseRDataSet.assays.replace
-)
+        FraseRDataSet.assays.replace)
+
+#' @rdname assays-FraseRDataSet-method
+#' @export
 setReplaceMethod("assays", c("FraseRDataSet", "list"),
-        FraseRDataSet.assays.replace
-)
+        FraseRDataSet.assays.replace)
+
+#' @rdname assays-FraseRDataSet-method
+#' @export
 setReplaceMethod("assays", c("FraseRDataSet", "DelayedMatrix"),
-        FraseRDataSet.assays.replace
-)
+        FraseRDataSet.assays.replace)
+
 
 #'
 #' retrieve the length of the object (aka number of junctions)

@@ -16,8 +16,8 @@ addons:
 
 r:
   - bioc-devel
-#  - bioc-release
-#  - 4.0.0
+  - bioc-release
+  - 3.6.0
 
 stages:
   - Setup Cache
@@ -31,12 +31,12 @@ jobs:
       script: true
     - stage: Test
       r: bioc-devel
-#    - stage: Setup Cache
-#      r: bioc-release
-#      script: true
-#    - stage: Setup Cache
-#      r: 4.0.0
-#      script: true
+    - stage: Setup Cache
+      r: bioc-release
+      script: true
+    - stage: Setup Cache
+      r: 3.6.0
+      script: true
 
 before_install:
   - tlmgr install index marginfix bera nowidow parnotes
