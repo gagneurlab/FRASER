@@ -21,6 +21,7 @@ Imports:
     Biobase,
     BiocGenerics,
     biomaRt,
+    BSgenome,
     cowplot,
     DelayedArray (>= 0.5.11),
     DelayedMatrixStats,

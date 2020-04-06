@@ -42,7 +42,18 @@
 #' @param minAnchor Minimum overlap around the Donor/Acceptor for
 #'             non spliced reads. Default to 5
 #' @param recount if TRUE the cache is ignored and the bam file is recounted.
-#' @param genome the genome
+#' @param genome NULL (default) or a character vector specifying the names of 
+#' the reference genomes that were used to align the reads for each sample. The 
+#' names have to be in a way accepted by the \link{getBSgenome} function. 
+#' Available genomes can be listed using the \link{available.genomes} function 
+#' from the BSgenome package. If genome is of length 1, the same reference 
+#' genome will be used for all samples. 
+#' If \code{genome} is supplied and \code{strandSpecific(fds) == FALSE}, then 
+#' the strand information will be estimated by checking the dinucleotides 
+#' found at the intron boundaries (see ?\link{summarizeJunctions} in 
+#' GenomicAlignments package for details). This can e.g. help to avoid 
+#' ambiguities when adding gene names from a gene annotation to the introns 
+#' in a later step. 
 #' @param filter If TRUE, splice sites of introns with low read support in 
 #' all samples are not considered when calculating the non-split reads. This 
 #' helps to speed up the subsequent steps.  
@@ -489,6 +500,12 @@ countSplitReadsPerChromosome <- function(chromosome, bamFile, settings, genome){
     # dont count if there is nothing to count
     if(length(galignment) == 0){
         return(GRanges())
+    }
+    
+    # ensure chromosome naming style in genome and bamFile is the same
+    if(!is.null(genome)){
+        genome <- getBSgenome(genome)
+        seqlevelsStyle(genome) <- seqlevelsStyle(galignment)
     }
     
     # get the junction positions and their counts

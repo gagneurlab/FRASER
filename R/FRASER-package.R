@@ -29,6 +29,7 @@
 #' @importFrom Rsamtools ScanBamParam scanBamHeader bamMapqFilter
 #'          bamWhich bamWhich<- BamFile
 #' @importFrom Rsubread featureCounts
+#' @importFrom BSgenome getBSgenome
 #'
 ### Annotation
 #'
