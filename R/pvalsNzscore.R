@@ -79,7 +79,7 @@ calculatePvalues <- function(fds, type=currentType(fds),
     
     # make sure its only in-memory data for k and n
     currentType(fds) <- type
-    # fds <- putCounts2Memory(fds, type)
+    fds <- putCounts2Memory(fds, type)
     
     # if method BB is used take the old FraseR code
     if(correction %in% c("BB")){
@@ -106,24 +106,24 @@ calculatePvalues <- function(fds, type=currentType(fds),
         capN <- 1e6
     }
     if(isScalarNumeric(capN)){
-        # bigN <- which(n > capN)
-        # if(length(bigN) >= 1){
-            # facN <- capN/n[bigN]
-            # k[bigN] <- pmin(round(k[bigN] * facN), capN)
-            # n[bigN] <- capN
-        # }
+        bigN <- which(n > capN)
+        if(length(bigN) >= 1){
+        facN <- capN/n[bigN]
+        k[bigN] <- pmin(round(k[bigN] * facN), capN)
+        n[bigN] <- capN
+        }
         # # above code would be nicer but fails for assignment to 
         # # delayedMatrix, for which the following is needed:
-        bigN <- which(n > capN, arr.ind=TRUE)
-        if(nrow(bigN) >= 1){
-            for(ind in seq_len(nrow(bigN))){
-                i <- bigN[ind, 1]
-                j <- bigN[ind, 2]
-                facN <- capN/n[i,j]
-                k[i,j] <- pmin(round(k[i,j] * facN), capN)
-                n[i,j] <- capN
-            }
-        }
+        # bigN <- which(n > capN, arr.ind=TRUE)
+        # if(nrow(bigN) >= 1){
+        #     for(ind in seq_len(nrow(bigN))){
+        #         i <- bigN[ind, 1]
+        #         j <- bigN[ind, 2]
+        #         facN <- capN/n[i,j]
+        #         k[i,j] <- pmin(round(k[i,j] * facN), capN)
+        #         n[i,j] <- capN
+        #     }
+        # }
     }
     
     if("betabinomial" %in% distributions){
