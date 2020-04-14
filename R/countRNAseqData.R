@@ -492,6 +492,16 @@ countSplitReadsPerChromosome <- function(chromosome, bamFile, settings, genome){
     }
     
     # get the junction positions and their counts
+    if(is.character(genome)){
+        genome <- getBSgenome(genome)
+    }
+    if(!is.null(genome) && any(
+            seqlevelsStyle(galignment) != seqlevelsStyle(genome))){
+        warning("The seqlevelsStyles from the BAM file and the annotation", 
+                " are not the same! Will force annotation to use the one", 
+                " from the BAM file.")
+        seqlevelsStyle(genome) <- seqlevelsStyle(galignment)[1]
+    }
     
     jc <- summarizeJunctions(galignment, genome=genome)
     
@@ -499,7 +509,7 @@ countSplitReadsPerChromosome <- function(chromosome, bamFile, settings, genome){
     colnames(mcols(ans)) <- "count"
     
     # set predicted strand if present or set it to + if NA
-    if(!strandSpecific(settings) & !is.null(genome) & length(ans) > 0){
+    if(!strandSpecific(settings) && !is.null(genome) && length(ans) > 0){
         strand(ans) <- jc$intron_strand
         ans$intron_motif <- jc$intron_motif
         
