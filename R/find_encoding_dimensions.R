@@ -110,9 +110,6 @@ findEncodingDim <- function(i, fds, type, params, correction,
 #'   # get estimated optimal dimension of the latent space
 #'   bestQ(fds, type="psi5")
 #'   
-#'   # plot the AUC for the different encoding dimensions tested
-#'   plotEncDimSearch(fds, type="psi5")
-#'
 #' @export
 optimHyperParams <- function(fds, type, correction="PCA",
                     q_param=seq(2, min(40, ncol(fds)), by=3),

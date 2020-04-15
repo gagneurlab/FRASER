@@ -1,39 +1,5 @@
 
-#' 
-#' @title Calculate P-values and Z-scores
-#'  
-#' @description The FraseR package provides functions to calculate nominal and 
-#' and adjusted p-values as well as z-scores after fitting the beta-binomial 
-#' parameters. See Detail and Functions for more information.
-#'  
-#' @details See Functions.
-#' 
-#' @inheritParams fit 
-#' 
-#' @return FraseRDataSet
-#' 
-#' @name pvalZscore
-#' @rdname pvalZscore
-#' 
-#' @examples
-#'   # preprocessing
-#'   fds <- createTestFraseRDataSet()
-#'   
-#'   # nomial p values
-#'   fds <- calculatePvalues(fds, type="psi5")
-#'   head(pVals(fds, type="psi5"))
-#'   
-#'   # donor site adjusted p values
-#'   fds <- calculatePadjValues(fds, type="psi5", method="BY")
-#'   head(padjVals(fds, type="psi5"))
-#'   
-#'   # z scores
-#'   fds <- calculateZscore(fds, type="psi5")
-#'   head(zScores(fds, type="psi5")) 
-#'
-NULL
-
-#' @describeIn pvalZscore This function calculates z-scores based on the 
+#' @describeIn FraseR This function calculates z-scores based on the 
 #' observed and expected logit 
 #' psi.
 #' 
@@ -62,8 +28,10 @@ calculateZscore <- function(fds, type=currentType(fds), correction="FraseR"){
     return(fds)
 }
 
-#' @describeIn pvalZscore This function calculates two-sided p-values based on 
-#' the beta-binomial distribution (or binomial or normal if desired).
+#' @describeIn FraseR This function calculates two-sided p-values based on 
+#' the beta-binomial distribution (or binomial or normal if desired). The 
+#' returned p values are already adjusted with Holm's method per donor or 
+#' acceptor site, respectively. 
 #' 
 #' @param distributions The distribution based on which the p-values are 
 #' calculated. Possible are beta-binomial, binomial and normal.
@@ -206,8 +174,8 @@ singlePvalueBinomial <- function(idx, k, n, mu){
     return (pvals)
 }
 
-#' @describeIn pvalZscore This function adjusts the previously calculated 
-#' p-values per donor/acceptor site for multiple testing.
+#' @describeIn FraseR This function adjusts the previously calculated 
+#' p-values per sample for multiple testing.
 #' 
 #' @param method The p.adjust method that should be used. 
 #' 

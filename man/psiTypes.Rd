@@ -4,7 +4,9 @@
 \name{psiTypes}
 \alias{psiTypes}
 \title{Available psi types}
-\format{An object of class \code{character} of length 3.}
+\format{
+An object of class \code{character} of length 3.
+}
 \usage{
 psiTypes
 }

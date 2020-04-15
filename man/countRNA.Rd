@@ -99,10 +99,10 @@ names have to be in a way accepted by the \link{getBSgenome} function.
 Available genomes can be listed using the \link{available.genomes} function 
 from the BSgenome package. If genome is of length 1, the same reference 
 genome will be used for all samples. 
-If \code{genome} is supplied and \code{strandSpecific(fds) == FALSE}, then 
-the strand information will be estimated by checking the dinucleotides 
-found at the intron boundaries (see ?\link{summarizeJunctions} in 
-GenomicAlignments package for details). This can e.g. help to avoid 
+If \code{genome} is supplied and \code{strandSpecific(fds) == 0L} 
+(unstranded), then the strand information will be estimated by checking the 
+dinucleotides found at the intron boundaries (see ?\link{summarizeJunctions} 
+in GenomicAlignments package for details). This can e.g. help to avoid 
 ambiguities when adding gene names from a gene annotation to the introns 
 in a later step.}
 

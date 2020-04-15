@@ -25,7 +25,7 @@
 #'
 #' @rdname makeSimulatedFraserDataSet
 #' @aliases makeSimulatedFraserDataSet
-#' @export
+#' @noRd
 makeSimulatedFraserDataSet <- function(m=100, j=500, q=10,
                     distribution=c("BB", "DM"), ...){
     distribution <- match.arg(distribution)
@@ -434,8 +434,8 @@ makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=1000, q=10,
 #' @return FraseRDataSet
 #' 
 #' @examples 
-#' # A generic dataset
-#' fds <- makeSimulatedFraserDataSet(m=10, j=100, q=3)
+#' # An example dataset
+#' fds <- createTestFraseRDataSet()
 #' fds <- injectOutliers(fds, minDpsi=0.2, freq=1E-3)
 #' @export
 injectOutliers <- function(fds, type=c("psi5", "psi3", "psiSite"),

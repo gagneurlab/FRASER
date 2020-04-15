@@ -229,7 +229,7 @@ findAnnotatedJunction <- function(fds, annotation, annotateNames=TRUE,
     # check if strandspecific data is used
     gr <- rowRanges(fds, type="psi5")
     
-    if(isFALSE(stranded)){
+    if(isFALSE(as.logical(stranded))){
         strand(gr) <- "*"
     }
     

@@ -26,8 +26,6 @@ optimHyperParams(
 \item{type}{The type of PSI (psi5, psi3 or psiSite for theta/splicing 
 efficiency)}
 
-\item{correction}{The method that should be used to correct for confounders.}
-
 \item{q_param}{Vector specifying which values of q should be tested}
 
 \item{noise_param}{Vector specifying which noise levels should be tested.}
@@ -44,7 +42,7 @@ should be used for the hyperparameter optimization.}
 \item{injectFreq}{The frequency with which outliers are injected into the 
 data.}
 
-\item{BPPARAM}{the BiocParallel parameters for the parallelization}
+\item{BPPARAM}{A BiocParallel object to run the computation in parallel}
 
 \item{internalThreads}{The number of threads used internally.}
 
@@ -74,7 +72,4 @@ ratios while maximizing the precision-recall curve.
   # get estimated optimal dimension of the latent space
   bestQ(fds, type="psi5")
   
-  # plot the AUC for the different encoding dimensions tested
-  plotEncDimSearch(fds, type="psi5")
-
 }

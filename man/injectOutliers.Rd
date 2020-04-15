@@ -45,7 +45,7 @@ FraseRDataSet
 Inject artificial outliers in an existing fds
 }
 \examples{
-# A generic dataset
-fds <- makeSimulatedFraserDataSet(m=10, j=100, q=3)
+# An example dataset
+fds <- createTestFraseRDataSet()
 fds <- injectOutliers(fds, minDpsi=0.2, freq=1E-3)
 }
