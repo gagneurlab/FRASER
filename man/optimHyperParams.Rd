@@ -7,7 +7,7 @@
 optimHyperParams(
   fds,
   type,
-  correction = "PCA",
+  implementation = "PCA",
   q_param = seq(2, min(40, ncol(fds)), by = 3),
   noise_param = 0,
   minDeltaPsi = 0.1,
@@ -25,6 +25,9 @@ optimHyperParams(
 
 \item{type}{The type of PSI (psi5, psi3 or psiSite for theta/splicing 
 efficiency)}
+
+\item{implementation}{The method that should be used to correct for 
+confounders.}
 
 \item{q_param}{Vector specifying which values of q should be tested}
 
@@ -67,7 +70,7 @@ ratios while maximizing the precision-recall curve.
   fds <- createTestFraseRDataSet()
   
   # run hyperparameter optimization
-  fds <- optimHyperParams(fds, type="psi5", correction="PCA")
+  fds <- optimHyperParams(fds, type="psi5", implementation="PCA")
   
   # get estimated optimal dimension of the latent space
   bestQ(fds, type="psi5")

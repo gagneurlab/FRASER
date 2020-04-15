@@ -33,6 +33,6 @@ based on the FraseRDataSet object
   fds <- createTestFraseRDataSet()
   fds <- calculatePSIValues(fds, types="psi5")
   
-  # usually one would run this function for all psi types by using:
+  ### usually one would run this function for all psi types by using:
   # fds <- calculatePSIValues(fds)
 }

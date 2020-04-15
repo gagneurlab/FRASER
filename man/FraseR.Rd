@@ -18,12 +18,12 @@ FraseR(
   ...
 )
 
-calculateZscore(fds, type = currentType(fds), correction = "FraseR")
+calculateZscore(fds, type = currentType(fds), implementation = "PCA")
 
 calculatePvalues(
   fds,
   type = currentType(fds),
-  correction = "FraseR",
+  implementation = "PCA",
   BPPARAM = bpparam(),
   distributions = c("betabinomial"),
   capN = 5 * 1e+05

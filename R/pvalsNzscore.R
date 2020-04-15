@@ -4,7 +4,7 @@
 #' psi.
 #' 
 #' @export
-calculateZscore <- function(fds, type=currentType(fds), correction="FraseR"){
+calculateZscore <- function(fds, type=currentType(fds), implementation="PCA"){
     currentType(fds) <- type
 
     # counts(fds, type=type, side="other", HDF5=FALSE)      <-
@@ -40,7 +40,7 @@ calculateZscore <- function(fds, type=currentType(fds), correction="FraseR"){
 #' 
 #' @export
 calculatePvalues <- function(fds, type=currentType(fds),
-                    correction="FraseR", BPPARAM=bpparam(),
+                    implementation="PCA", BPPARAM=bpparam(),
                     distributions=c("betabinomial"), capN=5*1e5){
     distributions <- match.arg(distributions, several.ok=TRUE,
             choices=c("betabinomial", "binomial", "normal"))
@@ -50,7 +50,7 @@ calculatePvalues <- function(fds, type=currentType(fds),
     fds <- putCounts2Memory(fds, type)
     
     # if method BB is used take the old FraseR code
-    if(correction %in% c("BB")){
+    if(implementation %in% c("BB")){
         index <- getSiteIndex(fds, type)
         pvals <- getAssayMatrix(fds, "pvalues_BB", type)
         fwer_pval  <- bplapply(seq_col(pvals), adjust_FWER_PValues,

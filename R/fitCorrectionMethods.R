@@ -257,14 +257,15 @@ fitPCA <- function(fds, q, psiType, rhoRange=c(1e-5, 1-1e-5), noiseAlpha=NULL,
         b(fds) <- colMeans2(x)
     }
 
-    # use delayed matrix representation of counts again
-    useDelayed <- length(samples(fds) > 1000)
+    # use delayed matrix representation of counts again for large datasets
+    useDelayed <- length(samples(fds)) > 1000
     if(isTRUE(useDelayed)){
-        counts(fds, type=psiType, side="other", HDF5=TRUE, withDimnames=FALSE) <- 
-            counts(fds, type=psiType, side="other")
+        counts(fds, type=psiType, side="other", HDF5=TRUE, 
+                withDimnames=FALSE) <- 
+                    counts(fds, type=psiType, side="other")
         counts(fds, type=psiType, side="ofInterest", HDF5=TRUE, 
                 withDimnames=FALSE) <- 
-            counts(fds, type=psiType, side="ofInterest")
+                    counts(fds, type=psiType, side="ofInterest")
     }
     
     # fit rho

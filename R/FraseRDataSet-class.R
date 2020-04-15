@@ -72,7 +72,7 @@ validateBamParam <- function(object) {
 validateStrandSpecific <- function(object) {
     if(!isScalarInteger(object@strandSpecific)) {
         return(paste("The 'strandSpecific' option must be 0L (unstranded),",
-                     "1L (stranded) or 2L (reverse)."))
+                        "1L (stranded) or 2L (reverse)."))
     }
     NULL
 }
