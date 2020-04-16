@@ -370,8 +370,8 @@ plotExpectedVsObservedPsi <- function(fds, type=c("psi5", "psi3", "psiSite"),
                 " (site ", .(as.character(idx)), ")"))))
         } else{
             main <- paste0(ggplotLabelPsi(type, asCharacter=TRUE)[[1]], 
-                           " observed expression vs prediction plot: ", 
-                           dt[,unique(featureID)], " (site ", idx, ")")
+                            " observed expression vs prediction plot: ", 
+                            dt[,unique(featureID)], " (site ", idx, ")")
         }
     }
     
