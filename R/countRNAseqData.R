@@ -511,7 +511,12 @@ countSplitReadsPerChromosome <- function(chromosome, bamFile, settings, genome){
         if(is.character(genome)){
             genome <- getBSgenome(genome)
         }
-        seqlevelsStyle(genome) <- seqlevelsStyle(galignment)
+        if(any(seqlevelsStyle(galignment) != seqlevelsStyle(genome))){
+            warning("The seqlevelsStyles from the BAM file and the annotation", 
+                    " are not the same! Will force annotation to use the one", 
+                    " from the BAM file.")
+            seqlevelsStyle(genome) <- seqlevelsStyle(galignment)[1]
+        }
     }
     
     # get the junction positions and their counts
@@ -521,14 +526,15 @@ countSplitReadsPerChromosome <- function(chromosome, bamFile, settings, genome){
     colnames(mcols(ans)) <- "count"
     
     # set predicted strand if present or set it to + if NA
-    if(isFALSE(as.logical(strandSpecific(settings))) & !is.null(genome) & 
-        length(ans) > 0){
-            strand(ans) <- jc$intron_strand
-            ans$intron_motif <- jc$intron_motif
-        
-            # set remaining unknown junction to plus strand
-            # (its 50/50 that we are wrong)
-            strand(ans)[jc$intron_strand == "*"] <- "+"
+
+    if(isFALSE(as.logical(strandSpecific(settings))) && !is.null(genome) && 
+                length(ans) > 0){
+        strand(ans) <- jc$intron_strand
+        ans$intron_motif <- jc$intron_motif
+
+        # set remaining unknown junction to plus strand
+        # (its 50/50 that we are wrong)
+        strand(ans)[jc$intron_strand == "*"] <- "+"
     }
     
     # sort it and return the GRange object
