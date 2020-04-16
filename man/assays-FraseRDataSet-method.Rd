@@ -7,20 +7,20 @@
 \alias{assays<-,FraseRDataSet,DelayedMatrix-method}
 \title{Returns the assay for the given name/index of the FraseRDataSet}
 \usage{
-\S4method{assays}{FraseRDataSet}(x, ..., withDimnames = TRUE)
+\S4method{assays}{FraseRDataSet}(x, withDimnames = TRUE, ...)
 
-\S4method{assays}{FraseRDataSet,SimpleList}(x, ..., HDF5 = TRUE, type = NULL, withDimnames = TRUE) <- value
+\S4method{assays}{FraseRDataSet,SimpleList}(x, withDimnames = TRUE, HDF5 = TRUE, type = NULL, ...) <- value
 
-\S4method{assays}{FraseRDataSet,list}(x, ..., HDF5 = TRUE, type = NULL, withDimnames = TRUE) <- value
+\S4method{assays}{FraseRDataSet,list}(x, withDimnames = TRUE, HDF5 = TRUE, type = NULL, ...) <- value
 
-\S4method{assays}{FraseRDataSet,DelayedMatrix}(x, ..., HDF5 = TRUE, type = NULL, withDimnames = TRUE) <- value
+\S4method{assays}{FraseRDataSet,DelayedMatrix}(x, withDimnames = TRUE, HDF5 = TRUE, type = NULL, ...) <- value
 }
 \arguments{
 \item{x}{FraseRDataSet}
 
-\item{...}{Parameters passed on to SummarizedExperiment::assays()}
-
 \item{withDimnames}{Passed on to SummarizedExperiment::assays()}
+
+\item{...}{Parameters passed on to SummarizedExperiment::assays()}
 }
 \value{
 (Delayed) matrix.
