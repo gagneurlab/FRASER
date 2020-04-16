@@ -488,6 +488,10 @@ if(compareVersion(package.version("SummarizedExperiment"), "1.17-2") < 0){
 #' @param x FraseRDataSet
 #' @param ... Parameters passed on to SummarizedExperiment::assays() 
 #' @param withDimnames Passed on to SummarizedExperiment::assays() 
+#' @param HDF5 Logical value indicating whether the assay should be stored as 
+#' a HDF5 file. 
+#' @param type The psi type. 
+#' @param value The new value to which the assay should be set. 
 #'
 #' @return (Delayed) matrix.
 #' @export
