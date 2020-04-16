@@ -36,6 +36,7 @@
 #' @param iterations The maximal number of iterations. When the autoencoder has 
 #' not yet converged after these number of iterations, the fit stops anyway.
 #' @param BPPARAM A BiocParallel object to run the computation in parallel
+#' @param correction Deprecated. The name changed to implementation. 
 #' @param ... Additional parameters passed on to the internal fit function
 ### Additional parameters of the internal fit function:
 #' @param rhoRange Defines the range of values that rho parameter from the 
@@ -99,8 +100,13 @@ NULL
 #' @export
 FraseR <- function(fds, q, implementation=c("PCA", "PCA-BB-Decoder", 
                                         "AE-weighted", "AE", "BB"), 
-                    iterations=15, BPPARAM=bpparam(), ...){
+                    iterations=15, BPPARAM=bpparam(), correction, ...){
     implementation <- match.arg(implementation)
+    if (!missing("correction")){
+        warning("The argument correction is deprecated. Use implementation ",
+                "instead.")
+        implementation <- correction
+    }
     # Check input
     checkFraseRDataSet(fds)
 

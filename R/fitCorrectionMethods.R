@@ -258,7 +258,7 @@ fitPCA <- function(fds, q, psiType, rhoRange=c(1e-5, 1-1e-5), noiseAlpha=NULL,
     }
 
     # use delayed matrix representation of counts again for large datasets
-    useDelayed <- length(samples(fds)) > 1000
+    useDelayed <- ncol(fds) > options()[['FraseR.minSamplesForDelayed']]
     if(isTRUE(useDelayed)){
         counts(fds, type=psiType, side="other", HDF5=TRUE, 
                 withDimnames=FALSE) <- 

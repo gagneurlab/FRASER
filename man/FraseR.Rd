@@ -15,6 +15,7 @@ FraseR(
   implementation = c("PCA", "PCA-BB-Decoder", "AE-weighted", "AE", "BB"),
   iterations = 15,
   BPPARAM = bpparam(),
+  correction,
   ...
 )
 
@@ -65,6 +66,8 @@ confounders.}
 not yet converged after these number of iterations, the fit stops anyway.}
 
 \item{BPPARAM}{A BiocParallel object to run the computation in parallel}
+
+\item{correction}{Deprecated. The name changed to implementation.}
 
 \item{...}{Additional parameters passed on to the internal fit function}
 
