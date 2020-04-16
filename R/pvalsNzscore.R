@@ -61,7 +61,7 @@ calculatePvalues <- function(fds, type=currentType(fds),
     }
     
     index <- getSiteIndex(fds, type=type)
-    mu <- predictedMeans(fds)
+    mu <- as.matrix(predictedMeans(fds))
     rho <- rho(fds)
     alpha <- mu * (1 - rho)/rho
     beta <- (1 - mu) * (1 - rho)/rho
