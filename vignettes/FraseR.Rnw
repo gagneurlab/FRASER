@@ -369,8 +369,8 @@ fds
 \label{sec:DataPreprocessing}
 
 As with gene expression analysis, a good quality control of the raw data is
-crucial. For some hints please refere to
-[these slides](https://docs.google.com/presentation/d/1a7KZ6FXwVmGqF-FMAnz0QTk07WgzRWAbFhSNrUBspIQ/edit?pli=1).
+crucial. For some hints please refere to our workshop 
+slides\footnote{\url{http://tinyurl.com/RNA-ASHG-presentation}}.
 
 At the time of writing this vignette, we recommend that the RNA-seq data should
 be aligned with a splice-aware aligner like STAR\cite{Dobin2013} or
@@ -402,7 +402,7 @@ Currently, we keep only junctions which support the following:
 Furthemore one could filter for:
 
 \begin{itemize}
-  \item At least one sample has a  $\Delta\psi$  of 0.1
+  \item At least one sample has a $|\Delta\psi|$ of 0.1
 \end{itemize}
 
 
