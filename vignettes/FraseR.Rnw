@@ -30,7 +30,7 @@ opts_chunk$set(
 \newcommand{\fraser}{\Biocpkg{FRASER}}
 \newcommand{\fds}{\Rclass{FraseRDataSet}}
 
-\title{FRASER: Find RAre Splicing Events in RNA-seq data}
+\title{FRASER: Find RAre Splicing Events in RNA-seq}
 
 \author{
     Christian Mertes$^{1}$, Ines Scheller$^{1}$, Julien Gagneur$^{1}$ \\
@@ -64,7 +64,7 @@ over-dispersed count fraction distribution. \fraser{} outperforms
 state-of-the-art approaches on simulated data and on enrichments for rare 
 near-splice site variants in 48 tissues of the GTEx dataset. Application to a 
 previously analysed rare disease dataset led to a new diagnostic by 
-reprioritizing an aberrant exon truncation in the TAZ gene. Altogether, we 
+reprioritizing an aberrant exon truncation in TAZ. Altogether, we 
 foresee \fraser{} as an important tool for RNA-seq based diagnostics of rare 
 diseases.
 
@@ -75,14 +75,13 @@ diseases.
 \hline
 If you use \fraser{} in published research, please cite:  \\
 \\
-Mertes C, Gagneur J, \emph{et al.}
-\textbf{FRASER: A statistical method to detect aberrant } \\
-\textbf{splicing events in RNA-Seq data} \\
-\emph{\url{https://tinyurl.com/FRASER-paper}}\\
+Mertes C, Scheller I, Yepez V, \emph{et al.}
+\textbf{Detection of aberrant splicing events} \\
+\textbf{in RNA-seq data with FRASER}, biorXiv, 2019, \\
+\emph{\url{https://doi.org/10.1101/2019.12.18.866830}} \\
 \hline
 \end{tabular}
 \end{center}
-
 \end{abstract}
 
 \packageVersion{\Sexpr{BiocStyle::pkg_ver("FRASER")}}
@@ -103,15 +102,16 @@ suppressPackageStartupMessages({
 \section{Introduction}
 \label{sec:Introduction}
 
-\fraser{} (Find RAre Splicing Evens in RNA-seq Data) is a tool for finding 
+\fraser{} (Find RAre Splicing Evens in RNA-seq) is a tool for finding 
 aberrant splicing events in RNA-seq samples. It works on the splice metrics 
-$\Psi_5$, $\Psi_3$ and $\theta$ to be able to detect any type of aberrant 
-splicing event. To detect these aberrant events, \fraser{} uses a similar 
-approach as the \Biocpkg{OUTRIDER} package which aims to find aberrantly 
+$\psi_5$, $\psi_3$ and $\theta$ to be able to detect any type of aberrant 
+splicing event from exon skipping over alternative donor usage to intron
+retention. To detect these aberrant events, \fraser{} uses a similar 
+approach as the \Biocpkg{OUTRIDER} package that aims to find aberrantly 
 expressed genes and makes use of an autoencoder to automatically control for 
 confounders within the data. 
 \fraser{} also uses this autoencoder approach and models the read count ratios 
-in the $\Psi$ values by fitting a beta binomial model to the $\Psi$ values 
+in the $\psi$ values by fitting a beta binomial model to the $\psi$ values 
 obtained from RNA-seq read counts and correcting for apparent co-variations 
 across samples. Similarly as in \Biocpkg{OUTRIDER}, read counts that 
 significantly deviate from the distribution are detected as outliers. A scheme 
@@ -124,7 +124,7 @@ detection in three steps. First (left column), a splice site map is generated
 in an annotation-free fashion based on RNA-seq split reads. Split reads 
 supporting exon-exon junctions as well as non-split reads overlapping splice 
 sites are counted. Splicing metrics quantifying alternative acceptors (
-$\Psi_5$), alternative donors ($\Psi_3$) and splicing efficiencies at donors 
+$\psi_5$), alternative donors ($\psi_3$) and splicing efficiencies at donors 
 ($\theta_5$) and acceptors ($\theta_3$) are computed. Second (middle column), 
 a statistical model is fitted for each splicing metric that controls for sample 
 covariations (latent space fitting using a denoising autoencoder) and 
@@ -135,15 +135,15 @@ models. Candidates are then visualized with a genome browser.
 
 \fraser{} uses the following splicing metrics as described by 
 Pervouchine et al\cite{Pervouchine2012}: we compute for each sample, 
-for donor D (5' splice site) and acceptor A (3' splice site) the $\Psi_5$ and 
-$\Psi_3$ values, respectively, as:
+for donor D (5' splice site) and acceptor A (3' splice site) the $\psi_5$ and 
+$\psi_3$ values, respectively, as:
 
 \begin{equation}
-    \Psi_5(D,A) = \frac{n(D,A)}{\sum_{A'} n(D,A')}\label{eq:psi5}
+    \psi_5(D,A) = \frac{n(D,A)}{\sum_{A'} n(D,A')}\label{eq:psi5}
 \end{equation}
 and
 \begin{equation}
-    \Psi_3(D,A) = \frac{n(D,A)}{\sum_{D'} n(D',A)}\label{eq:psi3},
+    \psi_3(D,A) = \frac{n(D,A)}{\sum_{D'} n(D',A)}\label{eq:psi3},
 \end{equation}
 
 where $n(D,A)$ denotes the number of split reads spanning the intron between 
@@ -165,8 +165,8 @@ and
 \end{equation}
 
 where $n(D)$ is the number of non-split reads spanning exon-intron boundary of 
-donor D, and $n(A)$ is defined as the number of non-split reads spanning 
-intron-exon boundary of acceptor A.  While we calculate $\theta$ for the 5' and 
+donor D, and $n(A)$ is defined as the number of non-split reads spanning the 
+intron-exon boundary of acceptor A. While we calculate $\theta$ for the 5' and 
 3' splice site separately, we do not distinguish later in the modeling step 
 between $\theta_5$ and $\theta_3$ and hence call it jointly $\theta$ in the 
 following.
@@ -175,8 +175,8 @@ following.
 
 Here we quickly show how to do an analysis with \fraser{}, starting from a
 sample annotation table and the corresponding bam files. First, we create an
-\fds{} from the sample annotation and count the relevant reads in the bam files
-or a Summarized Experiment object. Then, we compute the $\Psi$ values and
+\fds{} from the sample annotation and count the relevant reads in the bam files.
+Then, we compute the $\psi/\theta$ values and
 filter out introns that are just noise. Secondly, we run the full
 pipeline using the command \Rfunction{FraseR}. In the last step, we extract the
 results table from the \fds{} using the \Rfunction{results} function.
@@ -382,7 +382,7 @@ be processed with the same protocol and origin from the same tissue.
 \label{sec:filtering}
 
 Before we can filter the data, we have to compute the main splicing metric:
-the $\Psi$-value (Percent Spliced In).
+the $\psi$-value (Percent Spliced In).
 
 <<calculate psi/zscore values, echo=TRUE>>=
 fds <- calculatePSIValues(fds)
@@ -402,7 +402,7 @@ Currently, we keep only junctions which support the following:
 Furthemore one could filter for:
 
 \begin{itemize}
-  \item At least one sample has a  $\Delta\Psi$  of 0.1
+  \item At least one sample has a  $\Delta\psi$  of 0.1
 \end{itemize}
 
 
@@ -424,14 +424,14 @@ fds_filtered
 
 \subsubsection{Sample co-variation}
 
-Since $\Psi$ values are ratios within a sample, one might think that there
+Since $\psi$ values are ratios within a sample, one might think that there
 should not be as much correlation structure as observed in gene expression data
 within the splicing data.
 
 This is not true as we do see strong sample co-variation across different
 tissues and cohorts. Let's have a look into our data to see if we do have
 correlation structure or not. To have a better estimate, we use the logit
-transformed $\Psi$ values to compute the correlation.
+transformed $\psi$ values to compute the correlation.
 
 <<sample_covariation, echo=TRUE>>=
 # Heatmap of the sample correlation
@@ -439,7 +439,7 @@ plotCountCorHeatmap(fds, type="psi5", logit=TRUE, normalized=FALSE)
 @
 
 It is also possible to visualize the correlation structure of the logit
-transformed $\Psi$ values of the $topJ$ most variable introns for all samples:
+transformed $\psi$ values of the $topJ$ most variable introns for all samples:
 
 <<intron_sample_correlation, echo=TRUE, eval=FALSE>>=
 # Heatmap of the intron/sample expression
@@ -461,7 +461,7 @@ latent space with a dimension $q=10$ . Using the correct dimension is crucial
 to have the best performance (see \ref{sec:encDim}). Alternatively, one can
 also use a PCA to correct the data.
 The wrapper function \Rfunction{FraseR} both fits the model and calculates the
-p-values and z-scores for all $\Psi$ types. For more details see section
+p-values and z-scores for all $\psi$ types. For more details see section
 \ref{sec:details}.
 
 <<model fitting, echo=TRUE>>=
@@ -470,7 +470,7 @@ fds <- FraseR(fds, q=3)
 @
 
 To check whether the correction worked, we can have a look at the correlation
-heatmap using the normalized $\Psi$ values from the fit.
+heatmap using the normalized $\psi$ values from the fit.
 
 <<covariation_after_fitting, echo=TRUE>>=
 plotCountCorHeatmap(fds, type="psi5", normalized=TRUE, logit=TRUE)
@@ -485,8 +485,8 @@ HGNC symbols.
 
 Here we assume a beta binomial distribution and call outliers based on the
 significance level. The user can choose between a p value cutoff, a Z score
-cutoff or a cutoff on the $\Delta\Psi$ values between the observed and expected
-$\Psi$ values or both.
+cutoff or a cutoff on the $\Delta\psi$ values between the observed and expected
+$\psi$ values or both.
 
 <<result table, echo=TRUE>>=
 # annotate introns with the hgnc symbols of the corresponding gene
@@ -513,14 +513,14 @@ the following additional information:
     \item hgncSymbol: the gene symbol of the gene that contains the splice
     junction or site if available
     \item type: the metric for which the aberrant event was detected (either
-    psi5 for $\Psi_5$, psi3 for $\Psi_3$ or psiSite for $\theta$)
+    psi5 for $\psi_5$, psi3 for $\psi_3$ or psiSite for $\theta$)
     \item pValue, padjust, zScore: the p-value, adjusted p-value and z-score of
     this event
-    \item psiValue: the value of $\Psi_5$, $\Psi_3$ or $\theta$ metric
+    \item psiValue: the value of $\psi_5$, $\psi_3$ or $\theta$ metric
     (depending on the type column) of this junction or splice site for the
     sample in which it is detected as aberrant
-    \item deltaPsi: the $\Delta\Psi$-value of the event in this sample, which
-    is the difference between the actual observed $\Psi$ and the expected $\Psi$
+    \item deltaPsi: the $\Delta\psi$-value of the event in this sample, which
+    is the difference between the actual observed $\psi$ and the expected $\psi$
     \item meanCounts: the mean count (k) of reads mapping to this splice
     junction or site over all samples
     \item meanTotalCounts: the mean total count (n) of reads mapping to the
@@ -529,9 +529,9 @@ the following additional information:
     junction or site for the sample where it is detected as aberrant
 \end{itemize}
 Please refer to section \ref{sec:Introduction} for more information about the
-metrics $\Psi_5$, $\Psi_3$ and $\theta$ and their definition. In general, an
-aberrant $\Psi_5$ value might indicate aberrant acceptor site usage of the 
-junction where the event is detected; an aberrant $\Psi_3$ value might indicate 
+metrics $\psi_5$, $\psi_3$ and $\theta$ and their definition. In general, an
+aberrant $\psi_5$ value might indicate aberrant acceptor site usage of the 
+junction where the event is detected; an aberrant $\psi_3$ value might indicate 
 aberrant donor site usage of the junction where the event is detected; and an 
 aberrant $\theta$ value might indicate partial or full intron retention, or 
 exon truncation or elongation. We recommend using a genome browser to 
@@ -589,7 +589,7 @@ fds <- loadFraseRDataSet(file=file.path(workingDir(fds),
 
 The function \Rfunction{FraseR} is a convenient wrapper function that takes 
 care of correcting for confounders, fitting the beta binomial distribution and 
-calculating p-values and z-scores for all $\Psi$ types. To have more control 
+calculating p-values and z-scores for all $\psi$ types. To have more control 
 over the individual steps, the different functions can also be called 
 separately. The following sections give a short explanation of these steps.
 
@@ -679,7 +679,7 @@ head(padjVals(fds,type="psi5"))
 \subsection{Z-score calculation}
 \label{sec:Z-score-calculation}
 
-To calculate z-scores on the logit transformed $\Delta\Psi$ values and to store
+To calculate z-scores on the logit transformed $\Delta\psi$ values and to store
 them in the \fds{} object, the function \Rfunction{calculateZScores} can be
 called. The Z-scores can be used for visualization, filtering, and ranking of
 samples. The Z-scores are calculated as follows:
