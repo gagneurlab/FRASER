@@ -24,11 +24,12 @@
 #'          colData colData<- rowData rowRanges rowRanges<- SummarizedExperiment
 #'          rbind
 #' @importFrom GenomicRanges findOverlaps granges GRanges GRangesList
-#'          makeGRangesFromDataFrame
+#'          makeGRangesFromDataFrame invertStrand
 #' @importFrom IRanges subsetByOverlaps from to IRanges ranges
 #' @importFrom Rsamtools ScanBamParam scanBamHeader bamMapqFilter
 #'          bamWhich bamWhich<- BamFile
 #' @importFrom Rsubread featureCounts
+#' @importFrom BSgenome getBSgenome
 #'
 ### Annotation
 #'

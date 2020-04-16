@@ -29,9 +29,6 @@ or a full fitted model is returned.
 fds <- createTestFraseRSettings()
 fds
 
-fds <- createTestFraseRSettings("FRASER-data")
-fds
-
 fds <- createTestFraseRDataSet()
 fds
 

@@ -1,63 +1,18 @@
-#'
-#' Fit a beta-binomial distribution and correction for confounders
+
 #' 
-#' This method correct for confounders in the data and fits a beta-binomial 
-#' distribution to the introns.
-#' 
-#' Available methods to correct for the confounders are currently: a denoising 
-#' autoencoder with a BB loss ("AE" and "AE-weighted"), PCA ("PCA"), a hybrid 
-#' approach where PCA is used to fit the latent space and then the decoder of 
-#' the autoencoder is fit using the BB loss ("PCA-BB-Decoder"). Although not 
-#' recommended, it is also possible to directly fit the BB distrbution to the 
-#' raw counts ("BB"). 
-#'
-#' @inheritParams countRNA
-#' @param correction The method that should be used to correct for confounders. 
-#' @param q The dimension of the latent space. Should be fitted using 
-#' \code{\link{optimHyperParams}} if unknown.
-#' @param type The type of PSI (psi5, psi3 or psiSite for theta/splicing 
-#' efficiency)
-#' @param rhoRange Defines the range of values that rho parameter from the 
-#' beta-binomial distribution is allowed to take. For very small values of rho, 
-#' the loss can be instable, so it is not recommended to allow rho < 1e-8. 
-#' @param weighted If TRUE, the weighted implementation of the autoencoder is 
-#' used
-#' @param noiseAlpha Controls the amount of noise that is added for the 
-#' denoising autoencoder.
-#' @param convergence The fit is considered to have converged if the difference 
-#' between the previous and the current loss is smaller than this threshold.
-#' @param iterations The maximal number of iterations. When the autoencoder has 
-#' not yet converged after these number of iterations, the fit stops anyway.
-#' @param verbose Controls the level of information printed during the fit.
-#' @param minDeltaPsi Minimal delta psi of an intron to be be considered a 
-#' variable intron. 
-#' @param initialize If FALSE and a fit has been previoulsy run, the values 
-#' from the previous fit will be used as initial values. If TRUE, 
-#' (re-)initialization will be done. 
-#' @param control List of control parameters passed on to optim().
-#' @param nSubset The size of the subset to be used in fitting if subsetting is
-#' used.
-#' 
-#' @return FraseRDataSet
-#' 
-#' @examples 
-#'   # generate toy data
-#'   fds <- createTestFraseRDataSet()
-#'   
-#'   # fit
-#'   fds <- fit(fds, correction="PCA", q=3, type="psi5")
-#'   
+#' @describeIn FraseR This method correct for confounders in the data and fits 
+#' a beta-binomial distribution to the introns.
 #' @export
-fit <- function(fds, correction=c("PCA", "PCA-BB-Decoder", "AE", "AE-weighted", 
-                                "PCA-BB-full", "fullAE", "PCA-regression", 
-                                "PCA-reg-full", "PCA-BB-Decoder-no-weights", 
-                                "BB"),
+fit <- function(fds, implementation=c("PCA", "PCA-BB-Decoder", "AE", 
+                                "AE-weighted", "PCA-BB-full", "fullAE", 
+                                "PCA-regression", "PCA-reg-full", 
+                                "PCA-BB-Decoder-no-weights", "BB"),
                 q, type="psi3", rhoRange=c(1e-8, 1-1e-8), 
                 weighted=FALSE, noiseAlpha=1, convergence=1e-5, 
                 iterations=15, initialize=TRUE, control=list(), 
                 BPPARAM=bpparam(), nSubset=15000, verbose=FALSE, 
                 minDeltaPsi=0.1){
-    method <- match.arg(correction)
+    method <- match.arg(implementation)
 
     # make sure its only in-memory data for k and n
     currentType(fds) <- type
@@ -67,11 +22,11 @@ fit <- function(fds, correction=c("PCA", "PCA-BB-Decoder", "AE", "AE-weighted",
             counts(fds, type=type, side="ofInterest"))
     
     # check q is set
-    if(correction != "BB" & (missing(q) | is.null(q))){
+    if(method != "BB" & (missing(q) | is.null(q))){
         stop("Please provide a q to define the size of the latent space!")
     }
     
-    message(date(), ": Running fit with correction method: ", correction)
+    message(date(), ": Running fit with correction method: ", method)
     fds <- switch(
         method,
         "AE"      = fitFraserAE(
@@ -302,12 +257,16 @@ fitPCA <- function(fds, q, psiType, rhoRange=c(1e-5, 1-1e-5), noiseAlpha=NULL,
         b(fds) <- colMeans2(x)
     }
 
-    # use delayed matrix representation of counts again
-    counts(fds, type=psiType, side="other", HDF5=TRUE, withDimnames=FALSE) <- 
-        counts(fds, type=psiType, side="other")
-    counts(fds, type=psiType, side="ofInterest", HDF5=TRUE, 
-            withDimnames=FALSE) <- 
-        counts(fds, type=psiType, side="ofInterest")
+    # use delayed matrix representation of counts again for large datasets
+    useDelayed <- ncol(fds) > options()[['FraseR.minSamplesForDelayed']]
+    if(isTRUE(useDelayed)){
+        counts(fds, type=psiType, side="other", HDF5=TRUE, 
+                withDimnames=FALSE) <- 
+                    counts(fds, type=psiType, side="other")
+        counts(fds, type=psiType, side="ofInterest", HDF5=TRUE, 
+                withDimnames=FALSE) <- 
+                    counts(fds, type=psiType, side="ofInterest")
+    }
     
     # fit rho
     message(date(), ": Fitting rho ...")

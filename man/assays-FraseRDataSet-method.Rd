@@ -21,6 +21,13 @@
 \item{withDimnames}{Passed on to SummarizedExperiment::assays()}
 
 \item{...}{Parameters passed on to SummarizedExperiment::assays()}
+
+\item{HDF5}{Logical value indicating whether the assay should be stored as 
+a HDF5 file.}
+
+\item{type}{The psi type.}
+
+\item{value}{The new value to which the assay should be set.}
 }
 \value{
 (Delayed) matrix.

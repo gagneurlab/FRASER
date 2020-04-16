@@ -153,6 +153,8 @@ workingDir(fds)
 workingDir(fds) <- tempdir()
 strandSpecific(fds)
 strandSpecific(fds) <- TRUE
+strandSpecific(fds) <- "reverse"
+strandSpecific(fds)
 scanBamParam(fds)
 scanBamParam(fds) <- ScanBamParam(mapqFilter=30)
 nonSplicedReads(fds)

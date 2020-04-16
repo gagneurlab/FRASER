@@ -42,7 +42,18 @@
 #' @param minAnchor Minimum overlap around the Donor/Acceptor for
 #'             non spliced reads. Default to 5
 #' @param recount if TRUE the cache is ignored and the bam file is recounted.
-#' @param genome the genome
+#' @param genome NULL (default) or a character vector specifying the names of 
+#' the reference genomes that were used to align the reads for each sample. The 
+#' names have to be in a way accepted by the \link{getBSgenome} function. 
+#' Available genomes can be listed using the \link{available.genomes} function 
+#' from the BSgenome package. If genome is of length 1, the same reference 
+#' genome will be used for all samples. 
+#' If \code{genome} is supplied and \code{strandSpecific(fds) == 0L} 
+#' (unstranded), then the strand information will be estimated by checking the 
+#' dinucleotides found at the intron boundaries (see ?\link{summarizeJunctions} 
+#' in GenomicAlignments package for details). This can e.g. help to avoid 
+#' ambiguities when adding gene names from a gene annotation to the introns 
+#' in a later step. 
 #' @param filter If TRUE, splice sites of introns with low read support in 
 #' all samples are not considered when calculating the non-split reads. This 
 #' helps to speed up the subsequent steps.  
@@ -447,7 +458,7 @@ countSplitReads <- function(sampleID, fds, NcpuPerSample=1, genome=NULL,
     # parallelize over chromosomes
     chromosomes <- extractChromosomes(bamFile)
     
-    if(length(genome) > 1){
+    if(is.character(genome) && length(genome) > 1){
         genome <- genome[sampleID]
     }
     
@@ -482,8 +493,12 @@ countSplitReadsPerChromosome <- function(chromosome, bamFile, settings, genome){
     galignment <- readGAlignments(bamFile, param=param)
     
     # remove the strand information if unstranded data
-    if(!strandSpecific(settings)){
+    if(isFALSE(as.logical(strandSpecific(settings)))){
         strand(galignment) <- "*"
+    }
+    # invert the strand information for reverse strand specific protocols
+    if(strandSpecific(settings) == 2L){
+        galignment <- invertStrand(galignment)
     }
     
     # dont count if there is nothing to count
@@ -491,28 +506,32 @@ countSplitReadsPerChromosome <- function(chromosome, bamFile, settings, genome){
         return(GRanges())
     }
     
-    # get the junction positions and their counts
-    if(is.character(genome)){
-        genome <- getBSgenome(genome)
-    }
-    if(!is.null(genome) && any(
-            seqlevelsStyle(galignment) != seqlevelsStyle(genome))){
-        warning("The seqlevelsStyles from the BAM file and the annotation", 
-                " are not the same! Will force annotation to use the one", 
-                " from the BAM file.")
-        seqlevelsStyle(genome) <- seqlevelsStyle(galignment)[1]
+    # ensure chromosome naming style in genome and bamFile is the same
+    if(!is.null(genome)){
+        if(is.character(genome)){
+            genome <- getBSgenome(genome)
+        }
+        if(any(seqlevelsStyle(galignment) != seqlevelsStyle(genome))){
+            warning("The seqlevelsStyles from the BAM file and the annotation", 
+                    " are not the same! Will force annotation to use the one", 
+                    " from the BAM file.")
+            seqlevelsStyle(genome) <- seqlevelsStyle(galignment)[1]
+        }
     }
     
+    # get the junction positions and their counts
     jc <- summarizeJunctions(galignment, genome=genome)
     
     ans <- jc[,"score"]
     colnames(mcols(ans)) <- "count"
     
     # set predicted strand if present or set it to + if NA
-    if(!strandSpecific(settings) && !is.null(genome) && length(ans) > 0){
+
+    if(isFALSE(as.logical(strandSpecific(settings))) && !is.null(genome) && 
+                length(ans) > 0){
         strand(ans) <- jc$intron_strand
         ans$intron_motif <- jc$intron_motif
-        
+
         # set remaining unknown junction to plus strand
         # (its 50/50 that we are wrong)
         strand(ans)[jc$intron_strand == "*"] <- "+"
@@ -830,7 +849,7 @@ readJunctionMap <- function(junctionMap){
 #' @noRd
 extractSpliceSiteCoordinates <- function(junctions, fds){
     
-    if(isTRUE(strandSpecific(fds))){
+    if(strandSpecific(fds) >= 1L){
         spliceSiteCoords <- unlist(GRangesList(
             extractSpliceSiteCoordsPerStrand(junctions, "+"),
             extractSpliceSiteCoordsPerStrand(junctions, "-")

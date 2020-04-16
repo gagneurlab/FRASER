@@ -28,8 +28,12 @@
 #' @examples
 #'
 #' fds <- createTestFraseRDataSet()
-#' fds <- annotateRanges(fds, GRCh=NULL)
 #' 
+#' ### Two ways to annotage ranges with gene names: 
+#' # either using biomart:
+#' # fds <- annotateRanges(fds, GRCh=NULL)
+#' 
+#' # or with a TxDb object
 #' require(TxDb.Hsapiens.UCSC.hg19.knownGene)
 #' txdb <- TxDb.Hsapiens.UCSC.hg19.knownGene
 #' require(org.Hs.eg.db)
@@ -229,7 +233,7 @@ findAnnotatedJunction <- function(fds, annotation, annotateNames=TRUE,
     # check if strandspecific data is used
     gr <- rowRanges(fds, type="psi5")
     
-    if(isFALSE(stranded)){
+    if(isFALSE(as.logical(stranded))){
         strand(gr) <- "*"
     }
     

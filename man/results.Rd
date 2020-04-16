@@ -108,16 +108,11 @@ resultsByGenes(res)
 # based on the adjusted p-value
 aberrant(fds, type="psi5", by="sample")
 
-# use zScoreCutoff instead
-aberrant(fds, type="psi5", by="sample", zScoreCutoff=2, padjCutoff=NA)
-
 # get aberrant events per gene (first annotate gene symbols)
 fds <- annotateRanges(fds)
 aberrant(fds, type="psi5", by="feature", zScoreCutoff=2, padjCutoff=NA,
         aggregate=TRUE)
-aberrant(fds, type="psi5", zScoreCutoff=2, padjCutoff=NA, aggregate=TRUE)
         
 # find aberrant junctions/splice sites
-aberrant(fds, type="psi5", by="none")
 aberrant(fds, type="psi5")
 }

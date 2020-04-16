@@ -7,7 +7,7 @@
 optimHyperParams(
   fds,
   type,
-  correction = "PCA",
+  implementation = "PCA",
   q_param = seq(2, min(40, ncol(fds)), by = 3),
   noise_param = 0,
   minDeltaPsi = 0.1,
@@ -26,7 +26,8 @@ optimHyperParams(
 \item{type}{The type of PSI (psi5, psi3 or psiSite for theta/splicing 
 efficiency)}
 
-\item{correction}{The method that should be used to correct for confounders.}
+\item{implementation}{The method that should be used to correct for 
+confounders.}
 
 \item{q_param}{Vector specifying which values of q should be tested}
 
@@ -44,7 +45,7 @@ should be used for the hyperparameter optimization.}
 \item{injectFreq}{The frequency with which outliers are injected into the 
 data.}
 
-\item{BPPARAM}{the BiocParallel parameters for the parallelization}
+\item{BPPARAM}{A BiocParallel object to run the computation in parallel}
 
 \item{internalThreads}{The number of threads used internally.}
 
@@ -69,12 +70,9 @@ ratios while maximizing the precision-recall curve.
   fds <- createTestFraseRDataSet()
   
   # run hyperparameter optimization
-  fds <- optimHyperParams(fds, type="psi5", correction="PCA")
+  fds <- optimHyperParams(fds, type="psi5", implementation="PCA")
   
   # get estimated optimal dimension of the latent space
   bestQ(fds, type="psi5")
   
-  # plot the AUC for the different encoding dimensions tested
-  plotEncDimSearch(fds, type="psi5")
-
 }

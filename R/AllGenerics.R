@@ -41,6 +41,8 @@ asFDS <- function(x){
 #' workingDir(fds) <- tempdir()
 #' strandSpecific(fds)
 #' strandSpecific(fds) <- TRUE
+#' strandSpecific(fds) <- "reverse"
+#' strandSpecific(fds)
 #' scanBamParam(fds)
 #' scanBamParam(fds) <- ScanBamParam(mapqFilter=30)
 #' nonSplicedReads(fds)
@@ -236,6 +238,18 @@ setMethod("strandSpecific", "FraseRDataSet", function(object) {
 #' @export
 #' @rdname fds-methods
 setReplaceMethod("strandSpecific", "FraseRDataSet", function(object, value) {
+    if(is.logical(value)){
+        value <- as.integer(value)
+    }
+    if(is.character(value)){
+        value <- switch(tolower(value),
+                        'no' = 0L,
+                        'unstranded' = 0L,
+                        'yes' = 1L,
+                        'stranded' = 1L,
+                        'reverse' = 2L,
+                        -1L)
+    }
     slot(object, "strandSpecific") <- value
     validObject(object)
     return(object)
@@ -474,6 +488,10 @@ if(compareVersion(package.version("SummarizedExperiment"), "1.17-2") < 0){
 #' @param x FraseRDataSet
 #' @param ... Parameters passed on to SummarizedExperiment::assays() 
 #' @param withDimnames Passed on to SummarizedExperiment::assays() 
+#' @param HDF5 Logical value indicating whether the assay should be stored as 
+#' a HDF5 file. 
+#' @param type The psi type. 
+#' @param value The new value to which the assay should be set. 
 #'
 #' @return (Delayed) matrix.
 #' @export
@@ -811,17 +829,12 @@ FraseR.results <- function(x, sampleIDs, fdrCutoff, zscoreCutoff, dPsiCutoff,
 #' # based on the adjusted p-value
 #' aberrant(fds, type="psi5", by="sample")
 #' 
-#' # use zScoreCutoff instead
-#' aberrant(fds, type="psi5", by="sample", zScoreCutoff=2, padjCutoff=NA)
-#' 
 #' # get aberrant events per gene (first annotate gene symbols)
 #' fds <- annotateRanges(fds)
 #' aberrant(fds, type="psi5", by="feature", zScoreCutoff=2, padjCutoff=NA,
 #'         aggregate=TRUE)
-#' aberrant(fds, type="psi5", zScoreCutoff=2, padjCutoff=NA, aggregate=TRUE)
 #'         
 #' # find aberrant junctions/splice sites
-#' aberrant(fds, type="psi5", by="none")
 #' aberrant(fds, type="psi5")
 #' @export
 setMethod("results", "FraseRDataSet", function(x, sampleIDs=samples(x),

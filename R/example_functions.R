@@ -16,9 +16,6 @@
 #' fds <- createTestFraseRSettings()
 #' fds
 #' 
-#' fds <- createTestFraseRSettings("FRASER-data")
-#' fds
-#' 
 #' fds <- createTestFraseRDataSet()
 #' fds
 #' 

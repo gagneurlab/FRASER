@@ -14,14 +14,14 @@ setClass("FraseRDataSet",
     slots = list(
         name            = "character",
         bamParam        = "ScanBamParam",
-        strandSpecific  = "logical",
+        strandSpecific  = "integer",
         workingDir      = "character",
         nonSplicedReads = "RangedSummarizedExperiment"
     ),
     prototype = list(
         name            = "Data Analysis",
         bamParam        = ScanBamParam(mapqFilter=0),
-        strandSpecific  = FALSE,
+        strandSpecific  = 0L,
         workingDir      = file.path(tempdir(), "FraseR"),
         nonSplicedReads = SummarizedExperiment(rowRanges=GRanges())
     )
@@ -70,8 +70,9 @@ validateBamParam <- function(object) {
 }
 
 validateStrandSpecific <- function(object) {
-    if(!isScalarLogical(object@strandSpecific)) {
-        return(paste("The 'strandSpecific' option must be 0L, 1L or 2L."))
+    if(!isScalarInteger(object@strandSpecific)) {
+        return(paste("The 'strandSpecific' option must be 0L (unstranded),",
+                        "1L (stranded) or 2L (reverse)."))
     }
     NULL
 }
@@ -183,7 +184,7 @@ showFraseRDataSet <- function(object) {
 
     cat("----------------------- Settings -----------------------\n")
     cat(paste0("Analysis name:               ", name(object)), "\n")
-    cat(paste0("Analysis is strand specific: ", strandSpecific(object)), "\n")
+    cat(paste0("Analysis is strand specific: ", getStrandString(object)), "\n")
     cat(paste0("Working directory:           '", workingDir(object), "'"), "\n")
     cat("\n")
     

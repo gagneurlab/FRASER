@@ -137,16 +137,14 @@
 #' @examples
 #' fds <- createTestFraseRDataSet()
 #' 
+#' plotEncDimSearch(fds, type="psi5")
 #' plotAberrantPerSample(fds, padjCutoff=NA, zScoreCutoff=0.5)
-#' 
 #' plotVolcano(fds, "sample1", "psi5")
 #' 
 #' res <- results(fds, padjCutoff=NA, zScoreCutoff=0.5, deltaPsiCutoff=0.1)
 #' res
 #' plotExpression(fds, result=res[1])
-#' 
 #' plotQQ(fds, result=res[1])
-#' 
 #' plotExpectedVsObservedPsi(fds, type="psi5", idx=5)
 #' 
 #' plotCountCorHeatmap(fds, "psiSite")
@@ -364,8 +362,17 @@ plotExpectedVsObservedPsi <- function(fds, type=c("psi5", "psi3", "psiSite"),
     idx  <- unique(dt$idx)
     
     if(is.null(main)){
-        # TODO extract feature name if present: siteName <- ...
-        main <- paste0("Expression vs prediction plot: ", idx)
+        if(isTRUE(basePlot)){
+            main <- as.expression(bquote(bold(paste(
+                .(ggplotLabelPsi(type)[[1]]), 
+                " observed expression vs prediction plot: ",
+                bolditalic(.(as.character(dt[,unique(featureID)]))),
+                " (site ", .(as.character(idx)), ")"))))
+        } else{
+            main <- paste0(ggplotLabelPsi(type, asCharacter=TRUE)[[1]], 
+                           " observed expression vs prediction plot: ", 
+                           dt[,unique(featureID)], " (site ", idx, ")")
+        }
     }
     
     if(!is.null(colGroup)){

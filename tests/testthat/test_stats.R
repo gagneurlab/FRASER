@@ -2,7 +2,7 @@ context("Test stats calculations")
 
 test_that("PSI value calculation", {
     # get subset to speed up test
-    fds <- getFraseR()[,1]
+    #fds <- getFraseR()[,1]
     #fds <- fds[mcols(fds, type="psi3")$startID %in% c(1,2,6,7),]
     
     # expect it from the toy data after subsetting

@@ -204,7 +204,7 @@ fds <- calculatePSIValues(fds)
 
 
 # use PCA to speed up the tutorial
-fds <- FraseR(fds, q=2, correction="PCA")
+fds <- FraseR(fds, q=2, implementation="PCA")
 
 # we provide two ways to anntoate introns with the corresponding gene symbols:
 # the first way uses TxDb-objects provided by the user as shown here
@@ -613,7 +613,8 @@ confounders in the data. Currently the following methods are implemented:
 # Using an alternative way to correct splicing ratios
 # here: only 2 iteration to speed the calculation up
 # for the vignette, the default is 15 iterations
-fds <- fit(fds, q=3, type="psi5", correction="PCA-BB-Decoder", iterations=2)
+fds <- fit(fds, q=3, type="psi5", implementation="PCA-BB-Decoder", 
+            iterations=2)
 @
 
 \subsubsection{Finding the dimension of the latent space}

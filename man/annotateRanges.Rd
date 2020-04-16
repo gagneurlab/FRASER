@@ -54,8 +54,12 @@ Annotates the given FraseRDataSet with the HGNC symbol with biomaRt
 \examples{
 
 fds <- createTestFraseRDataSet()
-fds <- annotateRanges(fds, GRCh=NULL)
 
+### Two ways to annotage ranges with gene names: 
+# either using biomart:
+# fds <- annotateRanges(fds, GRCh=NULL)
+
+# or with a TxDb object
 require(TxDb.Hsapiens.UCSC.hg19.knownGene)
 txdb <- TxDb.Hsapiens.UCSC.hg19.knownGene
 require(org.Hs.eg.db)

@@ -21,7 +21,10 @@
 #' @export
 #' @examples
 #'   fds <- createTestFraseRDataSet()
-#'   fds <- calculatePSIValues(fds)
+#'   fds <- calculatePSIValues(fds, types="psi5")
+#'   
+#'   ### usually one would run this function for all psi types by using:
+#'   # fds <- calculatePSIValues(fds)
 calculatePSIValues <- function(fds, types=psiTypes, overwriteCts=FALSE, 
                                 BPPARAM=bpparam()){
     # check input
