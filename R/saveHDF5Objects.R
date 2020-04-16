@@ -70,6 +70,11 @@ loadFraseRDataSet <- function(dir, name=NULL, file=NULL, upgrade=FALSE){
     # can be removed later if the full pipeline is rerun
     attributes(fds)$class <- structure("FraseRDataSet", package="FRASER")
     
+    # adapt type of strandSpecific if needed (changed from logical to integer)
+    if(is.logical(strandSpecific(fds))){
+        strandSpecific(fds) <- as.integer(strandSpecific(fds))
+    }
+    
     e <- try(assays(fds), silent=TRUE)
     if(is.error(e)){
         if(grepl("DelayedMatrix .* representation .* Please update it ",
