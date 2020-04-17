@@ -196,12 +196,9 @@ fds
 # compute stats
 fds <- calculatePSIValues(fds)
 
-# filtering of lowly expressed junctions: This step is skipped here because
-# it is not meaningful on the small example dataset. See the section on
-# filtering below for more details
-# fds <- filterExpressionAndVariability(fds, minExpressionInOneSample=20,
-#         minDeltaPsi=0.0, filter=TRUE)
-
+# filtering junction with low expression
+fds <- filterExpressionAndVariability(fds, minExpressionInOneSample=20,
+       minDeltaPsi=0.0, filter=TRUE)
 
 # use PCA to speed up the tutorial
 fds <- FraseR(fds, q=2, implementation="PCA")
@@ -213,13 +210,14 @@ txdb <- TxDb.Hsapiens.UCSC.hg19.knownGene
 require(org.Hs.eg.db)
 orgDb <- org.Hs.eg.db
 fds <- annotateRangesWithTxDb(fds, txdb=txdb, orgDb=orgDb)
+
 # alternatively, we also provide a way to use biomart for the annotation:
-# fds <- annotateRanges(fds) # uses biomart
+# fds <- annotateRanges(fds)
 
 # get results: usually, using p-value cutoff is recommended, but on the small
 # example dataset, this would give no results, so we use z-scores here instead
 # res <- results(fds, zScoreCutoff=NA, padjCutoff=0.05, deltaPsiCutoff=0.1)
-res <- results(fds, zScoreCutoff=2, padjCutoff=NA, deltaPsiCutoff=0.1)
+res <- results(fds, zScoreCutoff=1, padjCutoff=NA, deltaPsiCutoff=0.02)
 res
 
 # result visualization
@@ -478,10 +476,11 @@ plotCountCorHeatmap(fds, type="psi5", normalized=TRUE, logit=TRUE)
 
 \subsubsection{Calling splicing outliers}
 
-Before we extract the results let's add the interpretable HGNC symbols.
-FraseR comes already with an annotation function. The function uses
-\Biocpkg{biomaRt} in the background to overlap the genomic ranges with the known
-HGNC symbols.
+Before we extract the results, we should add the human readable HGNC symbols.
+\fraser{} comes already with an annotation function. The function uses
+\Biocpkg{biomaRt} in the background to overlap the genomic ranges with 
+the known HGNC symbols. To have more flexibilty on the annotation, one can
+also provide a custom `txdb` object to annotate the HGNC symbols.
 
 Here we assume a beta binomial distribution and call outliers based on the
 significance level. The user can choose between a p value cutoff, a Z score
@@ -489,13 +488,13 @@ cutoff or a cutoff on the $\Delta\psi$ values between the observed and expected
 $\psi$ values or both.
 
 <<result table, echo=TRUE>>=
-# annotate introns with the hgnc symbols of the corresponding gene
+# annotate introns with the HGNC symbols of the corresponding gene
 require(TxDb.Hsapiens.UCSC.hg19.knownGene)
 txdb <- TxDb.Hsapiens.UCSC.hg19.knownGene
 require(org.Hs.eg.db)
 orgDb <- org.Hs.eg.db
 fds <- annotateRangesWithTxDb(fds, txdb=txdb, orgDb=orgDb)
-# fds <- annotateRanges(fds) # alternative way using biomart
+# fds <- annotateRanges(fds) # alternative way using biomaRt
 
 # retrieve results with default and recommended cutoffs (padj <= 0.05 and
 # |deltaPsi| >= 0.3)
@@ -618,6 +617,7 @@ fds <- fit(fds, q=3, type="psi5", implementation="PCA-BB-Decoder",
 @
 
 \subsubsection{Finding the dimension of the latent space}
+\label{sec:encDim}
 
 For the previous call, the dimension $q$ of the latent space has been fixed to 
 $q=10$. Since working with the correct $q$ is very important, the \fraser{} 
