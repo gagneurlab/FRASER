@@ -458,6 +458,7 @@ getHDF5ChunkSize <- function(fds, assayName){
 }
 
 getMaxChunks2Read <- function(fds, assayName, max=15, axis=c("col", "row")){
+    axis <- match.arg(axis)
     if(!any(c("DelayedArray", "DelayedMatrix") %in%
             class(assay(fds, assayName)))){
         if(axis == "col"){
@@ -466,7 +467,6 @@ getMaxChunks2Read <- function(fds, assayName, max=15, axis=c("col", "row")){
         return(ceiling(nrow(assay(fds, assayName))/bpnworkers(bpparam())))
     }
 
-    axis <- match.arg(axis)
     dims <- getHDF5ChunkSize(fds, assayName)
     if(axis == "col"){
         ans <- dims[2]
