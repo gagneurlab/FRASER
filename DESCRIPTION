@@ -8,7 +8,8 @@ Author: Christian Mertes <mertes@in.tum.de>, Ines Scheller <scheller@in.tum.de>,
 Maintainer: Christian Mertes <mertes@in.tum.de>
 Description: Detection of rare aberrant splicing events in transcriptome 
     profiles. The workflow aims to assist the diagnostics in the field of 
-    rare diseases where RNA-seq is performed to identify splicing defects.
+    rare diseases where RNA-seq is performed to identify aberrant 
+    splicing defects.
 License: MIT + file LICENSE
 Depends:
     R (>= 3.6.0),
@@ -32,13 +33,9 @@ Imports:
     GenomicFeatures,
     GenomicRanges,
     IRanges,
-    graphics,
     grDevices,
-    gplots,
     ggplot2,
-    ggpubr,
     HDF5Array,
-    LSD,
     matrixStats,
     methods,
     pcaMethods,
@@ -52,7 +49,6 @@ Imports:
     S4Vectors,
     stats,
     tibble,
-    tidyr,
     tools,
     utils,
     VGAM

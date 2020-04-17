@@ -39,12 +39,7 @@
 #'
 ### Plotting
 #'
-#' @importFrom graphics abline axis box grid hist legend lines mtext par plot
-#'          points polygon text title
-#'
 #' @importFrom plotly plot_ly subplot layout add_trace ggplotly
-#' @importFrom gplots col2hex barplot2
-#' @importFrom LSD heatscatter colorpalette
 #' @importFrom pheatmap pheatmap
 #' @importFrom RColorBrewer brewer.pal
 #' @importFrom cowplot theme_cowplot
@@ -52,9 +47,6 @@
 #'
 ### Data handling
 #'
-#' @importFrom data.table data.table as.data.table is.data.table := fread
-#'          setnames 
-#' @importFrom tidyr %>%
 #' @importFrom HDF5Array writeHDF5Array path HDF5Array 
 #'          saveHDF5SummarizedExperiment loadHDF5SummarizedExperiment
 #' @importFrom rhdf5 h5ls H5Fopen H5Fclose H5Pclose H5Dget_create_plist
@@ -62,7 +54,7 @@
 #'
 ### P-Value calculation
 #'
-#' @importFrom stats sd rbinom fisher.test na.omit p.adjust ppoints qbeta rnorm
+#' @importFrom stats sd rbinom na.omit p.adjust ppoints qbeta rnorm
 #'          predict cor cutree dbinom dist hclust lm optim optimize pbinom
 #'          rlnorm rnbinom pnorm
 #' @importFrom VGAM rbetabinom vglm Coef pbetabinom pbetabinom.ab betabinomial
@@ -76,15 +68,15 @@
 #' @importFrom R.utils renameFile withTimeout
 #' @importFrom tools file_path_as_absolute
 #' @importFrom methods as callNextMethod is new show slot slot<- validObject
-#' @importFrom utils browseURL capture.output sessionInfo
+#' @importFrom utils capture.output
 #'
 #'
-#
+#'
 ### To be added into the functions above
-#
+#'
 #' @importFrom S4Vectors DataFrame metadata Rle SimpleList mcols mcols<-
 #'          start end metadata metadata<- subjectHits queryHits
-#' @importFrom grDevices dev.off adjustcolor pdf colorRampPalette
+#' @importFrom grDevices colorRampPalette
 #' @importFrom GenomeInfoDb keepStandardChromosomes seqlevels<- seqlevels
 #'          seqlengths seqlengths<- seqlevelsStyle<- seqlevelsStyle seqnames 
 #'          seqinfo
@@ -102,7 +94,6 @@
 #'          scale_color_brewer scale_color_discrete scale_linetype_manual 
 #'          annotate geom_histogram scale_fill_manual xlim scale_colour_manual
 #'          element_blank
-#' @importFrom ggpubr ggarrange
 #'
 #' @importFrom tibble as_tibble
 #'

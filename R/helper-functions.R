@@ -249,12 +249,10 @@ fraserQQplotPlotly <- function(pvalues, ci=TRUE, reducePoints=FALSE,
 
     # add theoretical trace
     p <- add_trace(p, x=expect, y=expect, mode="lines",
-            line=list(color=col2hex("firebrick1")), name="theoretical-line"
-    )
+            line=list(color="#FF3030"), name="theoretical-line")
     p <- layout(p, title=main,
             xaxis=list(title="Expected -log<sub>10</sub>(<i>P</i>-value)"),
-            yaxis=list(title="Observed -log<sub>10</sub>(<i>P</i>-value)")
-    )
+            yaxis=list(title="Observed -log<sub>10</sub>(<i>P</i>-value)"))
 
     # add confidence interval
     if(ci){
