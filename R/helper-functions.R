@@ -530,10 +530,11 @@ plotBasePlot <- function(ggplot, basePlot=FALSE){
 }
 
 getBPParam <- function(worker, tasks=0, ...){
-    worker <- min(worker, multicoreWorkers())
     if(worker < 2){
-        ans <- SerialParam(...)
-    } else if(.Platform$OS.type != "unix") {
+        return(SerialParam(...))
+    }
+    worker <- min(worker, multicoreWorkers())
+    if(.Platform$OS.type != "unix") {
         ans <- SnowParam(workers=worker, tasks=tasks, ...)
     } else {
         ans <- MulticoreParam(workers=worker, tasks, ...)

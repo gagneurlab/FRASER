@@ -170,7 +170,6 @@ countRNAData <- function(fds, NcpuPerSample=1, minAnchor=5, recount=FALSE,
     
     # create final FraseR dataset
     fds <- addCountsToFraseRDataSet(fds, splitCounts, nonSplicedCounts)
-    gc()
     
     # return it
     return(fds)
@@ -213,8 +212,6 @@ getSplitReadCountsForAllSamples <- function(fds, NcpuPerSample=1,
                 assays=list(rawCountsJ=h5),
                 rowRanges=granges(splitCounts)
             )
-            rm(h5)
-            gc()
             return(final_splitCounts)
         }
     }
@@ -273,9 +270,6 @@ getSplitReadCountsForAllSamples <- function(fds, NcpuPerSample=1,
                             BPPARAM_old$numWorkers, BPPARAM_old$numTasks, 
                             set=TRUE)
     
-    rm(countList)
-    gc()
-    
     # splice site map
     rowRanges(counts) <- annotateSpliceSite(rowRanges(counts))
     
@@ -321,8 +315,6 @@ getNonSplitReadCountsForAllSamples <- function(fds, splitCountRanges,
                 assays=list(rawCountsSS=h5),
                 rowRanges=granges(siteCounts)
             )
-            rm(h5)
-            gc()
             return(final_nonSplicedCounts)
         }
     }
@@ -359,9 +351,6 @@ getNonSplitReadCountsForAllSamples <- function(fds, splitCountRanges,
     names(countList) <- samples(fds)
     siteCounts <- mergeCounts(countList, fds=fds, assumeEqual=TRUE, 
                                 spliceSiteCoords=spliceSiteCoords )
-    
-    rm(countList)
-    gc()
     
     # save summarized experiment
     if(!dir.exists(outDir)){
@@ -403,7 +392,7 @@ addCountsToFraseRDataSet <- function(fds, splitCounts, nonSplitCounts){
 #' extracts the chromosomes within the given bamFile
 #' @noRd
 extractChromosomes <- function(bamFile){
-    names(scanBamHeader(bamFile)[[bamFile]]$target)
+    as.character(as.data.table(idxstatsBam(bamFile))[mapped > 0, seqnames])
 }
 
 

@@ -27,7 +27,7 @@
 #'          makeGRangesFromDataFrame invertStrand
 #' @importFrom IRanges subsetByOverlaps from to IRanges ranges
 #' @importFrom Rsamtools ScanBamParam scanBamHeader bamMapqFilter
-#'          bamWhich bamWhich<- BamFile
+#'          bamWhich bamWhich<- BamFile idxstatsBam
 #' @importFrom Rsubread featureCounts
 #' @importFrom BSgenome getBSgenome
 #'
