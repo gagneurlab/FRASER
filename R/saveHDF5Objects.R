@@ -97,6 +97,9 @@ loadFraseRDataSet <- function(dir, name=NULL, file=NULL, upgrade=FALSE){
     
     # set the correct path of the assay seed file (if folder changed)
     for(aname in assayNames(fds)){
+        if(is(assay(fds, aname), "matrix")){
+            next
+        }
         message("Loading assay: ", aname)
         afile <- getFraseRHDF5File(fds, aname)
         if(!file.exists(afile)){
@@ -115,24 +118,17 @@ loadFraseRDataSet <- function(dir, name=NULL, file=NULL, upgrade=FALSE){
 #' @rdname loadFraseRDataSet
 #' @export
 saveFraseRDataSet <- function(fds, dir=NULL, name=NULL, rewrite=FALSE) {
-
-    if(isTRUE(dontWriteHDF5(fds))){
-        if(verbose(fds) > 0){
-            message(date(), ": Dont save fds object.")
-        }
-        return(fds)
-    }
-
+    
     # check input
     stopifnot(is(fds, "FraseRDataSet"))
     if(is.null(dir)) dir <- workingDir(fds)
     stopifnot(isScalarCharacter(dir))
     if(is.null(name)) name <- name(fds)
     stopifnot(isScalarCharacter(name))
-
+    
     outDir <- file.path(dir, "savedObjects", nameNoSpace(name))
     if(!dir.exists(outDir)) dir.create(outDir, recursive=TRUE)
-
+    
     # over each assay object
     name(fds) <- name
     for(aname in assayNames(fds)){
@@ -155,7 +151,7 @@ saveFraseRDataSet <- function(fds, dir=NULL, name=NULL, rewrite=FALSE) {
 saveAsHDF5 <- function(fds, name, object=NULL, rewrite=FALSE){
     if(is.null(object)) object <- assay(fds, name)
     
-    if(isTRUE(dontWriteHDF5(fds))){
+    if(isTRUE(dontWriteHDF5(fds)) | ncol(fds) < 20 | nrow(fds) < 1000){
         return(as.matrix(object))
     }
 

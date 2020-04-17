@@ -88,9 +88,7 @@ createTestFraseRDataSet <- function(workingDir=tempdir(), rerun=FALSE){
     fds <- annotateRanges(fds)
     
     # save data for later 
-    dontWriteHDF5(fds) <- FALSE
-    devNULL <- saveFraseRDataSet(fds)
-    dontWriteHDF5(fds) <- TRUE
+    fds <- saveFraseRDataSet(fds)
     
     # return a FraseRDataSet object
     return(fds)
