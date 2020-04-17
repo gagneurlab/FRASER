@@ -97,7 +97,6 @@ Collate:
     updateD.R
     updateE.R
     updateRho.R
-    methods-makeExampleObj.R
     pvalsNzscore.R
     makeSimulatedDataset.R
     fitCorrectionMethods.R
