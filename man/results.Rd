@@ -109,7 +109,7 @@ resultsByGenes(res)
 aberrant(fds, type="psi5", by="sample")
 
 # get aberrant events per gene (first annotate gene symbols)
-fds <- annotateRanges(fds)
+fds <- annotateRangesWithTxDb(fds)
 aberrant(fds, type="psi5", by="feature", zScoreCutoff=2, padjCutoff=NA,
         aggregate=TRUE)
         

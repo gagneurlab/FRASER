@@ -72,7 +72,7 @@ makeFittedExampleFraseRDataSet <- function(workingDir=tempdir(), rerun=FALSE){
     fds <- FraseR(fds, q=2, iterations=2)
     
     # annotate it
-    fds <- annotateRanges(fds)
+    suppressMessages({ fds <- annotateRangesWithTxDb(fds) })
     
     # save data for later 
     dontWriteHDF5(fds) <- FALSE

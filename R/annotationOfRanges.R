@@ -29,10 +29,12 @@
 #'
 #' fds <- createTestFraseRDataSet()
 #' 
+#' \dontrun{
 #' ### Two ways to annotage ranges with gene names: 
 #' # either using biomart:
-#' # fds <- annotateRanges(fds, GRCh=NULL)
-#' 
+#' fds <- annotateRanges(fds, GRCh=NULL)
+#' rowRanges(fds, type="psi5")[,"hgnc_symbol"]
+#'  
 #' # or with a TxDb object
 #' require(TxDb.Hsapiens.UCSC.hg19.knownGene)
 #' txdb <- TxDb.Hsapiens.UCSC.hg19.knownGene
@@ -41,7 +43,8 @@
 #' fds <- annotateRangesWithTxDb(fds, txdb=txdb, orgDb=orgDb)
 #'
 #' rowRanges(fds, type="psi5")[,"hgnc_symbol"]
-#'
+#' }
+#' 
 #' @rdname annotateRanges
 #' @export
 annotateRanges <- function(fds, feature="hgnc_symbol", featureName=feature,
