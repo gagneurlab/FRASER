@@ -151,7 +151,9 @@ saveFraseRDataSet <- function(fds, dir=NULL, name=NULL, rewrite=FALSE) {
 saveAsHDF5 <- function(fds, name, object=NULL, rewrite=FALSE){
     if(is.null(object)) object <- assay(fds, name)
     
-    if(isTRUE(dontWriteHDF5(fds)) | ncol(fds) < 20 | nrow(fds) < 1000){
+    if(isTRUE(dontWriteHDF5(fds)) | 
+            ncol(fds) <= options()[["FraseR.maxSamplesNoHDF5"]] | 
+            nrow(fds) <= options()[["FraseR.maxJunctionsNoHDF5"]] ){
         return(as.matrix(object))
     }
 

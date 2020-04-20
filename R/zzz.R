@@ -9,7 +9,9 @@
         `FraseR-hdf5-chunk-nrow` = 30000,
         `FraseR-hdf5-chunk-ncol` = 20,
         `FraseR.pseudoCount` = 1,
-        `FraseR.minSamplesForDelayed` = 1000)
+        `FraseR.minSamplesForDelayed` = 1000,
+        `FraseR.maxSamplesNoHDF5` = 20,
+        `FraseR.maxJunctionsNoHDF5` = 1000)
     
     toset <- !(names(op.fraser) %in% names(op))
     if(any(toset)){
