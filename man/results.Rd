@@ -35,7 +35,7 @@ aberrant(
 )
 }
 \arguments{
-\item{x}{FraserDataSet}
+\item{x, fds}{FraserDataSet}
 
 \item{...}{Further arguments can be passed to the method. If "zscores", 
 "padjVals" or "dPsi" is given, the values of those arguments
@@ -65,8 +65,6 @@ the gene symbols.}
 
 \item{method}{The p.adjust method that is being used to adjust p values per
 sample.}
-
-\item{fds}{FraserDataSet}
 
 \item{type}{Splicing type (psi5, psi3 or psiSite)}
 

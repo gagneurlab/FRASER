@@ -778,8 +778,7 @@ FRASER.results <- function(x, sampleIDs, fdrCutoff, zscoreCutoff, dPsiCutoff,
 #' based on the given options and cutoffs. The aberrant function extracts 
 #' aberrant splicing events based on the given cutoffs.
 #'
-#' @param x FraserDataSet
-#' @param fds FraserDataSet
+#' @param x,fds FraserDataSet
 #' @param sampleIDs A vector of sample IDs for which results should be 
 #' retrieved
 #' @param padjCutoff The FDR cutoff to be applied or NA if not requested.
