@@ -3,7 +3,7 @@ context("Test hyper param optimization")
 test_that("Getter/Setter hyper params", {
     attach(test_generate_count_example())
 
-    expect_is(test_fdsSample3, "FraseRDataSet")
+    expect_is(test_fdsSample3, "FraserDataSet")
 
     # test how many ranges we found
     expect_equal(length(test_rangeFDS), 3)

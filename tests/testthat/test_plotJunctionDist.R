@@ -2,7 +2,7 @@ context("Test distribution plots for given results/junction")
 
 test_that("Main junction distribution plot", {
     # get results
-    fds <- getFraseR()
+    fds <- getFraser()
     res <- results(fds, padjCutoff=1, zScoreCutoff=NA, deltaPsiCutoff=NA)
 
     # plot distributions

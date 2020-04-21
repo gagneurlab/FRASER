@@ -1,7 +1,7 @@
 #
 # helper scripts for the testing step
 #
-getFraseR <- function(clean=FALSE){
-    fds <- createTestFraseRDataSet(rerun=clean)
+getFraser <- function(clean=FALSE){
+    fds <- createTestFraserDataSet(rerun=clean)
     fds
 }

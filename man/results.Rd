@@ -2,14 +2,14 @@
 % Please edit documentation in R/AllGenerics.R
 \name{results}
 \alias{results}
-\alias{results,FraseRDataSet-method}
+\alias{results,FraserDataSet-method}
 \alias{resultsByGenes}
 \alias{aberrant}
 \title{Extracting results and aberrant splicing events}
 \usage{
 results(x, ...)
 
-\S4method{results}{FraseRDataSet}(
+\S4method{results}{FraserDataSet}(
   x,
   sampleIDs = samples(x),
   padjCutoff = 0.05,
@@ -35,7 +35,7 @@ aberrant(
 )
 }
 \arguments{
-\item{x}{FraseRDataSet}
+\item{x, fds}{FraserDataSet}
 
 \item{...}{Further arguments can be passed to the method. If "zscores", 
 "padjVals" or "dPsi" is given, the values of those arguments
@@ -66,8 +66,6 @@ the gene symbols.}
 \item{method}{The p.adjust method that is being used to adjust p values per
 sample.}
 
-\item{fds}{FraseRDataSet}
-
 \item{type}{Splicing type (psi5, psi3 or psiSite)}
 
 \item{by}{By default \code{none} which means no grouping. But if 
@@ -93,7 +91,7 @@ aberrant splicing events based on the given cutoffs.
 }
 \examples{
 # get data, fit and compute p-values and z-scores
-fds <- createTestFraseRDataSet()
+fds <- createTestFraserDataSet()
 
 # extract results: for this example dataset, z score cutoff of 2 is used to
 # get at least one result and show the output

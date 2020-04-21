@@ -6,12 +6,12 @@
 .onLoad <- function(libname, pkgname){
     op <- options()
     op.fraser <- list(
-        `FraseR-hdf5-chunk-nrow` = 30000,
-        `FraseR-hdf5-chunk-ncol` = 20,
-        `FraseR.pseudoCount` = 1,
-        `FraseR.minSamplesForDelayed` = 1000,
-        `FraseR.maxSamplesNoHDF5` = 20,
-        `FraseR.maxJunctionsNoHDF5` = 1000)
+        `FRASER-hdf5-chunk-nrow` = 30000,
+        `FRASER-hdf5-chunk-ncol` = 20,
+        `FRASER.pseudoCount` = 1,
+        `FRASER.minSamplesForDelayed` = 1000,
+        `FRASER.maxSamplesNoHDF5` = 20,
+        `FRASER.maxJunctionsNoHDF5` = 1000)
     
     toset <- !(names(op.fraser) %in% names(op))
     if(any(toset)){

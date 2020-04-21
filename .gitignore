@@ -19,6 +19,8 @@ vignettes/*.aux
 vignettes/*.toc
 vignettes/*.out
 vignettes/*.R
+vignettes/*.bbl
+vignettes/*.synctex.gz
 vignettes/figure/*
 
 # ignore cpp files

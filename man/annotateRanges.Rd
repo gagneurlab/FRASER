@@ -3,7 +3,7 @@
 \name{annotateRanges}
 \alias{annotateRanges}
 \alias{annotateRangesWithTxDb}
-\title{Annotates the given FraseRDataSet with the HGNC symbol with biomaRt}
+\title{Annotates the given FraserDataSet with the HGNC symbol with biomaRt}
 \usage{
 annotateRanges(
   fds,
@@ -23,12 +23,12 @@ annotateRangesWithTxDb(
 )
 }
 \arguments{
-\item{fds}{FraseRDataSet}
+\item{fds}{FraserDataSet}
 
 \item{feature}{Defines which feature (default is HGNC symbol) should be 
 annotated.}
 
-\item{featureName}{Name of the feature in the FraseRDataSet mcols.}
+\item{featureName}{Name of the feature in the FraserDataSet mcols.}
 
 \item{biotype}{The biotype.}
 
@@ -46,14 +46,14 @@ one is used, currently this is \code{TxDb.Hsapiens.UCSC.hg19.knownGene}.}
 default one is used, currently this is \code{org.Hs.eg.db}.}
 }
 \value{
-FraseRDataSet
+FraserDataSet
 }
 \description{
-Annotates the given FraseRDataSet with the HGNC symbol with biomaRt
+Annotates the given FraserDataSet with the HGNC symbol with biomaRt
 }
 \examples{
 
-fds <- createTestFraseRDataSet()
+fds <- createTestFraserDataSet()
 
 \dontrun{
 ### Two ways to annotage ranges with gene names: 

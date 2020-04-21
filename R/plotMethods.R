@@ -1,9 +1,9 @@
-#' Visualization functions for FraseR
+#' Visualization functions for FRASER
 #'
-#' The FraseR package provides mutliple functions to visualize
+#' The FRASER package provides mutliple functions to visualize
 #' the data and the results of a full data set analysis.
 #'
-#' This is the list of all plotting function provided by FraseR:
+#' This is the list of all plotting function provided by FRASER:
 #' \itemize{
 #'   \item plotAberrantPerSample()
 #'   \item plotVolcano()
@@ -20,7 +20,7 @@
 #' Most of the functions share the same parameters.
 #'
 #### Data specific parameters
-#' @param fds An FraseRDataSet object.
+#' @param fds An FraserDataSet object.
 #' @param type The psi type: either psi5, psi3 or psiSite (for SE).
 #' @param sampleID A sample ID which should be plotted. Can also be a vector.
 #'             Integers are treated as indices.
@@ -112,12 +112,12 @@
 #' \code{\link[pheatmap]{pheatmap}} function.
 #'
 #' \code{plotFilterExpression}: The distribution of FPKM values. If the 
-#' FraseRDataSet object contains the \code{passedFilter} column, it will plot 
+#' FraserDataSet object contains the \code{passedFilter} column, it will plot 
 #' both FPKM distributions for the expressed introns and for the filtered 
 #' introns.
 #' 
 #' \code{plotFilterVariability}: The distribution of maximal delta Psi values. 
-#' If the FraseRDataSet object contains the \code{passedFilter} column, 
+#' If the FraserDataSet object contains the \code{passedFilter} column, 
 #' it will plot both maximal delta Psi distributions for the variable 
 #' introns and for the filtered (i.e. non-variable) introns.
 #'
@@ -135,7 +135,7 @@
 #'             plotExpression plotCountCorHeatmap plotFilterExpression 
 #'             plotExpectedVsObservedPsi plotEncDimSearch
 #' @examples
-#' fds <- createTestFraseRDataSet()
+#' fds <- createTestFraserDataSet()
 #' 
 #' plotEncDimSearch(fds, type="psi5")
 #' plotAberrantPerSample(fds, padjCutoff=NA, zScoreCutoff=0.5)

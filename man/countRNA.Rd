@@ -5,7 +5,7 @@
 \alias{countRNAData}
 \alias{getSplitReadCountsForAllSamples}
 \alias{getNonSplitReadCountsForAllSamples}
-\alias{addCountsToFraseRDataSet}
+\alias{addCountsToFraserDataSet}
 \alias{countSplitReads}
 \alias{mergeCounts}
 \alias{countNonSplicedReads}
@@ -49,7 +49,7 @@ getNonSplitReadCountsForAllSamples(
     "nonSplitCounts")
 )
 
-addCountsToFraseRDataSet(fds, splitCounts, nonSplitCounts)
+addCountsToFraserDataSet(fds, splitCounts, nonSplitCounts)
 
 countSplitReads(
   sampleID,
@@ -80,7 +80,7 @@ countNonSplicedReads(
 )
 }
 \arguments{
-\item{fds}{A FraseRDataSet object}
+\item{fds}{A FraserDataSet object}
 
 \item{NcpuPerSample}{A BiocParallel param object or a positive integer
 to configure the parallel backend
@@ -167,7 +167,7 @@ calculated first based on the positions of the junctions defined
 from the split reads.}
 }
 \value{
-\code{\link{countRNAData}} returns a FraseRDataSet.
+\code{\link{countRNAData}} returns a FraserDataSet.
 
 \code{\link{getSplitReadCountsForAllSamples}} returns a GRanges 
 object.
@@ -175,7 +175,7 @@ object.
 \code{\link{getNonSplitReadCountsForAllSamples}} returns a 
          GRanges object.
 
-\code{\link{addCountsToFraseRDataSet}} returns a FraseRDataSet.
+\code{\link{addCountsToFraserDataSet}} returns a FraserDataSet.
 
 \code{\link{countSplitReads}} returns a GRanges object.
 
@@ -184,7 +184,7 @@ object.
 \code{\link{countNonSplicedReads}} returns a GRanges object.
 }
 \description{
-The FraseR package provides multiple functions to extract and 
+The FRASER package provides multiple functions to extract and 
               count both split and non-spliced reads from bam files. 
               See Detail and Functions for more information.
 }
@@ -193,13 +193,13 @@ The functions described in this file extract and count both the
 split and the non-spliced reads from bam files. 
 
 \code{\link{countRNAData}} is the main function that takes care of all 
-counting steps and returns a FraseRDataSet containing the counts for all 
+counting steps and returns a FraserDataSet containing the counts for all 
 samples in the fds. 
 
 \code{\link{getSplitReadCountsForAllSamples}} counts split reads for all 
 samples and \code{\link{getNonSplitReadCountsForAllSamples}} counts non 
 split reads overlapping splice sites for all samples. 
-\code{\link{addCountsToFraseRDataSet}} adds these counts to an existing fds.
+\code{\link{addCountsToFraserDataSet}} adds these counts to an existing fds.
 
 \code{\link{countSplitReads}} calculates the split read counts for a single
 sample. \code{\link{countNonSplicedReads}} counts the non split reads 
@@ -223,8 +223,8 @@ object containing the non split read counts at the
 exon-intron boundaries inferred from the GRanges object 
 containing the positions of all the introns in this dataset.
 
-\item \code{addCountsToFraseRDataSet}: This method adds the split read and 
-non split read counts to a existing FraseRDataSet 
+\item \code{addCountsToFraserDataSet}: This method adds the split read and 
+non split read counts to a existing FraserDataSet 
 containing the settings.
 
 \item \code{countSplitReads}: This method counts all split reads in a 
@@ -238,6 +238,6 @@ on the given target (acceptor/donor) regions for a single sample.
 }}
 
 \examples{
-  fds <- countRNAData(createTestFraseRSettings())
+  fds <- countRNAData(createTestFraserSettings())
 
 }

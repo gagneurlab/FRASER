@@ -98,11 +98,11 @@ findEncodingDim <- function(i, fds, type, params, implementation,
 #' representations (more memory efficient). The default value depends on the 
 #' number of samples in the fds-object. 
 #' 
-#' @return FraseRDataSet
+#' @return FraserDataSet
 #'
 #' @examples
 #'   # generate data
-#'   fds <- createTestFraseRDataSet()
+#'   fds <- createTestFraserDataSet()
 #'   
 #'   # run hyperparameter optimization
 #'   fds <- optimHyperParams(fds, type="psi5", implementation="PCA")

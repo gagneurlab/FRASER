@@ -5,7 +5,7 @@
 \alias{filterExpressionAndVariability}
 \alias{filterExpression}
 \alias{filterVariability}
-\title{Filtering FraseRDataSets}
+\title{Filtering FraserDataSets}
 \usage{
 filterExpressionAndVariability(
   fds,
@@ -37,7 +37,7 @@ filterVariability(
 )
 }
 \arguments{
-\item{fds}{A FraseRDataSet object}
+\item{fds}{A FraserDataSet object}
 
 \item{minExpressionInOneSample}{The minimal read count in at least one 
 sample that is required for an intron to pass the filter.}
@@ -63,8 +63,8 @@ default value depends on the number of samples in the fds-object.}
 \item{BPPARAM}{the BiocParallel parameters for the parallelization}
 }
 \value{
-A FraseRDataSet with information about which junctions passed the
-filters. If \code{filter=TRUE}, the filtered FraseRDataSet is returned.
+A FraserDataSet with information about which junctions passed the
+filters. If \code{filter=TRUE}, the filtered FraserDataSet is returned.
 }
 \description{
 This method can be used to filter out introns that are not 
@@ -83,7 +83,7 @@ splice sites which do not show variablity across samples.
 }}
 
 \examples{
-fds <- createTestFraseRDataSet()
+fds <- createTestFraserDataSet()
 fds <- filterExpressionAndVariability(fds)
 
 }

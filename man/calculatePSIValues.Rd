@@ -12,7 +12,7 @@ calculatePSIValues(
 )
 }
 \arguments{
-\item{fds}{A FraseRDataSet object}
+\item{fds}{A FraserDataSet object}
 
 \item{types}{A vector with the psi types which should be calculated. Default 
 is all of psi5, psi3 and psiSite.}
@@ -23,14 +23,14 @@ be recalculated based on the existing junction counts (aka K)}
 \item{BPPARAM}{the BiocParallel parameters for the parallelization}
 }
 \value{
-FraseRDataSet
+FraserDataSet
 }
 \description{
 This function calculates the PSI values for each junction and splice site
-based on the FraseRDataSet object
+based on the FraserDataSet object
 }
 \examples{
-  fds <- createTestFraseRDataSet()
+  fds <- createTestFraserDataSet()
   fds <- calculatePSIValues(fds, types="psi5")
   
   ### usually one would run this function for all psi types by using:

@@ -6,12 +6,12 @@
 ##
 
 #'
-#' Annotates the given FraseRDataSet with the HGNC symbol with biomaRt
+#' Annotates the given FraserDataSet with the HGNC symbol with biomaRt
 #' 
-#' @param fds FraseRDataSet
+#' @param fds FraserDataSet
 #' @param feature Defines which feature (default is HGNC symbol) should be 
 #' annotated.
-#' @param featureName Name of the feature in the FraseRDataSet mcols.
+#' @param featureName Name of the feature in the FraserDataSet mcols.
 #' @param biotype The biotype.
 #' @param ensembl The ensembl that should be used. If NULL, the default one is 
 #' used (hsapiens_gene_ensembl, GRCh37).
@@ -23,11 +23,11 @@
 #' @param orgDb An \code{orgDb} object If this is NULL, then the 
 #' default one is used, currently this is \code{org.Hs.eg.db}.
 #' 
-#' @return FraseRDataSet
+#' @return FraserDataSet
 #' 
 #' @examples
 #'
-#' fds <- createTestFraseRDataSet()
+#' fds <- createTestFraserDataSet()
 #' 
 #' \dontrun{
 #' ### Two ways to annotage ranges with gene names: 
@@ -51,7 +51,7 @@ annotateRanges <- function(fds, feature="hgnc_symbol", featureName=feature,
             biotype=list("protein_coding"), ensembl=NULL, GRCh=37){
 
     # check input
-    stopifnot(is(fds, "FraseRDataSet"))
+    stopifnot(is(fds, "FraserDataSet"))
     if(length(fds) == 0) return(fds)
 
     if(is.null(ensembl)){
@@ -99,7 +99,7 @@ annotateRangesWithTxDb <- function(fds, feature="SYMBOL",
                                     txdb=NULL, orgDb=NULL){
     
     # check input
-    stopifnot(is(fds, "FraseRDataSet"))
+    stopifnot(is(fds, "FraserDataSet"))
     if(length(fds) == 0) return(fds)
     
     if(is.null(txdb)){
@@ -216,7 +216,7 @@ getAnnotationFeature <- function(data, feature, annotation){
 #' 
 #' Annotate the object with a given annotation. 
 #' 
-#' @return FraseRDataSet
+#' @return FraserDataSet
 #' @examples 
 #'     TODO <- 1
 #' @noRd

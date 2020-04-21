@@ -1,9 +1,9 @@
 #' Getter/Setter functions
 #' 
 #' This is a collection of small accessor/setter functions for easy access to
-#' the values within the FraseR model.
+#' the values within the FRASER model.
 #' 
-#' @param fds An FraseRDataSet object.
+#' @param fds An FraserDataSet object.
 #' @param type The type of psi (psi5, psi3 or psiSite)
 #' @param byGroup If TRUE, aggregation by donor/acceptor site will be done.
 #' @param dist Distribution for which the p-values should be extracted.
@@ -19,7 +19,7 @@
 #' @aliases zScore, pVals, padjVals, rho, bestQ
 #' 
 #' @examples 
-#' fds <- createTestFraseRDataSet()
+#' fds <- createTestFraserDataSet()
 #' 
 #' # should assays be saved as hdf5? 
 #' dontWriteHDF5(fds)
@@ -291,14 +291,14 @@ deltaPsiValue <- function(fds, type=currentType(fds)){
 
 
 #' @describeIn getter_setter_functions Returns the psi type that is used 
-#' within several methods in the FraseR package.
+#' within several methods in the FRASER package.
 #' @export
 currentType <- function(fds){
     return(metadata(fds)[['currentType']])
 }
 
 #' @describeIn getter_setter_functions Sets the psi type that is to be used 
-#' within several methods in the FraseR package.
+#' within several methods in the FRASER package.
 #' @export 
 `currentType<-` <- function(fds, value){
     stopifnot(isScalarCharacter(whichPSIType(value)))
@@ -307,12 +307,12 @@ currentType <- function(fds){
 }
 
 #' @describeIn getter_setter_functions Sets and returns the pseudo count used 
-#' within the FraseR fitting procedure.
+#' within the FRASER fitting procedure.
 #' @export
 pseudocount <- function(value=NULL){
     # return if not provided
     if(is.null(value)){
-        ans <- options()[['FraseR.pseudoCount']]
+        ans <- options()[['FRASER.pseudoCount']]
         if(isScalarNumeric(ans)){
             return(ans)
         }
@@ -323,7 +323,7 @@ pseudocount <- function(value=NULL){
     stopifnot(isScalarNumeric(value))
     stopifnot(value >= 0)
     value <- as.integer(value)
-    options('FraseR.pseudoCount'=value)
+    options('FRASER.pseudoCount'=value)
     devNULL <- .setPseudoCount(value)
     stopifnot(value == devNULL)
 
@@ -463,8 +463,8 @@ getDeltaPsi <- function(fds, type, byGroup=FALSE, ...){
 }
 
 
-# calculate FraseR weights
-calcFraseRWeights <- function(fds, psiType){
+# calculate FRASER weights
+calcFraserWeights <- function(fds, psiType){
     k <- as.matrix(K(fds, psiType))
     n <- as.matrix(N(fds, psiType))
     mu <- t(predictMu(fds, psiType))
@@ -489,12 +489,12 @@ calcFraseRWeights <- function(fds, psiType){
     return(w)
 }
 
-# get FraseR weights
+# get FRASER weights
 weights <- function(fds, type){
     return(getAssayMatrix(fds, "weights", type))
 }
 
-# set FraseR weights
+# set FRASER weights
 `weights<-` <- function(fds, type=currentType(fds), ..., value){
     setAssayMatrix(fds, name="weights", type=type, ...) <- value
     return(fds)
@@ -512,7 +512,7 @@ getIndexFromResultTable <- function(fds, resultTable, padj.method="holm"){
     hits <- findOverlaps(target, gr, type="equal")
     ov <- to(hits)
     if(!isScalarInteger(ov)){
-        stop("Can not find the given range within the FraseR object.")
+        stop("Can not find the given range within the FRASER object.")
     }
     ov
 }

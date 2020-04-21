@@ -16,7 +16,7 @@ injectOutliers(
 )
 }
 \arguments{
-\item{fds}{FraseRDataSet}
+\item{fds}{FraserDataSet}
 
 \item{type}{The psi type}
 
@@ -39,13 +39,13 @@ add to the psi value of the junction in the specific sample. "simulatedPSI"
 is only possible if a simulated dataset is used.}
 }
 \value{
-FraseRDataSet
+FraserDataSet
 }
 \description{
 Inject artificial outliers in an existing fds
 }
 \examples{
 # An example dataset
-fds <- createTestFraseRDataSet()
+fds <- createTestFraserDataSet()
 fds <- injectOutliers(fds, minDpsi=0.2, freq=1E-3)
 }

@@ -2,7 +2,7 @@ context("Test stats calculations")
 
 test_that("PSI value calculation", {
     # get subset to speed up test
-    #fds <- getFraseR()[,1]
+    #fds <- getFraser()[,1]
     #fds <- fds[mcols(fds, type="psi3")$startID %in% c(1,2,6,7),]
     
     # expect it from the toy data after subsetting
@@ -20,15 +20,15 @@ test_that("PSI value calculation", {
     #counts(fds, type="psi3")
 
     #expect_equal("ok", "ok")
-    #settings <- createTestFraseRDataSet()
-    #expect_is(settings, "FraseRDataSet")
+    #settings <- createTestFraserDataSet()
+    #expect_is(settings, "FraserDataSet")
 })
 
 test_that("Zscore calculation", {
-    #fds <- getFraseR()
-    #fds <- FraseR(fds)
+    #fds <- getFraser()
+    #fds <- FRASER(fds)
 
-    #expect_is(fds, "FraseRDataSet")
+    #expect_is(fds, "FraserDataSet")
     #expect_equal(dim(fds), c(94, 12))
     #expect_equal(dim(nonSplicedReads(fds)), c(111, 12))
 })

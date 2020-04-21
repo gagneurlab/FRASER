@@ -17,26 +17,26 @@
 \alias{scanBamParam<-}
 \alias{nonSplicedReads}
 \alias{nonSplicedReads<-}
-\alias{samples,FraseRDataSet-method}
-\alias{samples<-,FraseRDataSet-method}
-\alias{condition,FraseRDataSet-method}
-\alias{condition<-,FraseRDataSet-method}
-\alias{bamFile,FraseRDataSet-method}
-\alias{bamFile<-,FraseRDataSet-method}
-\alias{name,FraseRDataSet-method}
-\alias{name<-,FraseRDataSet-method}
-\alias{workingDir,FraseRDataSet-method}
-\alias{workingDir<-,FraseRDataSet-method}
-\alias{strandSpecific,FraseRDataSet-method}
-\alias{strandSpecific<-,FraseRDataSet-method}
-\alias{scanBamParam,FraseRDataSet-method}
-\alias{scanBamParam<-,FraseRDataSet-method}
-\alias{nonSplicedReads,FraseRDataSet-method}
-\alias{nonSplicedReads<-,FraseRDataSet-method}
-\alias{FraseR.mcols.get}
-\alias{FraseR.rowRanges.get}
+\alias{samples,FraserDataSet-method}
+\alias{samples<-,FraserDataSet-method}
+\alias{condition,FraserDataSet-method}
+\alias{condition<-,FraserDataSet-method}
+\alias{bamFile,FraserDataSet-method}
+\alias{bamFile<-,FraserDataSet-method}
+\alias{name,FraserDataSet-method}
+\alias{name<-,FraserDataSet-method}
+\alias{workingDir,FraserDataSet-method}
+\alias{workingDir<-,FraserDataSet-method}
+\alias{strandSpecific,FraserDataSet-method}
+\alias{strandSpecific<-,FraserDataSet-method}
+\alias{scanBamParam,FraserDataSet-method}
+\alias{scanBamParam<-,FraserDataSet-method}
+\alias{nonSplicedReads,FraserDataSet-method}
+\alias{nonSplicedReads<-,FraserDataSet-method}
+\alias{FRASER.mcols.get}
+\alias{FRASER.rowRanges.get}
 \alias{mapSeqlevels}
-\title{Getter/Setter methods for the FraseRDataSet}
+\title{Getter/Setter methods for the FraserDataSet}
 \usage{
 samples(object)
 
@@ -70,57 +70,57 @@ nonSplicedReads(object)
 
 nonSplicedReads(object) <- value
 
-\S4method{samples}{FraseRDataSet}(object)
+\S4method{samples}{FraserDataSet}(object)
 
-\S4method{samples}{FraseRDataSet}(object) <- value
+\S4method{samples}{FraserDataSet}(object) <- value
 
-\S4method{condition}{FraseRDataSet}(object)
+\S4method{condition}{FraserDataSet}(object)
 
-\S4method{condition}{FraseRDataSet}(object) <- value
+\S4method{condition}{FraserDataSet}(object) <- value
 
-\S4method{bamFile}{FraseRDataSet}(object)
+\S4method{bamFile}{FraserDataSet}(object)
 
-\S4method{bamFile}{FraseRDataSet}(object) <- value
+\S4method{bamFile}{FraserDataSet}(object) <- value
 
-\S4method{name}{FraseRDataSet}(object)
+\S4method{name}{FraserDataSet}(object)
 
-\S4method{name}{FraseRDataSet}(object) <- value
+\S4method{name}{FraserDataSet}(object) <- value
 
-\S4method{workingDir}{FraseRDataSet}(object)
+\S4method{workingDir}{FraserDataSet}(object)
 
-\S4method{workingDir}{FraseRDataSet}(object) <- value
+\S4method{workingDir}{FraserDataSet}(object) <- value
 
-\S4method{strandSpecific}{FraseRDataSet}(object)
+\S4method{strandSpecific}{FraserDataSet}(object)
 
-\S4method{strandSpecific}{FraseRDataSet}(object) <- value
+\S4method{strandSpecific}{FraserDataSet}(object) <- value
 
-\S4method{scanBamParam}{FraseRDataSet}(object)
+\S4method{scanBamParam}{FraserDataSet}(object)
 
-\S4method{scanBamParam}{FraseRDataSet}(object) <- value
+\S4method{scanBamParam}{FraserDataSet}(object) <- value
 
-\S4method{nonSplicedReads}{FraseRDataSet}(object)
+\S4method{nonSplicedReads}{FraserDataSet}(object)
 
-\S4method{nonSplicedReads}{FraseRDataSet}(object) <- value
+\S4method{nonSplicedReads}{FraserDataSet}(object) <- value
 
-FraseR.mcols.get(x, type = NULL, ...)
+FRASER.mcols.get(x, type = NULL, ...)
 
-FraseR.rowRanges.get(x, type = NULL, ...)
+FRASER.rowRanges.get(x, type = NULL, ...)
 
 mapSeqlevels(fds, style = "UCSC", ...)
 }
 \arguments{
-\item{object}{A FraseRDataSet object.}
+\item{object}{A FraserDataSet object.}
 
 \item{value}{The new value that should replace the current one.}
 
-\item{x}{A FraseRDataSet object.}
+\item{x}{A FraserDataSet object.}
 
 \item{type}{The psi type (psi3, psi5 or psiSite)}
 
 \item{...}{Further parameters. For mapSeqLevels: further parameters 
 passed to GenomeInfoDb::mapSeqlevels().}
 
-\item{fds}{FraseRDataSet}
+\item{fds}{FraserDataSet}
 
 \item{style}{The style of the chromosome names.}
 }
@@ -129,7 +129,7 @@ Getter method return the respective current value.
 }
 \description{
 The following methods are getter and setter methods to extract or set
-certain values of a FraseRDataSet object.
+certain values of a FraserDataSet object.
 }
 \details{
 \code{samples} sets or gets the sample IDs; \code{condition} ;
@@ -140,7 +140,7 @@ sites in the fds.
 \code{}
 }
 \examples{
-fds <- createTestFraseRDataSet()
+fds <- createTestFraserDataSet()
 samples(fds)
 samples(fds) <- 1:dim(fds)[2]
 condition(fds)

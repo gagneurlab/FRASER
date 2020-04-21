@@ -8,9 +8,20 @@ The FRASER framework and workflow aims to assist the diagnostics in the field of
 
 ## Installation
 
-`FRASER` is an R/Bioconductor software package requiring a running [R 3.6 version or higher](https://cran.r-project.org/).
+`FRASER` is an R/Bioconductor software package requiring a running 
+[R 3.6 version or higher](https://cran.r-project.org/).
 
-We will use `devtools` to install it. For this, you need a working development environment to compile the C++ code (see for details: [Windows](https://cran.r-project.org/bin/windows/Rtools/)
+The recommanded way of installing `FRASER` is to use `Bioconductor`:
+```
+if (!requireNamespace("BiocManager", quietly=TRUE))
+    install.packages('BiocManager')
+BiocManager::install('FRASER')
+```
+
+If you use an R version below `4.0.0` you have to install it from source. 
+To this end, we will use `devtools` to install it. For this, you need a 
+working development environment to compile the C++ code (see for 
+details: [Windows](https://cran.r-project.org/bin/windows/Rtools/)
 or [MacOS X](https://cran.r-project.org/bin/macosx/tools/)).
 
 ```
@@ -19,17 +30,14 @@ if (!requireNamespace("devtools", quietly=TRUE))
 
 # latest development version
 devtools::install_github('gagneurlab/FRASER', dependencies=TRUE)
-```
 
-Due to changes in the Bioconductor API you have to use a different branch to install FRASER, if you use an R version below 4.0.0.
-
-``` 
-# latest development version if using >R4.0.0
-devtools::install_github('gagneurlab/FRASER', ref='R3.6', dependencies=TRUE)
+# or a specific version of FRASER (search for tags on github)
+devtools::install_github('gagneurlab/FRASER', ref='1.0.0', dependencies=TRUE)
 ```
 
 If you have dependency issues while installing any package, please have a look
-at the Troubleshooting section or submit an issue on [GitHub](https://github.com/gagneurlab/FRASER/issues).
+at the Troubleshooting section or submit an issue on 
+[GitHub](https://github.com/gagneurlab/FRASER/issues).
 
 
 ### Toubleshooting

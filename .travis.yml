@@ -43,14 +43,14 @@ before_install:
 
 install:
   - R --version
+  - R -e 'update.packages(ask=FALSE, Ncpus=4, instlib="/home/travis/R/Library/")'
   - Rscript setupEnv.R
-  - R -e "install.packages('magick')"
 
 script:
-  - R CMD build --no-build-vignettes .
-  - R CMD BiocCheck --no-check-vignettes *tar.gz
+  - R CMD build --keep-empty-dirs --no-resave-data .
+  - R CMD BiocCheck --new-package *tar.gz
   - R CMD check --no-vignettes --timings *tar.gz
-  - cd vignettes && R CMD Sweave --engine=knitr::knitr --pdf FraseR.Rnw
+  - cd vignettes && R CMD Sweave --engine=knitr::knitr --pdf FRASER.Rnw
   - R -e 'devtools::run_examples()'
   - R -e 'devtools::test()'
 

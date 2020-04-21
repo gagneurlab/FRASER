@@ -1,6 +1,6 @@
 
 #' 
-#' @describeIn FraseR This method correct for confounders in the data and fits 
+#' @describeIn FRASER This method correct for confounders in the data and fits 
 #' a beta-binomial distribution to the introns.
 #' @export
 fit <- function(fds, implementation=c("PCA", "PCA-BB-Decoder", "AE", 
@@ -179,13 +179,13 @@ needsHyperOpt <- function(method){
     switch(method,
         "PCA-BB-full"            = TRUE,
         "PCA-reg-full"           = TRUE,
-        FraseR                   = TRUE,
+        FRASER                   = TRUE,
         "PCA-BB-Decoder"         = TRUE,
         "PCA-BB-Decoder-no-weights" = TRUE,
-        "FraseR-5DecoderBatches" = TRUE,
-        "FraseR-1DecoderBatches" = TRUE,
-        "FraseR-weighted"        = TRUE,
-        fullFraseR               = TRUE,
+        "FRASER-5DecoderBatches" = TRUE,
+        "FRASER-1DecoderBatches" = TRUE,
+        "FRASER-weighted"        = TRUE,
+        fullFraser               = TRUE,
         PCA                      = TRUE,
         'PCA-regression'         = TRUE,
         BB                       = FALSE,
@@ -258,7 +258,7 @@ fitPCA <- function(fds, q, psiType, rhoRange=c(1e-5, 1-1e-5), noiseAlpha=NULL,
     }
 
     # use delayed matrix representation of counts again for large datasets
-    useDelayed <- ncol(fds) > options()[['FraseR.minSamplesForDelayed']]
+    useDelayed <- ncol(fds) > options()[['FRASER.minSamplesForDelayed']]
     if(isTRUE(useDelayed)){
         counts(fds, type=psiType, side="other", HDF5=TRUE, 
                 withDimnames=FALSE) <- 

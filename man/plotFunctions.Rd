@@ -11,7 +11,7 @@
 \alias{plotExpectedVsObservedPsi}
 \alias{plotEncDimSearch}
 \alias{plotFilterVariability}
-\title{Visualization functions for FraseR}
+\title{Visualization functions for FRASER}
 \usage{
 plotVolcano(
   fds,
@@ -118,7 +118,7 @@ plotCountCorHeatmap(
 )
 }
 \arguments{
-\item{fds}{An FraseRDataSet object.}
+\item{fds}{An FraserDataSet object.}
 
 \item{sampleID}{A sample ID which should be plotted. Can also be a vector.
 Integers are treated as indices.}
@@ -210,7 +210,7 @@ If base R graphics are used nothing is returned else the plotly or
             the gplot object is returned.
 }
 \description{
-The FraseR package provides mutliple functions to visualize
+The FRASER package provides mutliple functions to visualize
 the data and the results of a full data set analysis.
 
 Plots the p values over the delta psi values, known as volcano plot.
@@ -234,7 +234,7 @@ Histogram of minimal delta psi per junction
 Count correlation heatmap function
 }
 \details{
-This is the list of all plotting function provided by FraseR:
+This is the list of all plotting function provided by FRASER:
 \itemize{
   \item plotAberrantPerSample()
   \item plotVolcano()
@@ -279,12 +279,12 @@ are log transformed and row centered. The ... arguments are passed to the
 \code{\link[pheatmap]{pheatmap}} function.
 
 \code{plotFilterExpression}: The distribution of FPKM values. If the 
-FraseRDataSet object contains the \code{passedFilter} column, it will plot 
+FraserDataSet object contains the \code{passedFilter} column, it will plot 
 both FPKM distributions for the expressed introns and for the filtered 
 introns.
 
 \code{plotFilterVariability}: The distribution of maximal delta Psi values. 
-If the FraseRDataSet object contains the \code{passedFilter} column, 
+If the FraserDataSet object contains the \code{passedFilter} column, 
 it will plot both maximal delta Psi distributions for the variable 
 introns and for the filtered (i.e. non-variable) introns.
 
@@ -294,7 +294,7 @@ precision-recall curve). From this plot the optimum should be choosen for
 the \code{q} in fitting process.
 }
 \examples{
-fds <- createTestFraseRDataSet()
+fds <- createTestFraserDataSet()
 
 plotEncDimSearch(fds, type="psi5")
 plotAberrantPerSample(fds, padjCutoff=NA, zScoreCutoff=0.5)

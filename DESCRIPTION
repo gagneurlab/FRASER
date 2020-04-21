@@ -76,7 +76,7 @@ Collate:
     variables.R
     getNSetterFuns.R
     FRASER-package.R
-    FraseRDataSet-class.R
+    FraserDataSet-class.R
     AllGenerics.R
     Fraser-pipeline.R
     accessor-methods.R

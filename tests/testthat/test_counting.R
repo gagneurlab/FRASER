@@ -3,7 +3,7 @@ context("Test counting")
 test_that("Count junctions", {
     attach(test_generate_count_example())
 
-    expect_is(test_fdsSample3, "FraseRDataSet")
+    expect_is(test_fdsSample3, "FraserDataSet")
 
     # test how many ranges we found
     expect_equal(length(test_rangeFDS), 3)
@@ -15,7 +15,7 @@ test_that("Count junctions", {
 })
 
 test_that("test minAnchor", {
-    fds <- createTestFraseRSettings()
+    fds <- createTestFraserSettings()
     features <- makeGRangesFromDataFrame(data.table(GeneID=1:5, Chr="chr19",
             Start=c(7592514, 7592749, 7594598, 7595171, 7595320),
             End=c(7592515, 7592750, 7594599, 7595172, 7595321), Strand="*"))

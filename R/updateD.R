@@ -14,7 +14,7 @@ updateD <- function(fds, type, lambda, control, BPPARAM, verbose,
 
     weights <- matrix(1, nrow=nrow(k), ncol=ncol(k))
     if(isTRUE(weighted)){
-        weights <- calcFraseRWeights(fds, type)
+        weights <- calcFraserWeights(fds, type)
         weights(fds, type, HDF5=FALSE) <- weights
         message(sum(c(weights) != 1))
     }
