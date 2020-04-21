@@ -213,14 +213,14 @@ setMethod("show", "FraserDataSet", function(object) {
 #' annotation (colData) or count tables (junctions/spliceSites).
 #'
 #' @param colData A DataFrame containing the annotation of the samples
-#' @param junctions A matrix like object containing the raw counts for each
-#'                junction. It requires the \code{start} and the \code{endID}
-#'                column that identifies the corresponding splice site for
-#'                the given junction.
-#' @param spliceSites A matrix like object containing the raw counts for each
-#'                splice site. it requires the \code{spliceSiteID} and the
-#'                \code{type} column that gives the ID and the type of the
-#'                given splice site. The ID maps back to the junction.
+#' @param junctions,spliceSites A data.frame like object containing the 
+#'                raw counts for each junction or splice site.
+#'                It requires the columns \code{startID} and \code{endID} for the 
+#'                junctions and \code{spliceSiteID} and \code{type} for the
+#'                splice sites. Those columns identifies the corresponding
+#'                splice site for the given junction and map to the splice site.
+#'                For each sample the counts are saved in a corresponding 
+#'                column with the same name. It can also be a GRange object.
 #' @param ... Any parameters corresponding to the slots and their possible
 #'                values. See \linkS4class{FraserDataSet}
 #' @return A FraserDataSet object.
