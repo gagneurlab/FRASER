@@ -11,15 +11,15 @@
 #' Calculate the zscore for each PSI value.
 #'
 #' @noRd
-#' @return FraseRDataSet
+#' @return FraserDataSet
 #' @examples
-#'   fds <- createTestFraseRDataSet()
+#'   fds <- createTestFraserDataSet()
 #'   fds <- calculatePSIValues(fds)
 #'   fds <- calculateZScores(fds)
 calculateZScores <- function(fds, type=psiTypes){
 
     # check input
-    stopifnot(is(fds, "FraseRDataSet"))
+    stopifnot(is(fds, "FraserDataSet"))
 
     # calculate zscore for each psi type
     for(pt in type){

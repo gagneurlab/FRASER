@@ -62,7 +62,7 @@ verbose(fds)
 verbose(fds) <- value
 }
 \arguments{
-\item{fds}{An FraseRDataSet object.}
+\item{fds}{An FraserDataSet object.}
 
 \item{type}{The type of psi (psi5, psi3 or psiSite)}
 
@@ -83,7 +83,7 @@ A (delayed) matrix or vector dependent on the type of data retrieved.
 }
 \description{
 This is a collection of small accessor/setter functions for easy access to
-the values within the FraseR model.
+the values within the FRASER model.
 }
 \section{Functions}{
 \itemize{
@@ -113,13 +113,13 @@ values.
 observed and the fitted psi values.
 
 \item \code{currentType}: Returns the psi type that is used 
-within several methods in the FraseR package.
+within several methods in the FRASER package.
 
 \item \code{currentType<-}: Sets the psi type that is to be used 
-within several methods in the FraseR package.
+within several methods in the FRASER package.
 
 \item \code{pseudocount}: Sets and returns the pseudo count used 
-within the FraseR fitting procedure.
+within the FRASER fitting procedure.
 
 \item \code{hyperParams}: This returns the results of the 
 hyperparameter optimization NULL if the hyperparameter 
@@ -145,7 +145,7 @@ between 0 and 10. 0 means being quiet and 10 means reporting everything.
 }}
 
 \examples{
-fds <- createTestFraseRDataSet()
+fds <- createTestFraserDataSet()
 
 # should assays be saved as hdf5? 
 dontWriteHDF5(fds)

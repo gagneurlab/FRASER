@@ -1,15 +1,15 @@
 #######################
-## FraseRDataSet
+## FraserDataSet
 ## ====================
 
 
-#' FraseRDataSet
+#' FraserDataSet
 #'
-#' This class is designed to store the whole FraseR data set
+#' This class is designed to store the whole FRASER data set
 #' needed for an analysis of a disease cohort
 #'
 #' @author Christian Mertes \email{mertes@@in.tum.de}
-setClass("FraseRDataSet",
+setClass("FraserDataSet",
     contains="RangedSummarizedExperiment",
     slots = list(
         name            = "character",
@@ -22,7 +22,7 @@ setClass("FraseRDataSet",
         name            = "Data Analysis",
         bamParam        = ScanBamParam(mapqFilter=0),
         strandSpecific  = 0L,
-        workingDir      = file.path(tempdir(), "FraseR"),
+        workingDir      = file.path(tempdir(), "FRASER"),
         nonSplicedReads = SummarizedExperiment(rowRanges=GRanges())
     )
 )
@@ -119,7 +119,7 @@ validateAssays <- function(object){
     if(length(assayNames(object)) > 1){
         if(any(duplicated(assayNames(object)))){
             return(
-                "FraseR enforces unique assay names! Please provie such names."
+                "FRASER enforces unique assay names! Please provie such names."
             )
         }
     }
@@ -128,7 +128,7 @@ validateAssays <- function(object){
 
 
 ## general validate function
-validateFraseRDataSet <- function(object) {
+validateFraserDataSet <- function(object) {
     c(
         validateSampleAnnotation(object),
         validateName(object),
@@ -139,14 +139,14 @@ validateFraseRDataSet <- function(object) {
         validateAssays(object)
     )
 }
-setValidity("FraseRDataSet", validateFraseRDataSet)
+setValidity("FraserDataSet", validateFraserDataSet)
 
 
 ## Cosmetics (the show function)
 ## =============================
 
-## show method for FraseRDataSet
-showFraseRDataSet <- function(object) {
+## show method for FraserDataSet
+showFraserDataSet <- function(object) {
     if(dim(object)[2] < 1){
         cat("This Fraser object does not contain any sample! Please add one.")
         return()
@@ -189,7 +189,7 @@ showFraseRDataSet <- function(object) {
     cat("\n")
     
     cat("-------------------- BAM parameters --------------------\n")
-    if(identical(scanBamParam(FraseRDataSet()), scanBamParam(object))){
+    if(identical(scanBamParam(FraserDataSet()), scanBamParam(object))){
         cat(paste0("Default used with: ",
                 "bamMapqFilter=", bamMapqFilter(scanBamParam(object))
         ))
@@ -199,17 +199,17 @@ showFraseRDataSet <- function(object) {
     cat("\n\n")
 }
 
-setMethod("show", "FraseRDataSet", function(object) {
-    showFraseRDataSet(object)
+setMethod("show", "FraserDataSet", function(object) {
+    showFraserDataSet(object)
 })
 
 ## Constructor
 ## ==========
 
 #'
-#' The FraseR dataset object
+#' The FRASER dataset object
 #'
-#' Constructs an FraseR object based on the given input. It can take only the
+#' Constructs an FRASER object based on the given input. It can take only the
 #' annotation (colData) or count tables (junctions/spliceSites).
 #'
 #' @param colData A DataFrame containing the annotation of the samples
@@ -222,12 +222,12 @@ setMethod("show", "FraseRDataSet", function(object) {
 #'                \code{type} column that gives the ID and the type of the
 #'                given splice site. The ID maps back to the junction.
 #' @param ... Any parameters corresponding to the slots and their possible
-#'                values. See \linkS4class{FraseRDataSet}
-#' @return A FraseRDataSet object.
+#'                values. See \linkS4class{FraserDataSet}
+#' @return A FraserDataSet object.
 #' @author Christian Mertes \email{mertes@@in.tum.de}
 #' @export
 #' @examples
-#'   fraser <- FraseRDataSet()
+#'   fraser <- FraserDataSet()
 #'   
 #'   # example sample annoation
 #'   sampleTable <- fread(system.file("extdata",
@@ -239,11 +239,11 @@ setMethod("show", "FraseRDataSet", function(object) {
 #'   spliceSiteCts <- fread(system.file("extdata", 
 #'           "raw_site_counts.tsv.gz", package="FRASER", mustWork=TRUE))
 #'   
-#'   # create FraseR object
-#'   fds <- FraseRDataSet(colData=sampleTable, junctions=junctionCts,
+#'   # create FRASER object
+#'   fds <- FraserDataSet(colData=sampleTable, junctions=junctionCts,
 #'           spliceSites=spliceSiteCts, name="Example Dataset")
 #'   
-FraseRDataSet <- function(colData=NULL, junctions=NULL, spliceSites=NULL, ...) {
+FraserDataSet <- function(colData=NULL, junctions=NULL, spliceSites=NULL, ...) {
     if(!is.null(colData)){
         if(is.data.table(colData)){
             colData <- DataFrame(colData)
@@ -252,7 +252,7 @@ FraseRDataSet <- function(colData=NULL, junctions=NULL, spliceSites=NULL, ...) {
             rownames(colData) <- colData[['sampleID']]
         }
         if(is.null(junctions) & is.null(spliceSites))
-            return(new("FraseRDataSet", colData=colData, ...))
+            return(new("FraserDataSet", colData=colData, ...))
         if(is.null(junctions)){
             stop("Please provide junctions counts if you provide ",
                     "spliceSite counts.")
@@ -278,9 +278,9 @@ FraseRDataSet <- function(colData=NULL, junctions=NULL, spliceSites=NULL, ...) {
                 colData=colData,
                 assays=SimpleList(rawCountsJ=as.data.frame(
                         mcols(junctions)[colData[,"sampleID"]]), a=NULL)[1])
-        return(new("FraseRDataSet", se, nonSplicedReads=nsr, ...))
+        return(new("FraserDataSet", se, nonSplicedReads=nsr, ...))
     }
-    return(new("FraseRDataSet", ...))
+    return(new("FraserDataSet", ...))
 }
 
 

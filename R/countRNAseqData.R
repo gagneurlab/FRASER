@@ -8,7 +8,7 @@
 
 #' @title Count RNA-seq data
 #'  
-#' @description The FraseR package provides multiple functions to extract and 
+#' @description The FRASER package provides multiple functions to extract and 
 #'               count both split and non-spliced reads from bam files. 
 #'               See Detail and Functions for more information.
 #'  
@@ -17,13 +17,13 @@
 #' split and the non-spliced reads from bam files. 
 #' 
 #' \code{\link{countRNAData}} is the main function that takes care of all 
-#' counting steps and returns a FraseRDataSet containing the counts for all 
+#' counting steps and returns a FraserDataSet containing the counts for all 
 #' samples in the fds. 
 #' 
 #' \code{\link{getSplitReadCountsForAllSamples}} counts split reads for all 
 #' samples and \code{\link{getNonSplitReadCountsForAllSamples}} counts non 
 #' split reads overlapping splice sites for all samples. 
-#' \code{\link{addCountsToFraseRDataSet}} adds these counts to an existing fds.
+#' \code{\link{addCountsToFraserDataSet}} adds these counts to an existing fds.
 #' 
 #' \code{\link{countSplitReads}} calculates the split read counts for a single
 #' sample. \code{\link{countNonSplicedReads}} counts the non split reads 
@@ -33,7 +33,7 @@
 #' single count object, where the counts for junctions that are not present in 
 #' a sample are set to zero. 
 #' 
-#' @param fds A FraseRDataSet object
+#' @param fds A FraserDataSet object
 #' @param NcpuPerSample A BiocParallel param object or a positive integer
 #'             to configure the parallel backend
 #'             of the internal loop per sample
@@ -103,14 +103,14 @@
 #' @rdname countRNA
 #' 
 #' @examples
-#'   fds <- countRNAData(createTestFraseRSettings())
+#'   fds <- countRNAData(createTestFraserSettings())
 #'
 NULL
 
 
 #' @describeIn countRNA This method extracts and counts the split reads and
 #'             non spliced reads from RNA bam files.
-#' @return \code{\link{countRNAData}} returns a FraseRDataSet.
+#' @return \code{\link{countRNAData}} returns a FraserDataSet.
 #' 
 #' @export
 countRNAData <- function(fds, NcpuPerSample=1, minAnchor=5, recount=FALSE,
@@ -121,7 +121,7 @@ countRNAData <- function(fds, NcpuPerSample=1, minAnchor=5, recount=FALSE,
                         ...){
     
     # Check input TODO
-    stopifnot(is(fds, "FraseRDataSet"))
+    stopifnot(is(fds, "FraserDataSet"))
     stopifnot(is.numeric(NcpuPerSample) && NcpuPerSample > 0)
     stopifnot(is.numeric(minAnchor) & minAnchor >= 1)
     minAnchor <- as.integer(minAnchor)
@@ -168,8 +168,8 @@ countRNAData <- function(fds, NcpuPerSample=1, minAnchor=5, recount=FALSE,
                                                     "nonSplitCounts"),
                                                 ...)
     
-    # create final FraseR dataset
-    fds <- addCountsToFraseRDataSet(fds, splitCounts, nonSplicedCounts)
+    # create final FRASER dataset
+    fds <- addCountsToFraserDataSet(fds, splitCounts, nonSplicedCounts)
     
     # return it
     return(fds)
@@ -365,14 +365,14 @@ getNonSplitReadCountsForAllSamples <- function(fds, splitCountRanges,
 
 
 #' @describeIn countRNA This method adds the split read and 
-#'              non split read counts to a existing FraseRDataSet 
+#'              non split read counts to a existing FraserDataSet 
 #'              containing the settings.  
-#' @return \code{\link{addCountsToFraseRDataSet}} returns a FraseRDataSet.
+#' @return \code{\link{addCountsToFraserDataSet}} returns a FraserDataSet.
 #' @export
-addCountsToFraseRDataSet <- function(fds, splitCounts, nonSplitCounts){
+addCountsToFraserDataSet <- function(fds, splitCounts, nonSplitCounts){
     
-    # create final FraseR dataset
-    fds <- new("FraseRDataSet",
+    # create final FRASER dataset
+    fds <- new("FraserDataSet",
                 splitCounts,
                 name            = name(fds),
                 bamParam        = scanBamParam(fds),
@@ -382,8 +382,8 @@ addCountsToFraseRDataSet <- function(fds, splitCounts, nonSplitCounts){
                 metadata        = metadata(fds)
     )
     
-    # save it so the FraseR object also gets saved
-    fds <- saveFraseRDataSet(fds)
+    # save it so the FRASER object also gets saved
+    fds <- saveFraserDataSet(fds)
     
     return(fds)
 }
@@ -787,7 +787,7 @@ countNonSplicedReads <- function(sampleID, splitCountRanges, fds,
     
     # get counts that will be cached
     cache <- as.matrix(ncol=1, spliceSiteCoords$count)
-    rowChunkSize <- min(nrow(cache), options()[['FraseR-hdf5-chunk-nrow']])
+    rowChunkSize <- min(nrow(cache), options()[['FRASER-hdf5-chunk-nrow']])
     
     # cache counts as hdf5 file
     message("Saving splice site cache ...")

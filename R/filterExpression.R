@@ -1,4 +1,4 @@
-#' @title Filtering FraseRDataSets
+#' @title Filtering FraserDataSets
 #' 
 #' @description This method can be used to filter out introns that are not 
 #' reliably detected and to remove introns with no variablity between samples.
@@ -20,11 +20,11 @@
 #' otherwise the function works on the delayedMatrix representations. The 
 #' default value depends on the number of samples in the fds-object. 
 #'
-#' @return A FraseRDataSet with information about which junctions passed the
-#' filters. If \code{filter=TRUE}, the filtered FraseRDataSet is returned.
+#' @return A FraserDataSet with information about which junctions passed the
+#' filters. If \code{filter=TRUE}, the filtered FraserDataSet is returned.
 #' 
 #' @examples
-#' fds <- createTestFraseRDataSet()
+#' fds <- createTestFraserDataSet()
 #' fds <- filterExpressionAndVariability(fds)
 #'
 #' @name filtering
@@ -66,7 +66,7 @@ filterExpression <- function(fds, minExpressionInOneSample=20, quantile=0.05,
                     delayed=ifelse(ncol(fds) <= 300, FALSE, TRUE),
                     BPPARAM=bpparam()){
 
-    stopifnot(is(fds, "FraseRDataSet"))
+    stopifnot(is(fds, "FraserDataSet"))
     
     message(date(), ": Filtering out introns with low read support ...")
     

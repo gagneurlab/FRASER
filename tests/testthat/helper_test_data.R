@@ -5,7 +5,7 @@ test_generate_count_example <- function(recount=FALSE){
     # get a new object for only one sample
     if(recount || !"test_fdsSample3" %in% ls()){
 
-        test_fdsSample3 <- getFraseR()[,"sample3"]
+        test_fdsSample3 <- getFraser()[,"sample3"]
         name(test_fdsSample3) <- "onlySample3"
 
         # count the sample

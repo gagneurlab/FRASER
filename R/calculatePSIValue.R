@@ -10,17 +10,17 @@
 #' PSI value calculation
 #' 
 #' This function calculates the PSI values for each junction and splice site
-#' based on the FraseRDataSet object
+#' based on the FraserDataSet object
 #'
 #' @inheritParams countRNA
 #' @param types A vector with the psi types which should be calculated. Default 
 #' is all of psi5, psi3 and psiSite.
 #' @param overwriteCts FALSE or TRUE (the default) the total counts (aka N) will
 #'              be recalculated based on the existing junction counts (aka K)
-#' @return FraseRDataSet
+#' @return FraserDataSet
 #' @export
 #' @examples
-#'   fds <- createTestFraseRDataSet()
+#'   fds <- createTestFraserDataSet()
 #'   fds <- calculatePSIValues(fds, types="psi5")
 #'   
 #'   ### usually one would run this function for all psi types by using:
@@ -28,7 +28,7 @@
 calculatePSIValues <- function(fds, types=psiTypes, overwriteCts=FALSE, 
                                 BPPARAM=bpparam()){
     # check input
-    stopifnot(is(fds, "FraseRDataSet"))
+    stopifnot(is(fds, "FraserDataSet"))
     
     # calculate PSI value for each sample
     for(psiType in unique(vapply(types, whichReadType, fds=fds, ""))){
@@ -37,7 +37,7 @@ calculatePSIValues <- function(fds, types=psiTypes, overwriteCts=FALSE,
     }
     
     # save Fraser object to disk
-    fds <- saveFraseRDataSet(fds)
+    fds <- saveFraserDataSet(fds)
     
     # calculate the delta psi value
     for(psiType in types){
@@ -46,7 +46,7 @@ calculatePSIValues <- function(fds, types=psiTypes, overwriteCts=FALSE,
     }
     
     # save final Fraser object to disk
-    fds <- saveFraseRDataSet(fds)
+    fds <- saveFraserDataSet(fds)
     
     # return it
     return(fds)
@@ -58,7 +58,7 @@ calculatePSIValues <- function(fds, types=psiTypes, overwriteCts=FALSE,
 #'
 #' @noRd
 calculatePSIValuePrimeSite <- function(fds, psiType, overwriteCts, BPPARAM){
-    stopifnot(is(fds, "FraseRDataSet"))
+    stopifnot(is(fds, "FraserDataSet"))
     stopifnot(isScalarCharacter(psiType))
     stopifnot(psiType %in% c("j", "ss"))
     
@@ -131,7 +131,7 @@ calculatePSIValuePrimeSite <- function(fds, psiType, overwriteCts, BPPARAM){
             # write other counts and psi values to h5 file
             # get defind chunk sizes
             chunkDims <- c(
-                min(nrow(countData), options()[['FraseR-hdf5-chunk-nrow']]),
+                min(nrow(countData), options()[['FRASER-hdf5-chunk-nrow']]),
                 1)
             writeHDF5Array(as.matrix(countData[,.(o5,o3,psi5,psi3)]), 
                             filepath=cacheFile, name=h5DatasetName, 
@@ -165,13 +165,13 @@ calculatePSIValuePrimeSite <- function(fds, psiType, overwriteCts, BPPARAM){
 
 #'
 #' This function calculates the site PSI values for each splice site
-#' based on the FraseRDataSet object
+#' based on the FraserDataSet object
 #'
 #' @noRd
 calculateSitePSIValue <- function(fds, overwriteCts, BPPARAM){
     
     # check input
-    stopifnot(is(fds, "FraseRDataSet"))
+    stopifnot(is(fds, "FraserDataSet"))
     
     message(date(), ": Calculate the PSI site values ...")
     
@@ -238,7 +238,7 @@ calculateSitePSIValue <- function(fds, overwriteCts, BPPARAM){
             # write other counts and psi values to h5 file
             # get defind chunk sizes
             chunkDims <- c(
-                    min(nrow(sdata), options()[['FraseR-hdf5-chunk-nrow']]),
+                    min(nrow(sdata), options()[['FRASER-hdf5-chunk-nrow']]),
                     2)
             writeHDF5Array(as.matrix(sdata[,.(os, psiValue)]), 
                             filepath=cacheFile, name=psiH5datasetName, 

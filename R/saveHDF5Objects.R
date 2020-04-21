@@ -1,11 +1,11 @@
 #'
-#' Loading/Saving FraseRDataSets
+#' Loading/Saving FraserDataSets
 #'
-#' This is a convenient function to load and save a FraseRDataSet object.
-#' It looks and saves the FraseRDataSet objects and HDF5 files on disk under
+#' This is a convenient function to load and save a FraserDataSet object.
+#' It looks and saves the FraserDataSet objects and HDF5 files on disk under
 #' the given working dir. Internally it uses HDF5 files for all assays.
 #'
-#' @param fds A FraseRDataSet object ot be saved
+#' @param fds A FraserDataSet object ot be saved
 #' @param dir A path where to save the objects (replaces the working directory)
 #' @param name The analysis name of the project (saved within the `dir`)
 #' @param file The file path to the fds-object.RDS file that should be loaded.
@@ -15,25 +15,25 @@
 #' @param upgrade Should the version of the loaded object be updated?
 #'
 #' @examples
-#' fds <- createTestFraseRSettings()
+#' fds <- createTestFraserSettings()
 #' name(fds) <- "saveing_test"
 #' 
 #' # make sure the object is saved to disc
 #' dontWriteHDF5(fds) <- FALSE
-#' fdsSaved <- saveFraseRDataSet(fds)
+#' fdsSaved <- saveFraserDataSet(fds)
 #' fdsSaved
 #' 
 #' # load object from disc
-#' fdsLoaded <- loadFraseRDataSet(dir=workingDir(fds), name=name(fds))
+#' fdsLoaded <- loadFraserDataSet(dir=workingDir(fds), name=name(fds))
 #' fdsLoaded
 #'
 #' all.equal(fdsSaved, fdsLoaded)
 #' 
-#' @return FraseRDataSet
-#' @aliases loadFraseRDataSet saveFraseRDataSet
-#' @rdname loadFraseRDataSet
+#' @return FraserDataSet
+#' @aliases loadFraserDataSet saveFraserDataSet
+#' @rdname loadFraserDataSet
 #' @export
-loadFraseRDataSet <- function(dir, name=NULL, file=NULL, upgrade=FALSE){
+loadFraserDataSet <- function(dir, name=NULL, file=NULL, upgrade=FALSE){
     # check if file is provided
     if(!is.null(file)){
         if(!missing(dir) | !is.null(name)){
@@ -66,9 +66,9 @@ loadFraseRDataSet <- function(dir, name=NULL, file=NULL, upgrade=FALSE){
     }
     fds <- readRDS(fdsFile)
     
-    # needs to be here due to our FraseR -> FRASER package change.
+    # needs to be here due to our FRASER -> FRASER package change.
     # can be removed later if the full pipeline is rerun
-    attributes(fds)$class <- structure("FraseRDataSet", package="FRASER")
+    attributes(fds)$class <- structure("FraserDataSet", package="FRASER")
     
     # adapt type of strandSpecific if needed (changed from logical to integer)
     if(is.logical(strandSpecific(fds))){
@@ -101,7 +101,7 @@ loadFraseRDataSet <- function(dir, name=NULL, file=NULL, upgrade=FALSE){
             next
         }
         message("Loading assay: ", aname)
-        afile <- getFraseRHDF5File(fds, aname)
+        afile <- getFraserHDF5File(fds, aname)
         if(!file.exists(afile)){
             warning(paste("Can not find assay file: ", aname, ".",
                     "The assay will be removed from the object."))
@@ -115,12 +115,12 @@ loadFraseRDataSet <- function(dir, name=NULL, file=NULL, upgrade=FALSE){
 }
 
 
-#' @rdname loadFraseRDataSet
+#' @rdname loadFraserDataSet
 #' @export
-saveFraseRDataSet <- function(fds, dir=NULL, name=NULL, rewrite=FALSE) {
+saveFraserDataSet <- function(fds, dir=NULL, name=NULL, rewrite=FALSE) {
     
     # check input
-    stopifnot(is(fds, "FraseRDataSet"))
+    stopifnot(is(fds, "FraserDataSet"))
     if(is.null(dir)) dir <- workingDir(fds)
     stopifnot(isScalarCharacter(dir))
     if(is.null(name)) name <- name(fds)
@@ -138,7 +138,7 @@ saveFraseRDataSet <- function(fds, dir=NULL, name=NULL, rewrite=FALSE) {
     }
 
     rdsFile <- file.path(outDir, "fds-object.RDS")
-    message(date(), ": Writing final FraseR object ('", rdsFile, "').")
+    message(date(), ": Writing final FRASER object ('", rdsFile, "').")
     saveRDS(fds, rdsFile)
 
     return(fds)
@@ -152,15 +152,15 @@ saveAsHDF5 <- function(fds, name, object=NULL, rewrite=FALSE){
     if(is.null(object)) object <- assay(fds, name)
     
     if(isTRUE(dontWriteHDF5(fds)) | 
-            ncol(fds) <= options()[["FraseR.maxSamplesNoHDF5"]] | 
-            nrow(fds) <= options()[["FraseR.maxJunctionsNoHDF5"]] ){
+            ncol(fds) <= options()[["FRASER.maxSamplesNoHDF5"]] | 
+            nrow(fds) <= options()[["FRASER.maxJunctionsNoHDF5"]] ){
         return(as.matrix(object))
     }
 
     # get defind chunk sizes
     chunkDims <- c(
-        min(nrow(object), options()[['FraseR-hdf5-chunk-nrow']]),
-        min(ncol(object), options()[['FraseR-hdf5-chunk-ncol']]))
+        min(nrow(object), options()[['FRASER-hdf5-chunk-nrow']]),
+        min(ncol(object), options()[['FRASER-hdf5-chunk-ncol']]))
     
     if(isTRUE(dontWriteHDF5(fds))){
         if(verbose(fds) > 3){
@@ -168,7 +168,7 @@ saveAsHDF5 <- function(fds, name, object=NULL, rewrite=FALSE){
         }
         return(object)
     }
-    h5File <- getFraseRHDF5File(fds, name)
+    h5File <- getFraserHDF5File(fds, name)
     h5FileTmp <- paste0(h5File, ".", as.integer(abs(rnorm(1))*100), ".save.tmp")
     if(file.exists(h5FileTmp)) unlink(h5FileTmp)
 
@@ -207,7 +207,7 @@ saveAsHDF5 <- function(fds, name, object=NULL, rewrite=FALSE){
 #'
 #' creates the correct and needed HDF5 file
 #' @noRd
-getFraseRHDF5File <- function(fds, aname){
+getFraserHDF5File <- function(fds, aname){
     dir <- workingDir(fds)
     outDir <- file.path(dir, "savedObjects", nameNoSpace(fds))
     if(!dir.exists(outDir)) {

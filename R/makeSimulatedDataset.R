@@ -1,5 +1,5 @@
 #'
-#' Create an simulated example data set for FraseR
+#' Create an simulated example data set for FRASER
 #'
 #' Simulates a data set based on random counts following a
 #' beta binomial (or Dirichlet-Multinomial) distribution.
@@ -9,7 +9,7 @@
 #' @param q number of simulated latent variables.
 #' @param distribution Either "BB" for a beta-binomial simulation or "DM" for a 
 #' dirichlet-multinomial simulation.
-#' @param ... Further arguments used to construct the FraseRDataSet.
+#' @param ... Further arguments used to construct the FraserDataSet.
 #'
 #' @return An FraserDataSet containing an example dataset based on
 #'         simulated data
@@ -88,11 +88,11 @@ makeSimulatedFraserDataSet_BetaBinomial <- function(m=200, j=10000, q=10,
 
 
     #
-    # Create FraseR data set
+    # Create FRASER data set
     #
     sampleIDs <- paste0("sample", seq_len(m))
     anno <- data.table(sampleID = sampleIDs, bamFile=rep(NA, m))
-    fds <- FraseRDataSet(colData=anno, ...)
+    fds <- FraserDataSet(colData=anno, ...)
 
     # put in n as rawcountsJ first so it doesn't complain later
     # when assinging k to it
@@ -108,7 +108,7 @@ makeSimulatedFraserDataSet_BetaBinomial <- function(m=200, j=10000, q=10,
         rowRanges=GRanges(seqnames=rep("chr1", j),
                 ranges=IRanges(start=seq_len(j), width=1 ))
     )
-    fds <- new("FraseRDataSet",
+    fds <- new("FraserDataSet",
             junctionData,
             name            = name(fds),
             bamParam        = scanBamParam(fds),
@@ -339,11 +339,11 @@ makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=1000, q=10,
 
 
     #
-    # Create FraseR data set
+    # Create FRASER data set
     #
     sampleIDs <- paste0("sample", seq_len(m))
     anno <- data.table(sampleID = sampleIDs, bamFile=rep(NA, m))
-    fds <- FraseRDataSet(colData=anno, ...)
+    fds <- FraserDataSet(colData=anno, ...)
 
     # put in k as rawcountsJ (= nr reads spanning each junction)
     junctionData <- SummarizedExperiment(
@@ -358,7 +358,7 @@ makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=1000, q=10,
         rowRanges=GRanges(seqnames=rep("chr1", d), 
                             ranges=IRanges(start=donorGroups, width=1))
     )
-    fds <- new("FraseRDataSet",
+    fds <- new("FraserDataSet",
                 junctionData,
                 name            = name(fds),
                 bamParam        = scanBamParam(fds),
@@ -416,7 +416,7 @@ makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=1000, q=10,
 #'
 #' Inject artificial outliers in an existing fds
 #' 
-#' @param fds FraseRDataSet
+#' @param fds FraserDataSet
 #' @param type The psi type
 #' @param freq The injection frequency.
 #' @param minDpsi The minimal delta psi with which outliers will be injected.
@@ -431,11 +431,11 @@ makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=1000, q=10,
 #' add to the psi value of the junction in the specific sample. "simulatedPSI" 
 #' is only possible if a simulated dataset is used.
 #' 
-#' @return FraseRDataSet
+#' @return FraserDataSet
 #' 
 #' @examples 
 #' # An example dataset
-#' fds <- createTestFraseRDataSet()
+#' fds <- createTestFraserDataSet()
 #' fds <- injectOutliers(fds, minDpsi=0.2, freq=1E-3)
 #' @export
 injectOutliers <- function(fds, type=c("psi5", "psi3", "psiSite"),

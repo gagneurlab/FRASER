@@ -3,9 +3,9 @@
 #' calculates the pvalue per type (psi3,psi5,spliceSite) with beta-binomial
 #'
 #' @examples
-#' fds <- createTestFraseRDataSet()
+#' fds <- createTestFraserDataSet()
 #' fds <- calculatePSIValues(fds)
-#' debug(FraseR:::betabinVglmTest)
+#' debug(FRASER:::betabinVglmTest)
 #' fds <- pvalueByBetaBinomialPerType(fds, "testPval", "psi5",
 #'         FRASER:::betabinVglmTest)
 #'

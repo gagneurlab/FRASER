@@ -28,7 +28,7 @@ opts_chunk$set(
 \usepackage[nottoc]{tocbibind}
 
 \newcommand{\fraser}{\Biocpkg{FRASER}}
-\newcommand{\fds}{\Rclass{FraseRDataSet}}
+\newcommand{\fds}{\Rclass{FraserDataSet}}
 
 \title{FRASER: Find RAre Splicing Events in RNA-seq}
 
@@ -93,7 +93,7 @@ Mertes C, Scheller I, Yepez V, \emph{et al.}
 \newpage
 
 
-<<loadFraseR, echo=FALSE>>=
+<<loadFraser, echo=FALSE>>=
 suppressPackageStartupMessages({
     library(FRASER)
 })
@@ -115,9 +115,9 @@ in the $\psi$ values by fitting a beta binomial model to the $\psi$ values
 obtained from RNA-seq read counts and correcting for apparent co-variations 
 across samples. Similarly as in \Biocpkg{OUTRIDER}, read counts that 
 significantly deviate from the distribution are detected as outliers. A scheme 
-of this approach is given in Figure \ref{FraseR_sketch}.
+of this approach is given in Figure \ref{FRASER_sketch}.
 
-\incfig{FraseR_sketch}{1\textwidth}{The \fraser{} splicing outlier detection 
+\incfig{FRASER_sketch}{1\textwidth}{The \fraser{} splicing outlier detection 
 workflow.}{
 The workflow starts with RNA-seq aligned reads and performs splicing outlier 
 detection in three steps. First (left column), a splice site map is generated 
@@ -178,7 +178,7 @@ sample annotation table and the corresponding bam files. First, we create an
 \fds{} from the sample annotation and count the relevant reads in the bam files.
 Then, we compute the $\psi/\theta$ values and
 filter out introns that are just noise. Secondly, we run the full
-pipeline using the command \Rfunction{FraseR}. In the last step, we extract the
+pipeline using the command \Rfunction{FRASER}. In the last step, we extract the
 results table from the \fds{} using the \Rfunction{results} function.
 Additionally, the user can create several analysis plots directly from the
 fitted \fds{} object. These plotting functions are described in section
@@ -189,7 +189,7 @@ fitted \fds{} object. These plotting functions are described in section
 library(FRASER)
 
 # count data
-fds <- createTestFraseRSettings()
+fds <- createTestFraserSettings()
 fds <- countRNAData(fds)
 fds
 
@@ -201,7 +201,7 @@ fds <- filterExpressionAndVariability(fds, minExpressionInOneSample=20,
        minDeltaPsi=0.0, filter=TRUE)
 
 # use PCA to speed up the tutorial
-fds <- FraseR(fds, q=2, implementation="PCA")
+fds <- FRASER(fds, q=2, implementation="PCA")
 
 # we provide two ways to anntoate introns with the corresponding gene symbols:
 # the first way uses TxDb-objects provided by the user as shown here
@@ -238,7 +238,7 @@ in RNA-seq data can be divided into the following steps:
     \item Visualize the results \ref{sec:result-vis}
 \end{enumerate}
 
-Step 3-5 are wrapped up in one function \Rfunction{FraseR}, but each step can
+Step 3-5 are wrapped up in one function \Rfunction{FRASER}, but each step can
 be called individually and parametrizied. Either way, data preprocessing should
 be done before starting the analysis, so that samples failing quality
 measurements or introns stemming from background noise are discarded.
@@ -265,7 +265,7 @@ splice junctions.
 You can first create the \fds{} with only the sample annotation and
 subsequently count the reads as described in \ref{sec:CountingReads}. For this,
 we need a table with basic informations which then can be transformed into a
-\Rclass{FraseRSettings} object. The minimum of information per sample is an
+\Rclass{FraserSettings} object. The minimum of information per sample is an
 unique sample name, the path to the aligned bam file.
 Additionally groups can be specified for the P-value calculations later.
 If a \textbf{NA} is assigned no P-values will be calculated. An example sample
@@ -278,8 +278,8 @@ head(sampleTable)
 @
 
 To create a settings object for \fraser{} the constructor
-\Rfunction{FraseRSettings} should be called with at least a sampleData table.
-For an example have a look into the \Rfunction{createTestFraseRSettings}.
+\Rfunction{FraserSettings} should be called with at least a sampleData table.
+For an example have a look into the \Rfunction{createTestFraserSettings}.
 In addition to the sampleData you can specify further parameters.
 
 \begin{enumerate}
@@ -292,34 +292,34 @@ In addition to the sampleData you can specify further parameters.
 The following shows how to create a example \fds{} with only the settings
 options from the sample annotation above:
 
-<<FraseR setting example1, echo=TRUE>>=
+<<FRASER setting example1, echo=TRUE>>=
 # convert it to a bamFile list
 bamFiles <- system.file(sampleTable[,bamFile], package="FRASER", mustWork=TRUE)
 sampleTable[,bamFile:=bamFiles]
 
-# create FraseR object
-settings <- FraseRDataSet(colData=sampleTable,
+# create FRASER object
+settings <- FraserDataSet(colData=sampleTable,
         workingDir=tempdir())
 
-# show the FraseRSettings object
+# show the FraserSettings object
 settings
 @
 
 The \fds{} for this example data can also be generated through the function
-\Rfunction{createTestFraseRSettings}:
+\Rfunction{createTestFraserSettings}:
 
-<<FraseR setting example2, echo=TRUE>>=
-settings <- createTestFraseRSettings()
+<<FRASER setting example2, echo=TRUE>>=
+settings <- createTestFraserSettings()
 settings
 @
 
 Counting of the reads are straight forward and is done through the
 \Rfunction{countRNAData} function. The only required parameter is the
-FraseRSettings object. First all split reads are extracted from each individual
+FraserSettings object. First all split reads are extracted from each individual
 sample and cached if enabled. Then a dataset wide junction map is created
 (all visible junctions over all samples). After that for each sample the
 non-spliced reads at each given donor and acceptor site is counted. The
-resulting \Rclass{FraseRDataSet} object contains two
+resulting \Rclass{FraserDataSet} object contains two
 \Rclass{SummarizedExperiment} objects for each the junctions and the splice
 sites.
 
@@ -357,8 +357,8 @@ spliceSiteCts <- fread(system.file("extdata", "raw_site_counts.tsv.gz",
     package="FRASER", mustWork=TRUE))
 head(spliceSiteCts)
 
-# create FraseR object
-fds <- FraseRDataSet(colData=sampleTable, junctions=junctionCts,
+# create FRASER object
+fds <- FraserDataSet(colData=sampleTable, junctions=junctionCts,
         spliceSites=spliceSiteCts, workingDir=tempdir())
 fds
 @
@@ -458,13 +458,13 @@ confounding effects by using a denoising autoencoder. Here we use a predefined
 latent space with a dimension $q=10$ . Using the correct dimension is crucial
 to have the best performance (see \ref{sec:encDim}). Alternatively, one can
 also use a PCA to correct the data.
-The wrapper function \Rfunction{FraseR} both fits the model and calculates the
+The wrapper function \Rfunction{FRASER} both fits the model and calculates the
 p-values and z-scores for all $\psi$ types. For more details see section
 \ref{sec:details}.
 
 <<model fitting, echo=TRUE>>=
 # This is computational heavy on real size datasets and can take awhile
-fds <- FraseR(fds, q=3)
+fds <- FRASER(fds, q=3)
 @
 
 To check whether the correction worked, we can have a look at the correlation
@@ -573,12 +573,12 @@ A \fds{} object can be easily saved and reloaded at any time as follows:
 # saving a fds
 workingDir(fds) <- tempdir()
 name(fds) <- "ExampleAnalysis"
-saveFraseRDataSet(fds, dir=workingDir(fds), name=name(fds))
+saveFraserDataSet(fds, dir=workingDir(fds), name=name(fds))
 
 # two ways of loading a fds by either specifying the directory and anaysis name
 # or directly giving the path the to fds-object.RDS file
-fds <- loadFraseRDataSet(dir=workingDir(fds), name=name(fds))
-fds <- loadFraseRDataSet(file=file.path(workingDir(fds), 
+fds <- loadFraserDataSet(dir=workingDir(fds), name=name(fds))
+fds <- loadFraserDataSet(file=file.path(workingDir(fds), 
     "savedObjects", "ExampleAnalysis", "fds-object.RDS"))
 
 @
@@ -586,7 +586,7 @@ fds <- loadFraseRDataSet(file=file.path(workingDir(fds),
 \section{More details on \fraser{}}
 \label{sec:details}
 
-The function \Rfunction{FraseR} is a convenient wrapper function that takes 
+The function \Rfunction{FRASER} is a convenient wrapper function that takes 
 care of correcting for confounders, fitting the beta binomial distribution and 
 calculating p-values and z-scores for all $\psi$ types. To have more control 
 over the individual steps, the different functions can also be called 
@@ -595,7 +595,7 @@ separately. The following sections give a short explanation of these steps.
 \subsection{Correction for confounders}
 \label{sec:correction}
 
-The wrapper function \Rfunction{FraseR} and the underlying function 
+The wrapper function \Rfunction{FRASER} and the underlying function 
 \Rfunction{fit} method offer different methods to automatically control for 
 confounders in the data. Currently the following methods are implemented: 
 

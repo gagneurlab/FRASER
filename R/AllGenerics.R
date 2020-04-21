@@ -6,14 +6,14 @@ asSE <- function(x){
 }
 
 asFDS <- function(x){
-    return(as(x, "FraseRDataSet"))
+    return(as(x, "FraserDataSet"))
 }
 
 #'
-#'  Getter/Setter methods for the FraseRDataSet
+#'  Getter/Setter methods for the FraserDataSet
 #'
 #' The following methods are getter and setter methods to extract or set
-#' certain values of a FraseRDataSet object. 
+#' certain values of a FraserDataSet object. 
 #' 
 #' \code{samples} sets or gets the sample IDs; \code{condition} ;
 #' \code{}
@@ -22,13 +22,13 @@ asFDS <- function(x){
 #' sites in the fds.
 #' \code{}
 #'
-#' @param object A FraseRDataSet object.
+#' @param object A FraserDataSet object.
 #' @param value The new value that should replace the current one.
-#' @param x A FraseRDataSet object.
+#' @param x A FraserDataSet object.
 #' @param type The psi type (psi3, psi5 or psiSite)
 #' @return Getter method return the respective current value.
 #' @examples
-#' fds <- createTestFraseRDataSet()
+#' fds <- createTestFraserDataSet()
 #' samples(fds)
 #' samples(fds) <- 1:dim(fds)[2]
 #' condition(fds)
@@ -146,13 +146,13 @@ setGeneric("results", function(x, ...) standardGeneric("results"))
 
 #' @rdname fds-methods
 #' @export
-setMethod("samples", "FraseRDataSet", function(object) {
+setMethod("samples", "FraserDataSet", function(object) {
     return(colData(object)[,"sampleID"])
 })
 
 #' @rdname fds-methods
 #' @export
-setReplaceMethod("samples", "FraseRDataSet", function(object, value) {
+setReplaceMethod("samples", "FraserDataSet", function(object, value) {
     colData(object)[,"sampleID"] <- as.character(value)
     rownames(colData(object)) <- colData(object)[,"sampleID"]
     validObject(object)
@@ -162,7 +162,7 @@ setReplaceMethod("samples", "FraseRDataSet", function(object, value) {
 
 #' @export
 #' @rdname fds-methods
-setMethod("condition", "FraseRDataSet", function(object) {
+setMethod("condition", "FraserDataSet", function(object) {
     if("condition" %in% colnames(colData(object))){
         return(colData(object)[,"condition"])
     }
@@ -171,7 +171,7 @@ setMethod("condition", "FraseRDataSet", function(object) {
 
 #' @export
 #' @rdname fds-methods
-setReplaceMethod("condition", "FraseRDataSet", function(object, value) {
+setReplaceMethod("condition", "FraserDataSet", function(object, value) {
     colData(object)[,"condition"] <- value
     validObject(object)
     return(object)
@@ -180,7 +180,7 @@ setReplaceMethod("condition", "FraseRDataSet", function(object, value) {
 
 #' @export
 #' @rdname fds-methods
-setMethod("bamFile", "FraseRDataSet", function(object) {
+setMethod("bamFile", "FraserDataSet", function(object) {
     bamFile <- colData(object)[,"bamFile"]
     if(all(vapply(bamFile, is, class2="BamFile", FUN.VALUE=logical(1)))){
         bamFile <- vapply(bamFile, path, "")
@@ -190,7 +190,7 @@ setMethod("bamFile", "FraseRDataSet", function(object) {
 
 #' @export
 #' @rdname fds-methods
-setReplaceMethod("bamFile", "FraseRDataSet", function(object, value) {
+setReplaceMethod("bamFile", "FraserDataSet", function(object, value) {
     colData(object)[,"bamFile"] <- value
     validObject(object)
     return(object)
@@ -199,13 +199,13 @@ setReplaceMethod("bamFile", "FraseRDataSet", function(object, value) {
 
 #' @export
 #' @rdname fds-methods
-setMethod("name", "FraseRDataSet", function(object) {
+setMethod("name", "FraserDataSet", function(object) {
     return(slot(object, "name"))
 })
 
 #' @export
 #' @rdname fds-methods
-setReplaceMethod("name", "FraseRDataSet", function(object, value) {
+setReplaceMethod("name", "FraserDataSet", function(object, value) {
     slot(object, "name") <- value
     validObject(object)
     return(object)
@@ -215,13 +215,13 @@ setReplaceMethod("name", "FraseRDataSet", function(object, value) {
 #' @author Christian Mertes \email{mertes@@in.tum.de}
 #' @export
 #' @rdname fds-methods
-setMethod("workingDir", "FraseRDataSet", function(object) {
+setMethod("workingDir", "FraserDataSet", function(object) {
     return(slot(object, "workingDir"))
 })
 
 #' @export
 #' @rdname fds-methods
-setReplaceMethod("workingDir", "FraseRDataSet", function(object, value) {
+setReplaceMethod("workingDir", "FraserDataSet", function(object, value) {
     slot(object, "workingDir") <- value
     validObject(object)
     return(object)
@@ -231,13 +231,13 @@ setReplaceMethod("workingDir", "FraseRDataSet", function(object, value) {
 #' @author Christian Mertes \email{mertes@@in.tum.de}
 #' @export
 #' @rdname fds-methods
-setMethod("strandSpecific", "FraseRDataSet", function(object) {
+setMethod("strandSpecific", "FraserDataSet", function(object) {
     return(slot(object, "strandSpecific"))
 })
 
 #' @export
 #' @rdname fds-methods
-setReplaceMethod("strandSpecific", "FraseRDataSet", function(object, value) {
+setReplaceMethod("strandSpecific", "FraserDataSet", function(object, value) {
     if(is.logical(value)){
         value <- as.integer(value)
     }
@@ -258,13 +258,13 @@ setReplaceMethod("strandSpecific", "FraseRDataSet", function(object, value) {
 
 #' @export
 #' @rdname fds-methods
-setMethod("scanBamParam", "FraseRDataSet", function(object) {
+setMethod("scanBamParam", "FraserDataSet", function(object) {
     return(slot(object, "bamParam"))
 })
 
 #' @export
 #' @rdname fds-methods
-setReplaceMethod("scanBamParam", "FraseRDataSet", function(object, value) {
+setReplaceMethod("scanBamParam", "FraserDataSet", function(object, value) {
     slot(object, "bamParam") <- value
     validObject(object)
     return(object)
@@ -273,13 +273,13 @@ setReplaceMethod("scanBamParam", "FraseRDataSet", function(object, value) {
 
 #' @export
 #' @rdname fds-methods
-setMethod("nonSplicedReads", "FraseRDataSet", function(object){
+setMethod("nonSplicedReads", "FraserDataSet", function(object){
     return(slot(object, "nonSplicedReads"))
 })
 
 #' @export
 #' @rdname fds-methods
-setReplaceMethod("nonSplicedReads", "FraseRDataSet", function(object, value){
+setReplaceMethod("nonSplicedReads", "FraserDataSet", function(object, value){
     slot(object, "nonSplicedReads") <- value
     validObject(object)
     return(object)
@@ -290,20 +290,20 @@ setReplaceMethod("nonSplicedReads", "FraseRDataSet", function(object, value){
 #'
 #' Providing subsetting by indices through the single-bracket operator
 #'
-#' @param x A \code{FraseRDataSet} object
+#' @param x A \code{FraserDataSet} object
 #' @param i A integer vector to subset the rows/ranges
 #' @param j A integer vector to subset the columns/samples
 #' @param by a character (j or ss) definig if we subset by
 #'             junctions or splice sites
-#' @return A subsetted \code{FraseRDataSet} object
+#' @return A subsetted \code{FraserDataSet} object
 #' @examples
-#'     fds <- createTestFraseRDataSet()
+#'     fds <- createTestFraserDataSet()
 #'     fds[1:10,2:3]
 #'     fds[,samples(fds) %in% c("sample1", "sample2")]
 #'     fds[1:10,by="ss"]
 #'
 #' @rdname subset
-subset.FraseR <- function(x, i, j, by=c("j", "ss")){
+subset.FRASER <- function(x, i, j, by=c("j", "ss")){
     if(length(by) == 1){
         by <- whichReadType(x, by)
     }
@@ -358,10 +358,10 @@ subset.FraseR <- function(x, i, j, by=c("j", "ss")){
     if(length(x) == 0){
         i <- NULL
     }
-    subX <- as(as(x, "RangedSummarizedExperiment")[i,j], "FraseRDataSet")
+    subX <- as(as(x, "RangedSummarizedExperiment")[i,j], "FraserDataSet")
 
-    # create new FraseRDataSet object
-    newx <- new("FraseRDataSet",
+    # create new FraserDataSet object
+    newx <- new("FraserDataSet",
             subX,
             name            = name(x),
             bamParam        = scanBamParam(x),
@@ -374,17 +374,17 @@ subset.FraseR <- function(x, i, j, by=c("j", "ss")){
 }
 #' @rdname subset
 #' @export
-setMethod("[", c("FraseRDataSet", "ANY", "ANY"), subset.FraseR)
+setMethod("[", c("FraserDataSet", "ANY", "ANY"), subset.FRASER)
 
 
 #'
-#' Returns the assayNames of FraseR
+#' Returns the assayNames of FRASER
 #' 
-#' @param x FraseRDataSet
+#' @param x FraserDataSet
 #' 
 #' @return Character vector
 #' @export
-setMethod("assayNames", "FraseRDataSet", function(x) {
+setMethod("assayNames", "FraserDataSet", function(x) {
     return(c(
         assayNames(asSE(x)),
         assayNames(nonSplicedReads(x))
@@ -392,7 +392,7 @@ setMethod("assayNames", "FraseRDataSet", function(x) {
 })
 
 
-FraseRDataSet.assays.replace_pre <-
+FraserDataSet.assays.replace_pre <-
             function(x, withDimnames=TRUE, HDF5=TRUE, type=NULL, ..., value){
     if(any(names(value) == "")) stop("Name of an assay can not be empty!")
     if(any(duplicated(names(value)))) stop("Assay names need to be unique!")
@@ -433,9 +433,9 @@ FraseRDataSet.assays.replace_pre <-
     return(list(x=x, value=jslots))
 }
 
-FraseRDataSet.assays.replace_r40 <- function(x, withDimnames=TRUE, HDF5=TRUE, 
+FraserDataSet.assays.replace_r40 <- function(x, withDimnames=TRUE, HDF5=TRUE, 
                 type=NULL, ..., value){
-    ans <- FraseRDataSet.assays.replace_pre(x, withDimnames=withDimnames, 
+    ans <- FraserDataSet.assays.replace_pre(x, withDimnames=withDimnames, 
             HDF5=HDF5, type=type, ..., value=value)
     
     # retrieve adapted objects and set final assays on main SE object
@@ -448,9 +448,9 @@ FraseRDataSet.assays.replace_r40 <- function(x, withDimnames=TRUE, HDF5=TRUE,
     return(x)
 }
 
-FraseRDataSet.assays.replace_r36 <- function(x, ..., HDF5=TRUE, type=NULL, 
+FraserDataSet.assays.replace_r36 <- function(x, ..., HDF5=TRUE, type=NULL, 
                 withDimnames=TRUE, value){
-    ans <- FraseRDataSet.assays.replace_pre(x, withDimnames=withDimnames, 
+    ans <- FraserDataSet.assays.replace_pre(x, withDimnames=withDimnames, 
             HDF5=HDF5, type=type, ..., value=value)
     
     # retrieve adapted objects and set final assays on main SE object
@@ -463,29 +463,29 @@ FraseRDataSet.assays.replace_r36 <- function(x, ..., HDF5=TRUE, type=NULL,
     return(x)
 }
 
-FraseRDataSet.assays.set_r40 <- function(x, withDimnames=TRUE, ...){
+FraserDataSet.assays.set_r40 <- function(x, withDimnames=TRUE, ...){
     return(c(
         assays(asSE(x), withDimnames=withDimnames, ...),
         assays(nonSplicedReads(x), withDimnames=withDimnames, ...)
     ))
 }
 
-FraseRDataSet.assays.set_r36 <- function(x, ..., withDimnames=TRUE){
-    FraseRDataSet.assays.set_r40(x=x, ..., withDimnames=withDimnames)
+FraserDataSet.assays.set_r36 <- function(x, ..., withDimnames=TRUE){
+    FraserDataSet.assays.set_r40(x=x, ..., withDimnames=withDimnames)
 }
 
 if(compareVersion(package.version("SummarizedExperiment"), "1.17-2") < 0){
-    FraseRDataSet.assays.set <- FraseRDataSet.assays.set_r36
-    FraseRDataSet.assays.replace <- FraseRDataSet.assays.replace_r36
+    FraserDataSet.assays.set <- FraserDataSet.assays.set_r36
+    FraserDataSet.assays.replace <- FraserDataSet.assays.replace_r36
 } else {
-    FraseRDataSet.assays.set <- FraseRDataSet.assays.set_r40
-    FraseRDataSet.assays.replace <- FraseRDataSet.assays.replace_r40
+    FraserDataSet.assays.set <- FraserDataSet.assays.set_r40
+    FraserDataSet.assays.replace <- FraserDataSet.assays.replace_r40
 }
 
 #'
-#' Returns the assay for the given name/index of the FraseRDataSet
+#' Returns the assay for the given name/index of the FraserDataSet
 #'
-#' @param x FraseRDataSet
+#' @param x FraserDataSet
 #' @param ... Parameters passed on to SummarizedExperiment::assays() 
 #' @param withDimnames Passed on to SummarizedExperiment::assays() 
 #' @param HDF5 Logical value indicating whether the assay should be stored as 
@@ -495,43 +495,43 @@ if(compareVersion(package.version("SummarizedExperiment"), "1.17-2") < 0){
 #'
 #' @return (Delayed) matrix.
 #' @export
-setMethod("assays", "FraseRDataSet", FraseRDataSet.assays.set)
+setMethod("assays", "FraserDataSet", FraserDataSet.assays.set)
 
-#' @rdname assays-FraseRDataSet-method
+#' @rdname assays-FraserDataSet-method
 #' @export
-setReplaceMethod("assays", c("FraseRDataSet", "SimpleList"),
-        FraseRDataSet.assays.replace)
+setReplaceMethod("assays", c("FraserDataSet", "SimpleList"),
+        FraserDataSet.assays.replace)
 
-#' @rdname assays-FraseRDataSet-method
+#' @rdname assays-FraserDataSet-method
 #' @export
-setReplaceMethod("assays", c("FraseRDataSet", "list"),
-        FraseRDataSet.assays.replace)
+setReplaceMethod("assays", c("FraserDataSet", "list"),
+        FraserDataSet.assays.replace)
 
-#' @rdname assays-FraseRDataSet-method
+#' @rdname assays-FraserDataSet-method
 #' @export
-setReplaceMethod("assays", c("FraseRDataSet", "DelayedMatrix"),
-        FraseRDataSet.assays.replace)
+setReplaceMethod("assays", c("FraserDataSet", "DelayedMatrix"),
+        FraserDataSet.assays.replace)
 
 
 #'
 #' retrieve the length of the object (aka number of junctions)
 #' 
-#' @param x FraseRDataSet
+#' @param x FraserDataSet
 #'
 #' @return Length of the object.
 #' @export
-setMethod("length", "FraseRDataSet", function(x) callNextMethod())
+setMethod("length", "FraserDataSet", function(x) callNextMethod())
 
 #' @rdname fds-methods 
 #' @export
-FraseR.mcols.get <- function(x, type=NULL, ...){
+FRASER.mcols.get <- function(x, type=NULL, ...){
     type <- checkReadType(x, type)
     if(type=="j"){
         return(mcols(asSE(x), ...))
     }
     mcols(nonSplicedReads(x), ...)
 }
-FraseR.mcols.replace <- function(x, type=NULL, ..., value){
+FRASER.mcols.replace <- function(x, type=NULL, ..., value){
     type <- checkReadType(x, type)
     if(type=="j") {
         return(callNextMethod())
@@ -542,30 +542,30 @@ FraseR.mcols.replace <- function(x, type=NULL, ..., value){
     mcols(nonSplicedReads(x), ...) <- value
     return(x)
 }
-setMethod("mcols", "FraseRDataSet", FraseR.mcols.get)
-setReplaceMethod("mcols", "FraseRDataSet", FraseR.mcols.replace)
+setMethod("mcols", "FraserDataSet", FRASER.mcols.get)
+setReplaceMethod("mcols", "FraserDataSet", FRASER.mcols.replace)
 
 #' @rdname fds-methods
 #' @export
-FraseR.rowRanges.get <- function(x, type=NULL, ...){
+FRASER.rowRanges.get <- function(x, type=NULL, ...){
     type <- checkReadType(x, type)
     if(type=="j")  return(callNextMethod())
     if(type=="ss") return(rowRanges(nonSplicedReads(x), ...))
 }
-FraseR.rowRanges.replace <- function(x, type=NULL, ..., value){
+FRASER.rowRanges.replace <- function(x, type=NULL, ..., value){
     type <- checkReadType(x, type)
     if(type=="j") return(callNextMethod())
     rowRanges(nonSplicedReads(x), ...) <- value
     return(x)
 }
 
-setMethod("rowRanges", "FraseRDataSet", FraseR.rowRanges.get)
-setReplaceMethod("rowRanges", "FraseRDataSet", FraseR.rowRanges.replace)
+setMethod("rowRanges", "FraserDataSet", FRASER.rowRanges.get)
+setReplaceMethod("rowRanges", "FraserDataSet", FRASER.rowRanges.replace)
 
 #'
 #' Getter/setter for count data
 #'
-#' @param fds,object FraseRDataSet
+#' @param fds,object FraserDataSet
 #' @param type The psi type.
 #' @param side "ofInterest" for junction counts, "other" for sum of counts of 
 #' all other junctions at the same donor site (psi5) or acceptor site (psi3), 
@@ -573,17 +573,17 @@ setReplaceMethod("rowRanges", "FraseRDataSet", FraseR.rowRanges.replace)
 #' @param value An integer matrix containing the counts.
 #' @param ... Further parameters that are passed to assays(object,...)
 #' 
-#' @return FraseRDataSet
+#' @return FraserDataSet
 #' @rdname counts
 #' @examples 
-#'  fds <- createTestFraseRDataSet()
+#'  fds <- createTestFraserDataSet()
 #'  
 #'  counts(fds, type="psi5", side="ofInterest")
 #'  counts(fds, type="psi5", side="other")
 #'  head(K(fds, type="psi3"))
 #'  head(N(fds, type="psi3"))
 #'  
-setMethod("counts", "FraseRDataSet", function(object, type=NULL,
+setMethod("counts", "FraserDataSet", function(object, type=NULL,
             side=c("ofInterest", "otherSide")){
     side <- match.arg(side)
     if(side=="ofInterest"){
@@ -614,7 +614,7 @@ setMethod("counts", "FraseRDataSet", function(object, type=NULL,
 #' setter for count data
 #' 
 #' @rdname counts
-setReplaceMethod("counts", "FraseRDataSet", function(object, type=NULL,
+setReplaceMethod("counts", "FraserDataSet", function(object, type=NULL,
                     side=c("ofInterest", "otherSide"), ..., value){
     side <- match.arg(side)
 
@@ -694,7 +694,7 @@ resultsSingleSample <- function(sampleID, gr, pvals, padjs, zscores, psivals,
     return(ans[order(mcols(ans)$pValue)])
 }
 
-FraseR.results <- function(x, sampleIDs, fdrCutoff, zscoreCutoff, dPsiCutoff,
+FRASER.results <- function(x, sampleIDs, fdrCutoff, zscoreCutoff, dPsiCutoff,
                     psiType, BPPARAM=bpparam(), maxCols=20, minCount){
 
     # check input
@@ -703,7 +703,7 @@ FraseR.results <- function(x, sampleIDs, fdrCutoff, zscoreCutoff, dPsiCutoff,
     checkNaAndRange(zscoreCutoff, min=0, max=100, scalar=TRUE, na.ok=TRUE)
     checkNaAndRange(minCount,     min=0, max=Inf, scalar=TRUE, na.ok=TRUE)
 
-    stopifnot(is(x, "FraseRDataSet"))
+    stopifnot(is(x, "FraserDataSet"))
     stopifnot(all(sampleIDs %in% samples(x)))
 
     resultsls <- bplapply(psiType, BPPARAM=BPPARAM, function(type){
@@ -778,8 +778,8 @@ FraseR.results <- function(x, sampleIDs, fdrCutoff, zscoreCutoff, dPsiCutoff,
 #' based on the given options and cutoffs. The aberrant function extracts 
 #' aberrant splicing events based on the given cutoffs.
 #'
-#' @param x FraseRDataSet
-#' @param fds FraseRDataSet
+#' @param x FraserDataSet
+#' @param fds FraserDataSet
 #' @param sampleIDs A vector of sample IDs for which results should be 
 #' retrieved
 #' @param padjCutoff The FDR cutoff to be applied or NA if not requested.
@@ -814,7 +814,7 @@ FraseR.results <- function(x, sampleIDs, fdrCutoff, zscoreCutoff, dPsiCutoff,
 #' @rdname results
 #' @examples
 #' # get data, fit and compute p-values and z-scores
-#' fds <- createTestFraseRDataSet()
+#' fds <- createTestFraserDataSet()
 #' 
 #' # extract results: for this example dataset, z score cutoff of 2 is used to
 #' # get at least one result and show the output
@@ -837,11 +837,11 @@ FraseR.results <- function(x, sampleIDs, fdrCutoff, zscoreCutoff, dPsiCutoff,
 #' # find aberrant junctions/splice sites
 #' aberrant(fds, type="psi5")
 #' @export
-setMethod("results", "FraseRDataSet", function(x, sampleIDs=samples(x),
+setMethod("results", "FraserDataSet", function(x, sampleIDs=samples(x),
                     padjCutoff=0.05, zScoreCutoff=NA, deltaPsiCutoff=0.3,
                     minCount=5, psiType=c("psi3", "psi5", "psiSite"),
                     BPPARAM=bpparam()){
-    FraseR.results(x, sampleIDs=sampleIDs, fdrCutoff=padjCutoff,
+    FRASER.results(x, sampleIDs=sampleIDs, fdrCutoff=padjCutoff,
             zscoreCutoff=zScoreCutoff, dPsiCutoff=deltaPsiCutoff,
             minCount=minCount, psiType=match.arg(psiType, several.ok=TRUE),
             BPPARAM=BPPARAM)
@@ -888,7 +888,7 @@ resultsByGenes <- function(res, geneColumn="hgncSymbol", method="BY"){
 #'
 #' Mapping of chromosome names
 #'
-#' @param fds FraseRDataSet
+#' @param fds FraserDataSet
 #' @param style The style of the chromosome names.
 #' @param ... Further parameters. For mapSeqLevels: further parameters 
 #'     passed to GenomeInfoDb::mapSeqlevels().

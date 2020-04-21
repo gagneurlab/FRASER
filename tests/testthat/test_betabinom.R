@@ -2,10 +2,10 @@ context("Test betabinom pvalue calculations")
 
 test_that("Check test randomization is correct", {
     # get subset to speed up test
-    # fds <- getFraseR()
+    # fds <- getFraser()
     # fds <- fds[which(mcols(fds, type="psi3")$psi3_tested)[1:20]]
     # name(fds) <- "betabinomTest"
-    # fds <- saveFraseRDataSet(fds)
+    # fds <- saveFraserDataSet(fds)
     
     # for(psiType in c("psi3", "psi5", "psiSite")){
      #   pvalls <- sapply(1:2, function(i){

@@ -2,14 +2,14 @@
 #' Input check functions
 #'
 #' Checks all user input and returns corresponding messages
-#' checkFraseRDataSet
+#' checkFraserDataSet
 #' 
 #' @return logical(1)
 #' @rdname checkInputFunctions
 #' @noRd
-checkFraseRDataSet <- function(fds){
-    if(!is(fds, "FraseRDataSet")){
-        stop("Please provide a FraseRDataSet object.")
+checkFraserDataSet <- function(fds){
+    if(!is(fds, "FraserDataSet")){
+        stop("Please provide a FraserDataSet object.")
     }
     return(invisible(TRUE))
 }
@@ -17,7 +17,7 @@ checkFraseRDataSet <- function(fds){
 #' @rdname checkInputFunctions
 #' @noRd
 checkCountData <- function(fds, stop=TRUE){
-    checkFraseRDataSet(fds)
+    checkFraserDataSet(fds)
     if(!all(c("rawCountsJ", "rawCountsSS") %in% assayNames(fds))){
         if(isFALSE(stop)) return(invisible(FALSE))
         stop("No counts detected! Please provide counts first.")
@@ -34,11 +34,11 @@ checkCountData <- function(fds, stop=TRUE){
 #'
 #' @return nothing
 #' @examples
-#'     fds <- createTestFraseRSettings()
+#'     fds <- createTestFraserSettings()
 #'     cleanCache(fds)
 #' @noRd
 cleanCache <- function(fds, all=FALSE, cache=TRUE, assays=FALSE, results=FALSE){
-    stopifnot(is(fds, "FraseRDataSet"))
+    stopifnot(is(fds, "FraserDataSet"))
 
     dirs2delete <- c()
     fdsDirName <- nameNoSpace(fds)
@@ -145,7 +145,7 @@ whichReadType <- function(fds, name){
 #' Removes the white spaces to have a cleaner file path
 #'@noRd
 nameNoSpace <- function(name){
-    if(is(name, "FraseRDataSet")) name <- name(name)
+    if(is(name, "FraserDataSet")) name <- name(name)
     stopifnot(isScalarCharacter(name))
     gsub("\\s+", "_", name, perl=TRUE)
 }
@@ -212,7 +212,7 @@ null2na <- function(x){
 #' the qq plot function with confidence band of 5%
 #' @noRd
 fraserQQplotPlotly <- function(pvalues, ci=TRUE, reducePoints=FALSE,
-                    sampleWise=TRUE, main="FraseR QQ-Plot"){
+                    sampleWise=TRUE, main="FRASER QQ-Plot"){
     if(isTRUE(reducePoints)){
         reducePoints <- c(50, 10)
     }
@@ -343,7 +343,7 @@ logger <- function(type="INFO", name=flog.namespace(), ...){
 #' @noRd
 assayExists <- function(fds, assayName){
     stopifnot(isScalarCharacter(assayName))
-    stopifnot(is(fds, "FraseRDataSet"))
+    stopifnot(is(fds, "FraserDataSet"))
 
     aexists <- assayName %in% assayNames(fds)
     if(aexists){
@@ -442,7 +442,7 @@ getHDF5ChunkSize <- function(fds, assayName){
     # taken from here : https://github.com/grimbough/rhdf5/commit/52af7840c7
     # To be backwards compatible to R version 3.5.0
     # 
-    h5file <- getFraseRHDF5File(fds, assayName)
+    h5file <- getFraserHDF5File(fds, assayName)
     h5obj <- H5Fopen(h5file, flags="H5F_ACC_RDONLY")
     h5dataset <- h5obj&assayName
     

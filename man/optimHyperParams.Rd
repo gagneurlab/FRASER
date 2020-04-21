@@ -21,7 +21,7 @@ optimHyperParams(
 )
 }
 \arguments{
-\item{fds}{A FraseRDataSet object}
+\item{fds}{A FraserDataSet object}
 
 \item{type}{The type of PSI (psi5, psi3 or psiSite for theta/splicing 
 efficiency)}
@@ -59,7 +59,7 @@ representations (more memory efficient). The default value depends on the
 number of samples in the fds-object.}
 }
 \value{
-FraseRDataSet
+FraserDataSet
 }
 \description{
 Finds the optimal encoding dimension by injecting artificial splicing outlier
@@ -67,7 +67,7 @@ ratios while maximizing the precision-recall curve.
 }
 \examples{
   # generate data
-  fds <- createTestFraseRDataSet()
+  fds <- createTestFraserDataSet()
   
   # run hyperparameter optimization
   fds <- optimHyperParams(fds, type="psi5", implementation="PCA")

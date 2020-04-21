@@ -3,20 +3,20 @@
 \name{K}
 \alias{K}
 \alias{N}
-\alias{counts,FraseRDataSet-method}
-\alias{counts<-,FraseRDataSet-method}
+\alias{counts,FraserDataSet-method}
+\alias{counts<-,FraserDataSet-method}
 \title{Getter/setter for count data}
 \usage{
 K(fds, type = currentType(fds))
 
 N(fds, type = currentType(fds))
 
-\S4method{counts}{FraseRDataSet}(object, type = NULL, side = c("ofInterest", "otherSide"))
+\S4method{counts}{FraserDataSet}(object, type = NULL, side = c("ofInterest", "otherSide"))
 
-\S4method{counts}{FraseRDataSet}(object, type = NULL, side = c("ofInterest", "otherSide"), ...) <- value
+\S4method{counts}{FraserDataSet}(object, type = NULL, side = c("ofInterest", "otherSide"), ...) <- value
 }
 \arguments{
-\item{fds, object}{FraseRDataSet}
+\item{fds, object}{FraserDataSet}
 
 \item{type}{The psi type.}
 
@@ -29,7 +29,7 @@ respectively.}
 \item{value}{An integer matrix containing the counts.}
 }
 \value{
-FraseRDataSet
+FraserDataSet
 }
 \description{
 Getter/setter for count data
@@ -37,7 +37,7 @@ Getter/setter for count data
 setter for count data
 }
 \examples{
- fds <- createTestFraseRDataSet()
+ fds <- createTestFraserDataSet()
  
  counts(fds, type="psi5", side="ofInterest")
  counts(fds, type="psi5", side="other")

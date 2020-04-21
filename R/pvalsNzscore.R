@@ -1,5 +1,5 @@
 
-#' @describeIn FraseR This function calculates z-scores based on the 
+#' @describeIn FRASER This function calculates z-scores based on the 
 #' observed and expected logit 
 #' psi.
 #' 
@@ -28,7 +28,7 @@ calculateZscore <- function(fds, type=currentType(fds), implementation="PCA"){
     return(fds)
 }
 
-#' @describeIn FraseR This function calculates two-sided p-values based on 
+#' @describeIn FRASER This function calculates two-sided p-values based on 
 #' the beta-binomial distribution (or binomial or normal if desired). The 
 #' returned p values are already adjusted with Holm's method per donor or 
 #' acceptor site, respectively. 
@@ -49,7 +49,7 @@ calculatePvalues <- function(fds, type=currentType(fds),
     currentType(fds) <- type
     fds <- putCounts2Memory(fds, type)
     
-    # if method BB is used take the old FraseR code
+    # if method BB is used take the old FRASER code
     if(implementation %in% c("BB")){
         index <- getSiteIndex(fds, type)
         pvals <- getAssayMatrix(fds, "pvalues_BB", type)
@@ -174,7 +174,7 @@ singlePvalueBinomial <- function(idx, k, n, mu){
     return (pvals)
 }
 
-#' @describeIn FraseR This function adjusts the previously calculated 
+#' @describeIn FRASER This function adjusts the previously calculated 
 #' p-values per sample for multiple testing.
 #' 
 #' @param method The p.adjust method that should be used. 
