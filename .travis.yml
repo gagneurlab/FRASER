@@ -43,6 +43,7 @@ before_install:
 
 install:
   - R --version
+  - R -e 'update.packages(ask=FALSE, Ncpus=4, instlib="/home/travis/R/Library/")'
   - Rscript setupEnv.R
 
 script:
