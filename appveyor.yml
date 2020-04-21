@@ -33,11 +33,12 @@ environment:
     - R_VERSION: devel
       BIOC_USE_DEVEL: TRUE      
     - R_VERSION: release
+    - R_VERSION: 4.0.0
     - R_VERSION: 3.6.0
 
 build_script:
   - travis-tool.sh install_bioc BiocCheck backports
-  - R 'BiocManager::install(update=TRUE, ask=FALSE, dependencies=TRUE, Ncpus=4, type="both")'
+  - R -e 'BiocManager::install(update=TRUE, ask=FALSE, dependencies=TRUE, Ncpus=4, type="both")'
   - Rscript setupEnv.R
 
 test_script:
