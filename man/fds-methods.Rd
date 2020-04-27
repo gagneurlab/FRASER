@@ -11,6 +11,8 @@
 \alias{name<-}
 \alias{strandSpecific}
 \alias{strandSpecific<-}
+\alias{pairedEnd}
+\alias{pairedEnd<-}
 \alias{workingDir}
 \alias{workingDir<-}
 \alias{scanBamParam}
@@ -29,6 +31,8 @@
 \alias{workingDir<-,FraserDataSet-method}
 \alias{strandSpecific,FraserDataSet-method}
 \alias{strandSpecific<-,FraserDataSet-method}
+\alias{pairedEnd,FraserDataSet-method}
+\alias{pairedEnd<-,FraserDataSet-method}
 \alias{scanBamParam,FraserDataSet-method}
 \alias{scanBamParam<-,FraserDataSet-method}
 \alias{nonSplicedReads,FraserDataSet-method}
@@ -57,6 +61,10 @@ name(object) <- value
 strandSpecific(object)
 
 strandSpecific(object) <- value
+
+pairedEnd(object)
+
+pairedEnd(object) <- value
 
 workingDir(object)
 
@@ -93,6 +101,10 @@ nonSplicedReads(object) <- value
 \S4method{strandSpecific}{FraserDataSet}(object)
 
 \S4method{strandSpecific}{FraserDataSet}(object) <- value
+
+\S4method{pairedEnd}{FraserDataSet}(object)
+
+\S4method{pairedEnd}{FraserDataSet}(object) <- value
 
 \S4method{scanBamParam}{FraserDataSet}(object)
 

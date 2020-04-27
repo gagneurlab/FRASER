@@ -292,7 +292,7 @@ getSplitReadCountsForAllSamples <- function(fds, NcpuPerSample=1,
 #' @export
 getNonSplitReadCountsForAllSamples <- function(fds, splitCountRanges, 
                     NcpuPerSample=1, minAnchor=5, recount=FALSE, 
-                    BPPARAM=bpparam(), longRead=TRUE, outDir=file.path(
+                    BPPARAM=bpparam(), longRead=FALSE, outDir=file.path(
                             workingDir(fds), "savedObjects", 
                             nameNoSpace(name(fds)), "nonSplitCounts")){
     
@@ -423,6 +423,7 @@ getSplitCountCacheFile <- function(sampleID, settings){
 countSplitReads <- function(sampleID, fds, NcpuPerSample=1, genome=NULL, 
                             recount=FALSE){
     bamFile <- bamFile(fds[,samples(fds) == sampleID])[[1]]
+    pairedEnd <- pairedEnd(fds[,samples(fds) == sampleID])[[1]]
     
     # check cache if available
     cacheFile <- getSplitCountCacheFile(sampleID, fds)
@@ -453,7 +454,7 @@ countSplitReads <- function(sampleID, fds, NcpuPerSample=1, genome=NULL,
     
     # extract the counts per chromosome
     countsList <- bplapply(chromosomes, FUN=countSplitReadsPerChromosome,
-            bamFile=bamFile, settings=fds, genome=genome,
+            bamFile=bamFile, pairedEnd=pairedEnd, settings=fds, genome=genome,
             BPPARAM=getBPParam(NcpuPerSample, length(chromosomes)))
     
     # sort and merge the results befor returning/saving
@@ -467,7 +468,8 @@ countSplitReads <- function(sampleID, fds, NcpuPerSample=1, genome=NULL,
 #'
 #' counting the split reads per chromosome
 #' @noRd
-countSplitReadsPerChromosome <- function(chromosome, bamFile, settings, genome){
+countSplitReadsPerChromosome <- function(chromosome, bamFile, pairedEnd, 
+                                            settings, genome){
     # restrict to the chromosome only
     which=GRanges(
         seqnames=chromosome,
@@ -479,14 +481,21 @@ countSplitReadsPerChromosome <- function(chromosome, bamFile, settings, genome){
     }
     
     # get reads from bam file
-    galignment <- readGAlignments(bamFile, param=param)
+    if(isFALSE(as.logical(strandSpecific(settings))) || isFALSE(pairedEnd)){
+        galignment <- readGAlignments(bamFile, param=param)
+    } else{
+        galignment <- readGAlignmentPairs(bamFile, param=param, 
+                                            strandMode=strandSpecific(settings))
+    }
     
     # remove the strand information if unstranded data
     if(isFALSE(as.logical(strandSpecific(settings)))){
         strand(galignment) <- "*"
     }
     # invert the strand information for reverse strand specific protocols
-    if(strandSpecific(settings) == 2L){
+    # (only needed for single-end reads as real strand is already set for 
+    # paired-end reads in the readGAlignmentPairs function)
+    if(isFALSE(pairedEnd) && strandSpecific(settings) == 2L){
         galignment <- invertStrand(galignment)
     }
     
@@ -510,6 +519,19 @@ countSplitReadsPerChromosome <- function(chromosome, bamFile, settings, genome){
     
     # get the junction positions and their counts
     jc <- summarizeJunctions(galignment, genome=genome)
+    
+    # for strand specific counting: split result into counts for + and - strand
+    if(isTRUE(as.logical(strandSpecific(settings)))){
+        jcPlus <- jc
+        score(jcPlus) <- mcols(jc)[,"plus_score"]
+        strand(jcPlus) <- "+"
+        jcPlus <- jcPlus[score(jcPlus) > 0,]
+        jcMinus <- jc
+        score(jcMinus) <- mcols(jc)[,"minus_score"]
+        strand(jcMinus) <- "-"
+        jcMinus <- jcMinus[score(jcMinus) > 0,]
+        jc <- c(jcPlus, jcMinus)
+    }
     
     ans <- jc[,"score"]
     colnames(mcols(ans)) <- "count"
@@ -708,7 +730,7 @@ GRanges2SAF <- function(gr, minAnchor=1){
 #' @export
 countNonSplicedReads <- function(sampleID, splitCountRanges, fds,
                     NcpuPerSample=1, minAnchor=5, recount=FALSE,
-                    spliceSiteCoords=NULL, longRead=TRUE){
+                    spliceSiteCoords=NULL, longRead=FALSE){
     
     if(is.null(spliceSiteCoords) | !is(spliceSiteCoords, "GRanges")){
         
@@ -724,6 +746,13 @@ countNonSplicedReads <- function(sampleID, splitCountRanges, fds,
     
     
     bamFile <- bamFile(fds[,samples(fds) == sampleID])[[1]]
+    
+    # unstranded case: for counting only non spliced reads we 
+    # skip this information
+    isPairedEnd <- pairedEnd(fds[,samples(fds) == sampleID])[[1]]
+    if(isFALSE(as.logical(strandSpecific(fds)))){
+        isPairedEnd <- FALSE
+    }
     
     # check cache if available
     cacheFile <- getNonSplicedCountCacheFile(sampleID, fds)
@@ -771,9 +800,9 @@ countNonSplicedReads <- function(sampleID, splitCountRanges, fds,
             # multi-mapping reads
             countMultiMappingReads=TRUE,
             
-            # for counting only non spliced reads we 
+            # unstranded case: for counting only non spliced reads we 
             # skip this information
-            isPairedEnd=FALSE,
+            isPairedEnd=isPairedEnd,
             
             # this is important, otherwise it will sort it by name
             autosort=FALSE,
@@ -927,8 +956,14 @@ annotateSpliceSite <- function(gr){
         ov <- findOverlaps(gr, annogrtmp, type=type)
         mcols(annogrtmp[to(ov)])[["id"]]
     })
-    
     names(ids) <- paste0(c("start", "end"), "ID")
+    
+    if(length(ids[["startID"]]) != length(ids[["endID"]])){
+        stop(paste("Error in assigning IDs to the splice sites. A possible ",
+                "reason is a mix of stranded and unstranded sample-wise ",
+                "counting (+, -, *)."))
+    }
+    
     mcols(gr)[names(ids)] <- DataFrame(ids)
     
     return(gr)

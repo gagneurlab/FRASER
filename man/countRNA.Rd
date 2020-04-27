@@ -44,7 +44,7 @@ getNonSplitReadCountsForAllSamples(
   minAnchor = 5,
   recount = FALSE,
   BPPARAM = bpparam(),
-  longRead = TRUE,
+  longRead = FALSE,
   outDir = file.path(workingDir(fds), "savedObjects", nameNoSpace(name(fds)),
     "nonSplitCounts")
 )
@@ -76,7 +76,7 @@ countNonSplicedReads(
   minAnchor = 5,
   recount = FALSE,
   spliceSiteCoords = NULL,
-  longRead = TRUE
+  longRead = FALSE
 )
 }
 \arguments{

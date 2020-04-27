@@ -20,6 +20,7 @@
 #' @importFrom BiocGenerics updateObject counts counts<- strand strand<- which
 #' @importFrom GenomicFeatures makeTxDbFromGFF intronsByTranscript genes
 #' @importFrom GenomicAlignments junctions readGAlignments summarizeJunctions
+#'          readGAlignmentPairs
 #' @importFrom SummarizedExperiment assay assay<- assays assays<- assayNames
 #'          colData colData<- rowData rowRanges rowRanges<- SummarizedExperiment
 #'          rbind

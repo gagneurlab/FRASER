@@ -14,6 +14,22 @@ test_that("Count junctions", {
     # expect_equal(as.vector(counts(test_rangeFDS, type="ss")), test_rawCountsSS)
 })
 
+test_that("Strand spcific counting", {
+    attach(test_generate_strand_specific_count_example())
+    
+    expect_is(test_fdsSample3_stranded, "FraserDataSet")
+    
+    # test how many ranges we found
+    expect_equal(length(test_rangeFDS_stranded), 5)
+    expect_equal(length(nonSplicedReads(test_rangeFDS_stranded)), 9)
+    
+    # test the manually counted positions
+    expect_equal(as.vector(counts(test_rangeFDS_stranded, type="j")), 
+                    test_rawCountsJ_stranded)
+    # expect_equal(as.vector(counts(test_rangeFDS_stranded, type="ss")),
+    #                 test_rawCountsSS_stranded)
+})
+
 test_that("test minAnchor", {
     fds <- createTestFraserSettings()
     features <- makeGRangesFromDataFrame(data.table(GeneID=1:5, Chr="chr19",

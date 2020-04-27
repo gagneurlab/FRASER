@@ -109,6 +109,16 @@ setGeneric("strandSpecific<-",  signature = "object",
 
 #' @rdname fds-methods
 #' @export
+setGeneric("pairedEnd",    
+           function(object) standardGeneric("pairedEnd"))
+
+#' @rdname fds-methods
+#' @export
+setGeneric("pairedEnd<-",  signature = "object", 
+           function(object, value) standardGeneric("pairedEnd<-"))
+
+#' @rdname fds-methods
+#' @export
 setGeneric("workingDir",        
             function(object) standardGeneric("workingDir"))
 
@@ -251,6 +261,28 @@ setReplaceMethod("strandSpecific", "FraserDataSet", function(object, value) {
                         -1L)
     }
     slot(object, "strandSpecific") <- value
+    validObject(object)
+    return(object)
+})
+
+
+#' @export
+#' @rdname fds-methods
+setMethod("pairedEnd", "FraserDataSet", function(object) {
+    if(!("pairedEnd" %in% colnames(colData(object)))){
+        return(rep(FALSE, length(samples(object))))
+    }
+    pairedEnd <- colData(object)[,"pairedEnd"]
+    return(pairedEnd)
+})
+
+#' @export
+#' @rdname fds-methods
+setReplaceMethod("pairedEnd", "FraserDataSet", function(object, value) {
+    if(any(!is.logical(value))){
+        warning("Value need to be logical. Converting to logical.")
+    }
+    colData(object)[,"pairedEnd"] <- as.logical(value)
     validObject(object)
     return(object)
 })
