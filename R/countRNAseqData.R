@@ -523,11 +523,11 @@ countSplitReadsPerChromosome <- function(chromosome, bamFile, pairedEnd,
     # for strand specific counting: split result into counts for + and - strand
     if(isTRUE(as.logical(strandSpecific(settings)))){
         jcPlus <- jc
-        score(jcPlus) <- mcols(jc)[,"plus_score"]
+        mcols(jcPlus)[,"score"] <- mcols(jc)[,"plus_score"]
         strand(jcPlus) <- "+"
-        jcPlus <- jcPlus[score(jcPlus) > 0,]
+        jcPlus <- jcPlus[mcols(jcPlus)[,"score"] > 0,]
         jcMinus <- jc
-        score(jcMinus) <- mcols(jc)[,"minus_score"]
+        mcols(jcMinus)[,"score"] <- mcols(jc)[,"minus_score"]
         strand(jcMinus) <- "-"
         jcMinus <- jcMinus[score(jcMinus) > 0,]
         jc <- c(jcPlus, jcMinus)
