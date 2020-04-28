@@ -529,7 +529,7 @@ countSplitReadsPerChromosome <- function(chromosome, bamFile, pairedEnd,
         jcMinus <- jc
         mcols(jcMinus)[,"score"] <- mcols(jc)[,"minus_score"]
         strand(jcMinus) <- "-"
-        jcMinus <- jcMinus[score(jcMinus) > 0,]
+        jcMinus <- jcMinus[mcols(jcMinus)[,"score"] > 0,]
         jc <- c(jcPlus, jcMinus)
     }
     
