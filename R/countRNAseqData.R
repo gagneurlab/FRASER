@@ -518,10 +518,24 @@ countSplitReadsPerChromosome <- function(chromosome, bamFile, pairedEnd,
     }
     
     # get the junction positions and their counts
-    jc <- summarizeJunctions(galignment, genome=genome)
+    jc <- summarizeJunctions(galignment, genome=genome, 
+            with.revmap=(as.logical(strandSpecific(settings)) && pairedEnd) )
     
     # for strand specific counting: split result into counts for + and - strand
     if(isTRUE(as.logical(strandSpecific(settings)))){
+        
+        # for paired-end reads: ensure that each read pair is only counted once
+        if(isTRUE(pairedEnd)){
+            fragment_counts <- vapply(jc@elementMetadata$revmap, 
+                                FUN=function(pairs){
+                                    strands <- strand(galignment[pairs,])
+                                    return(c(plus_score=sum(strands == "+"),
+                                            minus_score=sum(strands == "-")))
+                                }, FUN.VALUE=integer(2) )
+            mcols(jc)[,"plus_score"]  <- fragment_counts["plus_score",]
+            mcols(jc)[,"minus_score"] <- fragment_counts["minus_score",]
+        }
+        
         jcPlus <- jc
         mcols(jcPlus)[,"score"] <- mcols(jc)[,"plus_score"]
         strand(jcPlus) <- "+"
@@ -753,6 +767,7 @@ countNonSplicedReads <- function(sampleID, splitCountRanges, fds,
     if(isFALSE(as.logical(strandSpecific(fds)))){
         isPairedEnd <- FALSE
     }
+    doAutosort <- isPairedEnd
     
     # check cache if available
     cacheFile <- getNonSplicedCountCacheFile(sampleID, fds)
@@ -804,8 +819,8 @@ countNonSplicedReads <- function(sampleID, splitCountRanges, fds,
             # skip this information
             isPairedEnd=isPairedEnd,
             
-            # this is important, otherwise it will sort it by name
-            autosort=FALSE,
+            # sorting only needed for paired-end reads
+            autosort=doAutosort,
             nthreads=NcpuPerSample,
             tmpDir=file.path(file_path_as_absolute(workingDir(fds)), "cache")
     )

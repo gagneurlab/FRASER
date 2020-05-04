@@ -75,15 +75,46 @@ test_generate_strand_specific_count_example <- function(recount=FALSE){
         test_fdsSample3_stranded[to(test_rangeOV_stranded)]
     
     #
-    # This is manually counted from the IGV browser
+    # This is manually counted from the IGV browser 
+    # colored by first of pair strand
     #
-    test_rawCountsJ_stranded   <- c(2, 1, 2, 10, 1) # first of pair strand
-    # after sorting: ranges on + strand are before ranges on - strand
-    test_rawCountsSS_stranded  <- c(2, 3, 0, 0, 3, 4, 5, 0, 0)
-    # currently returned nonSplit counts: c(2, 3, 0, 0, 2, 5, 4, 0, 0)
+    
+    # currently:
+    # split counts: reads pairs with both ends mapped counted
+    # nonSplit: read pairs counted, not requiring both ends mapped
+    
+    # split counts and ranges:
+    # GRanges object with 5 ranges and 2 metadata columns:
+    #     seqnames          ranges strand |   startID     endID
+    # [1]    chr19 7592515-7592749      + |         4        51
+    # [2]    chr19 7592515-7592749      - |        17        64
+    # [3]    chr19 7594599-7595171      + |        11        57
+    # [4]    chr19 7594599-7595171      - |        23        70
+    # [5]    chr19 7594599-7595320      + |        11        58
+    test_rawCountsJ_stranded   <- c(1, 1, 2, 8, 1)
+    # if individual reads (with mapped mate in bam) are counted: 
+    # c(2, 1, 2, 10, 1)
+    
+    # nonSplit ranges and counts:
+    # GRanges object with 9 ranges and 2 metadata columns:
+    #     seqnames          ranges strand | spliceSiteID     type
+    # [1]    chr19 7592514-7592515      + |            4    Donor
+    # [2]    chr19 7592749-7592750      + |           51 Acceptor
+    # [3]    chr19 7594598-7594599      + |           11    Donor
+    # [4]    chr19 7595171-7595172      + |           57 Acceptor
+    # [5]    chr19 7595320-7595321      + |           58 Acceptor
+    # [6]    chr19 7592514-7592515      - |           17 Acceptor
+    # [7]    chr19 7592749-7592750      - |           64    Donor
+    # [8]    chr19 7594598-7594599      - |           23 Acceptor
+    # [9]    chr19 7595171-7595172      - |           70    Donor
+    # manual counted based on read pairs:
+    test_rawCountsSS_stranded  <- c(1, 3, 0, 0, 2, 6, 5, 0, 0) 
+    
     test_p5rawOCounts_stranded <- c(0, 0, 1, 0, 2)
     test_p3rawOCounts_stranded <- c(0, 0, 0, 0, 0)
     test_pSrawOCounts_stranded <- c(2, 2, 3, 2, 1, 1, 1, 10, 10)
+    
+    
     
     return(list(
         test_fdsSample3_stranded=test_fdsSample3_stranded,

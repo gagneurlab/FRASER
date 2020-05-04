@@ -26,8 +26,8 @@ test_that("Strand spcific counting", {
     # test the manually counted positions
     expect_equal(as.vector(counts(test_rangeFDS_stranded, type="j")), 
                     test_rawCountsJ_stranded)
-    # expect_equal(as.vector(counts(test_rangeFDS_stranded, type="ss")),
-    #                 test_rawCountsSS_stranded)
+    expect_equal(as.vector(counts(test_rangeFDS_stranded, type="ss")),
+                    test_rawCountsSS_stranded)
 })
 
 test_that("test minAnchor", {

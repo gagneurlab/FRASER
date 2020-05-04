@@ -11,8 +11,8 @@ FraserDataSet(colData = NULL, junctions = NULL, spliceSites = NULL, ...)
 
 \item{junctions, spliceSites}{A data.frame like object containing the 
 raw counts for each junction or splice site.
-It requires the columns \code{startID} and \code{endID} for the 
-junctions and \code{spliceSiteID} and \code{type} for the
+It requires the columns \code{startID} and \code{endID} for 
+the junctions and \code{spliceSiteID} and \code{type} for the
 splice sites. Those columns identifies the corresponding
 splice site for the given junction and map to the splice site.
 For each sample the counts are saved in a corresponding 

@@ -110,12 +110,12 @@ setGeneric("strandSpecific<-",  signature = "object",
 #' @rdname fds-methods
 #' @export
 setGeneric("pairedEnd",    
-           function(object) standardGeneric("pairedEnd"))
+            function(object) standardGeneric("pairedEnd"))
 
 #' @rdname fds-methods
 #' @export
 setGeneric("pairedEnd<-",  signature = "object", 
-           function(object, value) standardGeneric("pairedEnd<-"))
+            function(object, value) standardGeneric("pairedEnd<-"))
 
 #' @rdname fds-methods
 #' @export
