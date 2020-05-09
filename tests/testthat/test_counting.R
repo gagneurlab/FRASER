@@ -28,6 +28,14 @@ test_that("Strand spcific counting", {
                     test_rawCountsJ_stranded)
     expect_equal(as.vector(counts(test_rangeFDS_stranded, type="ss")),
                     test_rawCountsSS_stranded)
+    
+    # check for non empty chromosome but no split reads present
+    fds <- createTestFraserSettings()
+    strandSpecific(fds) <- TRUE
+    ans <- countSplitReadsPerChromosome("chrUn_gl000218", bamFile(fds)[1], 
+            pairedEnd=TRUE, settings=fds, genome=NULL)
+    expect_equivalent(ans, GRanges())
+    
 })
 
 test_that("test minAnchor", {

@@ -521,6 +521,10 @@ countSplitReadsPerChromosome <- function(chromosome, bamFile, pairedEnd,
     jc <- summarizeJunctions(galignment, genome=genome, 
             with.revmap=(as.logical(strandSpecific(settings)) && pairedEnd) )
     
+    if(length(jc) == 0){
+        return(GRanges())
+    }
+    
     # for strand specific counting: split result into counts for + and - strand
     if(isTRUE(as.logical(strandSpecific(settings)))){
         
