@@ -447,6 +447,9 @@ countSplitReads <- function(sampleID, fds, NcpuPerSample=1, genome=NULL,
         if(length(cache) > 0){
             message(date(), ": Using existing split read counts for sample: ", 
                     sampleID)
+            if(isFALSE(keepNonStandardChromosomes)){
+                cache <- keepStandardChromosomes(cache,  pruning.mode="coarse")
+            }
             return(checkSeqLevelStyle(cache, fds, sampleID,
                                         sampleSpecific=FALSE))
         }
