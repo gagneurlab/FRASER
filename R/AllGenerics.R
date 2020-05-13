@@ -157,7 +157,7 @@ setGeneric("results", function(x, ...) standardGeneric("results"))
 #' @rdname fds-methods
 #' @export
 setMethod("samples", "FraserDataSet", function(object) {
-    return(colData(object)[,"sampleID"])
+    return(as.character(colData(object)[,"sampleID"]))
 })
 
 #' @rdname fds-methods
