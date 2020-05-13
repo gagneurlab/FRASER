@@ -260,13 +260,17 @@ pVals <- function(fds, type=currentType(fds), dist="BetaBinomial", ...){
 #' @export
 padjVals <- function(fds, type=currentType(fds), dist=c("BetaBinomial"), ...){
     dist <- match.arg(dist, choices=c("BetaBinomial", "Binomial", "Normal"))
-    getAssayMatrix(fds, paste0("pajd", dist), type=type, ...)
+    if( paste(paste0("padj", dist), type, sep="_") %in% assayNames(fds)){
+        return(getAssayMatrix(fds, paste0("padj", dist), type=type, ...))
+    } else{
+        return(getAssayMatrix(fds, paste0("pajd", dist), type=type, ...))
+    }
 }
 
 `padjVals<-` <- function(fds, type=currentType(fds),
                     dist="BetaBinomial", ..., value){
     dist <- match.arg(dist, choices=c("BetaBinomial", "Binomial", "Normal"))
-    setAssayMatrix(fds, name=paste0("pajd", dist), type=type, ...) <- value
+    setAssayMatrix(fds, name=paste0("padj", dist), type=type, ...) <- value
     return(fds)
 }
 
