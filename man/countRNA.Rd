@@ -21,6 +21,7 @@ countRNAData(
   junctionMap = NULL,
   filter = TRUE,
   minExpressionInOneSample = 20,
+  keepNonStandardChromosomes = TRUE,
   countDir = file.path(workingDir(fds), "savedObjects", nameNoSpace(name(fds))),
   ...
 )
@@ -33,6 +34,7 @@ getSplitReadCountsForAllSamples(
   BPPARAM = bpparam(),
   genome = NULL,
   countFiles = NULL,
+  keepNonStandardChromosomes = TRUE,
   outDir = file.path(workingDir(fds), "savedObjects", nameNoSpace(name(fds)),
     "splitCounts")
 )
@@ -56,7 +58,8 @@ countSplitReads(
   fds,
   NcpuPerSample = 1,
   genome = NULL,
-  recount = FALSE
+  recount = FALSE,
+  keepNonStandardChromosomes = TRUE
 )
 
 mergeCounts(
@@ -115,6 +118,9 @@ helps to speed up the subsequent steps.}
 
 \item{minExpressionInOneSample}{The minimal split read count in at least one 
 sample that is required for an intron to pass the filter.}
+
+\item{keepNonStandardChromosomes}{Logical value indicating if non standard 
+chromosomes should also be counted. Defaults to \code{TRUE}.}
 
 \item{countDir}{The directory in which the tsv containing the position and 
 counts of the junctions should be placed.}

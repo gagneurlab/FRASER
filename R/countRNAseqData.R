@@ -59,6 +59,8 @@
 #' helps to speed up the subsequent steps.  
 #' @param minExpressionInOneSample The minimal split read count in at least one 
 #' sample that is required for an intron to pass the filter.
+#' @param keepNonStandardChromosomes Logical value indicating if non standard 
+#'     chromosomes should also be counted. Defaults to \code{TRUE}.
 #' @param BPPARAM the BiocParallel parameters for the parallelization
 #' @param countDir The directory in which the tsv containing the position and 
 #'                 counts of the junctions should be placed.
@@ -116,6 +118,7 @@ NULL
 countRNAData <- function(fds, NcpuPerSample=1, minAnchor=5, recount=FALSE,
                         BPPARAM=bpparam(), genome=NULL, junctionMap=NULL,
                         filter=TRUE, minExpressionInOneSample=20,
+                        keepNonStandardChromosomes=TRUE,
                         countDir=file.path(workingDir(fds), "savedObjects", 
                                             nameNoSpace(name(fds))),
                         ...){
@@ -147,6 +150,8 @@ countRNAData <- function(fds, NcpuPerSample=1, minAnchor=5, recount=FALSE,
                                                 recount=recount, 
                                                 BPPARAM=BPPARAM, 
                                                 genome=genome,
+                                                keepNonStandardChromosomes=
+                                                    keepNonStandardChromosomes,
                                                 outDir=file.path(countDir, 
                                                         "splitCounts"))
     
@@ -186,6 +191,7 @@ getSplitReadCountsForAllSamples <- function(fds, NcpuPerSample=1,
                                             junctionMap=NULL, recount=FALSE, 
                                             BPPARAM=bpparam(), genome=NULL, 
                                             countFiles=NULL,
+                                            keepNonStandardChromosomes=TRUE,
                                             outDir=file.path(workingDir(fds), 
                                                         "savedObjects", 
                                                         nameNoSpace(name(fds)),
@@ -227,7 +233,9 @@ getSplitReadCountsForAllSamples <- function(fds, NcpuPerSample=1,
                                 BPPARAM=BPPARAM,
                                 NcpuPerSample=NcpuPerSample,
                                 genome=genome,
-                                recount=recount)
+                                recount=recount,
+                                keepNonStandardChromosomes=
+                                    keepNonStandardChromosomes)
         
         
     } else { # counts should be read from files
@@ -421,7 +429,7 @@ getSplitCountCacheFile <- function(sampleID, settings){
 #' @return \code{\link{countSplitReads}} returns a GRanges object.
 #' @export
 countSplitReads <- function(sampleID, fds, NcpuPerSample=1, genome=NULL, 
-                            recount=FALSE){
+                            recount=FALSE, keepNonStandardChromosomes=TRUE){
     bamFile <- bamFile(fds[,samples(fds) == sampleID])[[1]]
     pairedEnd <- pairedEnd(fds[,samples(fds) == sampleID])[[1]]
     
@@ -447,6 +455,11 @@ countSplitReads <- function(sampleID, fds, NcpuPerSample=1, genome=NULL,
     
     # parallelize over chromosomes
     chromosomes <- extractChromosomes(bamFile)
+    
+    if(isFALSE(keepNonStandardChromosomes)){
+        chr_gr <- GRanges(seqnames=paste0(chromosomes, ":1-2"))
+        chromosomes <- standardChromosomes(chr_gr)
+    }
     
     if(is.character(genome) && length(genome) > 1){
         genome <- genome[sampleID]
