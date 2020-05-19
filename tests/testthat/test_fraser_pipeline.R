@@ -13,7 +13,7 @@ test_that("FraserDataSet create settings", {
     fds <- createTestFraserDataSet()
     expect_is(fds, "FraserDataSet")
     anames <- c(psiTypes, paste0(c("delta", "predictedMeans", 
-            "pvaluesBetaBinomial", "pajdBetaBinomial", "zScores"), "_", 
+            "pvaluesBetaBinomial", "padjBetaBinomial", "zScores"), "_", 
             rep(psiTypes, 5)))
     expect_equal(anames %in% assayNames(fds), !logical(length(anames)))
 })
