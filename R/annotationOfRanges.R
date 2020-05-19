@@ -86,7 +86,9 @@ annotateRanges <- function(fds, feature="hgnc_symbol", featureName=feature,
             strand(annotation) <- "*"
         }
         annos <- getAnnotationFeature(data=gr, featureName, annotation)
-        mcols(fds, type=i)[[featureName]] <- annos
+        mcols(fds, type=i)[[featureName]] <- annos[["feature"]]
+        mcols(fds, type=i)[[paste0("other_", featureName)]] <- 
+            annos[["other_features"]]
     }
 
     return(fds)
@@ -135,8 +137,10 @@ annotateRangesWithTxDb <- function(fds, feature="SYMBOL",
         }
         
         # retrieve the feature of interest for the split reads
-        mcols(fds, type=i)[[featureName]] <- 
-            getAnnotationFeature(gr, featureName, anno)
+        annos <- getAnnotationFeature(data=gr, featureName, anno)
+        mcols(fds, type=i)[[featureName]] <- annos[["feature"]]
+        mcols(fds, type=i)[[paste0("other_", featureName)]] <- 
+            annos[["other_features"]]
     }
     
     return(fds)   
@@ -201,13 +205,15 @@ getAnnotationFeature <- function(data, feature, annotation){
 
     # TODO only take first hit since it is tooo slow to merge them
     # with more then 10k entries
-    featureDT <- unique(featureDT, by="from")
-    # featureDT <- featureDT[,
-    #        list(feature=paste(sort(unique(feature)), collapse = ";")),
-    #        by="from"
-    # ]
+    # featureDT <- unique(featureDT, by="from")
+    featureDT <- featureDT[,
+            list(first_feature=unique(feature)[1], 
+                other_features=paste(unique(feature)[-1], collapse = ";")),
+            by="from"
+    ]
 
-    return(featureDT[order(from),feature])
+    return(list(feature=featureDT[order(from),first_feature],
+                other_features=featureDT[order(from),other_features]))
 }
 
 

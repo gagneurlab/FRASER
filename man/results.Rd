@@ -17,6 +17,7 @@ results(x, ...)
   deltaPsiCutoff = 0.3,
   minCount = 5,
   psiType = c("psi3", "psi5", "psiSite"),
+  additionalColumns = NULL,
   BPPARAM = bpparam()
 )
 
@@ -55,6 +56,11 @@ to be considered as significant.
 result}
 
 \item{psiType}{The psi types for which the results should be retrieved.}
+
+\item{additionalColumns}{Character vector containing the names of additional 
+columns from mcols(fds) that should appear in the result table 
+(e.g. ensembl_gene_id). Default is \code{NULL}, so no additional columns 
+are included.}
 
 \item{BPPARAM}{The BiocParallel parameter.}
 

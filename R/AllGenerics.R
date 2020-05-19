@@ -678,7 +678,8 @@ setAs("DataFrame", "matrix", function(from){
 #' @noRd
 resultsSingleSample <- function(sampleID, gr, pvals, padjs, zscores, psivals,
                 rawCts, rawTotalCts, deltaPsiVals, muPsi, psiType, fdrCut,
-                zscoreCut, dPsiCut, rowMeansK, rowMeansN, minCount){
+                zscoreCut, dPsiCut, rowMeansK, rowMeansN, minCount,
+                additionalColumns){
 
     zscore  <- zscores[,sampleID]
     dpsi    <- deltaPsiVals[,sampleID]
@@ -722,12 +723,19 @@ resultsSingleSample <- function(sampleID, gr, pvals, padjs, zscores, psivals,
     mcols(ans)$meanTotalCounts <- Rle(round(rowMeansN[goodCut], 2))
     mcols(ans)$counts          <- Rle(rawCts[goodCut, sampleID])
     mcols(ans)$totalCounts     <- Rle(rawTotalCts[goodCut, sampleID])
+    
+    if(!is.null(additionalColumns)){
+        for(column in additionalColumns){
+            mcols(ans)[,column] <- Rle(mcols(gr[goodCut])[,column])
+        }
+    }
 
     return(ans[order(mcols(ans)$pValue)])
 }
 
 FRASER.results <- function(x, sampleIDs, fdrCutoff, zscoreCutoff, dPsiCutoff,
-                    psiType, BPPARAM=bpparam(), maxCols=20, minCount){
+                    psiType, BPPARAM=bpparam(), maxCols=20, minCount, 
+                    additionalColumns=NULL){
 
     # check input
     checkNaAndRange(fdrCutoff,    min=0, max=1,   scalar=TRUE, na.ok=TRUE)
@@ -782,7 +790,7 @@ FRASER.results <- function(x, sampleIDs, fdrCutoff, zscoreCutoff, dPsiCutoff,
                     rawTotalCts=rawTotalCts, fdrCut=fdrCutoff,
                     zscoreCut=zscoreCutoff, dPsiCut=dPsiCutoff,
                     rowMeansK=rowMeansK, rowMeansN=rowMeansN, 
-                    minCount=minCount)
+                    minCount=minCount, additionalColumns=additionalColumns)
 
             # return combined result
             return(unlist(GRangesList(sampleRes)))
@@ -820,6 +828,10 @@ FRASER.results <- function(x, sampleIDs, fdrCutoff, zscoreCutoff, dPsiCutoff,
 #' to be considered as significant.
 #' result
 #' @param psiType The psi types for which the results should be retrieved.
+#' @param additionalColumns Character vector containing the names of additional 
+#' columns from mcols(fds) that should appear in the result table 
+#' (e.g. ensembl_gene_id). Default is \code{NULL}, so no additional columns 
+#' are included. 
 #' @param BPPARAM The BiocParallel parameter.
 #' @param res Result as created with \code{results()}
 #' @param geneColumn The name of the column in \code{mcols(res)} that contains 
@@ -871,11 +883,11 @@ FRASER.results <- function(x, sampleIDs, fdrCutoff, zscoreCutoff, dPsiCutoff,
 setMethod("results", "FraserDataSet", function(x, sampleIDs=samples(x),
                     padjCutoff=0.05, zScoreCutoff=NA, deltaPsiCutoff=0.3,
                     minCount=5, psiType=c("psi3", "psi5", "psiSite"),
-                    BPPARAM=bpparam()){
+                    additionalColumns=NULL, BPPARAM=bpparam()){
     FRASER.results(x, sampleIDs=sampleIDs, fdrCutoff=padjCutoff,
             zscoreCutoff=zScoreCutoff, dPsiCutoff=deltaPsiCutoff,
             minCount=minCount, psiType=match.arg(psiType, several.ok=TRUE),
-            BPPARAM=BPPARAM)
+            additionalColumns=additionalColumns, BPPARAM=BPPARAM)
 })
 
 #' @rdname results
