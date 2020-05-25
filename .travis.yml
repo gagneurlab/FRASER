@@ -48,7 +48,7 @@ install:
 
 script:
   - R CMD build --keep-empty-dirs --no-resave-data .
-  - R CMD BiocCheck --new-package *tar.gz
+  - R CMD BiocCheck *tar.gz
   - R CMD check --no-vignettes --timings *tar.gz
   - cd vignettes && R CMD Sweave --engine=knitr::knitr --pdf FRASER.Rnw
   - R -e 'devtools::run_examples()'
