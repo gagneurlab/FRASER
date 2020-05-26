@@ -773,7 +773,9 @@ FRASER.results <- function(x, sampleIDs, fdrCutoff, zscoreCutoff, dPsiCutoff,
             zscores      <- as.matrix(zScores(tmp_x))
             psivals      <- as.matrix(assay(tmp_x, type))
             muPsi        <- as.matrix(predictedMeans(tmp_x))
-            deltaPsiVals <- psivals - muPsi
+            psivals_pc   <- (rawCts + pseudocount()) /
+                                (rawTotalCts + 2*pseudocount())
+            deltaPsiVals <- psivals_pc - muPsi
 
             if(length(sc) == 1){
                 colnames(pvals) <- sc

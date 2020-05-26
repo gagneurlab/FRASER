@@ -325,7 +325,7 @@ plotExpression <- function(fds, type=c("psi5", "psi3", "psiSite"),
             "p value: ", signif(pval, 5), "<br>",
             "padjust: ", signif(padj, 5), "<br>",
             "Observed Psi: ", round(obsPsi, 2), "<br>",
-            "Predicted mu: ", round(predPsi), "<br>"))) +
+            "Predicted mu: ", round(predPsi, 2), "<br>"))) +
         geom_point(alpha=ifelse(as.character(dt$aberrant) == "TRUE", 1, 0.7)) +
         scale_x_log10() +
         scale_y_log10() +

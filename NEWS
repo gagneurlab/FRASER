@@ -1,3 +1,13 @@
+CHANGES IN VERSION 1.1.2
+-------------------------
+
+    o Option to consider only the standard chromosomes in the counting
+    o Option to include additional columns from mcols(fds) in the result table
+    o Annotation of junctions with corresponding gene names/ids now produces 
+      an additional column in mcols(fds) that contains further gene names/ids 
+      if the junction overlaps with multiple genes
+    o Minor bugfixes 
+
 CHANGES IN VERSION 1.1.1
 -------------------------
 
