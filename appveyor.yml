@@ -42,6 +42,7 @@ environment:
     - R_VERSION: 3.6.0
 
 build_script:
+  - Rscript -e "update.packages(ask=FALSE, Ncpus=4, type='both', repos='https://cran.rstudio.com/')"
   - travis-tool.sh install_bioc BiocCheck backports
   - R -e "BiocManager::install(update=TRUE, ask=FALSE, dependencies=TRUE, Ncpus=4, type='both')"
   - Rscript setupEnv.R
