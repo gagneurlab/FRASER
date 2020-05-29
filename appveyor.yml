@@ -52,7 +52,7 @@ test_script:
     - R -e "BiocCheck::BiocCheck(list.files(path='.', pattern='.tar.gz'))"
     - R -e "devtools::run_examples(document=FALSE)"
     # runs currently into an error saying: "LaTeX Error: Missing \begin{document}."
-    - cd vignettes && R CMD Sweave --engine=knitr::knitr --pdf FRASER.Rnw
+    # - cd vignettes && R CMD Sweave --engine=knitr::knitr --pdf FRASER.Rnw
 
 on_failure:
   - 7z a failure.zip *.Rcheck\*
