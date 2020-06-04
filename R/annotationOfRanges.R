@@ -22,6 +22,8 @@
 #' one is used, currently this is \code{TxDb.Hsapiens.UCSC.hg19.knownGene}.
 #' @param orgDb An \code{orgDb} object If this is NULL, then the 
 #' default one is used, currently this is \code{org.Hs.eg.db}.
+#' @param keytype The type of gene IDs in the \code{TxDb} object (see 
+#' AnnotationDbi::keytypes(orgDb) for a list of available ID types).
 #' 
 #' @return FraserDataSet
 #' 
@@ -98,6 +100,7 @@ annotateRanges <- function(fds, feature="hgnc_symbol", featureName=feature,
 #' @export
 annotateRangesWithTxDb <- function(fds, feature="SYMBOL", 
                                     featureName="hgnc_symbol",
+                                    keytype="ENTREZID",
                                     txdb=NULL, orgDb=NULL){
     
     # check input
@@ -127,9 +130,12 @@ annotateRangesWithTxDb <- function(fds, feature="SYMBOL",
         
         # get the annotation to compare to
         anno <- genes(txdb)
-        mcols(anno)[[featureName]] <- 
-            select(orgDb, keys=mcols(anno)[,"gene_id"], columns=feature, 
-                    keytype="ENTREZID")[,feature]
+        tmp  <- select(orgDb, keys=mcols(anno)[,"gene_id"], columns=feature, 
+                    keytype=keytype)
+        tmp  <- as.data.table(tmp)
+        tmp[, uniqueID := .GRP, by=keytype]
+        anno <- anno[tmp[,uniqueID]]
+        mcols(anno)[[featureName]] <- tmp[,get(feature)]
         anno <- anno[!is.na(mcols(anno)[,featureName]),]
         anno <- anno[mcols(anno)[,featureName] != "",]
         if(any(strand(gr) == "*")){

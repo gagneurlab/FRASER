@@ -18,6 +18,7 @@ annotateRangesWithTxDb(
   fds,
   feature = "SYMBOL",
   featureName = "hgnc_symbol",
+  keytype = "ENTREZID",
   txdb = NULL,
   orgDb = NULL
 )
@@ -38,6 +39,9 @@ used (hsapiens_gene_ensembl, GRCh37).}
 \item{GRCh}{GRCh version to connect to. If this is NULL, then the current 
 GRCh38 is used. Otherwise, this can only be 37 (default) at the moment 
 (see \code{useEnsembl}).}
+
+\item{keytype}{The type of gene IDs in the \code{TxDb} object (see 
+AnnotationDbi::keytypes(orgDb) for a list of available ID types).}
 
 \item{txdb}{A \code{TxDb} object. If this is NULL, then the default 
 one is used, currently this is \code{TxDb.Hsapiens.UCSC.hg19.knownGene}.}
