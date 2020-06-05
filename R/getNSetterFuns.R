@@ -566,6 +566,11 @@ getPlottingDT <- function(fds, axis=c("row", "col"), type=NULL, result=NULL,
             predPsi   = c(predictedMeans(fds, type)[idxrow, idxcol]))
     dt[, deltaPsi:=obsPsi - predPsi]
 
+    # add aberrant information to it
+    aberrantVec <- aberrant(fds, ..., padjVals=dt[,.(padj)],
+        dPsi=dt[,.(deltaPsi)], zscores=dt[,.(zscore)], n=dt[,.(n)])
+    dt[,aberrant:=aberrantVec]
+
     # if requested return gene p values (correct for multiple testing again)
     if(isTRUE(aggregate)){
         dt <- dt[!is.na(featureID)]
@@ -577,18 +582,14 @@ getPlottingDT <- function(fds, axis=c("row", "col"), type=NULL, result=NULL,
                     dttmp <- dt[sampleID == x]
                     dttmp[, pval:=p.adjust(pval, method="holm"),
                             by="sampleID,featureID,type"]
-                    dttmp <- dttmp[order(sampleID, featureID, type, pval)][
+                    dttmp <- dttmp[order(sampleID, featureID, type, -aberrant,
+                                            pval, -abs(deltaPsi))][
                             !duplicated(data.table(sampleID, featureID, type))]
                     dttmp <- dttmp[, padj:=p.adjust(pval, method="BY"),
                             by="sampleID,type"]
                     dttmp
             }))
     }
-
-    # add aberrant information to it
-    aberrantVec <- aberrant(fds, ..., padjVals=dt[,.(padj)],
-        dPsi=dt[,.(deltaPsi)], zscores=dt[,.(zscore)], n=dt[,.(n)])
-    dt[,aberrant:=aberrantVec]
 
     # return object
     dt
