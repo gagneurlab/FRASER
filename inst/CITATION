@@ -1,0 +1,24 @@
+citHeader("To cite FRASER in publications please use:")
+citEntry(entry = "article",
+    title    = "Detection of aberrant splicing events in RNA-seq data with FRASER",
+    author   = personList(
+                    person("Christian", "Mertes"),
+                    person("Ines", "Scheller"),
+                    person(c("Vicente", "A"), "Y\\'{e}pez"),
+                    person(c("Muhammed", "H"), "\\c{C}elik"),
+                    person("Yingjiqiong", "Liang"),
+                    person(c("Laura", "S"), "Kremer"),
+                    person("Mirjana", "Gusic"),
+                    person("Holger", "Prokisch"),
+                    person("Julien", "Gagneur")),
+    journal  = "biorxiv",
+    volume   = "",
+    number   = "",
+    pages    = "",
+    year     = "2019",
+    issn     = "",
+    doi      = "10.1101/2019.12.18.866830",
+    textVersion  = paste(
+            "Mertes C, Scheller I et al.,",
+            "Detection of aberrant splicing events in RNA-seq data with FRASER.",
+            "biorxiv, 2019, 10.1101/2019.12.18.866830.") )
