@@ -393,7 +393,14 @@ plotExpectedVsObservedPsi <- function(fds, type=c("psi5", "psi3", "psiSite"),
         xlab <- paste("Predicted", ggplotLabelPsi(type, asCharacter=TRUE)[[1]])
     }
     
-    g <- ggplot(dt, aes(y=obsPsi, x=predPsi)) +
+    g <- ggplot(dt, aes(y=obsPsi, x=predPsi, text=paste0(
+            "Sample: ", sampleID, "<br>",
+            "Counts (K): ", k, "<br>",
+            "Total counts (N): ", n, "<br>",
+            "p value: ", signif(pval, 5), "<br>",
+            "padjust: ", signif(padj, 5), "<br>",
+            "Observed Psi: ", round(obsPsi, 2), "<br>",
+            "Predicted mu: ", round(predPsi, 2), "<br>"))) +
         geom_point(alpha=ifelse(dt$aberrant, 1, 0.5),
                 color=c("gray70", "firebrick")[dt$aberrant + 1]) +
         geom_abline(intercept = 0, slope=1) +
