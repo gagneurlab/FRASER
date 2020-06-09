@@ -403,6 +403,12 @@ extractChromosomes <- function(bamFile){
     as.character(as.data.table(idxstatsBam(bamFile))[mapped > 0, seqnames])
 }
 
+#'
+#' extracts the chromosome lengths within the given bamFile
+#' @noRd
+extractChromosomeLengths <- function(bamFile){
+    as.numeric(as.data.table(idxstatsBam(bamFile))[mapped > 0, seqlength])
+}
 
 #'
 #' returns the name of the cache file if caching is enabled
@@ -468,6 +474,23 @@ countSplitReads <- function(sampleID, fds, NcpuPerSample=1, genome=NULL,
         genome <- genome[sampleID]
     }
     
+    # remove chromosomes with different seqlength than in genome (if provided)
+    if(!is.null(genome)){
+        if(is.character(genome)){
+            genome <- getBSgenome(genome)
+        }
+        seqlevelsStyle(genome) <- seqlevelsStyle(chromosomes)[1]
+        chrLengths <- extractChromosomeLengths(bamFile)
+        mismatchChrs <- which(seqlengths(genome)[chromosomes] != chrLengths)
+        if(length(mismatchChrs) > 0){
+            warning("Not counting chromosome(s) ",  chromosomes[mismatchChrs],
+                    " in sample ", sampleID, " as it has a different length",
+                    " in the bamFile of this sample than in the provided",
+                    " genome.")
+            chromosomes <- chromosomes[-mismatchChrs]
+        }
+    }
+    
     # extract the counts per chromosome
     countsList <- bplapply(chromosomes, FUN=countSplitReadsPerChromosome,
             bamFile=bamFile, pairedEnd=pairedEnd, settings=fds, genome=genome,
@@ -530,6 +553,14 @@ countSplitReadsPerChromosome <- function(chromosome, bamFile, pairedEnd,
                     " are not the same! Will force annotation to use the one", 
                     " from the BAM file.")
             seqlevelsStyle(genome) <- seqlevelsStyle(galignment)[1]
+        }
+        # drop seqlevels of chromosomes with different length than in genome
+        chrLengths <- seqlengths(galignment)
+        mismatchChrs <- which(
+                seqlengths(genome)[names(chrLengths)] != chrLengths)
+        if(length(mismatchChrs) > 0){
+            chrsToDrop <- names(chrLengths)[mismatchChrs]
+            galignment <- dropSeqlevels(galignment, chrsToDrop)
         }
     }
     
