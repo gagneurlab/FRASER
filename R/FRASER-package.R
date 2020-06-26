@@ -44,6 +44,7 @@
 #' @importFrom pheatmap pheatmap
 #' @importFrom RColorBrewer brewer.pal
 #' @importFrom cowplot theme_cowplot
+#' @importFrom ggrepel geom_text_repel
 #'
 #'
 ### Data handling

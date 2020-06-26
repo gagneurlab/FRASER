@@ -35,6 +35,12 @@
 #' @param aggregate,aggregated If TRUE, the pvalues are aggregated by gene, 
 #'             otherwise junction level pvalues are used (default).
 #' @param result The result table to be used by the method.
+#' @param label Indicates the genes or samples that will be labelled in the 
+#'             plot (only for \code{basePlot=TRUE}). Setting 
+#'             \code{label="aberrant"} will label all aberrant genes or 
+#'             samples. Labelling can be turned off by setting 
+#'             \code{label=NULL}. The user can also provide a custom 
+#'             list of gene symbols or sampleIDs.
 #' @param BPPARAM BiocParallel parameter to use.
 #' @param Ncpus Number of cores to use.
 #' @param plotType The type of plot that should be shown for plotEncDimSearch. 
@@ -164,7 +170,7 @@ NULL
 #' @export
 plotVolcano <- function(fds, sampleID, type=c("psi3", "psi5", "psiSite"), 
                     basePlot=TRUE, aggregate=FALSE,
-                    main=NULL,
+                    main=NULL, label=NULL,
                     deltaPsiCutoff=0.3, padjCutoff=0.1, ...){
     
     type <- match.arg(type)
@@ -173,7 +179,8 @@ plotVolcano <- function(fds, sampleID, type=c("psi3", "psi5", "psiSite"),
             aggregate=aggregate, deltaPsiCutoff=deltaPsiCutoff, 
             padjCutoff=padjCutoff, ...)
     
-    g <- ggplot(dt, aes(x=deltaPsi, y=-log10(pval), color=aberrant, text=paste0(
+    g <- ggplot(dt, aes(x=deltaPsi, y=-log10(pval), color=aberrant, 
+                        label=featureID, text=paste0(
             "SampleID: ", sampleID, "<br>",
             "featureID: ", featureID, "<br>",
             "Raw count (K): ", k, "<br>",
@@ -207,6 +214,7 @@ plotVolcano <- function(fds, sampleID, type=c("psi3", "psi5", "psiSite"),
             geom_hline(yintercept=padj_line, color="firebrick", linetype=4)
     }
     
+    
     if(isFALSE(basePlot)){
         g <- g + xlab(paste("delta", 
                             ggplotLabelPsi(type, asCharacter=TRUE)[[1]])) +
@@ -216,6 +224,25 @@ plotVolcano <- function(fds, sampleID, type=c("psi3", "psi5", "psiSite"),
                             ggplotLabelPsi(type, asCharacter=TRUE)[[1]])
         }
     } else{
+        if(!is.null(label)){
+            if(isScalarCharacter(label) && label == "aberrant"){
+                g <- g + geom_text_repel(data=dt[aberrant == TRUE,],
+                                        fontface='bold', hjust=-.2, vjust=-.2)
+            }
+            else{
+                if(nrow(dt[featureID %in% label]) > 0){
+                    g <- g + geom_text_repel(data=
+                                        subset(dt, featureID %in% label),
+                                    fontface='bold', hjust=-.2, vjust=-.2)
+                }
+                if(any(!(label %in% dt[,featureID]))){
+                    warning("Did not find gene(s) ", 
+                            paste(label[!(label %in% dt[,featureID])], 
+                                collapse=", "), " to label.")
+                }
+            }
+        }
+        
         if(is.null(main)){
             main <- as.expression(bquote(paste(
                 bold("Volcano plot: "), .(sampleID), ", ",
@@ -288,7 +315,7 @@ plotAberrantPerSample <- function(fds, main, type=c("psi3", "psi5", "psiSite"),
 #' @export
 plotExpression <- function(fds, type=c("psi5", "psi3", "psiSite"),
                             site=NULL, result=NULL, colGroup=NULL, 
-                            basePlot=TRUE, main=NULL, ...){
+                            basePlot=TRUE, main=NULL, label="aberrant", ...){
     if(!is.null(result)){
         type <- as.character(result$type)
         site <- getIndexFromResultTable(fds, result)
@@ -318,7 +345,8 @@ plotExpression <- function(fds, type=c("psi5", "psi3", "psiSite"),
         }
     }
 
-    g <- ggplot(dt, aes(x=n + 2, y=k + 1, color=aberrant, text=paste0(
+    g <- ggplot(dt, aes(x=n + 2, y=k + 1, color=aberrant, label=sampleID, 
+                        text=paste0(
             "Sample: ", sampleID, "<br>",
             "Counts (K): ", k, "<br>",
             "Total counts (N): ", n, "<br>",
@@ -333,7 +361,28 @@ plotExpression <- function(fds, type=c("psi5", "psi3", "psiSite"),
         theme(legend.position="none", title=) +
         xlab("Total junction coverage + 2 (N)") +
         ylab("Junction count + 1 (K)") +
-        ggtitle(main)
+        ggtitle(main) +
+        annotation_logticks(sides='bl')
+    
+    if(isTRUE(basePlot) && !is.null(label)){
+        if(isScalarCharacter(label) && label == "aberrant"){
+            g <- g + geom_text_repel(data=dt[aberrant == TRUE,], 
+                                        aes(col=aberrant),
+                                        fontface='bold', hjust=-.2, vjust=-.2)
+        }
+        else{
+            if(nrow(dt[sampleID %in% label]) > 0){
+                g <- g + geom_text_repel(data=subset(dt, sampleID %in% label), 
+                                        aes(col=aberrant),
+                                        fontface='bold', hjust=-.2, vjust=-.2)
+            }
+            if(any(!(label %in% dt[,sampleID]))){
+                warning("Did not find sample(s) ", 
+                        paste(label[!(label %in% dt[,sampleID])], 
+                            collapse=", "), " to label.")
+            }
+        }
+    }
 
     if(is.null(colGroup)){
         g <- g + scale_colour_manual(
@@ -354,7 +403,7 @@ plotExpression <- function(fds, type=c("psi5", "psi3", "psiSite"),
 #' @export
 plotExpectedVsObservedPsi <- function(fds, type=c("psi5", "psi3", "psiSite"),
                     idx=NULL, result=NULL, colGroup=NULL, main=NULL,
-                    basePlot=TRUE, ...){
+                    basePlot=TRUE, label="aberrant", ...){
     type <- match.arg(type)
     
     # get plotting data
@@ -393,7 +442,8 @@ plotExpectedVsObservedPsi <- function(fds, type=c("psi5", "psi3", "psiSite"),
         xlab <- paste("Predicted", ggplotLabelPsi(type, asCharacter=TRUE)[[1]])
     }
     
-    g <- ggplot(dt, aes(y=obsPsi, x=predPsi, text=paste0(
+    g <- ggplot(dt, aes(y=obsPsi, x=predPsi, label=sampleID, color=aberrant, 
+            text=paste0(
             "Sample: ", sampleID, "<br>",
             "Counts (K): ", k, "<br>",
             "Total counts (N): ", n, "<br>",
@@ -409,8 +459,32 @@ plotExpectedVsObservedPsi <- function(fds, type=c("psi5", "psi3", "psiSite"),
         xlab(xlab) +
         ylab(ylab) +
         ggtitle(main)
-        
+    
+    if(isTRUE(basePlot) && !is.null(label)){
+        if(isScalarCharacter(label) && label == "aberrant"){
+            g <- g + geom_text_repel(data=dt[aberrant == TRUE,], 
+                                    aes(col=aberrant),
+                                    fontface='bold', hjust=-.2, vjust=-.2)
+        }
+        else{
+            if(nrow(dt[sampleID %in% label]) > 0){
+                g <- g + geom_text_repel(data=subset(dt, sampleID %in% label), 
+                                    aes(col=aberrant),
+                                    fontface='bold', hjust=-.2, vjust=-.2)
+            }
+            if(any(!(label %in% dt[,sampleID]))){
+                warning("Did not find sample(s) ", 
+                        paste(label[!(label %in% dt[,sampleID])], 
+                                collapse=", "), " to label.")
+            }
+        }
+    }    
 
+    if(is.null(colGroup)){
+        g <- g + scale_colour_manual(
+            values=c("FALSE"="gray70", "TRUE"="firebrick"))
+    }
+    
     plotBasePlot(g, basePlot)
 }
 

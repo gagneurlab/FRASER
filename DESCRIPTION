@@ -34,6 +34,7 @@ Imports:
     IRanges,
     grDevices,
     ggplot2,
+    ggrepel,
     HDF5Array,
     matrixStats,
     methods,
