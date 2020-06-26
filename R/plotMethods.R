@@ -151,7 +151,7 @@
 #' # example dataset and be able to show the usage of the plot functions
 #' res <- results(fds, padjCutoff=1, zScoreCutoff=NA, deltaPsiCutoff=NA)
 #' res
-#' plotExpression(fds, result=res[1])
+#' plotExpression(fds, result=res[2], type="psi5")
 #' plotQQ(fds, result=res[1])
 #' plotExpectedVsObservedPsi(fds, type="psi5", idx=5)
 #' 
@@ -226,8 +226,10 @@ plotVolcano <- function(fds, sampleID, type=c("psi3", "psi5", "psiSite"),
     } else{
         if(!is.null(label)){
             if(isScalarCharacter(label) && label == "aberrant"){
-                g <- g + geom_text_repel(data=dt[aberrant == TRUE,],
+                if(nrow(dt[aberrant == TRUE,]) > 0){
+                    g <- g + geom_text_repel(data=dt[aberrant == TRUE,],
                                         fontface='bold', hjust=-.2, vjust=-.2)
+                }
             }
             else{
                 if(nrow(dt[featureID %in% label]) > 0){
@@ -366,9 +368,11 @@ plotExpression <- function(fds, type=c("psi5", "psi3", "psiSite"),
     
     if(isTRUE(basePlot) && !is.null(label)){
         if(isScalarCharacter(label) && label == "aberrant"){
-            g <- g + geom_text_repel(data=dt[aberrant == TRUE,], 
+            if(nrow(dt[aberrant == TRUE,]) > 0){
+                g <- g + geom_text_repel(data=dt[aberrant == TRUE,], 
                                         aes(col=aberrant),
                                         fontface='bold', hjust=-.2, vjust=-.2)
+            }
         }
         else{
             if(nrow(dt[sampleID %in% label]) > 0){
@@ -462,9 +466,11 @@ plotExpectedVsObservedPsi <- function(fds, type=c("psi5", "psi3", "psiSite"),
     
     if(isTRUE(basePlot) && !is.null(label)){
         if(isScalarCharacter(label) && label == "aberrant"){
-            g <- g + geom_text_repel(data=dt[aberrant == TRUE,], 
-                                    aes(col=aberrant),
-                                    fontface='bold', hjust=-.2, vjust=-.2)
+            if(nrow(dt[aberrant == TRUE,]) > 0){
+                g <- g + geom_text_repel(data=dt[aberrant == TRUE,], 
+                                        aes(col=aberrant),
+                                        fontface='bold', hjust=-.2, vjust=-.2)
+            }
         }
         else{
             if(nrow(dt[sampleID %in% label]) > 0){

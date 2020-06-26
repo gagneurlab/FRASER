@@ -314,7 +314,7 @@ plotVolcano(fds, "sample1", "psi5")
 # example dataset and be able to show the usage of the plot functions
 res <- results(fds, padjCutoff=1, zScoreCutoff=NA, deltaPsiCutoff=NA)
 res
-plotExpression(fds, result=res[1])
+plotExpression(fds, result=res[2], type="psi5")
 plotQQ(fds, result=res[1])
 plotExpectedVsObservedPsi(fds, type="psi5", idx=5)
 
