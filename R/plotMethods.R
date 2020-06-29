@@ -662,7 +662,7 @@ plotEncDimSearch <- function(fds, type=c("psi3", "psi5", "psiSite"),
             geom_smooth() +
             ggtitle("Q estimation") +
             xlab("Estimated q") +
-            ylab("Area under the ROC curve") +
+            ylab("Area under the PR curve") +
             theme_bw(base_size=16)
         g1
     }
