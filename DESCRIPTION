@@ -3,9 +3,12 @@ Type: Package
 Title: Find RAre Splicing Events in RNA-Seq Data
 Version: 1.1.2
 Date: 2020-06-08
-Author: Christian Mertes <mertes@in.tum.de>, Ines Scheller <scheller@in.tum.de>,
-    Prof. Julien Gagneur <gagneur@in.tum.de>
-Maintainer: Christian Mertes <mertes@in.tum.de>
+Author@R: c(
+    person("Christian", "Mertes", role=c("aut", "cre"), 
+            email="mertes@in.tum.de"),
+    person("Ines", "Scheller",  role=c("aut"), email="scheller@in.tum.de"),
+    person("Vicente", "Yepez", role=c("ctb"), email="yepez@in.tum.de"),
+    person("Julien", "Gagneur", role=c("aut"), email="gagneur@in.tum.de"))
 Description: Detection of rare aberrant splicing events in transcriptome 
     profiles. The workflow aims to assist the diagnostics in the field of 
     rare diseases where RNA-seq is performed to identify aberrant 
