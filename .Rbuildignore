@@ -1,6 +1,7 @@
 # git files
 .gitignore
 .git
+*\.pack
 
 # ignore ci/app files
 .gitlab-ci.yaml
@@ -31,3 +32,7 @@ kremer_ae_*
 ^\.Rproj\.user$
 ^doc$
 ^Meta$
+
+# ignore compiled objects
+*\.o
+*\.so
