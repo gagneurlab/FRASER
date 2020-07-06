@@ -566,7 +566,7 @@ injectOutliers <- function(fds, type=c("psi5", "psi3", "psiSite"),
     # min and max dpsi
     injMinDpsi <- ifelse(minDpsi + meanDpsi < maxDpsi,
                         minDpsi + meanDpsi, maxDpsi)
-    injDpsi <- injDirection * switch(deltaDistr,
+    injDpsi <- injDirection * switch(as.character(deltaDistr),
             uniformDistr = runif(length(injMinDpsi), injMinDpsi, maxDpsi),
             ifelse(deltaDistr > maxDpsi, maxDpsi, deltaDistr))
     

@@ -96,7 +96,8 @@ findEncodingDim <- function(i, fds, type, params, implementation,
 #' @param delayed If FALSE, count matrices will be loaded into memory (faster 
 #' calculations), otherwise the function works on the delayedMatrix 
 #' representations (more memory efficient). The default value depends on the 
-#' number of samples in the fds-object. 
+#' number of samples in the fds-object.
+#' @param ... Additional parameters passed to \code{injectOutliers}.
 #' 
 #' @return FraserDataSet
 #'
@@ -116,7 +117,7 @@ optimHyperParams <- function(fds, type, implementation="PCA",
                     noise_param=0, minDeltaPsi=0.1,
                     iterations=5, setSubset=15000, injectFreq=1e-2,
                     BPPARAM=bpparam(), internalThreads=1, plot=TRUE, 
-                    delayed=ifelse(ncol(fds) <= 300, FALSE, TRUE)){
+                    delayed=ifelse(ncol(fds) <= 300, FALSE, TRUE), ...){
     if(isFALSE(needsHyperOpt(implementation))){
         message(date(), ": For correction '", implementation, "' no hyper ",
                 "parameter optimization is needed.")
@@ -168,8 +169,7 @@ optimHyperParams <- function(fds, type, implementation="PCA",
         currentType(fds_copy) <- type
 
         # inject outliers
-        fds_copy <- injectOutliers(fds_copy, type=type, freq=injectFreq,
-                minDpsi=minDeltaPsi, method="samplePSI")
+        fds_copy <- injectOutliers(fds_copy, type=type, freq=injectFreq, ...)
         
         if(sum(getAssayMatrix(fds_copy, type=type, "trueOutliers") != 0) == 0){
             warning(paste0("No outliers could be injected so the ", 
