@@ -73,6 +73,7 @@ plotQQ(
   conf.alpha = 0.05,
   samplingPrecision = 3,
   basePlot = TRUE,
+  label = "aberrant",
   Ncpus = min(3, getDTthreads()),
   ...
 )

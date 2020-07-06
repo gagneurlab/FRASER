@@ -1,5 +1,5 @@
 context("Annotations methods")
 
 test_that("annotateRanges", {
-    expect_that("TIMMDC1", equals("TIMMDC1"))
+    expect_equal("TIMMDC1", "TIMMDC1")
 })

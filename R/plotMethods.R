@@ -504,7 +504,7 @@ plotExpectedVsObservedPsi <- function(fds, type=c("psi5", "psi3", "psiSite"),
 #' @export
 plotQQ <- function(fds, type=NULL, idx=NULL, result=NULL, aggregate=FALSE,
                     global=FALSE, main=NULL, conf.alpha=0.05,
-                    samplingPrecision=3, basePlot=TRUE,
+                    samplingPrecision=3, basePlot=TRUE, label="aberrant",
                     Ncpus=min(3, getDTthreads()), ...){
 
     # check parameters
@@ -528,8 +528,14 @@ plotQQ <- function(fds, type=NULL, idx=NULL, result=NULL, aggregate=FALSE,
             dt <- dt[!duplicated(dt, by=c("type", "spliceID", "sampleID"))]
         }
     } else {
-        dt <- getPlottingDT(fds, axis="row", type=type, idx=idx, result=result,
-                aggregate=aggregate, ...)
+        dots <- list(...)
+        if(!"pvalLevel" %in% names(dots)){
+            dots[["pvalLevel"]] <- "junction"
+        }
+        dots <- append(list(fds=fds, axis="row", type=type, idx=idx, 
+                            result=result, aggregate=aggregate), 
+                        dots)
+        dt <- do.call(getPlottingDT, args=dots)
     }
     if(is.null(main)){
         if(isTRUE(global)){
@@ -575,7 +581,8 @@ plotQQ <- function(fds, type=NULL, idx=NULL, result=NULL, aggregate=FALSE,
     }
 
     # create qq-plot
-    g <- ggplot(dt2p[plotPoint == TRUE,], aes(x=exp, y=obs, col=aberrant,
+    g <- ggplot(dt2p[plotPoint == TRUE,], aes(x=exp, y=obs, col=aberrant, 
+            label=sampleID,
             text=paste(
                 "<br>SampleID: ", sampleID, "<br>K: ", k, "<br>N: ", n))) +
         geom_point() +
@@ -623,6 +630,30 @@ plotQQ <- function(fds, type=NULL, idx=NULL, result=NULL, aggregate=FALSE,
                 aes(x=exp, ymin=lower, ymax=upper, text=NULL),
                 alpha=0.2, color="gray")
     }
+    
+    # add labels if requested
+    if(isFALSE(global) && isTRUE(basePlot) && !is.null(label)){
+        if(isScalarCharacter(label) && label == "aberrant"){
+            if(nrow(dt2p[aberrant == TRUE,]) > 0){
+                g <- g + geom_text_repel(data=dt2p[aberrant == TRUE,], 
+                                        aes(col=aberrant),
+                                        fontface='bold', hjust=-.2, vjust=-.2)
+            }
+        }
+        else{
+            if(nrow(dt2p[sampleID %in% label]) > 0){
+                g <- g + geom_text_repel(data=subset(dt2p, sampleID %in% 
+                                                                        label), 
+                                        aes(col=aberrant),
+                                        fontface='bold', hjust=-.2, vjust=-.2)
+            }
+            if(any(!(label %in% dt2p[,sampleID]))){
+                warning("Did not find sample(s) ", 
+                        paste(label[!(label %in% dt2p[,sampleID])], 
+                                collapse=", "), " to label.")
+            }
+        }
+    }   
 
     # add abline in the end
     g <- g + geom_abline(intercept=0, slope=1, col="firebrick")

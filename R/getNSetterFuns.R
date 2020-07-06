@@ -7,6 +7,9 @@
 #' @param type The type of psi (psi5, psi3 or psiSite)
 #' @param byGroup If TRUE, aggregation by donor/acceptor site will be done.
 #' @param dist Distribution for which the p-values should be extracted.
+#' @param level Indicates if the retrieved p values should be adjusted on the 
+#'          donor/acceptor site-level (default) or if unadjusted junction-level 
+#'          p values should be returned.
 #' @param value The new value to be assigned.
 #' @param all Logical value indicating whether \code{hyperParams(fds)} should 
 #'          return the results of all evaluated parameter combinations or only 
@@ -244,15 +247,32 @@ zScores <- function(fds, type=currentType(fds), byGroup=FALSE, ...){
 }
 #' @describeIn getter_setter_functions This returns the calculated p-values.
 #' @export
-pVals <- function(fds, type=currentType(fds), dist="BetaBinomial", ...){
+pVals <- function(fds, type=currentType(fds), level="site", 
+                    dist="BetaBinomial", ...){
+    level <- match.arg(level, choices=c("site", "junction"))
     dist <- match.arg(dist, choices=c("BetaBinomial", "Binomial", "Normal"))
-    getAssayMatrix(fds, paste0("pvalues", dist), type=type, ...)
+    aname <- paste0("pvalues", dist)
+    if(level == "junction"){
+        if( paste(paste0(aname, "_junction"), type, sep="_") %in% 
+            assayNames(fds)){
+            aname <- paste0(aname, "_junction")
+        } else{
+            warning("Did not find junction-level p values. ",
+                    "Using site-level p values instead.")
+        }
+    }
+    getAssayMatrix(fds, aname, type=type, ...)
 }
 
-`pVals<-` <- function(fds, type=currentType(fds),
+`pVals<-` <- function(fds, type=currentType(fds), level="site",
                     dist="BetaBinomial", ..., value){
+    level <- match.arg(level, choices=c("site", "junction"))
     dist <- match.arg(dist, choices=c("BetaBinomial", "Binomial", "Normal"))
-    setAssayMatrix(fds, name=paste0("pvalues", dist), type=type, ...) <- value
+    aname <- paste0("pvalues", dist)
+    if(level == "junction"){
+        aname <- paste0(aname, "_junction")
+    }
+    setAssayMatrix(fds, name=aname, type=type, ...) <- value
     return(fds)
 }
 
@@ -522,7 +542,7 @@ getIndexFromResultTable <- function(fds, resultTable, padj.method="holm"){
 }
 
 getPlottingDT <- function(fds, axis=c("row", "col"), type=NULL, result=NULL,
-                    idx=NULL, aggregate=FALSE, Ncpus=3, ...){
+                    idx=NULL, aggregate=FALSE, pvalLevel="site", Ncpus=3, ...){
     if(!is.null(result)){
         type <- as.character(result$type)
         idx  <- getIndexFromResultTable(fds, result)
@@ -550,6 +570,11 @@ getPlottingDT <- function(fds, axis=c("row", "col"), type=NULL, result=NULL,
     if(is.null(feature_names)){
         feature_names <- as.character(seq_row(mcols(fds, type=type)))[idxrow]
     }
+    
+    pvalLevel <- match.arg(pvalLevel, choices=c("site", "junction"))
+    if(isTRUE(aggregate)){
+        pvalLevel <- "site"
+    }
 
     dt <- data.table(
             idx       = idx,
@@ -559,7 +584,8 @@ getPlottingDT <- function(fds, axis=c("row", "col"), type=NULL, result=NULL,
             type      = factor(type),
             k         = c(k),
             n         = c(n),
-            pval      = c(pVals(fds, type=type)[idxrow, idxcol]),
+            pval      = c(pVals(fds, type=type, 
+                                level=pvalLevel)[idxrow, idxcol]),
             padj      = c(padjVals(fds, type=type)[idxrow, idxcol]),
             zscore    = c(zScores(fds, type=type)[idxrow, idxcol]),
             obsPsi    = c((k + pseudocount())/(n + 2*pseudocount())),

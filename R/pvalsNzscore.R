@@ -3,25 +3,28 @@
 #' observed and expected logit 
 #' psi.
 #' 
+#' @param logit Indicates if z scores are computed on the logit scale (default) 
+#'      or in the natural (psi) scale.
 #' @export
-calculateZscore <- function(fds, type=currentType(fds), implementation="PCA"){
+calculateZscore <- function(fds, type=currentType(fds), logit=TRUE){
     currentType(fds) <- type
 
-    # counts(fds, type=type, side="other", HDF5=FALSE)      <-
-    #         as.matrix(counts(fds, type=type, side="other"))
-    # counts(fds, type=type, side="ofInterest", HDF5=FALSE) <-
-    #         as.matrix(counts(fds, type=type, side="ofInterest"))
+    mu <- predictedMeans(fds)
+    psi <- (K(fds) + pseudocount()) / (N(fds) + 2*pseudocount())
     
-    logit_mu <- qlogis(predictedMeans(fds))
-    logit_psi <- t(x(fds, all=TRUE, noiseAlpha=NULL, center=FALSE))
-    if(is.matrix(logit_psi) && !is.matrix(logit_mu)){
-        logit_mu <- as.matrix(logit_mu)
+    if(isTRUE(logit)){
+        mu <- qlogis(mu)
+        psi <- qlogis(psi)
+    }
+    
+    if(is.matrix(psi) && !is.matrix(mu)){
+        mu <- as.matrix(mu)
     }
 
-    logitfc <- logit_psi - logit_mu
+    residual <- psi - mu
 
     # z = ( x - mean ) / sd
-    zscores <- (logitfc - rowMeans(logitfc)) / rowSds(logitfc)
+    zscores <- (residual - rowMeans(residual)) / rowSds(residual)
 
     zScores(fds, withDimnames=FALSE) <- zscores
 
@@ -103,10 +106,13 @@ calculatePvalues <- function(fds, type=currentType(fds),
                         dbbinom(as.matrix(k), as.matrix(n), 
                                 as.matrix(alpha), as.matrix(beta)))
         pvals <- 2 * pmin(pval, 1 - pval + dval, 0.5)
+        pVals(fds, dist="BetaBinomial", level="junction", 
+                withDimnames=FALSE) <- pvals
         fwer_pval <- bplapply(seq_col(pvals), adjust_FWER_PValues,
                 pvals=pvals, index, BPPARAM=BPPARAM)
         fwer_pvals <- do.call(cbind, fwer_pval)
-        pVals(fds, dist="BetaBinomial", withDimnames=FALSE) <- fwer_pvals
+        pVals(fds, dist="BetaBinomial", level="site", 
+                withDimnames=FALSE) <- fwer_pvals
     }
     
     if("binomial" %in% distributions){
@@ -116,10 +122,13 @@ calculatePvalues <- function(fds, type=currentType(fds),
         pval <- do.call(rbind, pval_list)
         dval <- dbinom(as.matrix(k), as.matrix(n), as.matrix(mu))
         pvals <- 2 * pmin(pval, 1 - pval + dval, 0.5)
+        pVals(fds, dist="Binomial", level="junction", 
+                withDimnames=FALSE) <- pvals
         fwer_pval <- bplapply(seq_col(pvals), adjust_FWER_PValues,
                 pvals=pvals, index, BPPARAM=BPPARAM)
         fwer_pvals <- do.call(cbind, fwer_pval)
-        pVals(fds, dist="Binomial", withDimnames=FALSE) <- fwer_pvals
+        pVals(fds, dist="Binomial", level="site", 
+                withDimnames=FALSE) <- fwer_pvals
     }
     
     if("normal" %in% distributions){
@@ -130,10 +139,13 @@ calculatePvalues <- function(fds, type=currentType(fds),
         rsd <- rowSds(epsilon)
         pval <- pnorm(epsilon, sd=rsd)
         pvals <- 2 * pmin(pval, 1 - pval, 0.5)
+        pVals(fds, dist="Normal", level="junction", 
+                withDimnames=FALSE) <- pvals
         fwer_pval <- bplapply(seq_col(pvals), adjust_FWER_PValues,
                 pvals=pvals, index, BPPARAM=BPPARAM)
         fwer_pvals <- do.call(cbind, fwer_pval)
-        pVals(fds, dist="Normal", withDimnames=FALSE) <- fwer_pvals
+        pVals(fds, dist="Normal", level="site", 
+                withDimnames=FALSE) <- fwer_pvals
     }
     
     fds

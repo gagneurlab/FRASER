@@ -35,7 +35,7 @@ rho(fds, type = currentType(fds))
 
 zScores(fds, type = currentType(fds), byGroup = FALSE, ...)
 
-pVals(fds, type = currentType(fds), dist = "BetaBinomial", ...)
+pVals(fds, type = currentType(fds), level = "site", dist = "BetaBinomial", ...)
 
 padjVals(fds, type = currentType(fds), dist = c("BetaBinomial"), ...)
 
@@ -71,6 +71,10 @@ verbose(fds) <- value
 \item{byGroup}{If TRUE, aggregation by donor/acceptor site will be done.}
 
 \item{...}{Internally used parameteres.}
+
+\item{level}{Indicates if the retrieved p values should be adjusted on the 
+donor/acceptor site-level (default) or if unadjusted junction-level 
+p values should be returned.}
 
 \item{dist}{Distribution for which the p-values should be extracted.}
 
