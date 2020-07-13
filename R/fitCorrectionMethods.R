@@ -177,18 +177,16 @@ fit <- function(fds, implementation=c("PCA", "PCA-BB-Decoder", "AE",
 
 needsHyperOpt <- function(method){
     switch(method,
-        "PCA-BB-full"            = TRUE,
-        "PCA-reg-full"           = TRUE,
-        FRASER                   = TRUE,
-        "PCA-BB-Decoder"         = TRUE,
+        PCA                         = TRUE,
+        "PCA-BB-Decoder"            = TRUE,
+        "AE-weighted"               = TRUE,
+        AE                          = TRUE,
+        BB                          = FALSE,
+        "PCA-BB-full"               = TRUE,
+        "fullAE"                    = TRUE,
+        'PCA-regression'            = TRUE,
+        "PCA-reg-full"              = TRUE,
         "PCA-BB-Decoder-no-weights" = TRUE,
-        "FRASER-5DecoderBatches" = TRUE,
-        "FRASER-1DecoderBatches" = TRUE,
-        "FRASER-weighted"        = TRUE,
-        fullFraser               = TRUE,
-        PCA                      = TRUE,
-        'PCA-regression'         = TRUE,
-        BB                       = FALSE,
         stop("Method not found: '", method, "'!")
     )
 }
