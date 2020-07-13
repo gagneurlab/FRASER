@@ -4,27 +4,28 @@
 #' psi.
 #' 
 #' @export
-calculateZscore <- function(fds, type=currentType(fds), implementation="PCA"){
+calculateZscore <- function(fds, type=currentType(fds), logit=TRUE){
     currentType(fds) <- type
-
-    # counts(fds, type=type, side="other", HDF5=FALSE)      <-
-    #         as.matrix(counts(fds, type=type, side="other"))
-    # counts(fds, type=type, side="ofInterest", HDF5=FALSE) <-
-    #         as.matrix(counts(fds, type=type, side="ofInterest"))
     
-    logit_mu <- qlogis(predictedMeans(fds))
-    logit_psi <- t(x(fds, all=TRUE, noiseAlpha=NULL, center=FALSE))
-    if(is.matrix(logit_psi) && !is.matrix(logit_mu)){
-        logit_mu <- as.matrix(logit_mu)
+    mu <- predictedMeans(fds)
+    psi <- (K(fds) + pseudocount()) / (N(fds) + 2*pseudocount())
+    
+    if(isTRUE(logit)){
+        mu <- qlogis(mu)
+        psi <- qlogis(psi)
     }
-
-    logitfc <- logit_psi - logit_mu
-
+    
+    if(is.matrix(psi) && !is.matrix(mu)){
+        mu <- as.matrix(mu)
+    }
+    
+    residual <- psi - mu
+    
     # z = ( x - mean ) / sd
-    zscores <- (logitfc - rowMeans(logitfc)) / rowSds(logitfc)
-
+    zscores <- (residual - rowMeans(residual)) / rowSds(residual)
+    
     zScores(fds, withDimnames=FALSE) <- zscores
-
+    
     return(fds)
 }
 
