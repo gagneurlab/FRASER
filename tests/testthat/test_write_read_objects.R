@@ -17,13 +17,15 @@ test_that("save/load/move fds object", {
     fds_l1 <- loadFraserDataSet(file=file.path(
             dir1, "savedObjects", "Data_Analysis", "fds-object.RDS"))
     expect_equivalent(fds_l1, fds)
-    expect_match(path(assay(fds, "rawCountsJ")), dir1)
+    expect_equal(dir1,
+            dirname(dirname(dirname(path(assay(fds, "rawCountsJ"))))))
     
     # rename and check if still the same
     renameFile(dir1, dir2)
     fds_l2 <- loadFraserDataSet(file=file.path(
             dir2, "savedObjects", "Data_Analysis", "fds-object.RDS"))
     expect_equivalent(fds_l2, fds)
-    expect_match(path(assay(fds_l2, "rawCountsJ")), dir2)
+    expect_equal(dir2,
+            dirname(dirname(dirname(path(assay(fds_l2, "rawCountsJ"))))))
 })
 
