@@ -1003,7 +1003,8 @@ getColDataAsDFFactors <- function(fds, names){
 }
 
 #' @noRd
-qlogisWithCap <- function(x){
+qlogisWithCap <- function(x, digits=2){
+    x <- round(x, digits)
     ans <- qlogis(x)
     ans[is.infinite(ans)] <- NA
     rowm <- rowMaxs(ans, na.rm=TRUE)
