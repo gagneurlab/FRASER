@@ -140,7 +140,7 @@ pvalueByBetaBinomialPerType <- function(fds, aname, psiType, pvalFun,
     pvalues_full[toTest,] <- pvalues
 
     # transform it to a hdf5 assay and save it to the dataset
-    assays(fds, type=psiType)[[aname]] <- pvalues_full
+    assay(fds, aname, type=psiType, withDimnames=FALSE) <- pvalues_full
 
     # save the pvalue calculations in the SE ranged object
     return(fds)

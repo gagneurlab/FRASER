@@ -59,7 +59,8 @@ calculatePvalues <- function(fds, type=currentType(fds),
         fwer_pval  <- bplapply(seq_col(pvals), adjust_FWER_PValues,
                 pvals=pvals, index, BPPARAM=BPPARAM)
         fwer_pvals <- do.call(cbind, fwer_pval)
-        pVals(fds, type=type, dist="BetaBinomial") <- fwer_pvals
+        pVals(fds, type=type, dist="BetaBinomial", 
+                withDimnames=FALSE) <- fwer_pvals
         return(fds)
     }
     

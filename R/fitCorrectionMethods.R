@@ -22,7 +22,7 @@ fit <- function(fds, implementation=c("PCA", "PCA-BB-Decoder", "AE",
             counts(fds, type=type, side="ofInterest"))
     
     # check q is set
-    if(method != "BB" & (missing(q) | is.null(q))){
+    if(method != "BB" && (missing(q) | is.null(q))){
         stop("Please provide a q to define the size of the latent space!")
     }
     
@@ -168,7 +168,7 @@ fit <- function(fds, implementation=c("PCA", "PCA-BB-Decoder", "AE",
             nSubset = nSubset,
             minDeltaPsi = minDeltaPsi
         ),
-        BB          = fitBB(fds = fds, psiType = type)
+        BB          = fitBB(fds=fds, psiType=type, BPPARAM=BPPARAM)
     )
 
     return(fds)
@@ -208,7 +208,7 @@ getHyperOptimCorrectionMethod <- function(correction){
 }
 
 fitPCA <- function(fds, q, psiType, rhoRange=c(1e-5, 1-1e-5), noiseAlpha=NULL,
-                    BPPARAM=bpparam(), subset=FALSE, minDeltaPsi,
+                    BPPARAM=bpparam(), subset=FALSE, minDeltaPsi=0.1,
                     nSubset=15000, useLM=FALSE){
     counts(fds, type=psiType, side="other", HDF5=FALSE) <- as.matrix(
             counts(fds, type=psiType, side="other"))
@@ -279,15 +279,14 @@ fitPCA <- function(fds, q, psiType, rhoRange=c(1e-5, 1-1e-5), noiseAlpha=NULL,
     return(fds)
 }
 
-fitBB <- function(fds, psiType){
+fitBB <- function(fds, psiType, BPPARAM=bpparam()){
     currentType(fds) <- psiType
     fds <- pvalueByBetaBinomialPerType(fds=fds,
-                                        aname=paste0("pvalues_BB_", psiType),
-                                        psiType=psiType, 
-                                        pvalFun=betabinVglmTest)
+            aname=paste0("pvalues_BB_", psiType),
+            psiType=psiType, pvalFun=betabinVglmTest, BPPARAM=BPPARAM)
     # predictedMeans(fds, type=psiType) <- rowMeans(
     #         getAssayMatrix(fds, type=psiType))
-    predictedMeans(fds, type=psiType) <-
+    predictedMeans(fds, type=psiType, withDimnames=FALSE) <-
         mcols(fds, type=psiType)[,paste0(psiType, "_alpha")] /
         ( mcols(fds, type=psiType)[,paste0(psiType, "_alpha")] +
                 mcols(fds, type=psiType)[,paste0(psiType, "_beta")] )

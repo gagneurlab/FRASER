@@ -105,7 +105,7 @@ loadFraserDataSet <- function(dir, name=NULL, file=NULL, upgrade=FALSE){
         if(!file.exists(afile)){
             warning(paste("Can not find assay file: ", aname, ".",
                     "The assay will be removed from the object."))
-            assay(fds, aname) <- NULL
+            assay(fds, aname, withDimnames=FALSE) <- NULL
         } else if(afile != path(assay(fds, aname, withDimnames=FALSE))) {
             if(R.Version()$major == "3"){
                 path(assay(fds, aname, withDimnames=FALSE)) <- afile
@@ -136,6 +136,7 @@ saveFraserDataSet <- function(fds, dir=NULL, name=NULL, rewrite=FALSE) {
     
     # over each assay object
     name(fds) <- name
+    workingDir(fds) <- dir
     for(aname in assayNames(fds)){
         assay <- assay(fds, aname)
         assay(fds, aname, withDimnames=FALSE) <- saveAsHDF5(
