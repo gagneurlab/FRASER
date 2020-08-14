@@ -55,6 +55,11 @@ annotateRanges <- function(fds, feature="hgnc_symbol", featureName=feature,
     # check input
     stopifnot(is(fds, "FraserDataSet"))
     if(length(fds) == 0) return(fds)
+    
+    # useEnsembl only understands GRCh=37 or GRCh=NULL (uses 38 then)
+    if(GRCh == 38){
+        GRCh <- NULL
+    }
 
     if(is.null(ensembl)){
         tryCatch({
