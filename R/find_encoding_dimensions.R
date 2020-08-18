@@ -30,6 +30,9 @@ predict_outliers <- function(fds, type, implementation, BPPARAM){
 }
 
 eval_prot <- function(fds, type){
+   
+    message(date(), ": Calculating AUC-PR ...")
+    
     index <- getSiteIndex(fds, type)
     idx   <- !duplicated(index)
 
