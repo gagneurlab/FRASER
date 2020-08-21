@@ -1,5 +1,5 @@
 #'
-#' Create an simulated example data set for FraseR
+#' Create an simulated example data set for FRASER
 #'
 #' Simulates a data set based on random counts following a
 #' beta binomial (or Dirichlet-Multinomial) distribution.
@@ -9,7 +9,7 @@
 #' @param q number of simulated latent variables.
 #' @param distribution Either "BB" for a beta-binomial simulation or "DM" for a 
 #' dirichlet-multinomial simulation.
-#' @param ... Further arguments used to construct the FraseRDataSet.
+#' @param ... Further arguments used to construct the FraserDataSet.
 #'
 #' @return An FraserDataSet containing an example dataset based on
 #'         simulated data
@@ -20,25 +20,25 @@
 #' fds1
 #'
 #' # A generic dataset with specificed sample size and injection method
-#' fds2 <- makeSimulatedFraserDataSet(m=100, j=500, q=5)
+#' fds2 <- makeSimulatedFraserDataSet(m=10, j=100, q=3)
 #' fds2
 #'
 #' @rdname makeSimulatedFraserDataSet
 #' @aliases makeSimulatedFraserDataSet
 #' @export
 makeSimulatedFraserDataSet <- function(m=100, j=500, q=10,
-                                       distribution=c("BB", "DM"), ...){
+                distribution=c("BB", "DM"), ...){
     distribution <- match.arg(distribution)
     fds <- switch (distribution,
-                   BB = makeSimulatedFraserDataSet_BetaBinomial(m=m, j=j, q=q, ...),
-                   DM = makeSimulatedFraserDataSet_Multinomial(m=m, j=j, q=q, ...))
+        BB = makeSimulatedFraserDataSet_BetaBinomial(m=m, j=j, q=q, ...),
+        DM = makeSimulatedFraserDataSet_Multinomial(m=m, j=j, q=q, ...))
     
     fds
 }
 
 makeSimulatedFraserDataSet_BetaBinomial <- function(m=200, j=10000, q=10,
-                                                    nbMeanLog=8, nbSize=0.55, rhoMeanlog=-5, rhoSdlog=1,
-                                                    Hmean=0, Hsd=100, Dmean=0, Dsd=0.007, ...){
+                nbMeanLog=8, nbSize=0.55, rhoMeanlog=-5, rhoSdlog=1,
+                Hmean=0, Hsd=100, Dmean=0, Dsd=0.007, ...){
     
     # Simulate total coverage N = nonSplit + n at each junction using lognormal
     junction_n <- rlnorm(j, meanlog=nbMeanLog, sdlog=nbSize)
@@ -55,7 +55,7 @@ makeSimulatedFraserDataSet_BetaBinomial <- function(m=200, j=10000, q=10,
     H_true <- matrix(rnorm(m*q, mean=Hmean, sd=Hsd), nrow=m, ncol=q)
     D_true <- matrix(rnorm(j*q, mean=Dmean, sd=Dsd), nrow=j, ncol=q)
     b_true <- sample(c(rnorm(round(j*(1/6)), mean=3.5, sd=1.5),
-                       rnorm(round(j*(5/6)), mean=-2.5, sd=2.5)))
+            rnorm(round(j*(5/6)), mean=-2.5, sd=2.5)))
     y_se   <- t(predictYCpp(H_true, D_true, b_true))
     mu_se     <- predictMuCpp(y_se)
     # betaBin dispersion
@@ -63,7 +63,7 @@ makeSimulatedFraserDataSet_BetaBinomial <- function(m=200, j=10000, q=10,
     
     # Draw nonSplit reads from BB
     nonSplit <-matrix(rbetabinom(j*m, size=N, prob=mu_se, rho=rho_se),
-                      nrow=j, ncol=m)
+            nrow=j, ncol=m)
     mode(nonSplit) <- 'integer'
     
     # Set n = N - nonSplit
@@ -75,24 +75,24 @@ makeSimulatedFraserDataSet_BetaBinomial <- function(m=200, j=10000, q=10,
     H_true <- matrix(rnorm(m*q, mean=Hmean, sd=Hsd), nrow=m, ncol=q)
     D_true <- matrix(rnorm(j*q, mean=Dmean, sd=Dsd), nrow=j, ncol=q)
     b_true <- sample(c(rnorm(round(j*(1/6)), mean=-2.5, sd=2.5),
-                       rnorm(round(j*(5/6)), mean=3.5, sd=1.5)))
+            rnorm(round(j*(5/6)), mean=3.5, sd=1.5)))
     y_psi  <- t(predictYCpp(H_true, D_true, b_true))
-    mu_psi     <- predictMuCpp(y_psi)
+    mu_psi <- predictMuCpp(y_psi)
     # betaBin dispersion
     rho_psi <- rlnorm(j, meanlog=rhoMeanlog, sdlog=rhoSdlog)
     
     # Draw nonSplit reads from BB
-    k <-matrix(rbetabinom(j*m, size=n, prob=mu_psi, rho=rho_psi),
-               nrow=j, ncol=m)
+    k <- matrix(rbetabinom(j*m, size=n, prob=mu_psi, rho=rho_psi),
+            nrow=j, ncol=m)
     mode(k) <- 'integer'
     
     
     #
-    # Create FraseR data set
+    # Create FRASER data set
     #
     sampleIDs <- paste0("sample", seq_len(m))
     anno <- data.table(sampleID = sampleIDs, bamFile=rep(NA, m))
-    fds <- FraseRDataSet(colData=anno, ...)
+    fds <- FraserDataSet(colData=anno, ...)
     
     # put in n as rawcountsJ first so it doesn't complain later
     # when assinging k to it
@@ -100,30 +100,30 @@ makeSimulatedFraserDataSet_BetaBinomial <- function(m=200, j=10000, q=10,
         colData=colData(fds),
         assays=list(rawCountsJ=k),
         rowRanges=GRanges(seqnames=rep("chr1", j),
-                          ranges=IRanges(start=seq_len(j), width=1 ))
-    )
+                ranges=IRanges(start=seq_len(j), width=1 )))
+    
     nonSplitData <- SummarizedExperiment(
         colData=colData(fds),
         assays=list(rawCountsSS=nonSplit),
         rowRanges=GRanges(seqnames=rep("chr1", j),
-                          ranges=IRanges(start=seq_len(j), width=1 ))
-    )
-    fds <- new("FraseRDataSet",
-               junctionData,
-               name            = name(fds),
-               bamParam        = scanBamParam(fds),
-               strandSpecific  = strandSpecific(fds),
-               workingDir      = workingDir(fds),
-               nonSplicedReads = nonSplitData
-    )
+                ranges=IRanges(start=seq_len(j), width=1 )))
+    
+    fds <- new("FraserDataSet",
+            junctionData,
+            name            = name(fds),
+            bamParam        = scanBamParam(fds),
+            strandSpecific  = strandSpecific(fds),
+            workingDir      = workingDir(fds),
+            nonSplicedReads = nonSplitData)
+    
     metadata(fds)[['optimalEncDim']]  <- q
     metadata(fds)[['encDimTable']]    <- data.table(
-        encodingDimension=q, evaluationLoss=1, evalMethod='simulation')
+            encodingDimension=q, evaluationLoss=1, evalMethod='simulation')
     
     # Store "other" counts
-    counts(fds, type="psi3", side="other") <-    n - k
-    counts(fds, type="psi5", side="other") <-    n - k
-    counts(fds, type="psiSite", side="other") <- n
+    counts(fds, type="psi3", side="other", withDimnames=FALSE) <-    n - k
+    counts(fds, type="psi5", side="other", withDimnames=FALSE) <-    n - k
+    counts(fds, type="psiSite", side="other", withDimnames=FALSE) <- n
     
     # store information about the simulation in the fds
     # (same values for psi3 and psi5)
@@ -140,9 +140,11 @@ makeSimulatedFraserDataSet_BetaBinomial <- function(m=200, j=10000, q=10,
     }
     
     # store info for SE
-    setAssayMatrix(fds=fds, name="truePSI", type="psiSite")      <- mu_se
-    setAssayMatrix(fds=fds, name="trueLogitPSI", type="psiSite") <- y_se
-    mcols(fds, type="psiSite")[,"trueRho"]                       <- rho_se
+    setAssayMatrix(fds=fds, name="truePSI", type="psiSite", 
+            withDimnames=FALSE) <- mu_se
+    setAssayMatrix(fds=fds, name="trueLogitPSI", type="psiSite", 
+            withDimnames=FALSE) <- y_se
+    mcols(fds, type="psiSite")[,"trueRho"] <- rho_se
     
     # needed so that subsetting the fds works later
     siteIDs <- seq_row(mcols(fds, type="psiSite"))
@@ -158,9 +160,9 @@ makeSimulatedFraserDataSet_BetaBinomial <- function(m=200, j=10000, q=10,
 # Generate a simulated fds using a Dirichlet-Mulitnomial distribution
 #
 makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=1000, q=10,
-                                                   groups=round(j*0.65), nbMeanLog=8, nbSize=0.55,
-                                                   rhoMeanlog=-5, rhoSdlog=1, Hmean=0, Hsd=100, Dmean=0,
-                                                   Dsd=0.007, ...){
+                groups=round(j*0.65), nbMeanLog=8, nbSize=0.55,
+                rhoMeanlog=-5, rhoSdlog=1, Hmean=0, Hsd=100, Dmean=0,
+                Dsd=0.007, ...){
     
     #
     # Simulate groups of junctions having the same donor/acceptor site
@@ -272,7 +274,7 @@ makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=1000, q=10,
         
         # Substract nonSplit reads from total N to get n for PSI (=other for SE)
         group_n   <- group_n - matrix(nonSplit, nrow=nrow(group_n), 
-                                      ncol=ncol(group_n), byrow = TRUE)
+                ncol=ncol(group_n), byrow = TRUE)
         
         # Also get mu and rho for this group (to split it into PSI and SE part 
         # for storing later)
@@ -297,18 +299,18 @@ makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=1000, q=10,
         }
         # scale mu's so that they sum up to 1 again (after mu for SE is removed)
         psi_mu    <- psi_mu /  matrix(colSums(psi_mu), nrow=nrow(psi_mu), 
-                                      ncol=ncol(psi_mu), byrow = TRUE)
+                ncol=ncol(psi_mu), byrow = TRUE)
         
         # return everyting relevant for storing counts, n, alpha, mu, 
         # rho split into the parts for PSI and SE
         return(list(k=k, nonSplit=nonSplit, n=psi_n, group_n=se_n, 
-                    psi_mu=psi_mu, se_mu=se_mu, psi_alpha=psi_alpha, 
-                    se_alpha=se_alpha, psi_rho=psi_rho, se_rho=se_rho))
+                psi_mu=psi_mu, se_mu=se_mu, psi_alpha=psi_alpha, 
+                se_alpha=se_alpha, psi_rho=psi_rho, se_rho=se_rho))
     }, FUN.VALUE=list(k=numeric(m), nonSplit=numeric(m), n=numeric(m), 
-                      group_n=numeric(m), psi_mu=numeric(m), 
-                      se_mu=numeric(m), psi_alpha=numeric(m), 
-                      se_alpha=numeric(m), psi_rho=numeric(1), 
-                      se_rho=numeric(1)))
+            group_n=numeric(m), psi_mu=numeric(m), 
+            se_mu=numeric(m), psi_alpha=numeric(m), 
+            se_alpha=numeric(m), psi_rho=numeric(1), 
+            se_rho=numeric(1)))
     
     # Extract k and nonSplit reads
     k <- do.call(rbind, res[1,])
@@ -335,71 +337,75 @@ makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=1000, q=10,
     
     
     #
-    # Create FraseR data set
+    # Create FRASER data set
     #
     sampleIDs <- paste0("sample", seq_len(m))
     anno <- data.table(sampleID = sampleIDs, bamFile=rep(NA, m))
-    fds <- FraseRDataSet(colData=anno, ...)
+    fds <- FraserDataSet(colData=anno, ...)
     
     # put in k as rawcountsJ (= nr reads spanning each junction)
     junctionData <- SummarizedExperiment(
         colData=colData(fds),
         assays=list(rawCountsJ=k),
         rowRanges=GRanges(seqnames=rep("chr1", nrJunctions), 
-                          ranges=IRanges(start=psiJunctionGroups, width=1))
-    )
+                ranges=IRanges(start=psiJunctionGroups, width=1)))
+    
     nonSplitData <- SummarizedExperiment(
         colData=colData(fds),
         assays=list(rawCountsSS=nonSplit),
         rowRanges=GRanges(seqnames=rep("chr1", d), 
-                          ranges=IRanges(start=donorGroups, width=1))
-    )
-    fds <- new("FraseRDataSet",
-               junctionData,
-               name            = name(fds),
-               bamParam        = scanBamParam(fds),
-               strandSpecific  = strandSpecific(fds),
-               workingDir      = workingDir(fds),
-               nonSplicedReads = nonSplitData
-    )
+                ranges=IRanges(start=donorGroups, width=1)))
+    
+    fds <- new("FraserDataSet",
+            junctionData,
+            name            = name(fds),
+            bamParam        = scanBamParam(fds),
+            strandSpecific  = strandSpecific(fds),
+            workingDir      = workingDir(fds),
+            nonSplicedReads = nonSplitData)
+    
     metadata(fds)[['optimalEncDim']]  <- q
     
     
     # store other counts (n-k) for psi3=psi5 and SE (other=n)
-    counts(fds, type="psi3", side="other")    <- psi_n - k
-    counts(fds, type="psi5", side="other")    <- psi_n - k
-    counts(fds, type="psiSite", side="other") <- se_n
+    counts(fds, type="psi3", side="other", withDimnames=FALSE)    <- psi_n - k
+    counts(fds, type="psi5", side="other", withDimnames=FALSE)    <- psi_n - k
+    counts(fds, type="psiSite", side="other", withDimnames=FALSE) <- se_n
     
     for(type in c("psi3", "psi5")){
         # store information about the simulation in the fds 
         # (same values for psi3 and psi5)
-        setAssayMatrix(fds=fds, name="truePSI", type=type)      <- psi_mu
-        setAssayMatrix(fds=fds, name="trueLogitPSI", type=type) <- 
-            qlogis(psi_mu)
-        setAssayMatrix(fds=fds, name="trueAlpha", type=type)    <- psi_alpha
-        mcols(fds, type=type)[,"trueRho"]                       <- psi_rho
+        setAssayMatrix(fds=fds, name="truePSI", type=type,
+                withDimnames=FALSE) <- psi_mu
+        setAssayMatrix(fds=fds, name="trueLogitPSI", type=type,
+                withDimnames=FALSE) <- qlogis(psi_mu)
+        setAssayMatrix(fds=fds, name="trueAlpha", type=type,
+                withDimnames=FALSE) <- psi_alpha
+        mcols(fds, type=type)[,"trueRho"] <- psi_rho
         
         # needed so that subsetting the fds works later
         mcols(fds, type=type)[["startID"]] <- 
-            psiJunctionGroups # 1:nrow(mcols(fds, type=type))
+                psiJunctionGroups # 1:nrow(mcols(fds, type=type))
         mcols(fds, type=type)[["endID"]]   <- 
-            psiJunctionGroups # 1:nrow(mcols(fds, type=type))
+                psiJunctionGroups # 1:nrow(mcols(fds, type=type))
     }
     
     # store info for SE
-    setAssayMatrix(fds=fds, name="truePSI", type="psiSite")      <- se_mu
-    setAssayMatrix(fds=fds, name="trueLogitPSI", type="psiSite") <- 
-        qlogis(se_mu)
-    setAssayMatrix(fds=fds, name="trueAlpha", type="psiSite")    <- se_alpha
-    mcols(fds, type="psiSite")[,"trueRho"]                       <- se_rho
+    setAssayMatrix(fds=fds, name="truePSI", type="psiSite",
+            withDimnames=FALSE) <- se_mu
+    setAssayMatrix(fds=fds, name="trueLogitPSI", type="psiSite",
+            withDimnames=FALSE) <- qlogis(se_mu)
+    setAssayMatrix(fds=fds, name="trueAlpha", type="psiSite",
+            withDimnames=FALSE) <- se_alpha
+    mcols(fds, type="psiSite")[,"trueRho"] <- se_rho
     
     # needed so that subsetting the fds works later
     mcols(fds, type="psiSite")[["startID"]]      <- 
-        donorGroups # 1:nrow(mcols(fds, type="psiSite"))
+            donorGroups # 1:nrow(mcols(fds, type="psiSite"))
     mcols(fds, type="psiSite")[["endID"]]        <- 
-        seq_len(nrow(mcols(fds, type="psiSite")))
+            seq_len(nrow(mcols(fds, type="psiSite")))
     mcols(fds, type="psiSite")[["spliceSiteID"]] <- 
-        donorGroups # 1:nrow(mcols(fds, type="psiSite"))
+            donorGroups # 1:nrow(mcols(fds, type="psiSite"))
     
     return(fds)
     
@@ -408,7 +414,7 @@ makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=1000, q=10,
 #'
 #' Inject artificial outliers in an existing fds
 #' 
-#' @param fds FraseRDataSet
+#' @param fds FraserDataSet
 #' @param type The psi type
 #' @param freq The injection frequency.
 #' @param minDpsi The minimal delta psi with which outliers will be injected.
@@ -423,27 +429,41 @@ makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=1000, q=10,
 #' add to the psi value of the junction in the specific sample. "simulatedPSI" 
 #' is only possible if a simulated dataset is used.
 #' 
-#' @return FraseRDataSet
+#' @return FraserDataSet
 #' 
 #' @examples 
 #' # A generic dataset
 #' fds <- makeSimulatedFraserDataSet()
 #' fds <- injectOutliers(fds, minDpsi=0.2, freq=1E-3)
 #' @export
-injectOutliers <- function(fds, type=type, freq=1E-3, minDpsi=0.2,
-                           deltaDistr="uniformDistr", verbose=FALSE,
-                           method=c('samplePSI', 'meanPSI', 'simulatedPSI'),
-                           BPPARAM=bpparam()){
-
+injectOutliers <- function(fds, type=c("psi5", "psi3", "psiSite"),
+                    freq=1E-3, minDpsi=0.2, minCoverage=2,
+                    deltaDistr="uniformDistr", verbose=FALSE,
+                    method=c('samplePSI', 'meanPSI', 'simulatedPSI'),
+                    BPPARAM=bpparam()){
+    
+    if(length(type) > 1){
+        for(t in type){
+            fds <- injectOutliers(fds, type=t, freq=freq, minDpsi=minDpsi,
+                    minCoverage=minCoverage, deltaDistr=deltaDistr,
+                    verbose=verbose, method=method, BPPARAM=BPPARAM)
+        }
+        return(fds)
+    }
     # copy original k and o
     if(type == "psiSite"){
-        setAssayMatrix(fds, type="psiSite", "originalCounts") <- counts(fds, type="psiSite", side="ofInterest")
-        setAssayMatrix(fds, type="psiSite", "originalOtherCounts") <- counts(fds, type="psiSite", side="other")
+        setAssayMatrix(fds, type="psiSite", "originalCounts") <- 
+                counts(fds, type="psiSite", side="ofInterest")
+        setAssayMatrix(fds, type="psiSite", "originalOtherCounts") <- 
+                counts(fds, type="psiSite", side="other")
     }
     else{
-        setAssayMatrix(fds, type=type, "originalCounts") <- counts(fds, type=type, side="ofInterest")
-        setAssayMatrix(fds, type="psi5", "originalOtherCounts") <- counts(fds, type="psi5", side="other")
-        setAssayMatrix(fds, type="psi3", "originalOtherCounts") <- counts(fds, type="psi3", side="other")
+        setAssayMatrix(fds, type=type, "originalCounts") <- 
+                counts(fds, type=type, side="ofInterest")
+        setAssayMatrix(fds, type="psi5", "originalOtherCounts") <- 
+                counts(fds, type="psi5", side="other")
+        setAssayMatrix(fds, type="psi3", "originalOtherCounts") <- 
+                counts(fds, type="psi3", side="other")
     }
 
     # get infos from the fds
@@ -451,20 +471,22 @@ injectOutliers <- function(fds, type=type, freq=1E-3, minDpsi=0.2,
     j <- nrow(mcols(fds, type=type))
 
     k <- as.matrix(K(fds, type=type))
-    n <- as.matrix(N(fds, type=type)) # as.matrix(..) needed so that n doesn't change after new k is stored (needed only for swap=FALSE)
+    n <- as.matrix(N(fds, type=type))
     o <- as.matrix(counts(fds, type=type, side="other"))
 
     psi <- switch(match.arg(method),
-                  samplePSI    = (k + pseudocount())/(n + 2*pseudocount()),
-                  meanPSI      = matrix(rowMeans( (k + pseudocount())/(n + 2*pseudocount()) ), nrow=j, ncol=m),
-                  simulatedPSI = getAssayMatrix(fds, "truePSI", type=type) )
+            samplePSI    = (k + pseudocount())/(n + 2*pseudocount()),
+            meanPSI      = matrix(nrow=j, ncol=m,
+                    rowMeans( (k + pseudocount()) / (n + 2*pseudocount()))),
+            simulatedPSI = getAssayMatrix(fds, "truePSI", type=type) )
 
     # nedded to have comparably many outliers when type is SE
     if(type == "psiSite"){
         freq <- freq/10
     }
 
-    # data table with information about chr, start, end, ... for calculating groups
+    # data table with information about chr, start, end, 
+    # ... for calculating groups
     dt <- if(type == "psiSite"){
         data.table(
             junctionID = 1:j,
@@ -487,16 +509,21 @@ injectOutliers <- function(fds, type=type, freq=1E-3, minDpsi=0.2,
 
     # Get groups where outlier can be injected
     available_groups <- switch(type,
-                               psi3 = dt[acceptorGroupSize > 1, acceptorGroupID, by=acceptorGroupID]$acceptorGroupID,
-                               psi5 = dt[donorGroupSize > 1, donorGroupID, by=donorGroupID]$donorGroupID,
-                               psiSite = seq_len(j))
-
-    if(length(available_groups) == 0){ # e.g. for psi3/5: no donor/acceptor groups with at least 2 junctions (e.g in simulationBB)
+            psi3 = dt[acceptorGroupSize > 1, acceptorGroupID, 
+                    by=acceptorGroupID]$acceptorGroupID,
+            psi5 = dt[donorGroupSize > 1, donorGroupID, 
+                    by=donorGroupID]$donorGroupID,
+            psiSite = seq_len(j))
+    
+    # e.g. for psi3/5: no donor/acceptor 
+    # groups with at least 2 junctions (e.g in simulationBB)
+    if(length(available_groups) == 0){ 
         available_groups <- seq_len(j)
         freq <- freq/10
     }
 
-    indexOut_groups <- matrix(sample(c(0,1,-1), length(available_groups)*m, replace=TRUE, prob=c(1-freq, freq/2, freq/2)), ncol=m)
+    indexOut_groups <- matrix(sample(c(0,1,-1), length(available_groups)*m, 
+            replace=TRUE, prob=c(1-freq, freq/2, freq/2)), ncol=m)
 
     # positions where outliers will be injected
     list_index <- which(indexOut_groups != 0, arr.ind = TRUE)
@@ -504,89 +531,110 @@ injectOutliers <- function(fds, type=type, freq=1E-3, minDpsi=0.2,
     # apply injection function to each outlier
     message(date(), ": Injecting ", nrow(list_index), " outliers ...")
     result <- bplapply(seq_len(nrow(list_index)), list_index=list_index,
-                       indexOut_groups=indexOut_groups, type=type, psi=psi, n=n, dt=dt,
-                       minDpsi=minDpsi, verbose=verbose, BPPARAM=SerialParam(),
-                       FUN=function(j, list_index, indexOut_groups, type, psi, n, dt=dt, minDpsi, verbose){
+            indexOut_groups=indexOut_groups, type=type, psi=psi, n=n, dt=dt,
+            minDpsi=minDpsi, verbose=verbose, BPPARAM=SerialParam(),
+            FUN=function(j, list_index, indexOut_groups, type,
+                            psi, n, dt=dt, minDpsi, verbose){
+                # extract group, sample and injecetion 
+                # direction (i.e +1/up or -1/down)
+                row       <- list_index[j,'row']
+                group     <- available_groups[row]
+                sample    <- list_index[j,'col']
+                injDirection    <- indexOut_groups[row, sample]
 
-                           # extract group, sample and injecetion direction (i.e +1/up or -1/down)
-                           row       <- list_index[j,'row']
-                           group     <- available_groups[row]
-                           sample    <- list_index[j,'col']
-                           injDirection    <- indexOut_groups[row, sample]
+                # sample one junction from all junction within this group
+                group_junctions <- if(type == "psi3"){ 
+                            dt[acceptorGroupID == group, junctionID] }
+                        else {
+                            dt[donorGroupID == group, junctionID] }
+                junction <- if(length(group_junctions)==1){ 
+                            group }
+                        else {
+                            sample(group_junctions, 1) }
 
-                           # sample one junction from all junction within this group
-                           group_junctions <- if(type == "psi3"){ dt[acceptorGroupID == group, junctionID] }else{ dt[donorGroupID == group, junctionID] }
-                           junction        <- if(length(group_junctions)==1){ group }else{sample(group_junctions, 1) }
+                # get current psi of this junction and calculate
+                # maximla possible value of delta psi for the injection
+                junction_psi    <- psi[junction, sample]
+                maxDpsi <- if(injDirection > 0){ 
+                            1 - junction_psi }
+                        else{
+                            junction_psi }
 
-                           # get current psi of this junction and calculate maximla possible value of delta psi for the injection
-                           junction_psi    <- psi[junction, sample]
-                           maxDpsi <- if(injDirection > 0){ 1 - junction_psi }else{junction_psi}
+                # if not possible to inject here with at least minDpsi,
+                # change injection direction
+                if(maxDpsi < minDpsi){
+                    injDirection <- -injDirection
+                    indexOut_groups[row, sample] <- injDirection
+                    maxDpsi <- if(injDirection > 0){ 
+                                1 - junction_psi }
+                            else{
+                                junction_psi }
+                }
 
-                           # if not possible to inject here with at least minDpsi, change injection direction
-                           if(maxDpsi < minDpsi){
-                               injDirection <- -injDirection
-                               indexOut_groups[row, sample] <- injDirection
-                               maxDpsi <- if(injDirection > 0){ 1 - junction_psi }else{junction_psi}
-                           }
+                # sample delta psi for injection from uniform
+                # distribution between min and max dpsi
+                minDpsi <- ifelse(minDpsi < maxDpsi, minDpsi, maxDpsi)
+                injDpsi <- injDirection * switch(as.character(deltaDistr),
+                        uniformDistr = runif(1, minDpsi, maxDpsi),
+                        ifelse(as.double(deltaDistr) > maxDpsi, 
+                                maxDpsi, as.double(deltaDistr)) )
 
-                           # ensure that injected points becomes an outlier by adding mean delta psi as an offset
-                           # meanDpsi <- mean(abs(psi[junction,] - mean(psi[junction,])))
+                # get N of this junction
+                n_ji <- n[junction,sample]
 
-                           # sample delta psi for injection from uniform distribution between min and max dpsi
-                           # minDpsi <- ifelse(minDpsi+meanDpsi < maxDpsi, minDpsi+meanDpsi, maxDpsi)
-                           minDpsi <- ifelse(minDpsi < maxDpsi, minDpsi, maxDpsi)
-                           injDpsi <- injDirection * switch(as.character(deltaDistr),
-                                                            uniformDistr = runif(1, minDpsi, maxDpsi),
-                                                            ifelse(as.double(deltaDistr) > maxDpsi, maxDpsi, as.double(deltaDistr)) )
+                # new counts after injection
+                newKs     <- integer(length(group_junctions))
+                indexDpsi <- double(length(group_junctions))
+                indOut  <- integer(length(group_junctions))
 
-                           # if(is.na(injDpsi)){
-                           #   browser()
-                           # }
+                # for all other junctions in this group
+                for(i in seq_len(length(group_junctions))){
+                    junction_k <- group_junctions[i]
+                    # get new_psi and change k based on n and new_psi 
+                    # (and take pseudocounts into account): 
+                    #     (k+1)/(n+2)=psi -> k = psi*(n+2) - 1
+                    if(junction_k == junction){
+                        new_psi <- junction_psi + injDpsi
+                        new_k <- round( new_psi * 
+                                (n_ji + 2*pseudocount()) - pseudocount() )
 
-                           # get N of this junction
-                           n_ji <- n[junction,sample]
+                        # store position of outlier
+                        indOut[i]      <- injDirection
+                        indexDpsi[i]   <- injDpsi
+                    }
+                    else{
+                        deltaPSI_k <- - (psi[junction_k,sample] / 
+                                (1-junction_psi)) * injDpsi
+                        new_psi <- psi[junction_k,sample] + deltaPSI_k
+                        new_k <- round( new_psi*(n_ji + 2*pseudocount()) - 
+                                pseudocount() )
 
-                           # new counts after injection
-                           newKs     <- integer(length(group_junctions))
-                           indexDpsi <- double(length(group_junctions))
-                           indOut  <- integer(length(group_junctions))
+                        # also store position of other junction used in swap
+                        indOut[i]      <- -injDirection * 2
+                        indexDpsi[i]   <- deltaPSI_k
+                    }
+                    # for SE: ensure new_k <= n_ij 
+                    # (so that o=n-k is always >= 0) 
+                    # (not needed for psi3/5 because o
+                    # will recalculated from k's there)
+                    if(length(group_junctions)==1){ # if(type == "psiSite"){
+                        new_k <- min(new_k, n_ji)
+                    }
+                    # ensure new_k >= 0 and assign k_ij <- new_k
+                    newKs[i] <- max(0, new_k)
+                }
 
-                           # for all other junctions in this group
-                           for(i in seq_len(length(group_junctions))){
-                               junction_k <- group_junctions[i]
-                               # get new_psi and change k based on n and new_psi (and take pseudocounts into account): (k+1)/(n+2)=psi -> k = psi*(n+2) - 1
-                               if(junction_k == junction){
-                                   new_psi <- junction_psi + injDpsi
-                                   new_k <- round( new_psi*(n_ji + 2*pseudocount()) - pseudocount() )
+                if(verbose){
+                    print(paste("injected outlier", j, "with delta PSI of", 
+                            injDpsi, "at junction", junction, "and sample", 
+                            sample))
+                }
 
-                                   # store position of outlier
-                                   indOut[i]      <- injDirection
-                                   indexDpsi[i]   <- injDpsi
-                               }
-                               else{
-                                   deltaPSI_k <- - (psi[junction_k,sample] / (1-junction_psi)) * injDpsi
-                                   new_psi <- psi[junction_k,sample] + deltaPSI_k
-                                   new_k <- round( new_psi*(n_ji + 2*pseudocount()) - pseudocount() )
-
-                                   # also store position of other junction used in swap
-                                   indOut[i]      <- -injDirection * 2
-                                   indexDpsi[i]   <- deltaPSI_k
-                               }
-                               # for SE: ensure new_k <= n_ij (so that o=n-k is always >= 0) (not needed for psi3/5 because o will recalculated from k's there)
-                               if(length(group_junctions)==1){ # if(type == "psiSite"){
-                                   new_k <- min(new_k, n_ji)
-                               }
-                               # ensure new_k >= 0 and assign k_ij <- new_k
-                               newKs[i] <- max(0, new_k)
-                           }
-
-                           if(verbose){
-                               print(paste("injected outlier", j, "with delta PSI of", injDpsi, "at junction", junction, "and sample", sample))
-                           }
-
-                           return(list(newKs = newKs, newOs=sum(newKs)-newKs, junctions = group_junctions,
-                                       injDeltaPSI = indexDpsi, injDirections = indOut, sample = rep(sample, length(group_junctions))))
-                       } )
+                return(list(newKs = newKs, newOs=sum(newKs)-newKs, 
+                        junctions = group_junctions, injDeltaPSI = indexDpsi,
+                        injDirections = indOut, 
+                        sample = rep(sample, length(group_junctions))))
+            })
 
     # get all junctions, samples, ... where outlier injection changed the counts
     junctions     <- unlist(lapply(result, "[[", 'junctions'))
@@ -622,241 +670,7 @@ injectOutliers <- function(fds, type=type, freq=1E-3, minDpsi=0.2,
     counts(fds, type=type, side="other") <- o
 
     return(fds)
-
 }
-# injectOutliers <- function(fds, type=c("psi5", "psi3", "psiSite"),
-#                            freq=1E-3, minDpsi=0.2, minCoverage=2,
-#                            deltaDistr="uniformDistr", verbose=FALSE,
-#                            method=c('meanPSI', 'samplePSI', 'simulatedPSI'),
-#                            injectionOnlyInAlternativeIntrons=TRUE){
-#     type <- match.arg(type, several.ok=TRUE)
-#     method <- match.arg(method)
-#     
-#     if(length(type) > 1){
-#         for(t in type){
-#             fds <- injectOutliers(fds, type=t, freq=freq, minDpsi=minDpsi,
-#                                   minCoverage=minCoverage, deltaDistr=deltaDistr,
-#                                   verbose=verbose, method=method)
-#         }
-#         return(fds)
-#     }
-#     
-#     # get infos from the fds
-#     if(paste0("originalCounts_", type) %in% assayNames(fds)){
-#         message("Use existing original counts and reinject outliers.")
-#         k <- as.matrix(getAssayMatrix(fds, type=type, "originalCounts"))
-#         o <- as.matrix(getAssayMatrix(fds, type=type, "originalOtherCounts"))
-#     } else {
-#         k <- as.matrix(counts(fds, type=type, side="ofI"))
-#         o <- as.matrix(counts(fds, type=type, side="other"))
-#     }
-#     n <- k + o
-#     m <- ncol(k)
-#     j <- nrow(k)
-#     
-#     # compute psi
-#     psi <- switch(method,
-#                   samplePSI    = (k + pseudocount())/(n + 2*pseudocount()),
-#                   meanPSI      = matrix(nrow=j, ncol=m,
-#                                         rowMeans( (k + pseudocount())/(n + 2*pseudocount()) )),
-#                   simulatedPSI = getAssayMatrix(fds, "truePSI", type=type))
-#     
-#     # 
-#     # matrix of donor/acceptor for possible injection
-#     # 
-#     tmpIndex <- getSiteIndex(fds, type)
-#     dt <- as.data.table(rowRanges(fds, type=type))[,.(
-#         chr=seqnames, start, end, strand, idxInCount=.I, 
-#         junctionID=tmpIndex)]
-#     dt[,nPerGroup:=.N,by=junctionID]
-#     dt[,idxGroup:=.GRP, by=junctionID]
-#     dt[,idxInGroup:=seq_len(.N),by=junctionID]
-#     
-#     if(max(dt$idxGroup) * m * freq < 10){
-#         freq <- 10/(max(dt$idxGroup) * m)
-#         warning("Injection-frequency is to low. Increasing it to `",
-#                 signif(freq, 2), "` so we can inject at least 10 events ",
-#                 "into the data set!")
-#     }
-#     
-#     # where do we inject and how
-#     if(type != "psiSite" && isTRUE(injectionOnlyInAlternativeIntrons)){
-#         dt <- dt[nPerGroup > 1,]
-#     }
-#     # if(type == "psiSite"){
-#     #     freq <- freq/10
-#     # }
-#     indexOut_groups <- matrix(ncol=m, sample(c(0,1,-1),
-#                                              max(dt$idxGroup)*m, replace=TRUE,
-#                                              prob=c(1-freq, freq/2, freq/2)))
-#     
-#     # positions where outliers will be injected
-#     list_index <- which(indexOut_groups != 0, arr.ind=TRUE)
-#     
-#     
-#     # sample primary injection
-#     primaryInjection <- merge(as.data.table(list_index), dt,
-#                               sort=FALSE, by.x="row", by.y="idxGroup", allow.cartesian=TRUE)
-#     primaryInjection[,primary:=idxInGroup==sample(idxInGroup,1),by="row,col"]
-#     primaryInjection[,n:=n[cbind(idxInCount, col)]]
-#     primaryInjection[,k:=k[cbind(idxInCount, col)]]
-#     primaryInjection[,nOk:=length(unique(n)) == 1, by="row,col"]
-#     if(nrow(primaryInjection[nOk == FALSE]) / nrow(primaryInjection) > 0.05){
-#         # this can happen in the lower range if the prediction of the direction
-#         # did not work properly. Where the donor/acceptor goes the wrong way.
-#         # But this should not be too frequent. So ignore if it is below 5%
-#         warning("It looks like you have a problem with your indexes. ",
-#                 "Please report it on github to the developer.")
-#     }
-#     primaryInjection <- primaryInjection[nOk == TRUE]
-#     primaryInjection[,I:=cumsum(primary)]
-#     primaryInjection[,I:=max(I),by="row,col"]
-#     
-#     
-#     # get matrix accessors (row, col) aka (junctionID, sampleID)
-#     primaryIndexInReal <- as.matrix(
-#         primaryInjection[primary == TRUE, .(idxInCount, col)])
-#     primaryIndexInGroup <- as.matrix(
-#         primaryInjection[primary == TRUE, .(row, col)])
-#     secondaryIndexInReal <- as.matrix(
-#         primaryInjection[primary != TRUE, .(idxInCount, col)])
-#     secondaryIndexInGroup <- as.matrix(
-#         primaryInjection[primary != TRUE, .(row, col)])
-#     # init with empty for psiSite. Function rep does not 
-#     # support times of length zero eg: rep(1, integer(0))
-#     secondaryPrimaryIndex <- as.matrix(primaryInjection[FALSE,.(
-#         row, col, idxInCount, junctionID, nPerGroup, I, rep=integer(.N))])
-#     if(nrow(primaryInjection[primary == TRUE & nPerGroup > 1]) > 0){
-#         secondaryPrimaryIndex <- as.matrix(primaryInjection[
-#             primary == TRUE & nPerGroup > 1, .(
-#                 idxInCount, junctionID, nPerGroup, I, 
-#                 rep=rep(TRUE, nPerGroup-1)),
-#             by="row,col"])
-#     }
-#     
-#     # get direction of injection
-#     injDirection <- indexOut_groups[primaryIndexInGroup]
-#     # table(injDirection)
-#     
-#     # get current psi of this junction and calculate maximal possible delta psi
-#     junction_psi <- psi[primaryIndexInReal]
-#     maxDpsi <- ifelse(injDirection > 0, 1 - junction_psi, junction_psi)
-#     
-#     # if not possible to inject here with at least minDpsi, 
-#     # change injection direction
-#     injectionPossible <- maxDpsi > minDpsi
-#     # table(injectionPossible)
-#     injDirection[!injectionPossible] <- -injDirection[!injectionPossible]
-#     maxDpsi <- ifelse(injDirection > 0, 1 - junction_psi, junction_psi)
-#     
-#     # ensure that injected points becomes an outlier by adding
-#     # mean delta psi as an offset
-#     meanDpsi <- rowMeans2(abs(psi[primaryIndexInReal[,"idxInCount"],] - 
-#                                   rowMeans2(psi[primaryIndexInReal[,"idxInCount"],])))
-#     
-#     # sample delta psi for injection from uniform distribution between 
-#     # min and max dpsi
-#     injMinDpsi <- ifelse(minDpsi + meanDpsi < maxDpsi,
-#                          minDpsi + meanDpsi, maxDpsi)
-#     injDpsi <- injDirection * switch(as.character(deltaDistr),
-#                                      uniformDistr = runif(length(injMinDpsi), injMinDpsi, maxDpsi),
-#                                      ifelse(deltaDistr > maxDpsi, maxDpsi, deltaDistr))
-#     
-#     # get N of this junction
-#     n_ji <- n[primaryIndexInReal]
-#     
-#     # inject new primary k_ij -> change k based on n and new_psi 
-#     # (and take pseudocounts into account): (k+1)/(n+2)=psi -> k = psi*(n+2)-1
-#     new_primary_psi <- junction_psi + injDpsi
-#     new_primary_k   <- pmax(pmin(round(
-#         new_primary_psi*(n_ji + 2*pseudocount()) - pseudocount()), n_ji), 0)
-#     
-#     # inject secondary k_ij -> change k based on n and the new_psi
-#     second_delta_psi <- - injDpsi[secondaryPrimaryIndex[,"I"]] * (
-#         psi[secondaryIndexInReal] / (
-#             1-psi[secondaryPrimaryIndex[,c("idxInCount", "col"),drop=FALSE]]))
-#     new_second_psi <- psi[secondaryIndexInReal] + second_delta_psi
-#     
-#     # sanity check for injected psi
-#     if(any(new_second_psi < -0.0001) | any(new_second_psi > 1.0001)){
-#         warning("Have to cut injected delta psi for: ", 
-#                 sum(new_second_psi < -0.0001), " and ", 
-#                 sum(new_second_psi > 1.0001), " instances!")
-#     }
-#     new_second_psi <- pmin(pmax(new_second_psi, 0), 1)
-#     new_second_k <- pmax(pmin(round(new_second_psi * ((
-#         n[secondaryIndexInReal] + 2 * pseudocount()) - 
-#             pseudocount())), 
-#         n[secondaryIndexInReal]), 0)
-#     
-#     # 
-#     # check if we really have an outlier or not
-#     # and get primiary/secondary injections
-#     # 
-#     goodInjections <- n[primaryIndexInReal] >= minCoverage &
-#         abs(k[primaryIndexInReal] - new_primary_k) > 2
-#     goodJunctionIds <- primaryInjection[primary == TRUE][
-#         goodInjections,junctionID]
-#     goodSecondary <- primaryInjection[primary == FALSE][,
-#                                                         junctionID %in% goodJunctionIds]
-#     
-#     message(paste0(date(), ": Injecting outliers: ", sum(goodInjections), 
-#                    " / ", sum(goodSecondary), " (primary/secondary)"))
-#     
-#     # 
-#     # prepare the injection into the dataset only for those which passed QC
-#     # 
-#     
-#     # set counts (k and o)
-#     k[primaryIndexInReal[goodInjections,,drop=FALSE]]  <- 
-#         new_primary_k[goodInjections]
-#     k[secondaryIndexInReal[goodSecondary,,drop=FALSE]] <- 
-#         new_second_k[goodSecondary]
-#     o <- n - k
-#     
-#     # set injection status (direction, primary, secondary)
-#     indexOut <- matrix(0, nrow=nrow(k), ncol=ncol(k))
-#     indexOut[primaryIndexInReal[goodInjections,]] <- 
-#         injDirection[goodInjections]
-#     indexOut[secondaryIndexInReal[goodSecondary,]] <- 
-#         2 * injDirection[secondaryPrimaryIndex[,"I"][goodSecondary]]
-#     
-#     # set injected delta psi
-#     indexDeltaPsi <- matrix(0, nrow=nrow(k), ncol=ncol(k))
-#     indexDeltaPsi[primaryIndexInReal[goodInjections,]] <- 
-#         injDpsi[goodInjections]
-#     indexDeltaPsi[secondaryIndexInReal[goodSecondary,]] <- 
-#         second_delta_psi[goodSecondary]
-#     
-#     # 
-#     # do the injection and save the additional informations in the object
-#     # 
-#     
-#     # copy original k and o
-#     if(type == "psiSite"){
-#         setAssayMatrix(fds, type="psiSite", "originalCounts") <-
-#             counts(fds, type="psiSite", side="ofInterest")
-#         setAssayMatrix(fds, type="psiSite", "originalOtherCounts") <-
-#             counts(fds, type="psiSite", side="other")
-#     } else {
-#         setAssayMatrix(fds, type=type, "originalCounts") <-
-#             counts(fds, type=type, side="ofInterest")
-#         setAssayMatrix(fds, type="psi5", "originalOtherCounts") <-
-#             counts(fds, type="psi5", side="other")
-#         setAssayMatrix(fds, type="psi3", "originalOtherCounts") <-
-#             counts(fds, type="psi3", side="other")
-#     }
-#     
-#     # store new k and o counts including the outlier counts
-#     counts(fds, type=type, side="ofInterest") <- k
-#     counts(fds, type=type, side="other") <- o
-#     
-#     # store positions of true outliers and their true delta PSI value
-#     setAssayMatrix(fds=fds, name="trueOutliers", type=type) <- indexOut
-#     setAssayMatrix(fds=fds, name="trueDeltaPSI", type=type) <- indexDeltaPsi
-#     
-#     return(fds)
-# }
 
 removeInjectedOutliers <- function(fds, type){
     

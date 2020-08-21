@@ -201,7 +201,7 @@ betabinVglmTest <- function(cMat, alternative="two.sided",
 
 #'
 #' error/warning catching functions by martin morgan
-#' http://stackoverflow.com/questions/4948361/how-do-i-save-warnings-and-errors-as-output-from-a-function
+#' http://stackoverflow.com/questions/4948361
 #'
 #' @noRd
 tryCatchFactory <- function(fun, timeout=300){

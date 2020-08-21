@@ -12,7 +12,8 @@ injectOutliers(
   minCoverage = 2,
   deltaDistr = "uniformDistr",
   verbose = FALSE,
-  method = c("meanPSI", "samplePSI", "simulatedPSI")
+  method = c("samplePSI", "meanPSI", "simulatedPSI"),
+  BPPARAM = bpparam()
 )
 }
 \arguments{
@@ -45,7 +46,7 @@ FraserDataSet
 Inject artificial outliers in an existing fds
 }
 \examples{
-# An example dataset
-fds <- createTestFraserDataSet()
+# A generic dataset
+fds <- makeSimulatedFraserDataSet()
 fds <- injectOutliers(fds, minDpsi=0.2, freq=1E-3)
 }
