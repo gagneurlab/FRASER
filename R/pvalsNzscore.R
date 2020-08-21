@@ -27,7 +27,7 @@ calculateZscore <- function(fds, type=currentType(fds), logit=TRUE){
     zscores <- (residual - rowMeans(residual)) / rowSds(residual)
 
     zScores(fds, withDimnames=FALSE) <- zscores
-
+    
     return(fds)
 }
 
