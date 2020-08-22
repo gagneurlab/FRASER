@@ -533,7 +533,7 @@ injectOutliers <- function(fds, type=c("psi5", "psi3", "psiSite"),
     
     list_index <- data.frame(row=integer(0), col=integer(0))
     count <- 0
-    while(nrow(list_index) < 2){
+    while(nrow(list_index) < 1){
         if(count == 20){
             stop("Could not inject at least 2 outliers.", 
                     " Please make sure you have enough junctions and samples",

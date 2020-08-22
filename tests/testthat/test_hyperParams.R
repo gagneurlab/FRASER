@@ -1,7 +1,7 @@
 context("Test hyper param optimization")
 
 test_that("Test hyper param testing", {
-    fds <- makeSimulatedFraserDataSet(m=10, j=20, dist="BB")
+    fds <- makeSimulatedFraserDataSet(m=15, j=20, dist="BB")
     
     # test BB no hyper params and accessors
     fds <- optimHyperParams(fds, type="psi3", implementation="BB")
