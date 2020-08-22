@@ -39,6 +39,10 @@ if("windows" == .Platform$OS.type){
 # install needed packages
 # add testthat to pre installation dependencies 
 # due to: https://github.com/r-lib/pkgload/issues/89
+if(!requireNamespace("XML", quietly=TRUE) & R.version[['major']] == "3"){
+    installIfReq(p="devtools", type=BTYPE, Ncpus=NCPUS)
+    devtools::install_version("XML", version="3.99-0.3")
+}
 for(p in c("getopt", "XML", "xml2", "testthat", "devtools", "covr",
             "roxygen2", "BiocCheck", "R.utils", "GenomeInfoDbData",
             "rtracklayer", "hms")){
