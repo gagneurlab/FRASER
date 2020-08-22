@@ -15,7 +15,8 @@ updateRho <- function(fds, type, rhoRange, BPPARAM, verbose){
             double(1), "minimum")
     
     if(isTRUE(verbose)){
-        print(summary(rho(fds)))
+        stxt <- capture.output(summary(rho(fds)))
+        message(date(), ": rho fit:\n\t", paste(stxt, collapse="\n\t"))
     }
     
     validObject(fds)

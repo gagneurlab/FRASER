@@ -55,7 +55,7 @@ makeSimulatedFraserDataSet_BetaBinomial <- function(m=200, j=10000, q=10,
     H_true <- matrix(rnorm(m*q, mean=Hmean, sd=Hsd), nrow=m, ncol=q)
     D_true <- matrix(rnorm(j*q, mean=Dmean, sd=Dsd), nrow=j, ncol=q)
     b_true <- sample(c(rnorm(round(j*(1/6)), mean=3.5, sd=1.5),
-            rnorm(round(j*(5/6)), mean=-2.5, sd=2.5)))
+            rnorm(j - round(j*(1/6)), mean=-2.5, sd=2.5)))
     y_se   <- t(predictYCpp(H_true, D_true, b_true))
     mu_se     <- predictMuCpp(y_se)
     # betaBin dispersion
@@ -75,7 +75,7 @@ makeSimulatedFraserDataSet_BetaBinomial <- function(m=200, j=10000, q=10,
     H_true <- matrix(rnorm(m*q, mean=Hmean, sd=Hsd), nrow=m, ncol=q)
     D_true <- matrix(rnorm(j*q, mean=Dmean, sd=Dsd), nrow=j, ncol=q)
     b_true <- sample(c(rnorm(round(j*(1/6)), mean=-2.5, sd=2.5),
-            rnorm(round(j*(5/6)), mean=3.5, sd=1.5)))
+            rnorm(j-round(j*(1/6)), mean=3.5, sd=1.5)))
     y_psi  <- t(predictYCpp(H_true, D_true, b_true))
     mu_psi <- predictMuCpp(y_psi)
     # betaBin dispersion
@@ -128,9 +128,11 @@ makeSimulatedFraserDataSet_BetaBinomial <- function(m=200, j=10000, q=10,
     # store information about the simulation in the fds
     # (same values for psi3 and psi5)
     for(type in c("psi3", "psi5")){
-        setAssayMatrix(fds=fds, name="truePSI", type=type)      <- mu_psi
-        setAssayMatrix(fds=fds, name="trueLogitPSI", type=type) <- y_psi
-        mcols(fds, type=type)[,"trueRho"]                       <- rho_psi
+        setAssayMatrix(fds=fds, name="truePSI", type=type, 
+                withDimnames=FALSE) <- mu_psi
+        setAssayMatrix(fds=fds, name="trueLogitPSI", type=type,
+                withDimnames=FALSE) <- y_psi
+        mcols(fds, type=type)[,"trueRho"] <- rho_psi
         
         # needed so that subsetting the fds works later
         mcols(fds, type=type)[["startID"]] <- 
@@ -441,6 +443,8 @@ injectOutliers <- function(fds, type=c("psi5", "psi3", "psiSite"),
                     deltaDistr="uniformDistr", verbose=FALSE,
                     method=c('samplePSI', 'meanPSI', 'simulatedPSI'),
                     BPPARAM=bpparam()){
+    type <- match.arg(type, several.ok=TRUE)
+    method <- match.arg(method)
     
     if(length(type) > 1){
         for(t in type){
@@ -452,18 +456,23 @@ injectOutliers <- function(fds, type=c("psi5", "psi3", "psiSite"),
     }
     # copy original k and o
     if(type == "psiSite"){
-        setAssayMatrix(fds, type="psiSite", "originalCounts") <- 
-                counts(fds, type="psiSite", side="ofInterest")
-        setAssayMatrix(fds, type="psiSite", "originalOtherCounts") <- 
-                counts(fds, type="psiSite", side="other")
+        setAssayMatrix(fds, type="psiSite", "originalCounts",
+                withDimnames=FALSE) <- 
+                        counts(fds, type="psiSite", side="ofInterest")
+        setAssayMatrix(fds, type="psiSite", "originalOtherCounts",
+                withDimnames=FALSE) <- 
+                        counts(fds, type="psiSite", side="other")
     }
     else{
-        setAssayMatrix(fds, type=type, "originalCounts") <- 
-                counts(fds, type=type, side="ofInterest")
-        setAssayMatrix(fds, type="psi5", "originalOtherCounts") <- 
-                counts(fds, type="psi5", side="other")
-        setAssayMatrix(fds, type="psi3", "originalOtherCounts") <- 
-                counts(fds, type="psi3", side="other")
+        setAssayMatrix(fds, type=type, "originalCounts",
+                withDimnames=FALSE) <- 
+                        counts(fds, type=type, side="ofInterest")
+        setAssayMatrix(fds, type="psi5", "originalOtherCounts",
+                withDimnames=FALSE) <- 
+                        counts(fds, type="psi5", side="other")
+        setAssayMatrix(fds, type="psi3", "originalOtherCounts",
+                withDimnames=FALSE) <- 
+                        counts(fds, type="psi3", side="other")
     }
 
     # get infos from the fds
@@ -521,13 +530,24 @@ injectOutliers <- function(fds, type=c("psi5", "psi3", "psiSite"),
         available_groups <- seq_len(j)
         freq <- freq/10
     }
-
-    indexOut_groups <- matrix(sample(c(0,1,-1), length(available_groups)*m, 
-            replace=TRUE, prob=c(1-freq, freq/2, freq/2)), ncol=m)
-
-    # positions where outliers will be injected
-    list_index <- which(indexOut_groups != 0, arr.ind = TRUE)
-
+    
+    list_index <- data.frame(row=integer(0), col=integer(0))
+    count <- 0
+    while(nrow(list_index) < 2){
+        if(count == 20){
+            stop("Could not inject at least 2 outliers.", 
+                    " Please make sure you have enough junctions and samples",
+                    " in you dataset.")
+        }
+        count <- count + 1
+        
+        indexOut_groups <- matrix(sample(c(0,1,-1), length(available_groups)*m, 
+                replace=TRUE, prob=c(1-freq, freq/2, freq/2)), ncol=m)
+    
+        # positions where outliers will be injected
+        list_index <- which(indexOut_groups != 0, arr.ind = TRUE)
+    }
+    
     # apply injection function to each outlier
     message(date(), ": Injecting ", nrow(list_index), " outliers ...")
     result <- bplapply(seq_len(nrow(list_index)), list_index=list_index,
@@ -647,7 +667,7 @@ injectOutliers <- function(fds, type=c("psi5", "psi3", "psiSite"),
     # matrices to store indices of outliers and their delta psi
     indexOut <- matrix(0, nrow = j, ncol = m)
     indexDeltaPSI <- matrix(0, nrow = j, ncol = m)
-
+    
     # set counts to changed counts after the injection
     replaceIndices                <- matrix(c(junctions,samples), ncol=2)
     k[replaceIndices]             <- newKs
@@ -660,14 +680,16 @@ injectOutliers <- function(fds, type=c("psi5", "psi3", "psiSite"),
     indexDeltaPSI[replaceIndices] <- injDeltaPSI
 
     # store positions of true outliers and their true delta PSI value
-    setAssayMatrix(fds=fds, name="trueOutliers", type=type) <- indexOut
-    setAssayMatrix(fds=fds, name="trueDeltaPSI", type=type) <- indexDeltaPSI
+    setAssayMatrix(fds=fds, name="trueOutliers", type=type,
+            withDimnames=FALSE) <- indexOut
+    setAssayMatrix(fds=fds, name="trueDeltaPSI", type=type,
+            withDimnames=FALSE) <- indexDeltaPSI
 
     # store new k counts which include the outlier counts
-    counts(fds, type=type, side="ofInterest") <- k
+    counts(fds, type=type, side="ofInterest", withDimnames=FALSE) <- k
 
     # store modified other counts
-    counts(fds, type=type, side="other") <- o
+    counts(fds, type=type, side="other", withDimnames=FALSE) <- o
 
     return(fds)
 }
@@ -676,37 +698,37 @@ removeInjectedOutliers <- function(fds, type){
     
     # copy injected k and o counts
     if(type == "psiSite"){
-        setAssayMatrix(fds, type="psiSite", "outlierCounts") <- 
-            counts(fds, type="psiSite", side="ofInterest")
-        setAssayMatrix(fds, type="psiSite", "outlierOtherCounts") <- 
-            counts(fds, type="psiSite", side="other")
+        setAssayMatrix(fds, type="psiSite", "outlierCounts",
+            withDimnames=FALSE) <- counts(fds, type="psiSite", side="ofInteres")
+        setAssayMatrix(fds, type="psiSite", "outlierOtherCounts",
+            withDimnames=FALSE) <- counts(fds, type="psiSite", side="other")
     }
     else{
-        setAssayMatrix(fds, type="psi5", "outlierCounts") <- 
-            counts(fds, type="psi5", side="ofInterest")
-        setAssayMatrix(fds, type="psi5", "outlierOtherCounts") <- 
-            counts(fds, type="psi5", side="other")
-        setAssayMatrix(fds, type="psi3", "outlierOtherCounts") <- 
-            counts(fds, type="psi3", side="other")
+        setAssayMatrix(fds, type="psi5", "outlierCounts",
+            withDimnames=FALSE) <- counts(fds, type="psi5", side="ofInterest")
+        setAssayMatrix(fds, type="psi5", "outlierOtherCounts",
+            withDimnames=FALSE) <- counts(fds, type="psi5", side="other")
+        setAssayMatrix(fds, type="psi3", "outlierOtherCounts", 
+            withDimnames=FALSE) <- counts(fds, type="psi3", side="other")
     }
     
     # assign original k and o to rawCountsJ and rawOtherCounts
     if(type == "psiSite"){
-        counts(fds, type="psiSite", side="ofInterest") <- 
-            getAssayMatrix(fds, type="psiSite", "originalCounts")
-        counts(fds, type="psiSite", side="other") <- 
-            getAssayMatrix(fds, type="psiSite", "originalOtherCounts")
+        counts(fds, type="psiSite", side="ofInterest", withDimnames=FALSE) <- 
+                getAssayMatrix(fds, type="psiSite", "originalCounts")
+        counts(fds, type="psiSite", side="other", withDimnames=FALSE) <- 
+                getAssayMatrix(fds, type="psiSite", "originalOtherCounts")
         
         assays(fds)[['originalCounts_psiSite']] <- NULL
         assays(fds)[['originalOtherCounts_psiSite']] <- NULL
     }
     else{
-        counts(fds, type="psi5", side="ofInterest") <- 
-            getAssayMatrix(fds, type="psi5", "originalCounts")
-        counts(fds, type="psi5", side="other") <- 
-            getAssayMatrix(fds, type="psi5", "originalOtherCounts")
-        counts(fds, type="psi3", side="other") <-
-            getAssayMatrix(fds, type="psi3", "originalOtherCounts")
+        counts(fds, type="psi5", side="ofInterest", withDimnames=FALSE) <- 
+                getAssayMatrix(fds, type="psi5", "originalCounts")
+        counts(fds, type="psi5", side="other", withDimnames=FALSE) <-
+                getAssayMatrix(fds, type="psi5", "originalOtherCounts")
+        counts(fds, type="psi3", side="other", withDimnames=FALSE) <-
+                getAssayMatrix(fds, type="psi3", "originalOtherCounts")
         
         assays(fds)[['originalCounts_psi5']] <- NULL
         assays(fds)[['originalOtherCounts_psi5']] <- NULL

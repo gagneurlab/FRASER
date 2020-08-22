@@ -1,7 +1,7 @@
 context("Test counting")
 
 test_that("Count junctions", {
-    attach(test_generate_count_example())
+    out <- capture.output(attach(test_generate_count_example()))
 
     expect_is(test_fdsSample3, "FraserDataSet")
 
@@ -15,7 +15,7 @@ test_that("Count junctions", {
 })
 
 test_that("Strand spcific counting", {
-    attach(test_generate_strand_specific_count_example())
+    suppressMessages(attach(test_generate_strand_specific_count_example()))
     
     expect_is(test_fdsSample3_stranded, "FraserDataSet")
     

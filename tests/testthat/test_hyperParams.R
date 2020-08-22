@@ -1,46 +1,19 @@
 context("Test hyper param optimization")
 
-test_that("Getter/Setter hyper params", {
-    attach(test_generate_count_example())
-
-    expect_is(test_fdsSample3, "FraserDataSet")
-
-    # test how many ranges we found
-    expect_equal(length(test_rangeFDS), 3)
-    expect_equal(length(nonSplicedReads(test_rangeFDS)), 5)
-
-    # test the manually counted positions
-    expect_equal(as.vector(counts(test_rangeFDS, type="j")), test_rawCountsJ)
-    # expect_equal(as.vector(counts(test_rangeFDS, type="ss")), test_rawCountsSS)
-})
-
-test_that("Test psi values", {
-    attach(test_generate_count_example())
-
-    expect_equal(as.vector(counts(test_rangeFDS, type="psi3")), test_rawCountsJ)
-    expect_equal(test_p3rawOCounts,
-        as.vector(counts(test_rangeFDS, type="psi3", side="other"))
-    )
-
-    expect_equal(as.vector(counts(test_rangeFDS, type="psi5")), test_rawCountsJ)
-    expect_equal(test_p5rawOCounts,
-        as.vector(counts(test_rangeFDS, type="psi5", side="other"))
-    )
-
-    #expect_equal(as.vector(counts(test_rangeFDS, type="psiSite")), test_rawCountsSS)
-    expect_equal(test_pSrawOCounts,
-        as.vector(counts(test_rangeFDS, type="psiSite", side="other"))
-    )
-
-    expect_equal(as.vector(assays(test_rangeFDS)[["psi3"]]),
-        test_rawCountsJ / (test_rawCountsJ + test_p3rawOCounts)
-    )
-
-    expect_equal(as.vector(assays(test_rangeFDS)[["psi5"]]),
-        test_rawCountsJ / (test_rawCountsJ + test_p5rawOCounts)
-    )
-
-    #expect_equal(as.vector(assays(test_rangeFDS)[["psiSite"]]),
-    #    test_rawCountsSS / (test_rawCountsSS + test_pSrawOCounts)
-    #)
+test_that("Test hyper param testing", {
+    fds <- makeSimulatedFraserDataSet(m=10, j=20, dist="BB")
+    
+    # test BB no hyper params and accessors
+    fds <- optimHyperParams(fds, type="psi3", implementation="BB")
+    expect_true(is.na(hyperParams(fds, type="psi3")[,q]))
+    
+    fds <- optimHyperParams(fds, type="psi5", minDeltaPsi=0.01, plot=FALSE,
+            q_param = c(2,3), noise_param=c(1), iterations=2, BPPARAM=bpparam())
+    
+    expect_equal(c(2,5), dim(hyperParams(fds, type="psi5", all=TRUE)))
+    expect_equal(c(1,5), dim(hyperParams(fds, type="psi5", all=FALSE)))
+    expect_equal(metadata(fds)$hyperParams_psi5[order(-aroc)][1,q],
+            bestQ(fds, type="psi5"))
+    expect_equal(1, bestNoise(fds, type="psi5"))
+    expect_is(suppressWarnings(plotEncDimSearch(fds, "psi5")), "ggplot")
 })
