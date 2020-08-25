@@ -6,7 +6,13 @@
 \documentclass[11pt]{article}
 
 <<style-knitr, eval=TRUE, echo=FALSE, results="asis">>=
-BiocStyle::latex()
+BiocStyle::latex(relative.path = TRUE)
+@
+
+<<parallel, echo=FALSE, cache=FALSE, results="hide">>=
+library(BiocParallel)
+# for speed we run everything in serial mode
+register(SerialParam())
 @
 
 <<knitr, echo=FALSE, cache=FALSE, results="hide">>=
@@ -43,9 +49,8 @@ opts_chunk$set(
 
 <<include=FALSE>>=
 opts_chunk$set(concordance=TRUE)
-@
 
-% \SweaveOpts{concordance=TRUE}
+@
 
 \maketitle
 
@@ -184,7 +189,7 @@ Additionally, the user can create several analysis plots directly from the
 fitted \fds{} object. These plotting functions are described in section
 \ref{sec:result-vis}.
 
-<<quick_faser_guide, echo=TRUE>>=
+<<quick_fraser_guide, echo=TRUE>>=
 # load FRASER library
 library(FRASER)
 
@@ -214,10 +219,10 @@ fds <- annotateRangesWithTxDb(fds, txdb=txdb, orgDb=orgDb)
 # alternatively, we also provide a way to use biomart for the annotation:
 # fds <- annotateRanges(fds)
 
-# get results: usually, using p-value cutoff is recommended, but on the small
-# example dataset, this would give no results, so we use z-scores here instead
-# res <- results(fds, zScoreCutoff=NA, padjCutoff=0.05, deltaPsiCutoff=0.1)
-res <- results(fds, zScoreCutoff=1, padjCutoff=NA, deltaPsiCutoff=0.02)
+# get results: we recommend to use an FDR cutoff 0.05, but due to the small
+# dataset size we extract all events and their associated values
+# eg: res <- results(fds, zScoreCutoff=NA, padjCutoff=0.05, deltaPsiCutoff=0.3)
+res <- results(fds, zScoreCutoff=NA, padjCutoff=NA, deltaPsiCutoff=NA)
 res
 
 # result visualization
@@ -323,7 +328,7 @@ resulting \Rclass{FraserDataSet} object contains two
 \Rclass{SummarizedExperiment} objects for each the junctions and the splice
 sites.
 
-<<counting reads, echo=TRUE>>=
+<<parallelize example, eval=FALSE>>=
 # example of how to use parallelization: use 10 cores or the maximal number of
 # available cores if fewer than 10 are available and use Snow if on Windows
 if(.Platform$OS.type == "unix") {
@@ -331,7 +336,9 @@ if(.Platform$OS.type == "unix") {
 } else {
     register(SnowParam(workers=min(10, multicoreWorkers())))
 }
+@
 
+<<counting reads, echo=TRUE>>=
 # count reads
 fds <- countRNAData(settings)
 fds
@@ -345,16 +352,16 @@ together with the sample annotation from above to create the \fds:
 <<create fds with counts, echo=TRUE>>=
 # example sample annoation for precalculated count matrices
 sampleTable <- fread(system.file("extdata", "sampleTable_countTable.tsv",
-                                 package="FRASER", mustWork=TRUE))
+        package="FRASER", mustWork=TRUE))
 head(sampleTable)
 
 # get raw counts
 junctionCts   <- fread(system.file("extdata", "raw_junction_counts.tsv.gz",
-    package="FRASER", mustWork=TRUE))
+        package="FRASER", mustWork=TRUE))
 head(junctionCts)
 
 spliceSiteCts <- fread(system.file("extdata", "raw_site_counts.tsv.gz",
-    package="FRASER", mustWork=TRUE))
+        package="FRASER", mustWork=TRUE))
 head(spliceSiteCts)
 
 # create FRASER object
