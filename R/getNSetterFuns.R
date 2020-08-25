@@ -418,7 +418,11 @@ bestNoise <- function(fds, type=currentType(fds)){
 #' assays should be stored as hdf5 files.
 #' @export
 dontWriteHDF5 <- function(fds){
-    return(metadata(fds)[['dontWriteHDF5']])
+    ans <- metadata(fds)[['dontWriteHDF5']]
+    if(is.null(ans)){
+        ans <- FALSE
+    }
+    return(ans)
 }
 
 #' @describeIn getter_setter_functions Sets whether the assays should be stored 
