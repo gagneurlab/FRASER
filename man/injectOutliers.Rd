@@ -38,6 +38,8 @@ i.e. to which value the delta psi of the injection is added: "meanPSI" for
 adding to the mean psi of the junction over all samples or "samplePSI" to 
 add to the psi value of the junction in the specific sample. "simulatedPSI" 
 is only possible if a simulated dataset is used.}
+
+\item{BPPARAM}{A BiocParallel object to run the computation in parallel}
 }
 \value{
 FraserDataSet

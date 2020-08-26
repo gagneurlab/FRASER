@@ -430,6 +430,7 @@ makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=1000, q=10,
 #' adding to the mean psi of the junction over all samples or "samplePSI" to 
 #' add to the psi value of the junction in the specific sample. "simulatedPSI" 
 #' is only possible if a simulated dataset is used.
+#' @param BPPARAM A BiocParallel object to run the computation in parallel
 #' 
 #' @return FraserDataSet
 #' 
