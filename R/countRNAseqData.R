@@ -860,8 +860,7 @@ countNonSplicedReads <- function(sampleID, splitCountRanges, fds,
     # extract the counts with Rsubread
     tmp_ssc <- checkSeqLevelStyle(spliceSiteCoords, fds, sampleID, TRUE)
     anno <- GRanges2SAF(tmp_ssc, minAnchor=minAnchor)
-    out <- capture.output({
-        rsubreadCounts <- featureCounts(files=bamFile, annot.ext=anno,
+    rsubreadCounts <- featureCounts(files=bamFile, annot.ext=anno,
             minOverlap=minAnchor*2, 
             allowMultiOverlap=TRUE,
             checkFragLength=FALSE,
@@ -882,11 +881,7 @@ countNonSplicedReads <- function(sampleID, splitCountRanges, fds,
             autosort=doAutosort,
             nthreads=NcpuPerSample,
             tmpDir=file.path(file_path_as_absolute(workingDir(fds)), "cache")
-    )})
-    
-    if(verbose(fds) > 1){
-        message(date(), "\n\t", paste(out, collapse="\n\t"))
-    }
+    )
     
     # extract results
     mcols(spliceSiteCoords)$count <- rsubreadCounts$counts[,1]
