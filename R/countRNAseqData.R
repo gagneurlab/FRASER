@@ -825,9 +825,6 @@ countNonSplicedReads <- function(sampleID, splitCountRanges, fds,
     # unstranded case: for counting only non spliced reads we 
     # skip this information
     isPairedEnd <- pairedEnd(fds[,samples(fds) == sampleID])[[1]]
-    if(isFALSE(as.logical(strandSpecific(fds)))){
-        isPairedEnd <- FALSE
-    }
     doAutosort <- isPairedEnd
     
     # check cache if available
@@ -863,7 +860,8 @@ countNonSplicedReads <- function(sampleID, splitCountRanges, fds,
     # extract the counts with Rsubread
     tmp_ssc <- checkSeqLevelStyle(spliceSiteCoords, fds, sampleID, TRUE)
     anno <- GRanges2SAF(tmp_ssc, minAnchor=minAnchor)
-    rsubreadCounts <- featureCounts(files=bamFile, annot.ext=anno,
+    out <- capture.output({
+        rsubreadCounts <- featureCounts(files=bamFile, annot.ext=anno,
             minOverlap=minAnchor*2, 
             allowMultiOverlap=TRUE,
             checkFragLength=FALSE,
@@ -884,7 +882,11 @@ countNonSplicedReads <- function(sampleID, splitCountRanges, fds,
             autosort=doAutosort,
             nthreads=NcpuPerSample,
             tmpDir=file.path(file_path_as_absolute(workingDir(fds)), "cache")
-    )
+    )})
+    
+    if(verbose(fds) > 1){
+        message(date(), "\n\t", paste(out, collapse="\n\t"))
+    }
     
     # extract results
     mcols(spliceSiteCoords)$count <- rsubreadCounts$counts[,1]
