@@ -35,8 +35,8 @@ environment:
 #      BIOC_USE_DEVEL: TRUE
 #      GCC_PATH: mingw_32
 #      R_ARCH: i386    
-    - R_VERSION: devel
-      BIOC_USE_DEVEL: TRUE      
+#    - R_VERSION: devel
+#      BIOC_USE_DEVEL: TRUE      
     - R_VERSION: release
     # dont test 4.0.0 due to: 
     # * https://github.com/r-lib/roxygen2/issues/1128
