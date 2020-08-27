@@ -62,7 +62,7 @@ arma::vec estMu(arma::vec y, arma::uvec pos){
 // [[Rcpp::export()]]
 arma::mat predictYCpp(arma::mat H, arma::mat D, arma::vec b){
 
-  arma::mat y, ey, mu;
+  arma::mat y;
 
   y = H * D.t();
   y = y.each_row() + b.t();

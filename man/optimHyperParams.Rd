@@ -17,7 +17,8 @@ optimHyperParams(
   BPPARAM = bpparam(),
   internalThreads = 1,
   plot = TRUE,
-  delayed = ifelse(ncol(fds) <= 300, FALSE, TRUE)
+  delayed = ifelse(ncol(fds) <= 300, FALSE, TRUE),
+  ...
 )
 }
 \arguments{
@@ -57,6 +58,8 @@ the hyperparameter optimization finishes.}
 calculations), otherwise the function works on the delayedMatrix 
 representations (more memory efficient). The default value depends on the 
 number of samples in the fds-object.}
+
+\item{...}{Additional parameters passed to \code{injectOutliers}.}
 }
 \value{
 FraserDataSet
@@ -67,12 +70,13 @@ ratios while maximizing the precision-recall curve.
 }
 \examples{
   # generate data
-  fds <- createTestFraserDataSet()
+  fds <- makeSimulatedFraserDataSet(m=15, j=20)
   
   # run hyperparameter optimization
-  fds <- optimHyperParams(fds, type="psi5", implementation="PCA")
+  fds <- optimHyperParams(fds, type="psi5", q_param=c(2, 5))
   
   # get estimated optimal dimension of the latent space
   bestQ(fds, type="psi5")
+  hyperParams(fds, type="psi5")
   
 }

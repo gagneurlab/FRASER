@@ -89,7 +89,6 @@ Collate:
     annotationOfRanges.R
     beta-binomial-testing.R
     calculatePSIValue.R
-    calculateStats.R
     countRNAseqData.R
     example_functions.R
     filterExpression.R

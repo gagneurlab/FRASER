@@ -66,7 +66,7 @@ loadFraserDataSet <- function(dir, name=NULL, file=NULL, upgrade=FALSE){
     }
     fds <- readRDS(fdsFile)
     
-    # needs to be here due to our FRASER -> FRASER package change.
+    # needs to be here due to our FraseR -> FRASER package change.
     # can be removed later if the full pipeline is rerun
     attributes(fds)$class <- structure("FraserDataSet", package="FRASER")
     
@@ -97,7 +97,7 @@ loadFraserDataSet <- function(dir, name=NULL, file=NULL, upgrade=FALSE){
     
     # set the correct path of the assay seed file (if folder changed)
     for(aname in assayNames(fds)){
-        if(is(assay(fds, aname), "matrix")){
+        if(is(assay(fds, aname, withDimnames=FALSE), "matrix")){
             next
         }
         message("Loading assay: ", aname)
@@ -105,9 +105,14 @@ loadFraserDataSet <- function(dir, name=NULL, file=NULL, upgrade=FALSE){
         if(!file.exists(afile)){
             warning(paste("Can not find assay file: ", aname, ".",
                     "The assay will be removed from the object."))
-            assay(fds, aname) <- NULL
-        } else if(afile != path(assay(fds, aname))) {
-            path(assay(fds, aname)) <- afile
+            assay(fds, aname, withDimnames=FALSE) <- NULL
+        } else if(afile != path(assay(fds, aname, withDimnames=FALSE))) {
+            if(R.Version()$major == "3"){
+                path(assay(fds, aname, withDimnames=FALSE)) <- afile
+            } else {
+                slot(assay(fds, aname, withDimnames=FALSE), 
+                        "seed")@seed@filepath <- afile
+            }
         }
     }
 
@@ -131,6 +136,7 @@ saveFraserDataSet <- function(fds, dir=NULL, name=NULL, rewrite=FALSE) {
     
     # over each assay object
     name(fds) <- name
+    workingDir(fds) <- dir
     for(aname in assayNames(fds)){
         assay <- assay(fds, aname)
         assay(fds, aname, withDimnames=FALSE) <- saveAsHDF5(

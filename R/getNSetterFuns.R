@@ -280,11 +280,7 @@ pVals <- function(fds, type=currentType(fds), level="site",
 #' @export
 padjVals <- function(fds, type=currentType(fds), dist=c("BetaBinomial"), ...){
     dist <- match.arg(dist, choices=c("BetaBinomial", "Binomial", "Normal"))
-    if( paste(paste0("padj", dist), type, sep="_") %in% assayNames(fds)){
-        return(getAssayMatrix(fds, paste0("padj", dist), type=type, ...))
-    } else{
-        return(getAssayMatrix(fds, paste0("pajd", dist), type=type, ...))
-    }
+    return(getAssayMatrix(fds, paste0("padj", dist), type=type, ...))
 }
 
 `padjVals<-` <- function(fds, type=currentType(fds),
@@ -422,7 +418,11 @@ bestNoise <- function(fds, type=currentType(fds)){
 #' assays should be stored as hdf5 files.
 #' @export
 dontWriteHDF5 <- function(fds){
-    return(metadata(fds)[['dontWriteHDF5']])
+    ans <- metadata(fds)[['dontWriteHDF5']]
+    if(is.null(ans)){
+        ans <- FALSE
+    }
+    return(ans)
 }
 
 #' @describeIn getter_setter_functions Sets whether the assays should be stored 

@@ -1,7 +1,7 @@
 context("Test counting")
 
 test_that("Count junctions", {
-    attach(test_generate_count_example())
+    out <- capture.output(attach(test_generate_count_example()))
 
     expect_is(test_fdsSample3, "FraserDataSet")
 
@@ -15,7 +15,7 @@ test_that("Count junctions", {
 })
 
 test_that("Strand spcific counting", {
-    attach(test_generate_strand_specific_count_example())
+    suppressMessages(attach(test_generate_strand_specific_count_example()))
     
     expect_is(test_fdsSample3_stranded, "FraserDataSet")
     
@@ -40,13 +40,17 @@ test_that("Strand spcific counting", {
 
 test_that("test minAnchor", {
     fds <- createTestFraserSettings()
-    features <- makeGRangesFromDataFrame(data.table(GeneID=1:5, Chr="chr19",
-            Start=c(7592514, 7592749, 7594598, 7595171, 7595320),
-            End=c(7592515, 7592750, 7594599, 7595172, 7595321), Strand="*"))
-    expect_equivalent(c(9, 9, 10, 10, 0, 0, 0, 0, 9, 9), countNonSplicedReads(
-            "sample3", features, fds, minAnchor=5, recount=TRUE)[,1])
-    expect_equivalent(c(6, 5, 10, 10, 0, 0, 0, 0, 9, 8), countNonSplicedReads(
-        "sample3", features, fds, minAnchor=15, recount=TRUE)[,1])
+    features <- makeGRangesFromDataFrame(data.table(GeneID=1:3, Chr="chr19",
+            Start=c(7592515, 7594599, 7594599),
+            End=c(7592749, 7595171, 7595320), Strand="*"))
+    
+    out <- capture.output({ctnNS5 <- as.matrix(countNonSplicedReads(
+            "sample3", features, fds, minAnchor=5, recount=TRUE)) })
+    out <- capture.output({ctnNS25 <- as.matrix(countNonSplicedReads(
+        "sample3", features, fds, minAnchor=25, recount=TRUE)) })
+    
+    expect_equivalent(c(7, 8, 0, 0, 7), ctnNS5[,1])
+    expect_equivalent(c(5, 8, 0, 0, 6), ctnNS25[,1])
 })
 
 test_that("Test psi values", {

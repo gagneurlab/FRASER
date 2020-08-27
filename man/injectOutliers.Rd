@@ -12,7 +12,8 @@ injectOutliers(
   minCoverage = 2,
   deltaDistr = "uniformDistr",
   verbose = FALSE,
-  method = c("meanPSI", "samplePSI", "simulatedPSI")
+  method = c("samplePSI", "meanPSI", "simulatedPSI"),
+  BPPARAM = bpparam()
 )
 }
 \arguments{
@@ -37,6 +38,8 @@ i.e. to which value the delta psi of the injection is added: "meanPSI" for
 adding to the mean psi of the junction over all samples or "samplePSI" to 
 add to the psi value of the junction in the specific sample. "simulatedPSI" 
 is only possible if a simulated dataset is used.}
+
+\item{BPPARAM}{A BiocParallel object to run the computation in parallel}
 }
 \value{
 FraserDataSet
@@ -45,7 +48,7 @@ FraserDataSet
 Inject artificial outliers in an existing fds
 }
 \examples{
-# An example dataset
-fds <- createTestFraserDataSet()
+# A generic dataset
+fds <- makeSimulatedFraserDataSet()
 fds <- injectOutliers(fds, minDpsi=0.2, freq=1E-3)
 }

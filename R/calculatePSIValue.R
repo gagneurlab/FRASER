@@ -36,17 +36,11 @@ calculatePSIValues <- function(fds, types=psiTypes, overwriteCts=FALSE,
                                 overwriteCts=overwriteCts, BPPARAM=BPPARAM)
     }
     
-    # save Fraser object to disk
-    fds <- saveFraserDataSet(fds)
-    
     # calculate the delta psi value
     for(psiType in types){
         assayName <- paste0("delta_", psiType)
         fds <- calculateDeltaPsiValue(fds, psiType, assayName)
     }
-    
-    # save final Fraser object to disk
-    fds <- saveFraserDataSet(fds)
     
     # return it
     return(fds)
@@ -88,16 +82,10 @@ calculatePSIValuePrimeSite <- function(fds, psiType, overwriteCts, BPPARAM){
             
             # check if other counts and psi values chache file exists already
             cacheFile <- getOtherCountsCacheFile(sample, fds)
-            if(file.exists(cacheFile)){
-                h5 <- HDF5Array(filepath=cacheFile, name=h5DatasetName)
-                if((isFALSE(overwriteCts) | 
-                    !all(paste0("rawOtherCounts_psi", c(5, 3)) %in% 
-                        assayNames(fds)) ) && 
-                    nrow(h5) == nrow(K(fds, type="psi5"))){
-                    
-                    return(h5)
-                }
-                unlink(cacheFile)
+            ans <- checkPsiCacheFile(cFile=cacheFile, dName=h5DatasetName, 
+                    overwrite=overwriteCts, ptype=c("psi5", "psi3"), fds=fds)
+            if(!is.null(ans)){
+                return(ans)
             }
             
             # add sample specific counts to the data.table (K)
@@ -128,38 +116,60 @@ calculatePSIValuePrimeSite <- function(fds, psiType, overwriteCts, BPPARAM){
             countData[is.na(psi5),psi5:=1]
             countData[is.na(psi3),psi3:=1]
             
+            # if no HDF5 is requested return it as matrix
+            if(dontWriteHDF5(fds)){
+                return(as.matrix(countData[,.(o5,o3,psi5,psi3)]))
+            }
+            
             # write other counts and psi values to h5 file
-            # get defind chunk sizes
+            # get defined chunk sizes
             chunkDims <- c(
                 min(nrow(countData), options()[['FRASER-hdf5-chunk-nrow']]),
                 1)
             writeHDF5Array(as.matrix(countData[,.(o5,o3,psi5,psi3)]), 
-                            filepath=cacheFile, name=h5DatasetName, 
+                            filepath=cacheFile, name=h5DatasetName,
                             chunkdim=chunkDims, level=7, verbose=FALSE)
             
             # get counts as DelayedMatrix
             HDF5Array(filepath=cacheFile, name=h5DatasetName)
-            
         }
     )
     names(psiValues) <- samples(fds)
     
     # merge it and assign it to our object
-    assay(fds, type="j", "psi5", withDimnames=FALSE) <- 
-        do.call(cbind, mapply('[', psiValues, TRUE, 3, drop=FALSE))
-    assay(fds, type="j", "psi3", withDimnames=FALSE) <- 
-        do.call(cbind, mapply('[', psiValues, TRUE, 4, drop=FALSE))
+    assay(fds, type="j", "psi5", withDimnames=FALSE) <- do.call(cbind, 
+            mapply('[', psiValues, TRUE, 3, drop=FALSE, SIMPLIFY=FALSE))
+    assay(fds, type="j", "psi3", withDimnames=FALSE) <- do.call(cbind, 
+            mapply('[', psiValues, TRUE, 4, drop=FALSE, SIMPLIFY=FALSE))
     
     if(isTRUE(overwriteCts)){
         assay(fds, type="j", "rawOtherCounts_psi5", withDimnames=FALSE) <- 
-            do.call(cbind, bplapply(psiValues, BPPARAM=BPPARAM,
-                                    function(x){ x[,1,drop=FALSE] }))
+            do.call(cbind, mapply('[', psiValues, TRUE, 1,
+                    drop=FALSE, SIMPLIFY=FALSE))
         assay(fds, type="j", "rawOtherCounts_psi3", withDimnames=FALSE) <- 
-            do.call(cbind, bplapply(psiValues, BPPARAM=BPPARAM,
-                                    function(x){ x[,2,drop=FALSE] }))
+            do.call(cbind, mapply('[', psiValues, TRUE, 2,
+                    drop=FALSE, SIMPLIFY=FALSE))
     }
     
     return(fds)
+}
+
+
+#'
+#' Helper function to check for PSI value cached data
+#'
+#' @noRd
+checkPsiCacheFile <- function(cFile, dName, overwrite, ptype, fds){
+    if(file.exists(cFile) && dName %in% h5ls(cFile)$name){
+        h5 <- HDF5Array(filepath=cFile, name=dName)
+        aNames <- paste0("rawOtherCounts_", ptype)
+        if(isFALSE(overwrite) && all( aNames %in% assayNames(fds)) &&
+                nrow(h5) == nrow(K(fds, type=ptype[1]))){
+            return(h5)
+        }
+        h5delete(cFile, name=dName)
+    }
+    return(NULL)
 }
 
 
@@ -206,16 +216,10 @@ calculateSitePSIValue <- function(fds, overwriteCts, BPPARAM){
             
             # get counts and psiSite values from cache file if it exists
             cacheFile <- getOtherCountsCacheFile(sample, fds)
-            if(file.exists(cacheFile) && 
-                    psiH5datasetName %in% h5ls(cacheFile)$name){
-                h5 <- HDF5Array(filepath=cacheFile, name=psiH5datasetName)
-                if((isFALSE(overwriteCts) | !psiROCName %in% assayNames(fds)) 
-                    && nrow(h5) == nrow(K(fds, type="psiSite"))){
-                    
-                    return(h5)
-                } else{
-                    h5delete(cacheFile, name=psiH5datasetName)
-                }
+            ans <- checkPsiCacheFile(cFile=cacheFile, dName=psiH5datasetName, 
+                    overwrite=overwriteCts, ptype="psiSite", fds=fds)
+            if(!is.null(ans)){
+                return(ans)
             }
             
             # add sample specific counts to the data.table
@@ -226,7 +230,7 @@ calculateSitePSIValue <- function(fds, overwriteCts, BPPARAM){
             sdata[,os:=sum(k)-k, by="spliceSiteID"]
             
             # remove the junction part since we only want to calculate the
-            # psi values for the splice sites themselfs
+            # psi values for the splice sites themselves
             sdata <- sdata[type=="spliceSite"]
             
             # calculate psi value
@@ -235,8 +239,13 @@ calculateSitePSIValue <- function(fds, overwriteCts, BPPARAM){
             # if psi is NA this means there were no reads at all so set it to 1
             sdata[is.na(psiValue),psiValue:=1]
             
+            # if no HDF5 is requested return it as matrix
+            if(dontWriteHDF5(fds)){
+                return(as.matrix(sdata[,.(os, psiValue)]))
+            }
+            
             # write other counts and psi values to h5 file
-            # get defind chunk sizes
+            # get defined chunk sizes
             chunkDims <- c(
                     min(nrow(sdata), options()[['FRASER-hdf5-chunk-nrow']]),
                     2)
@@ -251,12 +260,13 @@ calculateSitePSIValue <- function(fds, overwriteCts, BPPARAM){
     names(psiSiteValues) <- samples(fds)
     
     # merge it and assign it to our object
-    assay(fds, type="ss", psiName, withDimnames=FALSE) <- 
-        do.call(cbind, mapply('[', psiSiteValues, TRUE, 2, drop=FALSE))
+    assay(fds, type="ss", psiName, withDimnames=FALSE) <- do.call(cbind, 
+            mapply('[', psiSiteValues, TRUE, 2, drop=FALSE, 
+                    SIMPLIFY=FALSE))
     if(isTRUE(overwriteCts)){
-        assay(fds, type="ss", psiROCName, withDimnames=FALSE) <- 
-            do.call(cbind, bplapply(psiSiteValues, BPPARAM=BPPARAM, 
-                                    function(x) { x[,1,drop=FALSE] }))
+        assay(fds, type="ss", psiROCName, withDimnames=FALSE) <- do.call(cbind,
+                mapply('[', psiSiteValues, TRUE, 1, drop=FALSE, 
+                        SIMPLIFY=FALSE))
     }
     
     return(fds)

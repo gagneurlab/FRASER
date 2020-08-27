@@ -1,4 +1,4 @@
-sampleID	bamFile	group	gene
-sample1	extdata/bam/sample1.bam	1	TIMMDC1
-sample2	extdata/bam/sample2.bam	3	CLPP
-sample3	extdata/bam/sample3.bam	2	MCOLN1
+sampleID	bamFile	group	gene	pairedEnd
+sample1	extdata/bam/sample1.bam	1	TIMMDC1	TRUE
+sample2	extdata/bam/sample2.bam	3	CLPP	TRUE
+sample3	extdata/bam/sample3.bam	2	MCOLN1	TRUE
