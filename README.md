@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.com/c-mertes/FRASER.svg?branch=master)](https://travis-ci.com/c-mertes/FRASER)
 [![AppVeyor build status](https://ci.appveyor.com/api/projects/status/371x22cn6fipu7bw/branch/master?svg=true)](https://ci.appveyor.com/project/c-mertes/fraser/branch/master)
-[![Version](https://img.shields.io/badge/Version-1.1.3-green.svg)](https://github.com/c-mertes/FRASER/tree/master)
+[![Version](https://img.shields.io/badge/Version-1.1.4-green.svg)](https://github.com/c-mertes/FRASER/tree/master)
 [![Coverage status](https://codecov.io/gh/c-mertes/FRASER/branch/master/graph/badge.svg)](https://codecov.io/github/c-mertes/FRASER/branch/master)
 [![License](https://img.shields.io/github/license/mashape/apistatus.svg?maxAge=2592000)](https://github.com/gagneurlab/OUTRIDER/blob/master/LICENSE)
 
