@@ -137,7 +137,7 @@ filterVariability <- function(fds, minDeltaPsi=0, filter=TRUE,
     ctsSE  <- K(fds, type="ss")
     ctsN5  <- N(fds, type="psi5")
     ctsN3  <- N(fds, type="psi3")
-    ctsNSE <- N(fds, type="psiSite")
+    ctsNSE <- N(fds, type="theta")
     
     if(isFALSE(delayed)){
         cts <- as.matrix(cts)

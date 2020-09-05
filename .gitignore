@@ -7,6 +7,8 @@
 
 # ignore tmp files
 tmp
+inst/igv
+inst/tmp*
 
 # ignore vignette artefacts
 FraseR.pdf
@@ -22,6 +24,8 @@ vignettes/*.R
 vignettes/*.bbl
 vignettes/*.synctex.gz
 vignettes/figure/*
+vignettes/Bioconductor.sty
+vignettes/unsrturl.bst
 
 # ignore cpp files
 *.o

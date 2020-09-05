@@ -6,6 +6,6 @@
 #'   psiTypes
 #' 
 #' @export
-psiTypes <- c("psi5", "psi3", "psiSite")
+psiTypes <- c("psi5", "psi3", "theta")
 names(psiTypes) <- psiTypes
 

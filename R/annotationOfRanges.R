@@ -87,7 +87,7 @@ annotateRanges <- function(fds, feature="hgnc_symbol", featureName=feature,
             biotype, useUSCS)
 
     # annotate split reads
-    for(i in c("psi3", "psiSite")){
+    for(i in c("psi3", "theta")){
         gr <- rowRanges(fds, type=i)
         if(any(strand(gr) == "*")){
             strand(annotation) <- "*"
@@ -129,7 +129,7 @@ annotateRangesWithTxDb <- function(fds, feature="SYMBOL",
         }
     }
     
-    for(i in c("psi3", "psiSite")){
+    for(i in c("psi3", "theta")){
         # get GRanges object with the split reads which should be annotated
         gr <- rowRanges(fds, type=i)
         

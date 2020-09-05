@@ -14,7 +14,7 @@
 #'
 #' @inheritParams countRNA
 #' @param types A vector with the psi types which should be calculated. Default 
-#' is all of psi5, psi3 and psiSite.
+#' is all of psi5, psi3 and theta.
 #' @param overwriteCts FALSE or TRUE (the default) the total counts (aka N) will
 #'              be recalculated based on the existing junction counts (aka K)
 #' @return FraserDataSet
@@ -185,12 +185,12 @@ calculateSitePSIValue <- function(fds, overwriteCts, BPPARAM){
     
     message(date(), ": Calculate the PSI site values ...")
     
-    psiName <- "psiSite"
-    psiROCName <- "rawOtherCounts_psiSite"
+    psiName <- "theta"
+    psiROCName <- "rawOtherCounts_theta"
     if(!psiROCName %in% assayNames(fds)){
         overwriteCts <- TRUE
     }
-    psiH5datasetName <- "oSite_psiSite"
+    psiH5datasetName <- "oSite_theta"
     
     # prepare data table for calculating the psi value
     countData <- data.table(
@@ -205,7 +205,7 @@ calculateSitePSIValue <- function(fds, overwriteCts, BPPARAM){
         )
     )
     
-    psiSiteValues <- bplapply(samples(fds), countData=countData, fds=fds,
+    thetaValues <- bplapply(samples(fds), countData=countData, fds=fds,
         BPPARAM=BPPARAM, FUN=function(sample, countData, fds){
             if(verbose(fds) > 3){
                 message("sample: ", sample)
@@ -214,10 +214,10 @@ calculateSitePSIValue <- function(fds, overwriteCts, BPPARAM){
             # get sample
             sample <- as.character(sample)
             
-            # get counts and psiSite values from cache file if it exists
+            # get counts and theta values from cache file if it exists
             cacheFile <- getOtherCountsCacheFile(sample, fds)
             ans <- checkPsiCacheFile(cFile=cacheFile, dName=psiH5datasetName, 
-                    overwrite=overwriteCts, ptype="psiSite", fds=fds)
+                    overwrite=overwriteCts, ptype="theta", fds=fds)
             if(!is.null(ans)){
                 return(ans)
             }
@@ -225,7 +225,7 @@ calculateSitePSIValue <- function(fds, overwriteCts, BPPARAM){
             # add sample specific counts to the data.table
             sdata <- data.table(k=c(
                     rep(K(fds, type="psi3")[,sample], 2),
-                    K(fds, type="psiSite")[,sample]))
+                    K(fds, type="theta")[,sample]))
             sdata <- cbind(countData, sdata)
             sdata[,os:=sum(k)-k, by="spliceSiteID"]
             
@@ -257,15 +257,15 @@ calculateSitePSIValue <- function(fds, overwriteCts, BPPARAM){
             HDF5Array(filepath=cacheFile, name=psiH5datasetName)
         }
     )
-    names(psiSiteValues) <- samples(fds)
+    names(thetaValues) <- samples(fds)
     
     # merge it and assign it to our object
     assay(fds, type="ss", psiName, withDimnames=FALSE) <- do.call(cbind, 
-            mapply('[', psiSiteValues, TRUE, 2, drop=FALSE, 
+            mapply('[', thetaValues, TRUE, 2, drop=FALSE, 
                     SIMPLIFY=FALSE))
     if(isTRUE(overwriteCts)){
         assay(fds, type="ss", psiROCName, withDimnames=FALSE) <- do.call(cbind,
-                mapply('[', psiSiteValues, TRUE, 1, drop=FALSE, 
+                mapply('[', thetaValues, TRUE, 1, drop=FALSE, 
                         SIMPLIFY=FALSE))
     }
     

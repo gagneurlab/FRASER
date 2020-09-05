@@ -26,7 +26,7 @@ pvalueByBetaBinomialPerType <- function(fds, aname, psiType, pvalFun,
     rawOtherCounts <- counts(fds, type=psiType, side="otherSide")
 
     # swap rawCounts with others for intron retention
-    if(psiType == "psiSite"){
+    if(psiType == "theta"){
         tmp <- rawCounts
         rawCounts <- rawOtherCounts
         rawOtherCounts <- tmp

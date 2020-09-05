@@ -215,7 +215,7 @@ calculatePadjValues <- function(fds, type=currentType(fds), method="BY"){
 }
 
 getSiteIndex <- function(fds, type){
-    if(type == "psiSite"){
+    if(type == "theta"){
         return(mcols(fds, type=type)[['spliceSiteID']])
     }
     

@@ -85,7 +85,6 @@ Collate:
     FraserDataSet-class.R
     AllGenerics.R
     Fraser-pipeline.R
-    accessor-methods.R
     annotationOfRanges.R
     beta-binomial-testing.R
     calculatePSIValue.R

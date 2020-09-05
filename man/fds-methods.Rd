@@ -127,7 +127,7 @@ mapSeqlevels(fds, style = "UCSC", ...)
 
 \item{x}{A FraserDataSet object.}
 
-\item{type}{The psi type (psi3, psi5 or psiSite)}
+\item{type}{The psi type (psi3, psi5 or theta)}
 
 \item{...}{Further parameters. For mapSeqLevels: further parameters 
 passed to GenomeInfoDb::mapSeqlevels().}
@@ -171,9 +171,9 @@ scanBamParam(fds)
 scanBamParam(fds) <- ScanBamParam(mapqFilter=30)
 nonSplicedReads(fds)
 rowRanges(fds)
-rowRanges(fds, type="psiSite")
+rowRanges(fds, type="theta")
 mcols(fds, type="psi5")
-mcols(fds, type="psiSite")
+mcols(fds, type="theta")
 seqlevels(fds)
 seqlevels(mapSeqlevels(fds, style="UCSC"))
 seqlevels(mapSeqlevels(fds, style="Ensembl"))

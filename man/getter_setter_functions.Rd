@@ -64,7 +64,7 @@ verbose(fds) <- value
 \arguments{
 \item{fds}{An FraserDataSet object.}
 
-\item{type}{The type of psi (psi5, psi3 or psiSite)}
+\item{type}{The type of psi (psi5, psi3 or theta)}
 
 \item{value}{The new value to be assigned.}
 
@@ -174,9 +174,9 @@ pseudocount(4L)
 pseudocount()
 
 # retrieve or set a mask to exclude certain junctions in the fitting step
-featureExclusionMask(fds, type="psiSite") <- sample(
-        c(FALSE, TRUE), nrow(mcols(fds, type="psiSite")), replace=TRUE)
-featureExclusionMask(fds, type="psiSite")
+featureExclusionMask(fds, type="theta") <- sample(
+        c(FALSE, TRUE), nrow(mcols(fds, type="theta")), replace=TRUE)
+featureExclusionMask(fds, type="theta")
 
 # controlling the verbosity level of the output of some algorithms
 verbose(fds) <- 2

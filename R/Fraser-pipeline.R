@@ -31,7 +31,7 @@
 #'         splicing types.
 #' @param implementation The method that should be used to correct for 
 #' confounders. 
-#' @param type The type of PSI (psi5, psi3 or psiSite for theta/splicing 
+#' @param type The type of PSI (psi5, psi3 or theta for theta/splicing 
 #' efficiency)
 #' @param iterations The maximal number of iterations. When the autoencoder has 
 #' not yet converged after these number of iterations, the fit stops anyway.

@@ -71,7 +71,7 @@ not yet converged after these number of iterations, the fit stops anyway.}
 
 \item{...}{Additional parameters passed on to the internal fit function}
 
-\item{type}{The type of PSI (psi5, psi3 or psiSite for theta/splicing 
+\item{type}{The type of PSI (psi5, psi3 or theta for theta/splicing 
 efficiency)}
 
 \item{logit}{Indicates if z scores are computed on the logit scale (default) 

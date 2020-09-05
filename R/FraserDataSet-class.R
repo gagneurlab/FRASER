@@ -261,6 +261,16 @@ FraserDataSet <- function(colData=NULL, junctions=NULL, spliceSites=NULL, ...) {
             stop("Please provdie splice site counts if you provide ",
                     "junction counts.")
         }
+        if(is.character(junctions)){
+            if(!file.exists(junctions))
+                stop("Junction file '", junctions, "' does not exists")
+            junctions <- fread(junctions)
+        }
+        if(is.character(spliceSites)){
+            if(!file.exists(spliceSites))
+                ?stop("SpliceSite file '", spliceSites, "' does not exists")
+            spliceSites <- fread(spliceSites)
+        }
         if(is.data.frame(junctions)){
             junctions <- makeGRangesFromDataFrame(junctions,
                     keep.extra.columns=TRUE)
@@ -268,6 +278,12 @@ FraserDataSet <- function(colData=NULL, junctions=NULL, spliceSites=NULL, ...) {
         if(is.data.frame(spliceSites)){
             spliceSites <- makeGRangesFromDataFrame(spliceSites,
                     keep.extra.columns=TRUE)
+        }
+        if(!is(junctions, "GRanges")){
+            stop("Provided junction object is not a GRanges object.")
+        }
+        if(!is(spliceSites, "GRanges")){
+            stop("Provided spliceSite object is not a GRanges object.")
         }
         nsr <- SummarizedExperiment(
                 rowRanges=spliceSites[,c("spliceSiteID", "type")],
@@ -279,6 +295,10 @@ FraserDataSet <- function(colData=NULL, junctions=NULL, spliceSites=NULL, ...) {
                 assays=SimpleList(rawCountsJ=as.data.frame(
                         mcols(junctions)[colData[,"sampleID"]]), a=NULL)[1])
         return(new("FraserDataSet", se, nonSplicedReads=nsr, ...))
+    }
+    if(!is.null(junctions) | !is.null(spliceSites)){
+        stop("If you provide count tables please provide",
+                " also a sample table (colData).")
     }
     return(new("FraserDataSet", ...))
 }

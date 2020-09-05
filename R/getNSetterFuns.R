@@ -4,7 +4,7 @@
 #' the values within the FRASER model.
 #' 
 #' @param fds An FraserDataSet object.
-#' @param type The type of psi (psi5, psi3 or psiSite)
+#' @param type The type of psi (psi5, psi3 or theta)
 #' @param byGroup If TRUE, aggregation by donor/acceptor site will be done.
 #' @param dist Distribution for which the p-values should be extracted.
 #' @param level Indicates if the retrieved p values should be adjusted on the 
@@ -47,9 +47,9 @@
 #' pseudocount()
 #' 
 #' # retrieve or set a mask to exclude certain junctions in the fitting step
-#' featureExclusionMask(fds, type="psiSite") <- sample(
-#'         c(FALSE, TRUE), nrow(mcols(fds, type="psiSite")), replace=TRUE)
-#' featureExclusionMask(fds, type="psiSite")
+#' featureExclusionMask(fds, type="theta") <- sample(
+#'         c(FALSE, TRUE), nrow(mcols(fds, type="theta")), replace=TRUE)
+#' featureExclusionMask(fds, type="theta")
 #' 
 #' # controlling the verbosity level of the output of some algorithms
 #' verbose(fds) <- 2
@@ -527,7 +527,7 @@ weights <- function(fds, type){
 getIndexFromResultTable <- function(fds, resultTable, padj.method="holm"){
     type <- as.character(resultTable$type)
     target <- makeGRangesFromDataFrame(resultTable)
-    if(type == "psiSite"){
+    if(type == "theta"){
         gr <- granges(asSE(nonSplicedReads(fds)))
     } else {
         gr <- granges(asSE(fds))

@@ -7,7 +7,7 @@ test_that("Check test randomization is correct", {
     # name(fds) <- "betabinomTest"
     # fds <- saveFraserDataSet(fds)
     
-    # for(psiType in c("psi3", "psi5", "psiSite")){
+    # for(psiType in c("psi3", "psi5", "theta")){
      #   pvalls <- sapply(1:2, function(i){
      #       aname <- paste0("pvalue_", psiType)
      #       tmpfds <- pvalueByBetaBinomialPerType(fds, aname, psiType, betabinVglmTest)

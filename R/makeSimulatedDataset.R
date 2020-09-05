@@ -123,7 +123,7 @@ makeSimulatedFraserDataSet_BetaBinomial <- function(m=200, j=10000, q=10,
     # Store "other" counts
     counts(fds, type="psi3", side="other", withDimnames=FALSE) <-    n - k
     counts(fds, type="psi5", side="other", withDimnames=FALSE) <-    n - k
-    counts(fds, type="psiSite", side="other", withDimnames=FALSE) <- n
+    counts(fds, type="theta", side="other", withDimnames=FALSE) <- n
     
     # store information about the simulation in the fds
     # (same values for psi3 and psi5)
@@ -142,17 +142,17 @@ makeSimulatedFraserDataSet_BetaBinomial <- function(m=200, j=10000, q=10,
     }
     
     # store info for SE
-    setAssayMatrix(fds=fds, name="truePSI", type="psiSite", 
+    setAssayMatrix(fds=fds, name="truePSI", type="theta", 
             withDimnames=FALSE) <- mu_se
-    setAssayMatrix(fds=fds, name="trueLogitPSI", type="psiSite", 
+    setAssayMatrix(fds=fds, name="trueLogitPSI", type="theta", 
             withDimnames=FALSE) <- y_se
-    mcols(fds, type="psiSite")[,"trueRho"] <- rho_se
+    mcols(fds, type="theta")[,"trueRho"] <- rho_se
     
     # needed so that subsetting the fds works later
-    siteIDs <- seq_row(mcols(fds, type="psiSite"))
-    mcols(fds, type="psiSite")[["startID"]]      <- siteIDs
-    mcols(fds, type="psiSite")[["endID"]]        <- siteIDs
-    mcols(fds, type="psiSite")[["spliceSiteID"]] <- siteIDs
+    siteIDs <- seq_row(mcols(fds, type="theta"))
+    mcols(fds, type="theta")[["startID"]]      <- siteIDs
+    mcols(fds, type="theta")[["endID"]]        <- siteIDs
+    mcols(fds, type="theta")[["spliceSiteID"]] <- siteIDs
     
     return(fds)
     
@@ -372,7 +372,7 @@ makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=1000, q=10,
     # store other counts (n-k) for psi3=psi5 and SE (other=n)
     counts(fds, type="psi3", side="other", withDimnames=FALSE)    <- psi_n - k
     counts(fds, type="psi5", side="other", withDimnames=FALSE)    <- psi_n - k
-    counts(fds, type="psiSite", side="other", withDimnames=FALSE) <- se_n
+    counts(fds, type="theta", side="other", withDimnames=FALSE) <- se_n
     
     for(type in c("psi3", "psi5")){
         # store information about the simulation in the fds 
@@ -393,21 +393,21 @@ makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=1000, q=10,
     }
     
     # store info for SE
-    setAssayMatrix(fds=fds, name="truePSI", type="psiSite",
+    setAssayMatrix(fds=fds, name="truePSI", type="theta",
             withDimnames=FALSE) <- se_mu
-    setAssayMatrix(fds=fds, name="trueLogitPSI", type="psiSite",
+    setAssayMatrix(fds=fds, name="trueLogitPSI", type="theta",
             withDimnames=FALSE) <- qlogis(se_mu)
-    setAssayMatrix(fds=fds, name="trueAlpha", type="psiSite",
+    setAssayMatrix(fds=fds, name="trueAlpha", type="theta",
             withDimnames=FALSE) <- se_alpha
-    mcols(fds, type="psiSite")[,"trueRho"] <- se_rho
+    mcols(fds, type="theta")[,"trueRho"] <- se_rho
     
     # needed so that subsetting the fds works later
-    mcols(fds, type="psiSite")[["startID"]]      <- 
-            donorGroups # 1:nrow(mcols(fds, type="psiSite"))
-    mcols(fds, type="psiSite")[["endID"]]        <- 
-            seq_len(nrow(mcols(fds, type="psiSite")))
-    mcols(fds, type="psiSite")[["spliceSiteID"]] <- 
-            donorGroups # 1:nrow(mcols(fds, type="psiSite"))
+    mcols(fds, type="theta")[["startID"]]      <- 
+            donorGroups # 1:nrow(mcols(fds, type="theta"))
+    mcols(fds, type="theta")[["endID"]]        <- 
+            seq_len(nrow(mcols(fds, type="theta")))
+    mcols(fds, type="theta")[["spliceSiteID"]] <- 
+            donorGroups # 1:nrow(mcols(fds, type="theta"))
     
     return(fds)
     
@@ -439,7 +439,7 @@ makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=1000, q=10,
 #' fds <- makeSimulatedFraserDataSet()
 #' fds <- injectOutliers(fds, minDpsi=0.2, freq=1E-3)
 #' @export
-injectOutliers <- function(fds, type=c("psi5", "psi3", "psiSite"),
+injectOutliers <- function(fds, type=c("psi5", "psi3", "theta"),
                     freq=1E-3, minDpsi=0.2, minCoverage=2,
                     deltaDistr="uniformDistr", verbose=FALSE,
                     method=c('samplePSI', 'meanPSI', 'simulatedPSI'),
@@ -456,13 +456,13 @@ injectOutliers <- function(fds, type=c("psi5", "psi3", "psiSite"),
         return(fds)
     }
     # copy original k and o
-    if(type == "psiSite"){
-        setAssayMatrix(fds, type="psiSite", "originalCounts",
+    if(type == "theta"){
+        setAssayMatrix(fds, type="theta", "originalCounts",
                 withDimnames=FALSE) <- 
-                        counts(fds, type="psiSite", side="ofInterest")
-        setAssayMatrix(fds, type="psiSite", "originalOtherCounts",
+                        counts(fds, type="theta", side="ofInterest")
+        setAssayMatrix(fds, type="theta", "originalOtherCounts",
                 withDimnames=FALSE) <- 
-                        counts(fds, type="psiSite", side="other")
+                        counts(fds, type="theta", side="other")
     }
     else{
         setAssayMatrix(fds, type=type, "originalCounts",
@@ -491,13 +491,13 @@ injectOutliers <- function(fds, type=c("psi5", "psi3", "psiSite"),
             simulatedPSI = getAssayMatrix(fds, "truePSI", type=type) )
 
     # nedded to have comparably many outliers when type is SE
-    if(type == "psiSite"){
+    if(type == "theta"){
         freq <- freq/10
     }
 
     # data table with information about chr, start, end, 
     # ... for calculating groups
-    dt <- if(type == "psiSite"){
+    dt <- if(type == "theta"){
         data.table(
             junctionID = 1:j,
             chr = as.factor(seqnames(nonSplicedReads(fds))),
@@ -523,7 +523,7 @@ injectOutliers <- function(fds, type=c("psi5", "psi3", "psiSite"),
                     by=acceptorGroupID]$acceptorGroupID,
             psi5 = dt[donorGroupSize > 1, donorGroupID, 
                     by=donorGroupID]$donorGroupID,
-            psiSite = seq_len(j))
+            theta = seq_len(j))
     
     # e.g. for psi3/5: no donor/acceptor 
     # groups with at least 2 junctions (e.g in simulationBB)
@@ -638,7 +638,7 @@ injectOutliers <- function(fds, type=c("psi5", "psi3", "psiSite"),
                     # (so that o=n-k is always >= 0) 
                     # (not needed for psi3/5 because o
                     # will recalculated from k's there)
-                    if(length(group_junctions)==1){ # if(type == "psiSite"){
+                    if(length(group_junctions)==1){ # if(type == "theta"){
                         new_k <- min(new_k, n_ji)
                     }
                     # ensure new_k >= 0 and assign k_ij <- new_k
@@ -698,11 +698,11 @@ injectOutliers <- function(fds, type=c("psi5", "psi3", "psiSite"),
 removeInjectedOutliers <- function(fds, type){
     
     # copy injected k and o counts
-    if(type == "psiSite"){
-        setAssayMatrix(fds, type="psiSite", "outlierCounts",
-            withDimnames=FALSE) <- counts(fds, type="psiSite", side="ofInteres")
-        setAssayMatrix(fds, type="psiSite", "outlierOtherCounts",
-            withDimnames=FALSE) <- counts(fds, type="psiSite", side="other")
+    if(type == "theta"){
+        setAssayMatrix(fds, type="theta", "outlierCounts",
+            withDimnames=FALSE) <- counts(fds, type="theta", side="ofInteres")
+        setAssayMatrix(fds, type="theta", "outlierOtherCounts",
+            withDimnames=FALSE) <- counts(fds, type="theta", side="other")
     }
     else{
         setAssayMatrix(fds, type="psi5", "outlierCounts",
@@ -714,14 +714,14 @@ removeInjectedOutliers <- function(fds, type){
     }
     
     # assign original k and o to rawCountsJ and rawOtherCounts
-    if(type == "psiSite"){
-        counts(fds, type="psiSite", side="ofInterest", withDimnames=FALSE) <- 
-                getAssayMatrix(fds, type="psiSite", "originalCounts")
-        counts(fds, type="psiSite", side="other", withDimnames=FALSE) <- 
-                getAssayMatrix(fds, type="psiSite", "originalOtherCounts")
+    if(type == "theta"){
+        counts(fds, type="theta", side="ofInterest", withDimnames=FALSE) <- 
+                getAssayMatrix(fds, type="theta", "originalCounts")
+        counts(fds, type="theta", side="other", withDimnames=FALSE) <- 
+                getAssayMatrix(fds, type="theta", "originalOtherCounts")
         
-        assays(fds)[['originalCounts_psiSite']] <- NULL
-        assays(fds)[['originalOtherCounts_psiSite']] <- NULL
+        assays(fds)[['originalCounts_theta']] <- NULL
+        assays(fds)[['originalOtherCounts_theta']] <- NULL
     }
     else{
         counts(fds, type="psi5", side="ofInterest", withDimnames=FALSE) <- 
@@ -743,11 +743,11 @@ removeInjectedOutliers <- function(fds, type){
 restoreInjectedOutliers <- function(fds, type){
     
     # copy original k and o counts
-    if(type == "psiSite"){
-        setAssayMatrix(fds, type="psiSite", "originalCounts") <- 
-            counts(fds, type="psiSite", side="ofInterest")
-        setAssayMatrix(fds, type="psiSite", "originalOtherCounts") <- 
-            counts(fds, type="psiSite", side="other")
+    if(type == "theta"){
+        setAssayMatrix(fds, type="theta", "originalCounts") <- 
+            counts(fds, type="theta", side="ofInterest")
+        setAssayMatrix(fds, type="theta", "originalOtherCounts") <- 
+            counts(fds, type="theta", side="other")
     }
     else{
         setAssayMatrix(fds, type="psi5", "originalCounts") <- 
@@ -759,14 +759,14 @@ restoreInjectedOutliers <- function(fds, type){
     }
     
     # assign injected k and o to rawCountsJ and rawOtherCounts
-    if(type == "psiSite"){
-        counts(fds, type="psiSite", side="ofInterest") <- 
-            getAssayMatrix(fds, type="psiSite", "outlierCounts")
-        counts(fds, type="psiSite", side="other") <- 
-            getAssayMatrix(fds, type="psiSite", "outlierOtherCounts")
+    if(type == "theta"){
+        counts(fds, type="theta", side="ofInterest") <- 
+            getAssayMatrix(fds, type="theta", "outlierCounts")
+        counts(fds, type="theta", side="other") <- 
+            getAssayMatrix(fds, type="theta", "outlierOtherCounts")
         
-        assays(fds)[['outlierCounts_psiSite']] <- NULL
-        assays(fds)[['outlierOtherCounts_psiSite']] <- NULL
+        assays(fds)[['outlierCounts_theta']] <- NULL
+        assays(fds)[['outlierOtherCounts_theta']] <- NULL
     }
     else{
         counts(fds, type="psi5", side="ofInterest") <- 

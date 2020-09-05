@@ -519,7 +519,7 @@ the following additional information:
     \item hgncSymbol: the gene symbol of the gene that contains the splice
     junction or site if available
     \item type: the metric for which the aberrant event was detected (either
-    psi5 for $\psi_5$, psi3 for $\psi_3$ or psiSite for $\theta$)
+    psi5 for $\psi_5$, psi3 for $\psi_3$ or theta for $\theta$)
     \item pValue, padjust, zScore: the p-value, adjusted p-value and z-score of
     this event
     \item psiValue: the value of $\psi_5$, $\psi_3$ or $\theta$ metric
