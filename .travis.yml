@@ -49,8 +49,9 @@ install:
 
 script:
   - R CMD build --keep-empty-dirs --no-resave-data .
-  - R -e 'BiocCheck::BiocCheck("'*tar.gz'")'
-  - R CMD check --no-vignettes --timings *tar.gz
+  - export PKG_TARBALL=*.tar.gz
+  - R -e "BiocCheck::BiocCheck('${PKG_TARBALL}')"
+  - R CMD check --no-vignettes --timings $PKG_TARBALL
   - cd vignettes && R CMD Sweave --engine=knitr::knitr --pdf FRASER.Rnw
   - R -e 'devtools::run_examples()'
   - R -e 'devtools::test()'
