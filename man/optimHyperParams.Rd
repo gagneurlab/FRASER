@@ -22,8 +22,6 @@ optimHyperParams(
 )
 }
 \arguments{
-\item{fds}{A FraserDataSet object}
-
 \item{type}{The type of PSI (psi5, psi3 or psiSite for theta/splicing 
 efficiency)}
 

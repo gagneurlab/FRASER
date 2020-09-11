@@ -60,36 +60,41 @@
 #' 
 #' @return FraserDataSet
 #' @examples
-#'    # preprocessing
-#'    fds <- createTestFraserDataSet()
-#'   
-#'    ### when running FRASER on a real dataset, one should run the following 
-#'    ### two commands first (not run here to make the example run faster):
-#'    # fds <- calculatePSIValues(fds)
-#'    # fds <- filterExpressionAndVariability(fds)
+#' # set default parallel backend
+#' register(SerialParam())
+#' 
+#' # preprocessing
+#' fds <- createTestFraserDataSet()
+#' 
+#' # when running FRASER on a real dataset, one should run the following 
+#' # two commands first (not run here to make the example run faster):
+#' fds <- calculatePSIValues(fds)
+#' fds <- filterExpressionAndVariability(fds)
 #'
-#'    # Run the full analysis pipeline: fits distribution and computes p values
-#'    fds <- FRASER(fds, q=2, implementation="PCA")
+#' # Run the full analysis pipeline: fits distribution and computes p values
+#' fds <- FRASER(fds, q=2, implementation="PCA")
 #'
-#'    # afterwards, the fitted fds-object can be saved and results can 
-#'    # be extracted and visualized, see ?saveFraserDataSet, ?results and 
-#'    # ?plotVolcano
-#'    
-#'    ### The functions run inside the FRASER function can also be directly 
-#'    ### run themselves. 
-#'    ### To directly run the fit function:
-#'    # fds <- fit(fds, implementation="PCA", q=2, type="psi5")
-#'    
-#'    ### To directly run the nomial and adjusted p value and z score 
-#'    ### calculation, the following functions can be used:
-#'    # fds <- calculatePvalues(fds, type="psi5")
-#'    # head(pVals(fds, type="psi5"))
-#'    # fds <- calculatePadjValues(fds, type="psi5", method="BY")
-#'    # head(padjVals(fds, type="psi5"))
-#'    # fds <- calculateZscore(fds, type="psi5")
-#'    # head(zScores(fds, type="psi5")) 
+#' # afterwards, the fitted fds-object can be saved and results can 
+#' # be extracted and visualized, see ?saveFraserDataSet, ?results and 
+#' # ?plotVolcano
+#'  
+#' # The functions run inside the FRASER function can also be directly 
+#' # run themselves. 
+#' # To directly run the fit function:
+#' fds <- fit(fds, implementation="PCA", q=2, type="psi5")
+#' 
+#' # To directly run the nomial and adjusted p value and z score 
+#' # calculation, the following functions can be used:
+#' fds <- calculatePvalues(fds, type="psi5")
+#' head(pVals(fds, type="psi5"))
+#' fds <- calculatePadjValues(fds, type="psi5", method="BY")
+#' head(padjVals(fds, type="psi5"))
+#' fds <- calculateZscore(fds, type="psi5")
+#' head(zScores(fds, type="psi5")) 
 #'
 #' @author Christian Mertes \email{mertes@@in.tum.de}
+#' @author Ines Scheller \email{scheller@@in.tum.de}
+#' 
 #' @rdname FRASER
 #' @name FRASER
 NULL
@@ -131,7 +136,7 @@ FRASER <- function(fds, q, implementation=c("PCA", "PCA-BB-Decoder",
         }
 
         message("\n", date(), ": Fit step for: '", i, "'.")
-        fds <- fit(fds, implementation=implementation, q=currQ,
+        fds <- fit(object=fds, implementation=implementation, q=currQ,
                 iterations=iterations, type=i, BPPARAM=BPPARAM, ...)
 
         message(date(), ": Compute p values for: '", i, "'.")
