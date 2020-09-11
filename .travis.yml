@@ -49,12 +49,11 @@ install:
 
 script:
   - R CMD build --keep-empty-dirs --no-resave-data .
-  - R CMD BiocCheck *tar.gz
+  - R -e "BiocCheck::BiocCheck('.')"
   - R CMD check --no-vignettes --timings *tar.gz
   - cd vignettes && R CMD Sweave --engine=knitr::knitr --pdf FRASER.Rnw
   - R -e 'devtools::run_examples()'
   - R -e 'devtools::test()'
 
 after_success:
-  - test $TRAVIS_BUILD_STAGE_NAME = "Test" && 
-      travis_wait 30 Rscript -e 'covr::codecov()'
+  - test $TRAVIS_BUILD_STAGE_NAME = "Test" && Rscript -e 'covr::codecov()'
