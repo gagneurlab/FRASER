@@ -20,11 +20,13 @@
   control = list(),
   BPPARAM = bpparam(),
   nSubset = 15000,
-  verbose = FALSE,
-  minDeltaPsi = 0.1
+  minDeltaPsi = 0.1,
+  ...
 )
 }
 \arguments{
+\item{object}{A \code{\link{FraserDataSet}} object}
+
 \item{implementation}{The method that should be used to correct for 
 confounders.}
 
@@ -58,22 +60,25 @@ from the previous fit will be used as initial values. If TRUE,
 
 \item{control}{List of control parameters passed on to optim().}
 
-\item{BPPARAM}{A BiocParallel object to run the computation in parallel}
+\item{BPPARAM}{the BiocParallel parameters for the parallelization}
 
 \item{nSubset}{The size of the subset to be used in fitting if subsetting is
 used.}
 
-\item{verbose}{Controls the level of information printed during the fit.}
-
 \item{minDeltaPsi}{Minimal delta psi of an intron to be be considered a 
 variable intron.}
+
+\item{...}{Currently not used}
+}
+\value{
+\code{\link{FraserDataSet}}
 }
 \description{
-This method corrects for confounders in the data and fits a beta-binomial
-distribution to the introns/splice sites.
+This method corrects for confounders in the data and 
+fits a beta-binomial distribution to the introns/splice sites.
 
-For more details please see \code{\link[FRASER]{FRASER}}.
+For more details please see \code{\link{FRASER}}.
 }
 \seealso{
-FRASER
+\code{\link{FRASER}}
 }

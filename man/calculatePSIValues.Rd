@@ -12,7 +12,7 @@ calculatePSIValues(
 )
 }
 \arguments{
-\item{fds}{A FraserDataSet object}
+\item{fds}{A \code{\link{FraserDataSet}} object}
 
 \item{types}{A vector with the psi types which should be calculated. Default 
 is all of psi5, psi3 and psiSite.}

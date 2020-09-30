@@ -6,11 +6,15 @@
 #'
 #' @name FRASER
 #' @noRd
-#'
+#' 
 #' @import data.table
 #'
 #' @importFrom Biobase rowMax
 #'
+### Import of generic functions
+#' 
+#' @importMethodsFrom OUTRIDER results
+#' 
 ### Parallel computing
 #'
 #' @import BiocParallel
@@ -70,7 +74,7 @@
 #' @importFrom R.utils renameFile withTimeout
 #' @importFrom tools file_path_as_absolute
 #' @importFrom methods as callNextMethod is new show slot slot<- validObject
-#' @importFrom utils capture.output
+#' @importFrom utils capture.output packageVersion
 #'
 #'
 #'
@@ -105,9 +109,11 @@ NULL
 
 #' TODO: Should be removed in the end!
 #' @noRd
-globalVariables(c(".", "J", ".N", ".asDataFrame", "End", "FN", "HTML", "Start", 
+globalVariables(c(".", "J", ".N", ".asDataFrame", "End", "first_feature", 
+        "FN", "HTML", "other_features", "Start", 
         "TP", "deltaPsi", "curgr", "gene", "lty", "hgnc_symbol", "id",
-        "ldat", "p.adj", "pval", "pvalue", "sampleID", "sampleGroup", "chr",
+        "ldat", "mapped", "p.adj", "pval", "pvalue", "sampleID", "sampleGroup", 
+        "chr",
         "symbol", "type", "pseudocount", "known_intron", "known_start", 
         "known_end", "..columns2Write", "maxVal", "idxGroup", "idxInCount", 
         "idxInGroup", "lower", "nOk", "nPerGroup", "nsubset", "obs", "p", 
@@ -121,5 +127,5 @@ globalVariables(c(".", "J", ".N", ".asDataFrame", "End", "FN", "HTML", "Start",
         "model", "mu", "n", ",nsubset", "o3", "o5", "obsPsi", "os", "pa",
         "padj", "passed", "pByFeature", "pointNr", "predPsi", "psi3", "psi5",
         "psiType", "psiValue", "seqlength", "seqlevel", "Step", "traceNr",
-        "V1", "value", "zscore", "maxDTheta"),
+        "uniqueID", "V1", "value", "zscore", "maxDTheta"),
         package="FRASER")

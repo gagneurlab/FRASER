@@ -83,7 +83,7 @@ countNonSplicedReads(
 )
 }
 \arguments{
-\item{fds}{A FraserDataSet object}
+\item{fds, x, object}{A \code{\link{FraserDataSet}} object}
 
 \item{NcpuPerSample}{A BiocParallel param object or a positive integer
 to configure the parallel backend

@@ -1,11 +1,4 @@
-##
-## @author Christian Mertes \email{mertes@@in.tum.de}
-##
-## This file contains all functions for reading in data
-## especially aligned RNA sequencing data
-##
-
-
+#' 
 #' @title Count RNA-seq data
 #'  
 #' @description The FRASER package provides multiple functions to extract and 
@@ -33,7 +26,7 @@
 #' single count object, where the counts for junctions that are not present in 
 #' a sample are set to zero. 
 #' 
-#' @param fds A FraserDataSet object
+#' @param fds,x,object A \code{\link{FraserDataSet}} object
 #' @param NcpuPerSample A BiocParallel param object or a positive integer
 #'             to configure the parallel backend
 #'             of the internal loop per sample

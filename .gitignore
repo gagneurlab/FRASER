@@ -22,6 +22,8 @@ vignettes/*.R
 vignettes/*.bbl
 vignettes/*.synctex.gz
 vignettes/figure/*
+vignettes/Bioconductor.sty
+vignettes/unsrturl.bst
 
 # ignore cpp files
 *.o

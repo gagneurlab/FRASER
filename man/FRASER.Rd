@@ -31,7 +31,7 @@ calculatePvalues(
 calculatePadjValues(fds, type = currentType(fds), method = "BY")
 }
 \arguments{
-\item{fds}{A FraserDataSet object}
+\item{fds}{A \code{\link{FraserDataSet}} object}
 
 \item{q}{The encoding dimensions to be used during the fitting proceadure.
 Should be fitted using \code{\link{optimHyperParams}} if unknown.
@@ -63,33 +63,6 @@ calculated. Possible are beta-binomial, binomial and normal.}
 calculation}
 
 \item{method}{The p.adjust method that should be used.}
-
-\item{rhoRange}{Defines the range of values that rho parameter from the 
-beta-binomial distribution is allowed to take. For very small values of rho, 
-the loss can be instable, so it is not recommended to allow rho < 1e-8.}
-
-\item{weighted}{If TRUE, the weighted implementation of the autoencoder is 
-used}
-
-\item{noiseAlpha}{Controls the amount of noise that is added for the 
-denoising autoencoder.}
-
-\item{convergence}{The fit is considered to have converged if the difference 
-between the previous and the current loss is smaller than this threshold.}
-
-\item{verbose}{Controls the level of information printed during the fit.}
-
-\item{minDeltaPsi}{Minimal delta psi of an intron to be be considered a 
-variable intron.}
-
-\item{initialize}{If FALSE and a fit has been previoulsy run, the values 
-from the previous fit will be used as initial values. If TRUE, 
-(re-)initialization will be done.}
-
-\item{control}{List of control parameters passed on to optim().}
-
-\item{nSubset}{The size of the subset to be used in fitting if subsetting is
-used.}
 }
 \value{
 FraserDataSet
@@ -171,6 +144,9 @@ head(padjVals(fds, type="psi5"))
 fds <- calculateZscore(fds, type="psi5")
 head(zScores(fds, type="psi5")) 
 
+}
+\seealso{
+\code{\link[FRASER]{fit}}
 }
 \author{
 Christian Mertes \email{mertes@in.tum.de}

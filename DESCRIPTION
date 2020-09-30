@@ -54,6 +54,7 @@ Imports:
     HDF5Array,
     matrixStats,
     methods,
+    OUTRIDER,
     pcaMethods,
     pheatmap,
     plotly,
@@ -84,6 +85,7 @@ Collate:
     getNSetterFuns.R
     FRASER-package.R
     FraserDataSet-class.R
+    AllGenerics-definitions.R
     AllGenerics.R
     Fraser-pipeline.R
     accessor-methods.R

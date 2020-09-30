@@ -10,11 +10,13 @@ fit_autoenc <- function(fds, type=currentType(fds), q_guess=round(ncol(fds)/4),
     
     # setup object
     currentType(fds) <- type
+    verbose_old <- verbose(fds)
+    verbose(fds) <- verbose
+    on.exit({ verbose(fds) <- verbose_old })
     
     # train AE
     fds <- fit(fds, type=type, q=q_guess, implementation=implementation,
-                iterations=iterations, 
-                verbose=verbose, BPPARAM=BPPARAM)
+                iterations=iterations, BPPARAM=BPPARAM)
     curLoss <- metadata(fds)[[paste0('loss_', type)]]
     curLoss <- mean(curLoss[,ncol(curLoss)])
     
@@ -84,8 +86,10 @@ findEncodingDim <- function(i, fds, type, params, implementation,
 #'
 #' Finds the optimal encoding dimension by injecting artificial splicing outlier
 #' ratios while maximizing the precision-recall curve.
-#'
-#' @inheritParams fit
+#' 
+#' @inheritParams countRNA
+#' @inheritParams FRASER
+#' @inherit fit
 #' @param q_param Vector specifying which values of q should be tested
 #' @param noise_param Vector specifying which noise levels should be tested.
 #' @param setSubset The size of the subset of the most variable introns that 

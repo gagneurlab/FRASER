@@ -37,7 +37,7 @@ filterVariability(
 )
 }
 \arguments{
-\item{fds}{A FraserDataSet object}
+\item{fds}{A \code{\link{FraserDataSet}} object}
 
 \item{minExpressionInOneSample}{The minimal read count in at least one 
 sample that is required for an intron to pass the filter.}

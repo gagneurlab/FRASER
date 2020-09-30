@@ -1,7 +1,3 @@
-#' @importFrom generics fit
-#' @export
-generics::fit
-
 #' 
 #' Fitting the denoising autoencoder
 #' 
@@ -10,12 +6,33 @@ generics::fit
 #' 
 #' For more details please see \code{\link{FRASER}}.
 #' 
+#' @inheritParams countRNA
 #' @inheritParams FRASER
+#' 
+#' @param rhoRange Defines the range of values that rho parameter from the 
+#' beta-binomial distribution is allowed to take. For very small values of rho, 
+#' the loss can be instable, so it is not recommended to allow rho < 1e-8. 
+#' @param noiseAlpha Controls the amount of noise that is added for the 
+#' denoising autoencoder.
+#' @param convergence The fit is considered to have converged if the difference 
+#' between the previous and the current loss is smaller than this threshold.
+#' @param minDeltaPsi Minimal delta psi of an intron to be be considered a 
+#' variable intron.
+#' @param initialize If FALSE and a fit has been previoulsy run, the values 
+#' from the previous fit will be used as initial values. If TRUE, 
+#' (re-)initialization will be done. 
+#' @param control List of control parameters passed on to optim().
+#' @param nSubset The size of the subset to be used in fitting if subsetting is
+#' used.
+#' @param weighted If TRUE, the weighted implementation of the autoencoder is 
+#' used
+#' @param ... Currently not used 
 #' 
 #' @return \code{\link{FraserDataSet}}
 #' 
 #' @seealso \code{\link{FRASER}}
 #' @name fit
+#' @rdname fit
 #' @method fit FraserDataSet
 #' @export
 fit.FraserDataSet <- function(object, implementation=c("PCA", "PCA-BB-Decoder",
@@ -25,10 +42,17 @@ fit.FraserDataSet <- function(object, implementation=c("PCA", "PCA-BB-Decoder",
                     q, type="psi3", rhoRange=c(1e-8, 1-1e-8), 
                     weighted=FALSE, noiseAlpha=1, convergence=1e-5, 
                     iterations=15, initialize=TRUE, control=list(), 
-                    BPPARAM=bpparam(), nSubset=15000, verbose=FALSE, 
-                    minDeltaPsi=0.1){
+                    BPPARAM=bpparam(), nSubset=15000, 
+                    minDeltaPsi=0.1, ...){
+    if(length(list(...))){
+        stop("... is currently not used. Please remove the ", 
+                "additional arguments: ", 
+                paste(names(list(...)), collapse=", "))
+    }
     method <- match.arg(implementation)
-
+    
+    verbose <- verbose(object) > 0
+    
     # make sure its only in-memory data for k and n
     currentType(object) <- type
     counts(object, type=type, side="other", HDF5=FALSE) <- as.matrix(

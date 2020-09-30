@@ -56,6 +56,10 @@ R.utils::withTimeout(timeout=2400, {
         INSTALL(ask=FALSE, type=BTYPE, Ncpus=NCPUS)
     
         print_log("Install dev package")
+        
+        # TODO only till we get the S3/S4 change into bioc
+        devtools::install_github("gagneurlab/OUTRIDER", ref="use_S3_methods")
+        
         devtools::install(".", dependencies=TRUE, upgrade=TRUE, 
                 type=BTYPE, Ncpus=NCPUS)
     })

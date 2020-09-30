@@ -38,25 +38,6 @@
 #' @param BPPARAM A BiocParallel object to run the computation in parallel
 #' @param correction Deprecated. The name changed to implementation. 
 #' @param ... Additional parameters passed on to the internal fit function
-### Additional parameters of the internal fit function:
-#' @param rhoRange Defines the range of values that rho parameter from the 
-#' beta-binomial distribution is allowed to take. For very small values of rho, 
-#' the loss can be instable, so it is not recommended to allow rho < 1e-8. 
-#' @param weighted If TRUE, the weighted implementation of the autoencoder is 
-#' used
-#' @param noiseAlpha Controls the amount of noise that is added for the 
-#' denoising autoencoder.
-#' @param convergence The fit is considered to have converged if the difference 
-#' between the previous and the current loss is smaller than this threshold.
-#' @param verbose Controls the level of information printed during the fit.
-#' @param minDeltaPsi Minimal delta psi of an intron to be be considered a 
-#' variable intron. 
-#' @param initialize If FALSE and a fit has been previoulsy run, the values 
-#' from the previous fit will be used as initial values. If TRUE, 
-#' (re-)initialization will be done. 
-#' @param control List of control parameters passed on to optim().
-#' @param nSubset The size of the subset to be used in fitting if subsetting is
-#' used.
 #' 
 #' @return FraserDataSet
 #' @examples
@@ -91,7 +72,9 @@
 #' head(padjVals(fds, type="psi5"))
 #' fds <- calculateZscore(fds, type="psi5")
 #' head(zScores(fds, type="psi5")) 
-#'
+#' 
+#' @seealso \code{\link[FRASER]{fit}}
+#' 
 #' @author Christian Mertes \email{mertes@@in.tum.de}
 #' @author Ines Scheller \email{scheller@@in.tum.de}
 #' 
