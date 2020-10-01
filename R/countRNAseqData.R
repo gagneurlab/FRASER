@@ -98,6 +98,13 @@
 #' @rdname countRNA
 #' 
 #' @examples
+#'    # On Windows SNOW is the default for the parallele backend, which can be 
+#'    # very slow for many but small tasks. Therefore, we will use 
+#'    # for the example the SerialParam() backend.
+#'    if(.Platform$OS.type != "unix") {
+#'        register(SerialParam())
+#'    }
+#'    
 #'   fds <- countRNAData(createTestFraserSettings())
 #'
 NULL

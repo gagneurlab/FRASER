@@ -142,8 +142,7 @@ head(pVals(fds, type="psi5"))
 fds <- calculatePadjValues(fds, type="psi5", method="BY")
 head(padjVals(fds, type="psi5"))
 fds <- calculateZscore(fds, type="psi5")
-head(zScores(fds, type="psi5")) 
-
+head(zScores(fds, type="psi5"))
 }
 \seealso{
 \code{\link[FRASER]{fit}}
