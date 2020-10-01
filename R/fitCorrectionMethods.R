@@ -6,6 +6,7 @@
 #' 
 #' For more details please see \code{\link{FRASER}}.
 #' 
+#' @param object A \code{\link{FraserDataSet}} object
 #' @inheritParams countRNA
 #' @inheritParams FRASER
 #' 

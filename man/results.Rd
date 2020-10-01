@@ -34,7 +34,7 @@ aberrant(
 )
 }
 \arguments{
-\item{object}{A FraserDataSet}
+\item{object, fds}{A \code{\link{FraserDataSet}} object}
 
 \item{sampleIDs}{A vector of sample IDs for which results should be 
 retrieved}

@@ -638,9 +638,9 @@ resultsSingleSample <- function(sampleID, gr, pvals, padjs, zscores, psivals,
     return(ans[order(mcols(ans)$pValue)])
 }
 
-FRASER.results <- function(object, sampleIDs, fdrCutoff, zscoreCutoff, dPsiCutoff,
-                    psiType, BPPARAM=bpparam(), maxCols=20, minCount, 
-                    additionalColumns=NULL){
+FRASER.results <- function(object, sampleIDs, fdrCutoff, zscoreCutoff, 
+                    dPsiCutoff, psiType, BPPARAM=bpparam(), maxCols=20, 
+                    minCount, additionalColumns=NULL){
 
     # check input
     checkNaAndRange(fdrCutoff,    min=0, max=1,   scalar=TRUE, na.ok=TRUE)
@@ -725,7 +725,7 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff, zscoreCutoff, dPsiCutof
 #' based on the given options and cutoffs. The aberrant function extracts 
 #' aberrant splicing events based on the given cutoffs.
 #'
-#' @param object A FraserDataSet
+#' @param object,fds A \code{\link{FraserDataSet}} object
 #' @param sampleIDs A vector of sample IDs for which results should be 
 #' retrieved
 #' @param padjCutoff The FDR cutoff to be applied or NA if not requested.

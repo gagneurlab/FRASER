@@ -26,7 +26,7 @@
 #' single count object, where the counts for junctions that are not present in 
 #' a sample are set to zero. 
 #' 
-#' @param fds,x,object A \code{\link{FraserDataSet}} object
+#' @param fds A \code{\link{FraserDataSet}} object
 #' @param NcpuPerSample A BiocParallel param object or a positive integer
 #'             to configure the parallel backend
 #'             of the internal loop per sample
