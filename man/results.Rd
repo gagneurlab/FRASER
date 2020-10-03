@@ -3,7 +3,7 @@
 \name{results,FraserDataSet-method}
 \alias{results,FraserDataSet-method}
 \alias{resultsByGenes}
-\alias{aberrant}
+\alias{aberrant,FraserDataSet-method}
 \title{Extracting results and aberrant splicing events}
 \usage{
 \S4method{results}{FraserDataSet}(
@@ -21,9 +21,9 @@
 
 resultsByGenes(res, geneColumn = "hgncSymbol", method = "BY")
 
-aberrant(
-  fds,
-  type = currentType(fds),
+\S4method{aberrant}{FraserDataSet}(
+  object,
+  type = currentType(object),
   padjCutoff = 0.05,
   deltaPsiCutoff = 0.3,
   zScoreCutoff = NA,

@@ -865,9 +865,7 @@ mapSeqlevels <- function(fds, style="UCSC", ...){
 }
 
 
-#' @rdname results
-#' @export
-aberrant <- function(fds, type=currentType(fds), padjCutoff=0.05,
+aberrant.FRASER <- function(object, type=currentType(object), padjCutoff=0.05,
                     deltaPsiCutoff=0.3, zScoreCutoff=NA, minCount=5,
                     by=c("none", "sample", "feature"), aggregate=FALSE, ...){
 
@@ -880,31 +878,31 @@ aberrant <- function(fds, type=currentType(fds), padjCutoff=0.05,
     if("n" %in% names(dots)){
         n <- dots[['n']]
     } else {
-        n <- N(fds, type=type)
+        n <- N(object, type=type)
     }
     if("zscores" %in% names(dots)){
         zscores <- dots[['zscores']]
     } else {
-        zscores <- zScores(fds, type=type)
+        zscores <- zScores(object, type=type)
     }
     if("padjVals" %in% names(dots)){
         padj <- dots[['padjVals']]
     } else {
-        padj <- padjVals(fds, type=type)
+        padj <- padjVals(object, type=type)
     }
     if("dPsi" %in% names(dots)){
         dpsi <- dots[['dPsi']]
     } else {
-        dpsi <- deltaPsiValue(fds, type=type)
+        dpsi <- deltaPsiValue(object, type=type)
     } 
     
     
     # create cutoff matrix
     goodCutoff <- matrix(TRUE, nrow=nrow(zscores), ncol=ncol(zscores),
             dimnames=dimnames(zscores))
-    if("hgnc_symbol" %in% colnames(mcols(fds, type=type)) &
-                nrow(mcols(fds, type=type)) == nrow(goodCutoff)){
-        rownames(goodCutoff) <- mcols(fds, type=type)[,"hgnc_symbol"]
+    if("hgnc_symbol" %in% colnames(mcols(object, type=type)) &
+                nrow(mcols(object, type=type)) == nrow(goodCutoff)){
+        rownames(goodCutoff) <- mcols(object, type=type)[,"hgnc_symbol"]
     } else if(isTRUE(aggregate)){
         stop("Please provide hgnc symbols to compute gene p values!")
     }
@@ -930,7 +928,7 @@ aberrant <- function(fds, type=currentType(fds), padjCutoff=0.05,
     if(isTRUE(aggregate)){
         goodCutoff <- as.matrix(data.table(goodCutoff, keep.rownames=TRUE)[,
                 as.data.table(t(colAnys(as.matrix(.SD)))), by=rn][,-1])
-        rownames(goodCutoff) <- unique(mcols(fds, type=type)[,"hgnc_symbol"])
+        rownames(goodCutoff) <- unique(mcols(object, type=type)[,"hgnc_symbol"])
         colnames(goodCutoff) <- colnames(zscores)
     }
     
@@ -943,3 +941,7 @@ aberrant <- function(fds, type=currentType(fds), padjCutoff=0.05,
     }
     return(goodCutoff)
 }
+
+#' @rdname results
+#' @export
+setMethod("aberrant", "FraserDataSet", aberrant.FRASER)

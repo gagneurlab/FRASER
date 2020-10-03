@@ -3,7 +3,7 @@
 \name{filtering}
 \alias{filtering}
 \alias{filterExpressionAndVariability}
-\alias{filterExpression}
+\alias{filterExpression,FraserDataSet-method}
 \alias{filterVariability}
 \title{Filtering FraserDataSets}
 \usage{
@@ -18,13 +18,13 @@ filterExpressionAndVariability(
   BPPARAM = bpparam()
 )
 
-filterExpression(
-  fds,
+\S4method{filterExpression}{FraserDataSet}(
+  object,
   minExpressionInOneSample = 20,
   quantile = 0.05,
   quantileMinExpression = 1,
   filter = TRUE,
-  delayed = ifelse(ncol(fds) <= 300, FALSE, TRUE),
+  delayed = ifelse(ncol(object) <= 300, FALSE, TRUE),
   BPPARAM = bpparam()
 )
 
@@ -75,7 +75,7 @@ reliably detected and to remove introns with no variablity between samples.
 \item \code{filterExpressionAndVariability}: This functions filters out both introns with low 
 read support and introns that are not variable across samples.
 
-\item \code{filterExpression}: This function filters out introns and corresponding 
+\item \code{filterExpression,FraserDataSet-method}: This function filters out introns and corresponding 
 splice sites that have low read support in all samples.
 
 \item \code{filterVariability}: This function filters out introns and corresponding 

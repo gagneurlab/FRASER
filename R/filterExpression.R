@@ -58,22 +58,19 @@ filterExpressionAndVariability <- function(fds, minExpressionInOneSample=20,
     
 }
 
-#' @describeIn filtering This function filters out introns and corresponding 
-#' splice sites that have low read support in all samples.
-#' @export
-filterExpression <- function(fds, minExpressionInOneSample=20, quantile=0.05,
+filterExpression.FRASER <- function(object, minExpressionInOneSample=20, quantile=0.05,
                     quantileMinExpression=1, filter=TRUE, 
-                    delayed=ifelse(ncol(fds) <= 300, FALSE, TRUE),
+                    delayed=ifelse(ncol(object) <= 300, FALSE, TRUE),
                     BPPARAM=bpparam()){
 
-    stopifnot(is(fds, "FraserDataSet"))
+    stopifnot(is(object, "FraserDataSet"))
     
     message(date(), ": Filtering out introns with low read support ...")
     
     # extract counts
-    cts  <- K(fds, type="j")
-    ctsN5 <- N(fds, type="psi5")
-    ctsN3 <- N(fds, type="psi3")
+    cts  <- K(object, type="j")
+    ctsN5 <- N(object, type="psi5")
+    ctsN3 <- N(object, type="psi3")
     
     if(isFALSE(delayed)){
         cts <- as.matrix(cts)
@@ -97,31 +94,37 @@ filterExpression <- function(fds, minExpressionInOneSample=20, quantile=0.05,
 
     # add annotation to object
     for(n in names(cutoffs)){
-        mcols(fds, type="j")[n] <- cutoffs[[n]]
+        mcols(object, type="j")[n] <- cutoffs[[n]]
     }
     
-    mcols(fds, type="j")[['passedExpression']] <-
+    mcols(object, type="j")[['passedExpression']] <-
             cutoffs$maxCount >= minExpressionInOneSample &
             (cutoffs$quantileValue5 >= quantileMinExpression |
                 cutoffs$quantileValue3 >= quantileMinExpression) 
-    if("passedVariability" %in% colnames(mcols(fds, type="j"))){
-        mcols(fds, type="j")[['passed']] <-  
-            mcols(fds, type="j")[['passedExpression']] & 
-            mcols(fds, type="j")[['passedVariability']]
+    if("passedVariability" %in% colnames(mcols(object, type="j"))){
+        mcols(object, type="j")[['passed']] <-  
+            mcols(object, type="j")[['passedExpression']] & 
+            mcols(object, type="j")[['passedVariability']]
     } else{
-        mcols(fds, type="j")[['passed']] <-  
-            mcols(fds, type="j")[['passedExpression']]
+        mcols(object, type="j")[['passed']] <-  
+            mcols(object, type="j")[['passedExpression']]
     }
     
     # filter if requested
     if(isTRUE(filter)){
-        fds <- applyExpressionFilters(fds, minExpressionInOneSample, 
+        object <- applyExpressionFilters(object, minExpressionInOneSample, 
                                 quantileMinExpression)
     }
 
-    validObject(fds)
-    return(fds)
+    validObject(object)
+    return(object)
 }
+
+#' @describeIn filtering This function filters out introns and corresponding 
+#' splice sites that have low read support in all samples.
+#' @export
+setMethod("filterExpression", signature="FraserDataSet",
+        filterExpression.FRASER)
 
 #' @describeIn filtering This function filters out introns and corresponding 
 #' splice sites which do not show variablity across samples.
