@@ -46,7 +46,7 @@ install:
   - R --version
   - R -e 'update.packages(ask=FALSE, Ncpus=4, instlib="/home/travis/R/Library/")'
   - R -e 'if(Sys.getenv("TRAVIS_R_VERSION_STRING") == "bioc-devel") {
-        install.packages("BiocManager")
+        install.packages("BiocManager");
         BiocManager::install(version = "devel", ask=FALSE)
       }'
   - Rscript setupEnv.R
