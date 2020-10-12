@@ -1,5 +1,5 @@
 BTYPE <- ifelse(.Platform$OS.type == 'unix', "source", "both")
-NCPUS <- 6
+NCPUS <- ifelse(.Platform$OS.type == 'unix', 6, 1)
 START_TIME <- Sys.time()
 
 print_log <- function(...){
@@ -33,7 +33,7 @@ if(!requireNamespace("XML", quietly=TRUE) & R.version[['major']] == "3"){
 if("windows" == .Platform$OS.type){
     print_log("Install XML on windows ...")
     BTYPE <- "win.binary"
-    installIfReq(p=c("XML", "xml2", "RSQLite", "progress", "AnnotationDbi", "BiocCheck"))
+    installIfReq(p=c("XML", "xml2", "RSQLite", "progress", "tibble", "AnnotationDbi", "BiocCheck"))
     
     print_log("Install source packages only for windows ...")
     INSTALL(c("GenomeInfoDbData", "org.Hs.eg.db", "TxDb.Hsapiens.UCSC.hg19.knownGene"), type="both")
@@ -53,15 +53,11 @@ for(p in c("getopt", "XML", "xml2", "testthat", "devtools", "covr",
 R.utils::withTimeout(timeout=2400, {
     try({
         print_log("Update packages")
+	BTYPE <- ifelse(.Platform$OS.type == 'unix', "source", "win.binary")
         INSTALL(ask=FALSE, type=BTYPE, Ncpus=NCPUS)
     
         print_log("Install dev package")
-        
-        # TODO only till we get the S3/S4 change into bioc
-        devtools::install_github("gagneurlab/OUTRIDER", ref="use_S3_methods")
-        
-        devtools::install(".", dependencies=TRUE, upgrade=TRUE, 
-                type=BTYPE, Ncpus=NCPUS)
+        devtools::install(".", dependencies=TRUE, type=BTYPE, Ncpus=NCPUS)
     })
 })
 
