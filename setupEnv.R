@@ -57,7 +57,7 @@ R.utils::withTimeout(timeout=2400, {
         INSTALL(ask=FALSE, type=BTYPE, Ncpus=NCPUS)
     
         print_log("Install dev package")
-        devtools::install(".", dependencies=TRUE, type=BTYPE, Ncpus=NCPUS)
+        tryCatch({ devtools::install(".", dependencies=TRUE, type=BTYPE, Ncpus=NCPUS) })
 
 	print_log("Install OUTRIDER source package")
 	devtools::install_github("gagneurlab/OUTRIDER")
