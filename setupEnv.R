@@ -55,15 +55,15 @@ R.utils::withTimeout(timeout=2400, {
         print_log("Update packages")
 	BTYPE <- ifelse(.Platform$OS.type == 'unix', "source", "win.binary")
         INSTALL(ask=FALSE, type=BTYPE, Ncpus=NCPUS)
-    
+ 
         print_log("Install dev package")
-        tryCatch({ devtools::install(".", dependencies=TRUE, type=BTYPE, Ncpus=NCPUS) })
+        try({ devtools::install(".", dependencies=TRUE, type=BTYPE, Ncpus=NCPUS) })
 
-	print_log("Install OUTRIDER source package")
-	devtools::install_github("gagneurlab/OUTRIDER")
+        print_log("Install OUTRIDER source package")
+        devtools::install_github("gagneurlab/OUTRIDER")
 
-	print_log("Install dev package")
-	devtools::install(".", dependencies=FALSE, type=BTYPE, Ncpus=NCPUS)
+        print_log("Install dev package")
+        devtools::install(".", dependencies=FALSE, type=BTYPE, Ncpus=NCPUS)
     })
 })
 
