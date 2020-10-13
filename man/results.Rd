@@ -34,7 +34,7 @@ resultsByGenes(res, geneColumn = "hgncSymbol", method = "BY")
 )
 }
 \arguments{
-\item{object, fds}{A \code{\link{FraserDataSet}} object}
+\item{object}{A \code{\link{FraserDataSet}} object}
 
 \item{sampleIDs}{A vector of sample IDs for which results should be 
 retrieved}
