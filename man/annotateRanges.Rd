@@ -38,7 +38,7 @@ used (hsapiens_gene_ensembl, GRCh37).}
 
 \item{GRCh}{GRCh version to connect to. If this is NULL, then the current 
 GRCh38 is used. Otherwise, this can only be 37 (default) at the moment 
-(see \code{useEnsembl}).}
+(see \code{\link[biomaRt]{useEnsembl}}).}
 
 \item{keytype}{The type of gene IDs in the \code{TxDb} object (see 
 AnnotationDbi::keytypes(orgDb) for a list of available ID types).}
@@ -59,7 +59,6 @@ Annotates the given FraserDataSet with the HGNC symbol with biomaRt
 
 fds <- createTestFraserDataSet()
 
-\dontrun{
 ### Two ways to annotage ranges with gene names: 
 # either using biomart:
 fds <- annotateRanges(fds, GRCh=NULL)
@@ -73,6 +72,5 @@ orgDb <- org.Hs.eg.db
 fds <- annotateRangesWithTxDb(fds, txdb=txdb, orgDb=orgDb)
 
 rowRanges(fds, type="psi5")[,"hgnc_symbol"]
-}
 
 }

@@ -1,10 +1,3 @@
-########
-## @author Christian Mertes \email{mertes@@in.tum.de}
-##
-## This file contains all functions for annotating the ranges with
-## biomaRt from ENSEMBL
-##
-
 #'
 #' Annotates the given FraserDataSet with the HGNC symbol with biomaRt
 #' 
@@ -17,7 +10,7 @@
 #' used (hsapiens_gene_ensembl, GRCh37).
 #' @param GRCh GRCh version to connect to. If this is NULL, then the current 
 #' GRCh38 is used. Otherwise, this can only be 37 (default) at the moment 
-#' (see \code{useEnsembl}).
+#' (see \code{\link[biomaRt]{useEnsembl}}).
 #' @param txdb A \code{TxDb} object. If this is NULL, then the default 
 #' one is used, currently this is \code{TxDb.Hsapiens.UCSC.hg19.knownGene}.
 #' @param orgDb An \code{orgDb} object If this is NULL, then the 
@@ -31,7 +24,6 @@
 #'
 #' fds <- createTestFraserDataSet()
 #' 
-#' \dontrun{
 #' ### Two ways to annotage ranges with gene names: 
 #' # either using biomart:
 #' fds <- annotateRanges(fds, GRCh=NULL)
@@ -45,7 +37,6 @@
 #' fds <- annotateRangesWithTxDb(fds, txdb=txdb, orgDb=orgDb)
 #'
 #' rowRanges(fds, type="psi5")[,"hgnc_symbol"]
-#' }
 #' 
 #' @rdname annotateRanges
 #' @export
