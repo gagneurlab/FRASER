@@ -59,8 +59,9 @@ R.utils::withTimeout(timeout=2400, {
         print_log("Install dev package")
         try({ devtools::install(".", dependencies=TRUE, type=BTYPE, Ncpus=NCPUS) })
 
-        print_log("Install OUTRIDER source package")
+        print_log("Install updated source package")
         devtools::install_github("gagneurlab/OUTRIDER", dependencies=FALSE)
+        devtools::install_github("grimbough/biomaRt", dependencies=FALSE)
 
         print_log("Install dev package")
         devtools::install(".", dependencies=FALSE, type=BTYPE, Ncpus=NCPUS)

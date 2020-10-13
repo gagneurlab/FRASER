@@ -26,8 +26,9 @@
 #' 
 #' ### Two ways to annotage ranges with gene names: 
 #' # either using biomart:
-#' fds <- annotateRanges(fds, GRCh=NULL)
-#' rowRanges(fds, type="psi5")[,"hgnc_symbol"]
+#' fds <- annotateRanges(fds, GRCh=38)
+#' fds <- annotateRanges(fds, featureName="hgnc_symbol_37", GRCh=37)
+#' rowRanges(fds, type="psi5")[,c("hgnc_symbol", "hgnc_symbol_37")]
 #'  
 #' # or with a TxDb object
 #' require(TxDb.Hsapiens.UCSC.hg19.knownGene)
@@ -48,6 +49,9 @@ annotateRanges <- function(fds, feature="hgnc_symbol", featureName=feature,
     if(length(fds) == 0) return(fds)
     
     # useEnsembl only understands GRCh=37 or GRCh=NULL (uses 38 then)
+    if(is.null(GRCh)){
+        GRCh <- 38
+    }
     if(GRCh == 38){
         GRCh <- NULL
     }
