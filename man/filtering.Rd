@@ -8,13 +8,13 @@
 \title{Filtering FraserDataSets}
 \usage{
 filterExpressionAndVariability(
-  fds,
+  object,
   minExpressionInOneSample = 20,
   quantile = 0.05,
   quantileMinExpression = 1,
   minDeltaPsi = 0,
   filter = TRUE,
-  delayed = ifelse(ncol(fds) <= 300, FALSE, TRUE),
+  delayed = ifelse(ncol(object) <= 300, FALSE, TRUE),
   BPPARAM = bpparam()
 )
 
@@ -29,15 +29,15 @@ filterExpressionAndVariability(
 )
 
 filterVariability(
-  fds,
+  object,
   minDeltaPsi = 0,
   filter = TRUE,
-  delayed = ifelse(ncol(fds) <= 300, FALSE, TRUE),
+  delayed = ifelse(ncol(object) <= 300, FALSE, TRUE),
   BPPARAM = bpparam()
 )
 }
 \arguments{
-\item{fds}{A \code{\link{FraserDataSet}} object}
+\item{object}{A \code{\link{FraserDataSet}} object}
 
 \item{minExpressionInOneSample}{The minimal read count in at least one 
 sample that is required for an intron to pass the filter.}
@@ -84,6 +84,11 @@ splice sites which do not show variablity across samples.
 
 \examples{
 fds <- createTestFraserDataSet()
-fds <- filterExpressionAndVariability(fds)
+fds <- filterExpressionAndVariability(fds, minDeltaPsi=0.1, filter=FALSE)
+mcols(fds, type="psi5")[, c(
+        "maxCount", "passedExpression", "maxDPsi3", "passedVariability")]
+
+plotFilterExpression(fds)
+plotFilterVariability(fds)     
 
 }
