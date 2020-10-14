@@ -12,12 +12,12 @@ install:
   - ps: Bootstrap
   # install ImageMagick and set path correctly at first position
   # only needed for building the vignette
-  - ps: InstallMiktex
-  - choco install -y -PackageParameters LegacySupport=true imagemagick
-  - set "PATH=C:\Program Files\ImageMagick-7.0.8-Q16;%PATH%"
+  #- ps: InstallMiktex
+  #- choco install -y -PackageParameters LegacySupport=true imagemagick
+  #- set "PATH=C:\Program Files\ImageMagick-7.0.8-Q16;%PATH%"
 
-cache:
-  - C:\RLibrary
+#cache:
+#  - C:\RLibrary
 
 environment:
   # parameters to setup R environment
@@ -28,26 +28,21 @@ environment:
   KEEP_VIGNETTES: TRUE
   GCC_PATH: mingw_64
   R_ARCH: x64
-  APPVEYOR_SAVE_CACHE_ON_ERROR: TRUE
+#  APPVEYOR_SAVE_CACHE_ON_ERROR: TRUE
   
   matrix:
 #    - R_VERSION: devel
 #      BIOC_USE_DEVEL: TRUE
+#    - R_VERSION: devel
+#      BIOC_USE_DEVEL: TRUE
 #      GCC_PATH: mingw_32
 #      R_ARCH: i386    
-#    - R_VERSION: devel
-#      BIOC_USE_DEVEL: TRUE      
     - R_VERSION: release
-    # dont test 4.0.0 due to: 
-    # * https://github.com/r-lib/roxygen2/issues/1128
-    # * https://github.com/RcppCore/Rcpp/issues/1095
-    - R_VERSION: 4.0.2
-    - R_VERSION: 3.6.0
-
+#    - R_VERSION: 3.6.0
+      
 build_script:
-  - Rscript -e "update.packages(ask=FALSE, Ncpus=4, type='both', repos='https://cran.rstudio.com/')"
-  - travis-tool.sh install_bioc BiocCheck backports
-  - R -e "BiocManager::install(update=TRUE, ask=FALSE, dependencies=TRUE, Ncpus=4, type='both')"
+  - travis-tool.sh install_bioc BiocManager BiocCheck
+  - R -e "BiocManager::install(Ncpus=5, ask=FALSE, upgrade=TRUE)"
   - Rscript setupEnv.R
 
 test_script:
@@ -56,7 +51,7 @@ test_script:
     - R -e "BiocCheck::BiocCheck(list.files(path='.', pattern='.tar.gz'))"
     - R -e "devtools::run_examples(document=FALSE)"
     # runs currently into an error saying: "LaTeX Error: Missing \begin{document}."
-    # - cd vignettes && R CMD Sweave --engine=knitr::knitr --pdf FRASER.Rnw
+    #    - cd vignettes && R CMD Sweave --engine=knitr::knitr --pdf FRASER.Rnw
 
 on_failure:
   - 7z a failure.zip *.Rcheck\*

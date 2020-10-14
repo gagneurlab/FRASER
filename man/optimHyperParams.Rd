@@ -22,7 +22,7 @@ optimHyperParams(
 )
 }
 \arguments{
-\item{fds}{A FraserDataSet object}
+\item{fds}{A \code{\link{FraserDataSet}} object}
 
 \item{type}{The type of PSI (psi5, psi3 or psiSite for theta/splicing 
 efficiency)}
@@ -46,7 +46,7 @@ should be used for the hyperparameter optimization.}
 \item{injectFreq}{The frequency with which outliers are injected into the 
 data.}
 
-\item{BPPARAM}{A BiocParallel object to run the computation in parallel}
+\item{BPPARAM}{the BiocParallel parameters for the parallelization}
 
 \item{internalThreads}{The number of threads used internally.}
 
@@ -79,4 +79,7 @@ ratios while maximizing the precision-recall curve.
   bestQ(fds, type="psi5")
   hyperParams(fds, type="psi5")
   
+}
+\seealso{
+\code{\link{FRASER}}
 }

@@ -3,41 +3,41 @@
 \name{filtering}
 \alias{filtering}
 \alias{filterExpressionAndVariability}
-\alias{filterExpression}
+\alias{filterExpression,FraserDataSet-method}
 \alias{filterVariability}
 \title{Filtering FraserDataSets}
 \usage{
 filterExpressionAndVariability(
-  fds,
+  object,
   minExpressionInOneSample = 20,
   quantile = 0.05,
   quantileMinExpression = 1,
   minDeltaPsi = 0,
   filter = TRUE,
-  delayed = ifelse(ncol(fds) <= 300, FALSE, TRUE),
+  delayed = ifelse(ncol(object) <= 300, FALSE, TRUE),
   BPPARAM = bpparam()
 )
 
-filterExpression(
-  fds,
+\S4method{filterExpression}{FraserDataSet}(
+  object,
   minExpressionInOneSample = 20,
   quantile = 0.05,
   quantileMinExpression = 1,
   filter = TRUE,
-  delayed = ifelse(ncol(fds) <= 300, FALSE, TRUE),
+  delayed = ifelse(ncol(object) <= 300, FALSE, TRUE),
   BPPARAM = bpparam()
 )
 
 filterVariability(
-  fds,
+  object,
   minDeltaPsi = 0,
   filter = TRUE,
-  delayed = ifelse(ncol(fds) <= 300, FALSE, TRUE),
+  delayed = ifelse(ncol(object) <= 300, FALSE, TRUE),
   BPPARAM = bpparam()
 )
 }
 \arguments{
-\item{fds}{A FraserDataSet object}
+\item{object}{A \code{\link{FraserDataSet}} object}
 
 \item{minExpressionInOneSample}{The minimal read count in at least one 
 sample that is required for an intron to pass the filter.}
@@ -75,7 +75,7 @@ reliably detected and to remove introns with no variablity between samples.
 \item \code{filterExpressionAndVariability}: This functions filters out both introns with low 
 read support and introns that are not variable across samples.
 
-\item \code{filterExpression}: This function filters out introns and corresponding 
+\item \code{filterExpression,FraserDataSet-method}: This function filters out introns and corresponding 
 splice sites that have low read support in all samples.
 
 \item \code{filterVariability}: This function filters out introns and corresponding 
@@ -84,6 +84,11 @@ splice sites which do not show variablity across samples.
 
 \examples{
 fds <- createTestFraserDataSet()
-fds <- filterExpressionAndVariability(fds)
+fds <- filterExpressionAndVariability(fds, minDeltaPsi=0.1, filter=FALSE)
+mcols(fds, type="psi5")[, c(
+        "maxCount", "passedExpression", "maxDPsi3", "passedVariability")]
+
+plotFilterExpression(fds)
+plotFilterVariability(fds)     
 
 }

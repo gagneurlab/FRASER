@@ -10,11 +10,16 @@
 \alias{plotFilterExpression}
 \alias{plotExpectedVsObservedPsi}
 \alias{plotEncDimSearch}
+\alias{plotVolcano,FraserDataSet-method}
+\alias{plotAberrantPerSample,FraserDataSet-method}
+\alias{plotQQ,FraserDataSet-method}
+\alias{plotEncDimSearch,FraserDataSet-method}
 \alias{plotFilterVariability}
+\alias{plotCountCorHeatmap,FraserDataSet-method}
 \title{Visualization functions for FRASER}
 \usage{
-plotVolcano(
-  fds,
+\S4method{plotVolcano}{FraserDataSet}(
+  object,
   sampleID,
   type = c("psi3", "psi5", "psiSite"),
   basePlot = TRUE,
@@ -26,8 +31,8 @@ plotVolcano(
   ...
 )
 
-plotAberrantPerSample(
-  fds,
+\S4method{plotAberrantPerSample}{FraserDataSet}(
+  object,
   main,
   type = c("psi3", "psi5", "psiSite"),
   padjCutoff = 0.1,
@@ -62,8 +67,8 @@ plotExpectedVsObservedPsi(
   ...
 )
 
-plotQQ(
-  fds,
+\S4method{plotQQ}{FraserDataSet}(
+  object,
   type = NULL,
   idx = NULL,
   result = NULL,
@@ -78,8 +83,8 @@ plotQQ(
   ...
 )
 
-plotEncDimSearch(
-  fds,
+\S4method{plotEncDimSearch}{FraserDataSet}(
+  object,
   type = c("psi3", "psi5", "psiSite"),
   plotType = c("auc", "loss")
 )
@@ -98,8 +103,8 @@ plotFilterVariability(
   onlyExpressedIntrons = FALSE
 )
 
-plotCountCorHeatmap(
-  fds,
+\S4method{plotCountCorHeatmap}{FraserDataSet}(
+  object,
   type = c("psi5", "psi3", "psiSite"),
   logit = FALSE,
   topN = 50000,
@@ -122,7 +127,7 @@ plotCountCorHeatmap(
 )
 }
 \arguments{
-\item{fds}{An FraserDataSet object.}
+\item{object, fds}{An FraserDataSet object.}
 
 \item{sampleID}{A sample ID which should be plotted. Can also be a vector.
 Integers are treated as indices.}
