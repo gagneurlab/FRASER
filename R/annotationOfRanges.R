@@ -1,10 +1,3 @@
-########
-## @author Christian Mertes \email{mertes@@in.tum.de}
-##
-## This file contains all functions for annotating the ranges with
-## biomaRt from ENSEMBL
-##
-
 #'
 #' Annotates the given FraserDataSet with the HGNC symbol with biomaRt
 #' 
@@ -17,7 +10,7 @@
 #' used (hsapiens_gene_ensembl, GRCh37).
 #' @param GRCh GRCh version to connect to. If this is NULL, then the current 
 #' GRCh38 is used. Otherwise, this can only be 37 (default) at the moment 
-#' (see \code{useEnsembl}).
+#' (see \code{\link[biomaRt]{useEnsembl}}).
 #' @param txdb A \code{TxDb} object. If this is NULL, then the default 
 #' one is used, currently this is \code{TxDb.Hsapiens.UCSC.hg19.knownGene}.
 #' @param orgDb An \code{orgDb} object If this is NULL, then the 
@@ -31,11 +24,11 @@
 #'
 #' fds <- createTestFraserDataSet()
 #' 
-#' \dontrun{
 #' ### Two ways to annotage ranges with gene names: 
 #' # either using biomart:
-#' fds <- annotateRanges(fds, GRCh=NULL)
-#' rowRanges(fds, type="psi5")[,"hgnc_symbol"]
+#' fds <- annotateRanges(fds, GRCh=38)
+#' fds <- annotateRanges(fds, featureName="hgnc_symbol_37", GRCh=37)
+#' rowRanges(fds, type="psi5")[,c("hgnc_symbol", "hgnc_symbol_37")]
 #'  
 #' # or with a TxDb object
 #' require(TxDb.Hsapiens.UCSC.hg19.knownGene)
@@ -45,7 +38,6 @@
 #' fds <- annotateRangesWithTxDb(fds, txdb=txdb, orgDb=orgDb)
 #'
 #' rowRanges(fds, type="psi5")[,"hgnc_symbol"]
-#' }
 #' 
 #' @rdname annotateRanges
 #' @export
@@ -57,6 +49,9 @@ annotateRanges <- function(fds, feature="hgnc_symbol", featureName=feature,
     if(length(fds) == 0) return(fds)
     
     # useEnsembl only understands GRCh=37 or GRCh=NULL (uses 38 then)
+    if(is.null(GRCh)){
+        GRCh <- 38
+    }
     if(GRCh == 38){
         GRCh <- NULL
     }

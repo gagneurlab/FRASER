@@ -83,7 +83,7 @@ countNonSplicedReads(
 )
 }
 \arguments{
-\item{fds}{A FraserDataSet object}
+\item{fds}{A \code{\link{FraserDataSet}} object}
 
 \item{NcpuPerSample}{A BiocParallel param object or a positive integer
 to configure the parallel backend
@@ -244,6 +244,13 @@ on the given target (acceptor/donor) regions for a single sample.
 }}
 
 \examples{
+   # On Windows SNOW is the default for the parallele backend, which can be 
+   # very slow for many but small tasks. Therefore, we will use 
+   # for the example the SerialParam() backend.
+   if(.Platform$OS.type != "unix") {
+       register(SerialParam())
+   }
+   
   fds <- countRNAData(createTestFraserSettings())
 
 }

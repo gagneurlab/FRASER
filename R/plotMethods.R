@@ -1,3 +1,4 @@
+#' 
 #' Visualization functions for FRASER
 #'
 #' The FRASER package provides mutliple functions to visualize
@@ -20,7 +21,7 @@
 #' Most of the functions share the same parameters.
 #'
 #### Data specific parameters
-#' @param fds An FraserDataSet object.
+#' @param object,fds An \code{\link{FraserDataSet}} object.
 #' @param type The psi type: either psi5, psi3 or theta (for SE).
 #' @param sampleID A sample ID which should be plotted. Can also be a vector.
 #'             Integers are treated as indices.
@@ -162,23 +163,14 @@
 #'
 NULL
 
-#'
-#' Volcano plot
-#'
-#' Plots the p values over the delta psi values, known as volcano plot.
-#' Visualizes per sample the outliers. By type and aggregate by
-#' gene if requested.
-#'
-#' @rdname plotFunctions
-#' @export
-plotVolcano <- function(fds, sampleID, type=c("psi3", "psi5", "theta"), 
-                    basePlot=TRUE, aggregate=TRUE,
-                    main=NULL, label=NULL,
+plotVolcano.FRASER <- function(object, sampleID, 
+                    type=c("psi3", "psi5", "theta"), basePlot=TRUE, 
+                    aggregate=FALSE, main=NULL, label=NULL,
                     deltaPsiCutoff=0.3, padjCutoff=0.1, ...){
     
     type <- match.arg(type)
 
-    dt <- getPlottingDT(fds, axis="col", type=type, idx=sampleID,
+    dt <- getPlottingDT(object, axis="col", type=type, idx=sampleID,
             aggregate=aggregate, deltaPsiCutoff=deltaPsiCutoff, 
             padjCutoff=padjCutoff, ...)
     
@@ -260,13 +252,19 @@ plotVolcano <- function(fds, sampleID, type=c("psi3", "psi5", "theta"),
 }
 
 #'
-#' Number of aberrant events per sample
+#' Volcano plot
 #'
-#' Plot the number of aberrant events per samples
+#' Plots the p values over the delta psi values, known as volcano plot.
+#' Visualizes per sample the outliers. By type and aggregate by
+#' gene if requested.
 #'
 #' @rdname plotFunctions
 #' @export
-plotAberrantPerSample <- function(fds, main, type=c("psi3", "psi5", "theta"),
+setMethod("plotVolcano", signature="FraserDataSet", plotVolcano.FRASER)
+
+
+plotAberrantPerSample.FRASER <- function(object, main, 
+                    type=c("psi3", "psi5", "theta"),
                     padjCutoff=0.1, zScoreCutoff=NA, deltaPsiCutoff=0.3,
                     aggregate=TRUE, BPPARAM=bpparam(), ...){
 
@@ -280,7 +278,7 @@ plotAberrantPerSample <- function(fds, main, type=c("psi3", "psi5", "theta"),
     }
 
     # extract outliers
-    outliers <- bplapply(type, aberrant, fds=fds, by="sample",
+    outliers <- bplapply(type, aberrant, object=object, by="sample",
             padjCutoff=padjCutoff, zScoreCutoff=zScoreCutoff,
             deltaPsiCutoff=deltaPsiCutoff, ..., BPPARAM=BPPARAM)
     dt2p <- rbindlist(lapply(seq_along(outliers), function(idx){
@@ -309,6 +307,16 @@ plotAberrantPerSample <- function(fds, main, type=c("psi3", "psi5", "theta"),
     g
 }
 
+#'
+#' Number of aberrant events per sample
+#'
+#' Plot the number of aberrant events per samples
+#'
+#' @rdname plotFunctions
+#' @export
+setMethod("plotAberrantPerSample", signature="FraserDataSet",
+        plotAberrantPerSample.FRASER)
+
 
 #'
 #' Junction expression plot
@@ -319,8 +327,8 @@ plotAberrantPerSample <- function(fds, main, type=c("psi3", "psi5", "theta"),
 #' @rdname plotFunctions
 #' @export
 plotExpression <- function(fds, type=c("psi5", "psi3", "theta"),
-                            site=NULL, result=NULL, colGroup=NULL, 
-                            basePlot=TRUE, main=NULL, label="aberrant", ...){
+                    site=NULL, result=NULL, colGroup=NULL, 
+                    basePlot=TRUE, main=NULL, label="aberrant", ...){
     if(!is.null(result)){
         type <- as.character(result$type)
         site <- getIndexFromResultTable(fds, result)
@@ -498,15 +506,8 @@ plotExpectedVsObservedPsi <- function(fds, type=c("psi5", "psi3", "theta"),
 }
 
 
-#'
-#' Q-Q plot
-#'
-#' Plots the quantile-quantile plot
-#'
-#' @rdname plotFunctions
-#' @export
-plotQQ <- function(fds, type=NULL, idx=NULL, result=NULL, aggregate=FALSE,
-                    global=FALSE, main=NULL, conf.alpha=0.05,
+plotQQ.FRASER <- function(object, type=NULL, idx=NULL, result=NULL, 
+                    aggregate=FALSE, global=FALSE, main=NULL, conf.alpha=0.05,
                     samplingPrecision=3, basePlot=TRUE, label="aberrant",
                     Ncpus=min(3, getDTthreads()), ...){
 
@@ -514,7 +515,7 @@ plotQQ <- function(fds, type=NULL, idx=NULL, result=NULL, aggregate=FALSE,
     if(is.null(aggregate)){
         aggregate <- isTRUE(global)
     } else if(!(is.logical(aggregate) |
-                all(aggregate %in% colnames(mcols(fds))))){
+                all(aggregate %in% colnames(mcols(object))))){
         stop("Please provide TRUE/FALSE or a ",
             "charactor matching a column name in mcols.")
     }
@@ -523,7 +524,7 @@ plotQQ <- function(fds, type=NULL, idx=NULL, result=NULL, aggregate=FALSE,
         if(is.null(type)){
             type <- psiTypes
         }
-        dt <- rbindlist(bplapply(type, getPlottingDT, fds=fds, axis="col",
+        dt <- rbindlist(bplapply(type, getPlottingDT, fds=object, axis="col",
                 idx=TRUE, aggregate=aggregate, Ncpus=Ncpus, ...))
         # remove duplicated entries donor/acceptor sites if not aggregated 
         # by a feature
@@ -535,7 +536,7 @@ plotQQ <- function(fds, type=NULL, idx=NULL, result=NULL, aggregate=FALSE,
         if(!"pvalLevel" %in% names(dots)){
             dots[["pvalLevel"]] <- "junction"
         }
-        dots <- append(list(fds=fds, axis="row", type=type, idx=idx, 
+        dots <- append(list(fds=object, axis="row", type=type, idx=idx, 
                             result=result, aggregate=aggregate), 
                         dots)
         dt <- do.call(getPlottingDT, args=dots)
@@ -666,17 +667,21 @@ plotQQ <- function(fds, type=NULL, idx=NULL, result=NULL, aggregate=FALSE,
     g
 }
 
-
 #'
-#' Plots the results from the hyperparamter optimization.
+#' Q-Q plot
+#'
+#' Plots the quantile-quantile plot
 #'
 #' @rdname plotFunctions
 #' @export
-plotEncDimSearch <- function(fds, type=c("psi3", "psi5", "theta"), 
-                                plotType=c("auc", "loss")){
+setMethod("plotQQ", signature="FraserDataSet", plotQQ.FRASER)
+
+
+plotEncDimSearch.FRASER <- function(object, type=c("psi3", "psi5", "theta"), 
+                    plotType=c("auc", "loss")){
     type <- match.arg(type)
     plotType <- match.arg(plotType)
-    data <- hyperParams(fds, type=type, all=TRUE)
+    data <- hyperParams(object, type=type, all=TRUE)
     if (is.null(data)) {
         warning(paste("no hyperparameters were estimated for", type, 
                         "\nPlease use `optimHyperParams` to compute them."))
@@ -712,6 +717,14 @@ plotEncDimSearch <- function(fds, type=c("psi3", "psi5", "theta"),
     }
 
 }
+
+#'
+#' Plots the results from the hyperparamter optimization.
+#'
+#' @rdname plotFunctions
+#' @export
+setMethod("plotEncDimSearch", signature="FraserDataSet", 
+        plotEncDimSearch.FRASER)
 
 
 #'
@@ -813,16 +826,9 @@ plotFilterVariability <- function(fds, bins=200, legend.position=c(0.8, 0.8),
 }
 
 
-#'
-#' Plot count correlation
-#'
-#' Count correlation heatmap function
-#'
-#' @rdname plotFunctions
-#' @export
-plotCountCorHeatmap <- function(fds, type=c("psi5", "psi3", "theta"),
-                    logit=FALSE, topN=50000, topJ=5000, minMedian=1, 
-                    minCount=10,
+plotCountCorHeatmap.FRASER <- function(object, 
+                    type=c("psi5", "psi3", "theta"),
+                    logit=FALSE, topN=50000, topJ=5000, minMedian=1,
                     main=NULL, normalized=FALSE, show_rownames=FALSE,
                     show_colnames=FALSE, minDeltaPsi=0.1, annotation_col=NA,
                     annotation_row=NA, border_color=NA, nClust=5,
@@ -833,10 +839,10 @@ plotCountCorHeatmap <- function(fds, type=c("psi5", "psi3", "theta"),
     plotType <- match.arg(plotType)
 
     # use counts as matrix, otherwise x(fds,...) does not work later on
-    counts(fds, type=type, side="other", HDF5=FALSE)      <-
-        as.matrix(counts(fds, type=type, side="other"))
-    counts(fds, type=type, side="ofInterest", HDF5=FALSE) <-
-        as.matrix(counts(fds, type=type, side="ofInterest"))
+    counts(object, type=type, side="other", HDF5=FALSE)      <-
+        as.matrix(counts(object, type=type, side="other"))
+    counts(object, type=type, side="ofInterest", HDF5=FALSE) <-
+        as.matrix(counts(object, type=type, side="ofInterest"))
 
     kmat <- K(fds, type=type)
     nmat <- N(fds, type=type)
@@ -860,7 +866,7 @@ plotCountCorHeatmap <- function(fds, type=c("psi5", "psi3", "theta"),
     xmat_rc_2_plot <- xmat_rc[plotIdx,]
     cormatS <- cor(xmat_rc_2_plot, use="pairwise", method="spearman")
     if(isTRUE(normalized)){
-        pred_mu <- as.matrix(predictedMeans(fds, type=type)[
+        pred_mu <- as.matrix(predictedMeans(object, type=type)[
             expRowsMax & expRowsMedian,][plotIdx,])
         if(isTRUE(logit)){
             pred_mu <- qlogisWithCap(pred_mu)
@@ -875,7 +881,7 @@ plotCountCorHeatmap <- function(fds, type=c("psi5", "psi3", "theta"),
     if(plotType == "junctionSample"){
 
         if(isTRUE(normalized)){
-            pred_mu <- as.matrix(predictedMeans(fds, type=type)[
+            pred_mu <- as.matrix(predictedMeans(object, type=type)[
                 expRowsMax & expRowsMedian,])
             if(isTRUE(logit)){
                 pred_mu <- qlogisWithCap(pred_mu)
@@ -884,13 +890,13 @@ plotCountCorHeatmap <- function(fds, type=c("psi5", "psi3", "theta"),
             xmat_rc <- xmat_rc - lpred_mu_rc
         }
 
-        fds <- fds[expRowsMax & expRowsMedian,,by=type]
-        j2keepVa <- variableJunctions(fds, type, minDeltaPsi)
+        object <- object[expRowsMax & expRowsMedian,,by=type]
+        j2keepVa <- variableJunctions(object, type, minDeltaPsi)
         j2keepDP <- rowQuantiles(kmat[expRowsMax & expRowsMedian,],
                                     probs=0.75) >= 10
         j2keep <- j2keepDP & j2keepVa
         xmat_rc_2_plot <- xmat_rc[j2keep,]
-        mostVarKeep <- subsetKMostVariableJunctions(fds[j2keep,,by=type],
+        mostVarKeep <- subsetKMostVariableJunctions(object[j2keep,,by=type],
                                                     type, topJ)
         xmat_rc_2_plot <- xmat_rc_2_plot[mostVarKeep,]
         rownames(xmat_rc_2_plot) <- seq_len(nrow(xmat_rc_2_plot))
@@ -900,10 +906,10 @@ plotCountCorHeatmap <- function(fds, type=c("psi5", "psi3", "theta"),
 
 
     if(is.character(annotation_col)){
-        annotation_col <- getColDataAsDFFactors(fds, annotation_col)
+        annotation_col <- getColDataAsDFFactors(object, annotation_col)
     }
     if(is.character(annotation_row)){
-        annotation_row <- getColDataAsDFFactors(fds, annotation_row)
+        annotation_row <- getColDataAsDFFactors(object, annotation_row)
     }
 
     # annotate with sample clusters
@@ -990,6 +996,16 @@ plotCountCorHeatmap <- function(fds, type=c("psi5", "psi3", "theta"),
 }
 
 #'
+#' Plot count correlation
+#'
+#' Count correlation heatmap function
+#'
+#' @rdname plotFunctions
+#' @export
+setMethod("plotCountCorHeatmap", signature="FraserDataSet", 
+        plotCountCorHeatmap.FRASER)
+
+#'
 #' helper function to get the annotation as data frame from the col data object
 #'
 #' @noRd
@@ -1008,6 +1024,9 @@ getColDataAsDFFactors <- function(fds, names){
     return(tmpDF)
 }
 
+#' 
+#' used to cap the qlogis for the correlation heatmap
+#' 
 #' @noRd
 qlogisWithCap <- function(x, digits=2){
     x <- round(x, digits)
@@ -1041,41 +1060,4 @@ ggplotLabelPsi <- function(type, asCharacter=FALSE){
                     theta = "theta"),
             FUN.VALUE=character(1))
     }
-}
-
-#' @noRd
-plotLoss <- function(fds, type){
-    type
-    fds <- fds_new
-    lossList <- metadata(fds)[[paste0('loss_', type)]]
-    dt2plot <- as.data.table(melt(do.call(rbind, list(
-        max=colMaxs(lossList, na.rm=TRUE),
-        mean=colMeans(lossList, na.rm=TRUE),
-        min=colMins(lossList, na.rm=TRUE),
-        sd=colSds(lossList, na.rm=TRUE))), value.name="Loss"))
-    colnames(dt2plot)[c(1,2)] <- c("Aggregation", "IterSteps")
-    
-    # set iterations
-    dt2plot[grepl("init",IterSteps),iteration:=0]
-    dt2plot[is.na(iteration),iteration:=as.numeric(as.character(
-        gsub("_.*", "" ,gsub("final_", "" , IterSteps))))]
-    
-    # set step
-    dt2plot[grepl("final", IterSteps),Step:="D fit"]
-    dt2plot[is.na(Step) & !grepl("init", IterSteps),Step:="E fit"]
-    dt2plot[is.na(Step),Step:="Init"]
-    dt2plot[,Iteration:=seq_len(.N)/1,by="Aggregation,Step"]
-    dt2plot[Step=="E fit", Iteration:=Iteration/3]
-    dt2plot[Step=="D fit", Iteration:=Iteration/2]
-    
-    # summaries
-    ggplot(dt2plot[Aggregation != "sd"], aes(x=Iteration, y=Loss, col=Step, 
-                                                lty=Aggregation)) +
-        geom_ribbon(data=dt2plot[Aggregation == "mean",], aes(
-            ymin = dt2plot[Aggregation == "mean", Loss] - 
-                dt2plot[Aggregation == "sd", Loss],
-            ymax = dt2plot[Aggregation == "mean", Loss] + 
-                dt2plot[Aggregation == "sd", Loss]), fill="gray80", col=NA) +
-        geom_line() +
-        scale_y_log10()
 }

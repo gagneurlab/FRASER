@@ -386,10 +386,8 @@ makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=1000, q=10,
         mcols(fds, type=type)[,"trueRho"] <- psi_rho
         
         # needed so that subsetting the fds works later
-        mcols(fds, type=type)[["startID"]] <- 
-                psiJunctionGroups # 1:nrow(mcols(fds, type=type))
-        mcols(fds, type=type)[["endID"]]   <- 
-                psiJunctionGroups # 1:nrow(mcols(fds, type=type))
+        mcols(fds, type=type)[["startID"]] <- psiJunctionGroups
+        mcols(fds, type=type)[["endID"]]   <- psiJunctionGroups
     }
     
     # store info for SE
@@ -402,12 +400,9 @@ makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=1000, q=10,
     mcols(fds, type="theta")[,"trueRho"] <- se_rho
     
     # needed so that subsetting the fds works later
-    mcols(fds, type="theta")[["startID"]]      <- 
-            donorGroups # 1:nrow(mcols(fds, type="theta"))
-    mcols(fds, type="theta")[["endID"]]        <- 
-            seq_len(nrow(mcols(fds, type="theta")))
-    mcols(fds, type="theta")[["spliceSiteID"]] <- 
-            donorGroups # 1:nrow(mcols(fds, type="theta"))
+    mcols(fds, type="theta")[["startID"]]      <- donorGroups
+    mcols(fds, type="theta")[["endID"]]        <- donorGroups
+    mcols(fds, type="theta")[["spliceSiteID"]] <- donorGroups
     
     return(fds)
     
@@ -499,14 +494,14 @@ injectOutliers <- function(fds, type=c("psi5", "psi3", "theta"),
     # ... for calculating groups
     dt <- if(type == "theta"){
         data.table(
-            junctionID = 1:j,
+            junctionID = seq_len(j),
             chr = as.factor(seqnames(nonSplicedReads(fds))),
             start = start(nonSplicedReads(fds)),
             end = end(nonSplicedReads(fds)),
             strand = as.factor(strand(nonSplicedReads(fds))) )
     }else{
         data.table(
-            junctionID = 1:j,
+            junctionID = seq_len(j),
             chr = as.factor(seqnames(fds)),
             start = start(fds),
             end = end(fds),

@@ -4,6 +4,7 @@
 #' reliably detected and to remove introns with no variablity between samples.
 #' 
 #' @inheritParams countRNA
+#' @param object A \code{\link{FraserDataSet}} object
 #' @param minExpressionInOneSample The minimal read count in at least one 
 #' sample that is required for an intron to pass the filter.
 #' @param quantile Defines which quantile should be considered for the filter.
@@ -25,8 +26,13 @@
 #' 
 #' @examples
 #' fds <- createTestFraserDataSet()
-#' fds <- filterExpressionAndVariability(fds)
-#'
+#' fds <- filterExpressionAndVariability(fds, minDeltaPsi=0.1, filter=FALSE)
+#' mcols(fds, type="psi5")[, c(
+#'         "maxCount", "passedExpression", "maxDPsi3", "passedVariability")]
+#' 
+#' plotFilterExpression(fds)
+#' plotFilterVariability(fds)     
+#' 
 #' @name filtering
 #' @rdname filtering
 #' 
@@ -35,13 +41,13 @@ NULL
 #' @describeIn filtering This functions filters out both introns with low 
 #' read support and introns that are not variable across samples. 
 #' @export
-filterExpressionAndVariability <- function(fds, minExpressionInOneSample=20, 
+filterExpressionAndVariability <- function(object, minExpressionInOneSample=20, 
                                 quantile=0.05, quantileMinExpression=1, 
                                 minDeltaPsi=0, filter=TRUE, 
-                                delayed=ifelse(ncol(fds) <= 300, FALSE, TRUE),
+                                delayed=ifelse(ncol(object) <= 300, FALSE, TRUE),
                                 BPPARAM=bpparam()){
     # filter introns with low read support and corresponding splice sites
-    fds <- filterExpression(fds, 
+    object <- filterExpression(object, 
                     minExpressionInOneSample=minExpressionInOneSample, 
                     quantile=quantile, 
                     quantileMinExpression=quantileMinExpression, 
@@ -49,31 +55,28 @@ filterExpressionAndVariability <- function(fds, minExpressionInOneSample=20,
                     BPPARAM=BPPARAM)
     
     # filter introns that are not variable across samples
-    fds <- filterVariability(fds, minDeltaPsi=minDeltaPsi, filter=filter, 
+    object <- filterVariability(object, minDeltaPsi=minDeltaPsi, filter=filter, 
                     delayed=delayed, BPPARAM=BPPARAM)
     
     # return fds
     message(date(), ": Filtering done!")
-    return(fds)
+    return(object)
     
 }
 
-#' @describeIn filtering This function filters out introns and corresponding 
-#' splice sites that have low read support in all samples.
-#' @export
-filterExpression <- function(fds, minExpressionInOneSample=20, quantile=0.05,
+filterExpression.FRASER <- function(object, minExpressionInOneSample=20, quantile=0.05,
                     quantileMinExpression=1, filter=TRUE, 
-                    delayed=ifelse(ncol(fds) <= 300, FALSE, TRUE),
+                    delayed=ifelse(ncol(object) <= 300, FALSE, TRUE),
                     BPPARAM=bpparam()){
 
-    stopifnot(is(fds, "FraserDataSet"))
+    stopifnot(is(object, "FraserDataSet"))
     
     message(date(), ": Filtering out introns with low read support ...")
     
     # extract counts
-    cts  <- K(fds, type="j")
-    ctsN5 <- N(fds, type="psi5")
-    ctsN3 <- N(fds, type="psi3")
+    cts  <- K(object, type="j")
+    ctsN5 <- N(object, type="psi5")
+    ctsN3 <- N(object, type="psi3")
     
     if(isFALSE(delayed)){
         cts <- as.matrix(cts)
@@ -97,47 +100,53 @@ filterExpression <- function(fds, minExpressionInOneSample=20, quantile=0.05,
 
     # add annotation to object
     for(n in names(cutoffs)){
-        mcols(fds, type="j")[n] <- cutoffs[[n]]
+        mcols(object, type="j")[n] <- cutoffs[[n]]
     }
     
-    mcols(fds, type="j")[['passedExpression']] <-
+    mcols(object, type="j")[['passedExpression']] <-
             cutoffs$maxCount >= minExpressionInOneSample &
             (cutoffs$quantileValue5 >= quantileMinExpression |
                 cutoffs$quantileValue3 >= quantileMinExpression) 
-    if("passedVariability" %in% colnames(mcols(fds, type="j"))){
-        mcols(fds, type="j")[['passed']] <-  
-            mcols(fds, type="j")[['passedExpression']] & 
-            mcols(fds, type="j")[['passedVariability']]
+    if("passedVariability" %in% colnames(mcols(object, type="j"))){
+        mcols(object, type="j")[['passed']] <-  
+            mcols(object, type="j")[['passedExpression']] & 
+            mcols(object, type="j")[['passedVariability']]
     } else{
-        mcols(fds, type="j")[['passed']] <-  
-            mcols(fds, type="j")[['passedExpression']]
+        mcols(object, type="j")[['passed']] <-  
+            mcols(object, type="j")[['passedExpression']]
     }
     
     # filter if requested
     if(isTRUE(filter)){
-        fds <- applyExpressionFilters(fds, minExpressionInOneSample, 
+        object <- applyExpressionFilters(object, minExpressionInOneSample, 
                                 quantileMinExpression)
     }
 
-    validObject(fds)
-    return(fds)
+    validObject(object)
+    return(object)
 }
+
+#' @describeIn filtering This function filters out introns and corresponding 
+#' splice sites that have low read support in all samples.
+#' @export
+setMethod("filterExpression", signature="FraserDataSet",
+        filterExpression.FRASER)
 
 #' @describeIn filtering This function filters out introns and corresponding 
 #' splice sites which do not show variablity across samples.
 #' @export
-filterVariability <- function(fds, minDeltaPsi=0, filter=TRUE, 
-                                delayed=ifelse(ncol(fds) <= 300, FALSE, TRUE),
+filterVariability <- function(object, minDeltaPsi=0, filter=TRUE, 
+                                delayed=ifelse(ncol(object) <= 300, FALSE, TRUE),
                                 BPPARAM=bpparam()){
     
     message(date(), ": Filtering out non-variable introns ...")
     
     # extract counts
-    cts    <- K(fds, type="j")
-    ctsSE  <- K(fds, type="ss")
-    ctsN5  <- N(fds, type="psi5")
-    ctsN3  <- N(fds, type="psi3")
-    ctsNSE <- N(fds, type="theta")
+    cts    <- K(object, type="j")
+    ctsSE  <- K(object, type="ss")
+    ctsN5  <- N(object, type="psi5")
+    ctsN3  <- N(object, type="psi3")
+    ctsNSE <- N(object, type="theta")
     
     if(isFALSE(delayed)){
         cts <- as.matrix(cts)
@@ -170,47 +179,47 @@ filterVariability <- function(fds, minDeltaPsi=0, filter=TRUE,
     # add annotation to object
     for(n in names(cutoffs)){
         if(n == "maxDTheta"){
-            mcols(fds, type="ss")[n] <- cutoffs[[n]]
+            mcols(object, type="ss")[n] <- cutoffs[[n]]
         } else{ 
-            mcols(fds, type="j")[n] <- cutoffs[[n]]
+            mcols(object, type="j")[n] <- cutoffs[[n]]
         }
     }
     
     # add annotation of theta on splice sites of introns to mcols
-    intron_dt <- as.data.table(rowRanges(fds, type="j"))
-    ss_dt <- as.data.table(rowRanges(fds, type="ss"))
-    mcols(fds, type="j")["maxDThetaDonor"] <- 
+    intron_dt <- as.data.table(rowRanges(object, type="j"))
+    ss_dt <- as.data.table(rowRanges(object, type="ss"))
+    mcols(object, type="j")["maxDThetaDonor"] <- 
         merge(intron_dt, ss_dt, by.x="startID", by.y="spliceSiteID", 
                 all.x=TRUE, sort=FALSE)[,maxDTheta]
-    mcols(fds, type="j")["maxDThetaAcceptor"] <- 
+    mcols(object, type="j")["maxDThetaAcceptor"] <- 
         merge(intron_dt, ss_dt, by.x="endID", by.y="spliceSiteID", 
                 all.x=TRUE, sort=FALSE)[,maxDTheta]
 
     # check which introns pass the filter
-    mcols(fds, type="j")[['passedVariability']] <-
+    mcols(object, type="j")[['passedVariability']] <-
         pmax(cutoffs$maxDPsi3, cutoffs$maxDPsi5, 
-                mcols(fds, type="j")$maxDThetaDonor, 
-                mcols(fds, type="j")$maxDThetaAcceptor) >= minDeltaPsi 
-    if(any(is.na(mcols(fds, type="j")[['passedVariability']]))){
-        mcols(fds, type="j")$passedVariability[
-            is.na(mcols(fds, type="j")[['passedVariability']])] <- FALSE
+                mcols(object, type="j")$maxDThetaDonor, 
+                mcols(object, type="j")$maxDThetaAcceptor) >= minDeltaPsi 
+    if(any(is.na(mcols(object, type="j")[['passedVariability']]))){
+        mcols(object, type="j")$passedVariability[
+            is.na(mcols(object, type="j")[['passedVariability']])] <- FALSE
     }
-    if("passedExpression" %in% colnames(mcols(fds, type="j"))){
-        mcols(fds, type="j")[['passed']] <-  
-            mcols(fds, type="j")[['passedExpression']] & 
-            mcols(fds, type="j")[['passedVariability']]
+    if("passedExpression" %in% colnames(mcols(object, type="j"))){
+        mcols(object, type="j")[['passed']] <-  
+            mcols(object, type="j")[['passedExpression']] & 
+            mcols(object, type="j")[['passedVariability']]
     } else{
-        mcols(fds, type="j")[['passed']] <-  
-            mcols(fds, type="j")[['passedVariability']]
+        mcols(object, type="j")[['passed']] <-  
+            mcols(object, type="j")[['passedVariability']]
     }
     
     # filter if requested
     if(isTRUE(filter)){
-        fds <- applyVariabilityFilters(fds, minDeltaPsi)
+        object <- applyVariabilityFilters(object, minDeltaPsi)
     }
     
-    validObject(fds)
-    return(fds)
+    validObject(object)
+    return(object)
 }
 
 #' Applies previously calculated filters for expression filters

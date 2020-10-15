@@ -45,16 +45,19 @@ before_install:
 install:
   - R --version
   - R -e 'update.packages(ask=FALSE, Ncpus=4, instlib="/home/travis/R/Library/")'
+  - R -e 'if(Sys.getenv("TRAVIS_R_VERSION_STRING") == "bioc-devel") {
+        install.packages("BiocManager");
+        BiocManager::install(version = "devel", ask=FALSE)
+      }'
   - Rscript setupEnv.R
 
 script:
   - R CMD build --keep-empty-dirs --no-resave-data .
-  - R CMD BiocCheck *tar.gz
+  - R -e "BiocCheck::BiocCheck('.')"
   - R CMD check --no-vignettes --timings *tar.gz
   - cd vignettes && R CMD Sweave --engine=knitr::knitr --pdf FRASER.Rnw
   - R -e 'devtools::run_examples()'
   - R -e 'devtools::test()'
 
 after_success:
-  - test $TRAVIS_BUILD_STAGE_NAME = "Test" && 
-      travis_wait 30 Rscript -e 'covr::codecov()'
+  - test $TRAVIS_BUILD_STAGE_NAME = "Test" && Rscript -e 'covr::codecov()'

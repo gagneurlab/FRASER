@@ -10,7 +10,7 @@ asFDS <- function(x){
 }
 
 #'
-#'  Getter/Setter methods for the FraserDataSet
+#' @title Getter/Setter methods for the FraserDataSet
 #'
 #' The following methods are getter and setter methods to extract or set
 #' certain values of a FraserDataSet object. 
@@ -56,102 +56,11 @@ asFDS <- function(x){
 #' seqlevels(mapSeqlevels(fds, style="dbSNP"))
 #' 
 #' @author Christian Mertes \email{mertes@@in.tum.de}
+#' @author Ines Scheller \email{scheller@@in.tum.de}
 #'
 #' @rdname fds-methods
-#' @export
-setGeneric("samples",           
-            function(object) standardGeneric("samples"))
-
-#' @rdname fds-methods
-#' @export
-setGeneric("samples<-",         signature = "object", 
-            function(object, value) standardGeneric("samples<-"))
-
-#' @rdname fds-methods
-#' @export
-setGeneric("condition",         
-            function(object) standardGeneric("condition"))
-
-#' @rdname fds-methods
-#' @export
-setGeneric("condition<-",       signature = "object", 
-            function(object, value) standardGeneric("condition<-"))
-
-#' @rdname fds-methods
-#' @export
-setGeneric("bamFile",           
-            function(object) standardGeneric("bamFile"))
-
-#' @rdname fds-methods
-#' @export
-setGeneric("bamFile<-",         signature = "object", 
-            function(object, value) standardGeneric("bamFile<-"))
-
-#' @rdname fds-methods
-#' @export
-setGeneric("name",              
-            function(object) standardGeneric("name"))
-
-#' @rdname fds-methods
-#' @export
-setGeneric("name<-",            signature = "object", 
-            function(object, value) standardGeneric("name<-"))
-
-#' @rdname fds-methods
-#' @export
-setGeneric("strandSpecific",    
-            function(object) standardGeneric("strandSpecific"))
-
-#' @rdname fds-methods
-#' @export
-setGeneric("strandSpecific<-",  signature = "object", 
-            function(object, value) standardGeneric("strandSpecific<-"))
-
-#' @rdname fds-methods
-#' @export
-setGeneric("pairedEnd",    
-            function(object) standardGeneric("pairedEnd"))
-
-#' @rdname fds-methods
-#' @export
-setGeneric("pairedEnd<-",  signature = "object", 
-            function(object, value) standardGeneric("pairedEnd<-"))
-
-#' @rdname fds-methods
-#' @export
-setGeneric("workingDir",        
-            function(object) standardGeneric("workingDir"))
-
-#' @rdname fds-methods
-#' @export
-setGeneric("workingDir<-",      signature = "object", 
-            function(object, value) standardGeneric("workingDir<-"))
-
-#' @rdname fds-methods
-#' @export
-setGeneric("scanBamParam",      
-            function(object) standardGeneric("scanBamParam"))
-
-#' @rdname fds-methods
-#' @export
-setGeneric("scanBamParam<-",    signature = "object", 
-            function(object, value) standardGeneric("scanBamParam<-"))
-
-#' @rdname fds-methods
-#' @export
-setGeneric("nonSplicedReads",   
-            function(object) standardGeneric("nonSplicedReads"))
-
-#' @rdname fds-methods
-#' @export
-setGeneric("nonSplicedReads<-", signature = "object", 
-            function(object, value) standardGeneric("nonSplicedReads<-"))
-
-#' @rdname results
-#' @return GRanges object
-#' @export
-setGeneric("results", function(x, ...) standardGeneric("results"))
-
+#' @name fds-methods
+NULL
 
 
 #' @rdname fds-methods
@@ -221,8 +130,6 @@ setReplaceMethod("name", "FraserDataSet", function(object, value) {
     return(object)
 })
 
-
-#' @author Christian Mertes \email{mertes@@in.tum.de}
 #' @export
 #' @rdname fds-methods
 setMethod("workingDir", "FraserDataSet", function(object) {
@@ -237,8 +144,6 @@ setReplaceMethod("workingDir", "FraserDataSet", function(object, value) {
     return(object)
 })
 
-
-#' @author Christian Mertes \email{mertes@@in.tum.de}
 #' @export
 #' @rdname fds-methods
 setMethod("strandSpecific", "FraserDataSet", function(object) {
@@ -732,9 +637,9 @@ resultsSingleSample <- function(sampleID, gr, pvals, padjs, zscores, psivals,
     return(ans[order(mcols(ans)$pValue)])
 }
 
-FRASER.results <- function(x, sampleIDs, fdrCutoff, zscoreCutoff, dPsiCutoff,
-                    psiType, BPPARAM=bpparam(), maxCols=20, minCount, 
-                    additionalColumns=NULL){
+FRASER.results <- function(object, sampleIDs, fdrCutoff, zscoreCutoff, 
+                    dPsiCutoff, psiType, BPPARAM=bpparam(), maxCols=20, 
+                    minCount, additionalColumns=NULL){
 
     # check input
     checkNaAndRange(fdrCutoff,    min=0, max=1,   scalar=TRUE, na.ok=TRUE)
@@ -742,27 +647,27 @@ FRASER.results <- function(x, sampleIDs, fdrCutoff, zscoreCutoff, dPsiCutoff,
     checkNaAndRange(zscoreCutoff, min=0, max=100, scalar=TRUE, na.ok=TRUE)
     checkNaAndRange(minCount,     min=0, max=Inf, scalar=TRUE, na.ok=TRUE)
 
-    stopifnot(is(x, "FraserDataSet"))
-    stopifnot(all(sampleIDs %in% samples(x)))
+    stopifnot(is(object, "FraserDataSet"))
+    stopifnot(all(sampleIDs %in% samples(object)))
 
     resultsls <- bplapply(psiType, BPPARAM=BPPARAM, function(type){
         message(date(), ": Collecting results for: ", type)
-        currentType(x) <- type
-        gr <- rowRanges(x, type=type)
+        currentType(object) <- type
+        gr <- rowRanges(object, type=type)
 
         # first get row means
-        rowMeansK <- rowMeans(K(x, type=type))
-        rowMeansN <- rowMeans(N(x, type=type))
+        rowMeansK <- rowMeans(K(object, type=type))
+        rowMeansN <- rowMeans(N(object, type=type))
 
         # then iterate by chunk
-        chunkCols <- getMaxChunks2Read(fds=x, assayName=type, max=maxCols)
-        sampleChunks <- getSamplesByChunk(fds=x, sampleIDs=sampleIDs,
+        chunkCols <- getMaxChunks2Read(fds=object, assayName=type, max=maxCols)
+        sampleChunks <- getSamplesByChunk(fds=object, sampleIDs=sampleIDs,
                 chunkSize=chunkCols)
 
         ans <- lapply(seq_along(sampleChunks), function(idx){
             message(date(), ": Process chunk: ", idx, " for: ", type)
             sc <- sampleChunks[[idx]]
-            tmp_x <- x[,sc]
+            tmp_x <- object[,sc]
 
             # extract values
             rawCts       <- as.matrix(K(tmp_x))
@@ -819,7 +724,7 @@ FRASER.results <- function(x, sampleIDs, fdrCutoff, zscoreCutoff, dPsiCutoff,
 #' based on the given options and cutoffs. The aberrant function extracts 
 #' aberrant splicing events based on the given cutoffs.
 #'
-#' @param x,fds FraserDataSet
+#' @param object A \code{\link{FraserDataSet}} object
 #' @param sampleIDs A vector of sample IDs for which results should be 
 #' retrieved
 #' @param padjCutoff The FDR cutoff to be applied or NA if not requested.
@@ -881,11 +786,12 @@ FRASER.results <- function(x, sampleIDs, fdrCutoff, zscoreCutoff, dPsiCutoff,
 #' # find aberrant junctions/splice sites
 #' aberrant(fds, type="psi5")
 #' @export
-setMethod("results", "FraserDataSet", function(x, sampleIDs=samples(x),
-                    padjCutoff=0.05, zScoreCutoff=NA, deltaPsiCutoff=0.3,
+setMethod("results", "FraserDataSet", function(object, 
+                    sampleIDs=samples(object), padjCutoff=0.05,
+                    zScoreCutoff=NA, deltaPsiCutoff=0.3,
                     minCount=5, psiType=c("psi3", "psi5", "theta"),
-                    additionalColumns=NULL, BPPARAM=bpparam()){
-    FRASER.results(x, sampleIDs=sampleIDs, fdrCutoff=padjCutoff,
+                    additionalColumns=NULL, BPPARAM=bpparam(), ...){
+    FRASER.results(object=object, sampleIDs=sampleIDs, fdrCutoff=padjCutoff,
             zscoreCutoff=zScoreCutoff, dPsiCutoff=deltaPsiCutoff,
             minCount=minCount, psiType=match.arg(psiType, several.ok=TRUE),
             additionalColumns=additionalColumns, BPPARAM=BPPARAM)
@@ -958,9 +864,7 @@ mapSeqlevels <- function(fds, style="UCSC", ...){
 }
 
 
-#' @rdname results
-#' @export
-aberrant <- function(fds, type=currentType(fds), padjCutoff=0.05,
+aberrant.FRASER <- function(object, type=currentType(object), padjCutoff=0.05,
                     deltaPsiCutoff=0.3, zScoreCutoff=NA, minCount=5,
                     by=c("none", "sample", "feature"), aggregate=FALSE, ...){
 
@@ -973,31 +877,31 @@ aberrant <- function(fds, type=currentType(fds), padjCutoff=0.05,
     if("n" %in% names(dots)){
         n <- dots[['n']]
     } else {
-        n <- N(fds, type=type)
+        n <- N(object, type=type)
     }
     if("zscores" %in% names(dots)){
         zscores <- dots[['zscores']]
     } else {
-        zscores <- zScores(fds, type=type)
+        zscores <- zScores(object, type=type)
     }
     if("padjVals" %in% names(dots)){
         padj <- dots[['padjVals']]
     } else {
-        padj <- padjVals(fds, type=type)
+        padj <- padjVals(object, type=type)
     }
     if("dPsi" %in% names(dots)){
         dpsi <- dots[['dPsi']]
     } else {
-        dpsi <- deltaPsiValue(fds, type=type)
+        dpsi <- deltaPsiValue(object, type=type)
     } 
     
     
     # create cutoff matrix
     goodCutoff <- matrix(TRUE, nrow=nrow(zscores), ncol=ncol(zscores),
             dimnames=dimnames(zscores))
-    if("hgnc_symbol" %in% colnames(mcols(fds, type=type)) &
-                nrow(mcols(fds, type=type)) == nrow(goodCutoff)){
-        rownames(goodCutoff) <- mcols(fds, type=type)[,"hgnc_symbol"]
+    if("hgnc_symbol" %in% colnames(mcols(object, type=type)) &
+                nrow(mcols(object, type=type)) == nrow(goodCutoff)){
+        rownames(goodCutoff) <- mcols(object, type=type)[,"hgnc_symbol"]
     } else if(isTRUE(aggregate)){
         stop("Please provide hgnc symbols to compute gene p values!")
     }
@@ -1023,7 +927,7 @@ aberrant <- function(fds, type=currentType(fds), padjCutoff=0.05,
     if(isTRUE(aggregate)){
         goodCutoff <- as.matrix(data.table(goodCutoff, keep.rownames=TRUE)[,
                 as.data.table(t(colAnys(as.matrix(.SD)))), by=rn][,-1])
-        rownames(goodCutoff) <- unique(mcols(fds, type=type)[,"hgnc_symbol"])
+        rownames(goodCutoff) <- unique(mcols(object, type=type)[,"hgnc_symbol"])
         colnames(goodCutoff) <- colnames(zscores)
     }
     
@@ -1036,3 +940,7 @@ aberrant <- function(fds, type=currentType(fds), padjCutoff=0.05,
     }
     return(goodCutoff)
 }
+
+#' @rdname results
+#' @export
+setMethod("aberrant", "FraserDataSet", aberrant.FRASER)

@@ -1,8 +1,8 @@
 Package: FRASER
 Type: Package
 Title: Find RAre Splicing Events in RNA-Seq Data
-Version: 1.1.3
-Date: 2020-08-27
+Version: 1.1.5
+Date: 2020-10-15
 Authors@R: c(
     person("Christian", "Mertes", role=c("aut", "cre"), 
             email="mertes@in.tum.de"),
@@ -42,6 +42,7 @@ Imports:
     DelayedArray (>= 0.5.11),
     DelayedMatrixStats,
     extraDistr,
+    generics,
     GenomeInfoDb,
     GenomicAlignments,
     GenomicFeatures,
@@ -53,6 +54,7 @@ Imports:
     HDF5Array,
     matrixStats,
     methods,
+    OUTRIDER,
     pcaMethods,
     pheatmap,
     plotly,
@@ -83,6 +85,7 @@ Collate:
     getNSetterFuns.R
     FRASER-package.R
     FraserDataSet-class.R
+    AllGenerics-definitions.R
     AllGenerics.R
     Fraser-pipeline.R
     annotationOfRanges.R

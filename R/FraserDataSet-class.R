@@ -35,6 +35,9 @@ setClass("FraserDataSet",
 #
 validateSampleAnnotation <- function(object) {
     sampleData <- as.data.table(colData(object))
+    if(nrow(sampleData) == 0){
+        return(NULL)
+    }
     if(!"sampleID" %in% colnames(sampleData)){
         return("Please provide a 'sampleID' column with a ID for each sample.")
     }
@@ -294,13 +297,15 @@ FraserDataSet <- function(colData=NULL, junctions=NULL, spliceSites=NULL, ...) {
                 colData=colData,
                 assays=SimpleList(rawCountsJ=as.data.frame(
                         mcols(junctions)[colData[,"sampleID"]]), a=NULL)[1])
-        return(new("FraserDataSet", se, nonSplicedReads=nsr, ...))
+        obj <- new("FraserDataSet", se, nonSplicedReads=nsr, ...)
+    } else {
+        obj <- new("FraserDataSet", ...)
     }
-    if(!is.null(junctions) | !is.null(spliceSites)){
-        stop("If you provide count tables please provide",
-                " also a sample table (colData).")
-    }
-    return(new("FraserDataSet", ...))
+    
+    metadata(obj)[["version"]] <- packageVersion("FRASER")
+    validObject(obj)
+    
+    return(obj)
 }
 
 
