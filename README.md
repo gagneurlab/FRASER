@@ -2,13 +2,13 @@
 
 [![Build Status](https://travis-ci.com/c-mertes/FRASER.svg?branch=master)](https://travis-ci.com/c-mertes/FRASER)
 [![AppVeyor build status](https://ci.appveyor.com/api/projects/status/371x22cn6fipu7bw/branch/master?svg=true)](https://ci.appveyor.com/project/c-mertes/fraser/branch/master)
-[![Version](https://img.shields.io/badge/Version-1.1.4-green.svg)](https://github.com/c-mertes/FRASER/tree/master)
+[![Version](https://img.shields.io/github/v/release/c-mertes/FRASER)](https://github.com/c-mertes/FRASER/releases)
 [![Coverage status](https://codecov.io/gh/c-mertes/FRASER/branch/master/graph/badge.svg)](https://codecov.io/github/c-mertes/FRASER/branch/master)
-[![License](https://img.shields.io/github/license/mashape/apistatus.svg?maxAge=2592000)](https://github.com/gagneurlab/OUTRIDER/blob/master/LICENSE)
+[![License](https://img.shields.io/github/license/mashape/apistatus.svg?maxAge=2592000)](https://github.com/c-mertes/FRASER/blob/master/LICENSE)
 
 FRASER is a tool to detect aberrant splicing events in RNA-seq data. The method is described in a preprint on [bioRxiv](https://www.biorxiv.org/content/10.1101/2019.12.18.866830v1) and available through [Bioconductor](http://bioconductor.org/packages/release/bioc/html/FRASER.html). It is also part of the [Detection of RNA Outlier Pipeline (DROP)](https://github.com/gagneurlab/drop). The DROP pipeline is described [here on Nature's protocol exchange](https://doi.org/10.21203/rs.2.19080/v1).
                                                                              
-The FRASER framework and workflow aims to assist the diagnostics in the field of rare diseases where RNA-seq is performed to identify aberrant splicing defects. For a short tutorial on how to use FRASER on a dataset please use the [vignette](http://bioconductor.org/packages/release/bioc/vignettes/FRASER/inst/doc/FRASER.pdf) or our Colab tutorial at: [http://tinyurl.com/RNA-ASHG-colab](http://tinyurl.com/RNA-ASHG-colab). The Colab is based on a workshop that we presented at ASHG 2019.
+The FRASER framework and workflow aims to assist the diagnostics in the field of rare diseases where RNA-seq is performed to identify aberrant splicing defects. For a short tutorial on how to use FRASER on a dataset please use the [vignette](http://bioconductor.org/packages/release/bioc/vignettes/FRASER/inst/doc/FRASER.pdf) or our Colab tutorial at: [http://tinyurl.com/RNA-ASHG-colab](http://tinyurl.com/RNA-ASHG-colab). The Colab is based on a workshop that we presented at ASHG 2019/2020.
 
 ## Installation
 
