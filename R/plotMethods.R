@@ -163,6 +163,7 @@
 #'
 NULL
 
+
 plotVolcano.FRASER <- function(object, sampleID, 
                     type=c("psi3", "psi5", "theta"), basePlot=TRUE, 
                     aggregate=FALSE, main=NULL, label=NULL,
@@ -826,9 +827,9 @@ plotFilterVariability <- function(fds, bins=200, legend.position=c(0.8, 0.8),
 }
 
 
-plotCountCorHeatmap.FRASER <- function(object, 
-                    type=c("psi5", "psi3", "theta"),
-                    logit=FALSE, topN=50000, topJ=5000, minMedian=1,
+plotCountCorHeatmap.FRASER <- function(object,
+                    type=c("psi5", "psi3", "theta"), logit=FALSE, topN=50000, 
+                    topJ=5000, minMedian=1, minCount=10, 
                     main=NULL, normalized=FALSE, show_rownames=FALSE,
                     show_colnames=FALSE, minDeltaPsi=0.1, annotation_col=NA,
                     annotation_row=NA, border_color=NA, nClust=5,
@@ -844,8 +845,8 @@ plotCountCorHeatmap.FRASER <- function(object,
     counts(object, type=type, side="ofInterest", HDF5=FALSE) <-
         as.matrix(counts(object, type=type, side="ofInterest"))
 
-    kmat <- K(fds, type=type)
-    nmat <- N(fds, type=type)
+    kmat <- K(object, type=type)
+    nmat <- N(object, type=type)
 
     expRowsMedian <- rowMedians(kmat) >= minMedian
     expRowsMax    <- rowMax(kmat)     >= minCount

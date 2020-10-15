@@ -110,6 +110,7 @@ plotFilterVariability(
   topN = 50000,
   topJ = 5000,
   minMedian = 1,
+  minCount = 10,
   main = NULL,
   normalized = FALSE,
   show_rownames = FALSE,

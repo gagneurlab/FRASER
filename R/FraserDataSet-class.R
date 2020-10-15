@@ -271,7 +271,7 @@ FraserDataSet <- function(colData=NULL, junctions=NULL, spliceSites=NULL, ...) {
         }
         if(is.character(spliceSites)){
             if(!file.exists(spliceSites))
-                ?stop("SpliceSite file '", spliceSites, "' does not exists")
+                stop("SpliceSite file '", spliceSites, "' does not exists")
             spliceSites <- fread(spliceSites)
         }
         if(is.data.frame(junctions)){

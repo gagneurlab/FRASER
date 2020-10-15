@@ -47,8 +47,7 @@
 #' # preprocessing
 #' fds <- createTestFraserDataSet()
 #' 
-#' # when running FRASER on a real dataset, one should run the following 
-#' # two commands first (not run here to make the example run faster):
+#' # filtering not expressed introns
 #' fds <- calculatePSIValues(fds)
 #' fds <- filterExpressionAndVariability(fds)
 #'

@@ -535,7 +535,7 @@ setMethod("counts", "FraserDataSet", function(object, type=NULL,
 
     # extract psi value from type
     type <- whichPSIType(type)
-    if(length(type) == 0){
+    if(length(type) == 0 | length(type) > 1){
         stop(paste0("Please provide a correct psi type: psi5, psi3, or ",
                     "theta. Not the given one: '", type, "'."))
     }
