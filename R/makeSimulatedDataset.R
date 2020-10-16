@@ -33,6 +33,7 @@ makeSimulatedFraserDataSet <- function(m=100, j=500, q=10,
         BB = makeSimulatedFraserDataSet_BetaBinomial(m=m, j=j, q=q, ...),
         DM = makeSimulatedFraserDataSet_Multinomial(m=m, j=j, q=q, ...))
     
+    dontWriteHDF5(fds) <- TRUE
     fds
 }
 
@@ -116,6 +117,7 @@ makeSimulatedFraserDataSet_BetaBinomial <- function(m=200, j=10000, q=10,
             workingDir      = workingDir(fds),
             nonSplicedReads = nonSplitData)
     
+    dontWriteHDF5(fds) <- TRUE
     metadata(fds)[['optimalEncDim']]  <- q
     metadata(fds)[['encDimTable']]    <- data.table(
             encodingDimension=q, evaluationLoss=1, evalMethod='simulation')
@@ -366,6 +368,7 @@ makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=1000, q=10,
             workingDir      = workingDir(fds),
             nonSplicedReads = nonSplitData)
     
+    dontWriteHDF5(fds) <- TRUE
     metadata(fds)[['optimalEncDim']]  <- q
     
     

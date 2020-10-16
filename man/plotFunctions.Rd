@@ -316,20 +316,30 @@ precision-recall curve). From this plot the optimum should be choosen for
 the \code{q} in fitting process.
 }
 \examples{
-fds <- createTestFraserDataSet()
+# create full FRASER object 
+fds <- makeSimulatedFraserDataSet()
+fds <- calculatePSIValues(fds)
+fds <- filterExpressionAndVariability(fds, filter=FALSE)
+fds <- optimHyperParams(fds, "psi5", q_param=c(2,7,14,25,40))
+fds <- FRASER(fds)
 
+# QC plotting
+plotFilterExpression(fds)
+plotFilterVariability(fds)
+plotCountCorHeatmap(fds, "theta")
+plotCountCorHeatmap(fds, "theta", normalized=TRUE)
 plotEncDimSearch(fds, type="psi5")
-plotAberrantPerSample(fds, padjCutoff=NA, zScoreCutoff=0.5)
+
+# extract results 
+plotAberrantPerSample(fds)
 plotVolcano(fds, "sample1", "psi5")
 
-# for this example a padj cutoff of 1 is used to get results for the small 
-# example dataset and be able to show the usage of the plot functions
-res <- results(fds, padjCutoff=1, zScoreCutoff=NA, deltaPsiCutoff=NA)
+# dive into gene/sample level results
+res <- results(fds)
 res
-plotExpression(fds, result=res[2], type="psi5")
+plotExpression(fds, result=res[1])
 plotQQ(fds, result=res[1])
-plotExpectedVsObservedPsi(fds, type="psi5", idx=5)
+plotExpectedVsObservedPsi(fds, type="psi5", res=res[1])
 
-plotCountCorHeatmap(fds, "theta")
 
 }
