@@ -317,10 +317,11 @@ the \code{q} in fitting process.
 }
 \examples{
 # create full FRASER object 
-fds <- makeSimulatedFraserDataSet()
+fds <- makeSimulatedFraserDataSet(m=40, j=200)
 fds <- calculatePSIValues(fds)
 fds <- filterExpressionAndVariability(fds, filter=FALSE)
-fds <- optimHyperParams(fds, "psi5", q_param=c(2,7,14,25,40))
+# this step should be done for all splicing metrics and more dimensions
+fds <- optimHyperParams(fds, "psi5", q_param=c(2,5,10,25))
 fds <- FRASER(fds)
 
 # QC plotting
