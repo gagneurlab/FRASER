@@ -11,6 +11,7 @@ test_that("save/load/move fds object", {
     options(FRASER.maxJunctionsNoHDF5=10)
     on.exit(options(FRASER.maxJunctionsNoHDF5=1000))
     fds <- makeSimulatedFraserDataSet(workingDir=dir1, j=11)
+    dontWriteHDF5(fds) <- FALSE
     fds <- saveFraserDataSet(fds)
     
     # load from created folder
