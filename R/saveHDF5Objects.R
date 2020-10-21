@@ -106,13 +106,21 @@ loadFraserDataSet <- function(dir, name=NULL, file=NULL, upgrade=FALSE){
             warning(paste("Can not find assay file: ", aname, ".",
                     "The assay will be removed from the object."))
             assay(fds, aname, withDimnames=FALSE) <- NULL
-        } else if(afile != path(assay(fds, aname, withDimnames=FALSE))) {
-            if(R.Version()$major == "3"){
-                path(assay(fds, aname, withDimnames=FALSE)) <- afile
-            } else {
-                slot(assay(fds, aname, withDimnames=FALSE), 
-                        "seed")@seed@filepath <- afile
-            }
+            next
+        }
+        if(afile == path(assay(fds, aname, withDimnames=FALSE))){
+            next
+        }
+        if(R.Version()$major == "3"){
+            path(assay(fds, aname, withDimnames=FALSE)) <- afile
+        } else if("DelayedMatrix" == 
+                    class(assay(fds, aname, withDimnames=FALSE))){
+            slot(slot(slot(assay(fds, aname, withDimnames=FALSE), 
+                    "seed"), "seed"), "filepath") <- afile
+        # if its a HDF5 matrix we have one seed less
+        } else {
+            slot(slot(assay(fds, aname, withDimnames=FALSE), 
+                    "seed"), "filepath") <- afile
         }
     }
 

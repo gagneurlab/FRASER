@@ -42,6 +42,6 @@ setter for count data
  counts(fds, type="psi5", side="ofInterest")
  counts(fds, type="psi5", side="other")
  head(K(fds, type="psi3"))
- head(N(fds, type="psi3"))
+ head(N(fds, type="theta"))
  
 }

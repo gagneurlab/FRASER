@@ -7,6 +7,8 @@
 
 # ignore tmp files
 tmp
+inst/igv
+inst/tmp*
 
 # ignore vignette artefacts
 FraseR.pdf

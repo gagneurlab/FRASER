@@ -13,7 +13,7 @@
   zScoreCutoff = NA,
   deltaPsiCutoff = 0.3,
   minCount = 5,
-  psiType = c("psi3", "psi5", "psiSite"),
+  psiType = c("psi3", "psi5", "theta"),
   additionalColumns = NULL,
   BPPARAM = bpparam(),
   ...
@@ -70,7 +70,7 @@ the gene symbols.}
 \item{method}{The p.adjust method that is being used to adjust p values per
 sample.}
 
-\item{type}{Splicing type (psi5, psi3 or psiSite)}
+\item{type}{Splicing type (psi5, psi3 or theta)}
 
 \item{by}{By default \code{none} which means no grouping. But if 
 \code{sample} or \code{feature} is specified the sum by 

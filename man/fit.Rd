@@ -35,7 +35,7 @@ Should be fitted using \code{\link{optimHyperParams}} if unknown.
 If a named vector is provided it is used for the different
 splicing types.}
 
-\item{type}{The type of PSI (psi5, psi3 or psiSite for theta/splicing 
+\item{type}{The type of PSI (psi5, psi3 or theta for theta/splicing 
 efficiency)}
 
 \item{rhoRange}{Defines the range of values that rho parameter from the 

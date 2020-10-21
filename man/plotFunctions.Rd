@@ -21,7 +21,7 @@
 \S4method{plotVolcano}{FraserDataSet}(
   object,
   sampleID,
-  type = c("psi3", "psi5", "psiSite"),
+  type = c("psi3", "psi5", "theta"),
   basePlot = TRUE,
   aggregate = FALSE,
   main = NULL,
@@ -34,18 +34,18 @@
 \S4method{plotAberrantPerSample}{FraserDataSet}(
   object,
   main,
-  type = c("psi3", "psi5", "psiSite"),
+  type = c("psi3", "psi5", "theta"),
   padjCutoff = 0.1,
   zScoreCutoff = NA,
   deltaPsiCutoff = 0.3,
-  aggregated = TRUE,
+  aggregate = TRUE,
   BPPARAM = bpparam(),
   ...
 )
 
 plotExpression(
   fds,
-  type = c("psi5", "psi3", "psiSite"),
+  type = c("psi5", "psi3", "theta"),
   site = NULL,
   result = NULL,
   colGroup = NULL,
@@ -57,7 +57,7 @@ plotExpression(
 
 plotExpectedVsObservedPsi(
   fds,
-  type = c("psi5", "psi3", "psiSite"),
+  type = c("psi5", "psi3", "theta"),
   idx = NULL,
   result = NULL,
   colGroup = NULL,
@@ -85,7 +85,7 @@ plotExpectedVsObservedPsi(
 
 \S4method{plotEncDimSearch}{FraserDataSet}(
   object,
-  type = c("psi3", "psi5", "psiSite"),
+  type = c("psi3", "psi5", "theta"),
   plotType = c("auc", "loss")
 )
 
@@ -105,11 +105,12 @@ plotFilterVariability(
 
 \S4method{plotCountCorHeatmap}{FraserDataSet}(
   object,
-  type = c("psi5", "psi3", "psiSite"),
+  type = c("psi5", "psi3", "theta"),
   logit = FALSE,
   topN = 50000,
   topJ = 5000,
   minMedian = 1,
+  minCount = 10,
   main = NULL,
   normalized = FALSE,
   show_rownames = FALSE,
@@ -127,18 +128,18 @@ plotFilterVariability(
 )
 }
 \arguments{
-\item{object, fds}{An FraserDataSet object.}
+\item{object, fds}{An \code{\link{FraserDataSet}} object.}
 
 \item{sampleID}{A sample ID which should be plotted. Can also be a vector.
 Integers are treated as indices.}
 
-\item{type}{The psi type: either psi5, psi3 or psiSite (for SE).}
+\item{type}{The psi type: either psi5, psi3 or theta (for SE).}
 
 \item{basePlot}{if \code{TRUE} (default), use the R base plot version, else
 use the plotly framework.}
 
-\item{aggregate, aggregated}{If TRUE, the pvalues are aggregated by gene, 
-otherwise junction level pvalues are used (default).}
+\item{aggregate}{If TRUE, the pvalues are aggregated by gene (default), 
+otherwise junction level pvalues are used (default for Q-Q plot).}
 
 \item{main}{Title for the plot, if missing a default title will be used.}
 
@@ -174,10 +175,13 @@ reduce number of points to plot. Defines the digits to round to.}
 
 \item{Ncpus}{Number of cores to use.}
 
-\item{plotType}{Character string indicating the type of correlation heatmap
-that should be plotted. Can be either 'sampleCorrelation' for a
-sample-sample correlation heatmap or 'junctionSample' for a
-junction-sample correlation heatmap.}
+\item{plotType}{The type of plot that should be shown as character string. 
+For plotEncDimSearch, it has to be either \code{"auc"} 
+for a plot of the area under the curve (AUC) or 
+\code{"loss"} for the model loss. For the correlation heatmap,
+it can be either \code{"sampleCorrelation"} for a
+sample-sample correlation heatmap or \code{"junctionSample"}
+for a junction-sample correlation heatmap.}
 
 \item{bins}{Set the number of bins to be used in the histogram.}
 
@@ -198,8 +202,9 @@ FALSE.}
 heatmap. TopN is used for sample-sample correlation heatmaps and
 topJ for junction-sample correlation heatmaps.}
 
-\item{minMedian, minDeltaPsi}{Minimal median value or minimal delta psi of a
-junction to be considered for the correlation heatmap.}
+\item{minMedian, minCount, minDeltaPsi}{Minimal median (\eqn{m \ge 1}), 
+delta psi (\eqn{|\Delta\psi| > 0.1}), read count (\eqn{n \ge 10})
+value of a junction to be considered for the correlation heatmap.}
 
 \item{normalized}{If TRUE, the normalized psi values are used, the default,
 otherwise the raw psi values}
@@ -278,7 +283,8 @@ values for all splice sites or aggregates by gene if requested.
 
 \code{plotExpression}: This function plots for a given site the
 read count at this site (i.e. K) against the total coverage (i.e. N) for the
-given psi type (psi5, psi3 or SE (psiSite)) for all samples.
+given psi type (\eqn{\psi_5, \psi_3, or \theta}{\psi5, \psi3, or \theta}
+(SE)) for all samples.
 
 \code{plotQQ}: the quantile-quantile plot for a given gene or if
 \code{global} is set to \code{TRUE} over the full data set. Here the
@@ -310,20 +316,31 @@ precision-recall curve). From this plot the optimum should be choosen for
 the \code{q} in fitting process.
 }
 \examples{
-fds <- createTestFraserDataSet()
+# create full FRASER object 
+fds <- makeSimulatedFraserDataSet(m=40, j=200)
+fds <- calculatePSIValues(fds)
+fds <- filterExpressionAndVariability(fds, filter=FALSE)
+# this step should be done for all splicing metrics and more dimensions
+fds <- optimHyperParams(fds, "psi5", q_param=c(2,5,10,25))
+fds <- FRASER(fds)
 
+# QC plotting
+plotFilterExpression(fds)
+plotFilterVariability(fds)
+plotCountCorHeatmap(fds, "theta")
+plotCountCorHeatmap(fds, "theta", normalized=TRUE)
 plotEncDimSearch(fds, type="psi5")
-plotAberrantPerSample(fds, padjCutoff=NA, zScoreCutoff=0.5)
+
+# extract results 
+plotAberrantPerSample(fds)
 plotVolcano(fds, "sample1", "psi5")
 
-# for this example a padj cutoff of 1 is used to get results for the small 
-# example dataset and be able to show the usage of the plot functions
-res <- results(fds, padjCutoff=1, zScoreCutoff=NA, deltaPsiCutoff=NA)
+# dive into gene/sample level results
+res <- results(fds)
 res
-plotExpression(fds, result=res[2], type="psi5")
+plotExpression(fds, result=res[1])
 plotQQ(fds, result=res[1])
-plotExpectedVsObservedPsi(fds, type="psi5", idx=5)
+plotExpectedVsObservedPsi(fds, type="psi5", res=res[1])
 
-plotCountCorHeatmap(fds, "psiSite")
 
 }

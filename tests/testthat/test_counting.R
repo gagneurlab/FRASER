@@ -66,9 +66,9 @@ test_that("Test psi values", {
         as.vector(counts(test_rangeFDS, type="psi5", side="other"))
     )
 
-    #expect_equal(as.vector(counts(test_rangeFDS, type="psiSite")), test_rawCountsSS)
+    #expect_equal(as.vector(counts(test_rangeFDS, type="theta")), test_rawCountsSS)
     expect_equal(test_pSrawOCounts,
-        as.vector(counts(test_rangeFDS, type="psiSite", side="other"))
+        as.vector(counts(test_rangeFDS, type="theta", side="other"))
     )
 
     expect_equal(as.vector(assays(test_rangeFDS)[["psi3"]]),
@@ -79,7 +79,7 @@ test_that("Test psi values", {
         test_rawCountsJ / (test_rawCountsJ + test_p5rawOCounts)
     )
 
-    #expect_equal(as.vector(assays(test_rangeFDS)[["psiSite"]]),
+    #expect_equal(as.vector(assays(test_rangeFDS)[["theta"]]),
     #    test_rawCountsSS / (test_rawCountsSS + test_pSrawOCounts)
     #)
 })

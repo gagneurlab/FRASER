@@ -25,7 +25,7 @@ asFDS <- function(x){
 #' @param object A FraserDataSet object.
 #' @param value The new value that should replace the current one.
 #' @param x A FraserDataSet object.
-#' @param type The psi type (psi3, psi5 or psiSite)
+#' @param type The psi type (psi3, psi5 or theta)
 #' @return Getter method return the respective current value.
 #' @examples
 #' fds <- createTestFraserDataSet()
@@ -47,9 +47,9 @@ asFDS <- function(x){
 #' scanBamParam(fds) <- ScanBamParam(mapqFilter=30)
 #' nonSplicedReads(fds)
 #' rowRanges(fds)
-#' rowRanges(fds, type="psiSite")
+#' rowRanges(fds, type="theta")
 #' mcols(fds, type="psi5")
-#' mcols(fds, type="psiSite")
+#' mcols(fds, type="theta")
 #' seqlevels(fds)
 #' seqlevels(mapSeqlevels(fds, style="UCSC"))
 #' seqlevels(mapSeqlevels(fds, style="Ensembl"))
@@ -518,7 +518,7 @@ setReplaceMethod("rowRanges", "FraserDataSet", FRASER.rowRanges.replace)
 #'  counts(fds, type="psi5", side="ofInterest")
 #'  counts(fds, type="psi5", side="other")
 #'  head(K(fds, type="psi3"))
-#'  head(N(fds, type="psi3"))
+#'  head(N(fds, type="theta"))
 #'  
 setMethod("counts", "FraserDataSet", function(object, type=NULL,
             side=c("ofInterest", "otherSide")){
@@ -534,15 +534,15 @@ setMethod("counts", "FraserDataSet", function(object, type=NULL,
     }
 
     # extract psi value from type
-    type <- unlist(regmatches(type, gregexpr("psi(3|5|Site)", type, perl=TRUE)))
-    if(length(type) == 0){
-        stop(paste0("Please provide a correct psi type: psi5, psi3, and ",
-                    "psiSite. Not the given one: '", type, "'."))
+    type <- whichPSIType(type)
+    if(length(type) == 0 | length(type) > 1){
+        stop(paste0("Please provide a correct psi type: psi5, psi3, or ",
+                    "theta. Not the given one: '", type, "'."))
     }
     aname <- paste0("rawOtherCounts_", type)
     if(!aname %in% assayNames(object)){
         stop(paste0("Missing rawOtherCounts for type '", type, "'.",
-                "Please calculate PSIValues first. And then try again."))
+                " Please calculate PSIValues first. And then try again."))
     }
     return(assays(object)[[aname]])
 })
@@ -559,8 +559,7 @@ setReplaceMethod("counts", "FraserDataSet", function(object, type=NULL,
         type <- checkReadType(object, type)
         aname <- paste0("rawCounts", toupper(type))
     } else {
-        type <- unlist(
-                regmatches(type, gregexpr("psi(3|5|Site)", type, perl=TRUE)))
+        type <- whichPSIType(type)
         aname <- paste0("rawOtherCounts_", type)
     }
     assays(object, ...)[[aname]] <- value
@@ -745,7 +744,7 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff, zscoreCutoff,
 #'     the gene symbols.   
 #' @param method The p.adjust method that is being used to adjust p values per
 #'     sample.
-#' @param type Splicing type (psi5, psi3 or psiSite)
+#' @param type Splicing type (psi5, psi3 or theta)
 #' @param by By default \code{none} which means no grouping. But if 
 #'              \code{sample} or \code{feature} is specified the sum by 
 #'              sample or feature is returned
@@ -790,7 +789,7 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff, zscoreCutoff,
 setMethod("results", "FraserDataSet", function(object, 
                     sampleIDs=samples(object), padjCutoff=0.05,
                     zScoreCutoff=NA, deltaPsiCutoff=0.3,
-                    minCount=5, psiType=c("psi3", "psi5", "psiSite"),
+                    minCount=5, psiType=c("psi3", "psi5", "theta"),
                     additionalColumns=NULL, BPPARAM=bpparam(), ...){
     FRASER.results(object=object, sampleIDs=sampleIDs, fdrCutoff=padjCutoff,
             zscoreCutoff=zScoreCutoff, dPsiCutoff=deltaPsiCutoff,

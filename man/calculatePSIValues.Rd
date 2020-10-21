@@ -15,7 +15,7 @@ calculatePSIValues(
 \item{fds}{A \code{\link{FraserDataSet}} object}
 
 \item{types}{A vector with the psi types which should be calculated. Default 
-is all of psi5, psi3 and psiSite.}
+is all of psi5, psi3 and theta.}
 
 \item{overwriteCts}{FALSE or TRUE (the default) the total counts (aka N) will
 be recalculated based on the existing junction counts (aka K)}

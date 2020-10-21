@@ -21,8 +21,8 @@
 #' Most of the functions share the same parameters.
 #'
 #### Data specific parameters
-#' @param object,fds An FraserDataSet object.
-#' @param type The psi type: either psi5, psi3 or psiSite (for SE).
+#' @param object,fds An \code{\link{FraserDataSet}} object.
+#' @param type The psi type: either psi5, psi3 or theta (for SE).
 #' @param sampleID A sample ID which should be plotted. Can also be a vector.
 #'             Integers are treated as indices.
 #' @param idx,site A junction site ID or gene ID or one of both, which
@@ -33,8 +33,8 @@
 #' @param global Flag to plot a global Q-Q plot, default FALSE
 #' @param normalized If TRUE, the normalized psi values are used, the default,
 #'             otherwise the raw psi values
-#' @param aggregate,aggregated If TRUE, the pvalues are aggregated by gene, 
-#'             otherwise junction level pvalues are used (default).
+#' @param aggregate If TRUE, the pvalues are aggregated by gene (default), 
+#'             otherwise junction level pvalues are used (default for Q-Q plot).
 #' @param result The result table to be used by the method.
 #' @param label Indicates the genes or samples that will be labelled in the 
 #'             plot (only for \code{basePlot=TRUE}). Setting 
@@ -44,15 +44,20 @@
 #'             list of gene symbols or sampleIDs.
 #' @param BPPARAM BiocParallel parameter to use.
 #' @param Ncpus Number of cores to use.
-#' @param plotType The type of plot that should be shown for plotEncDimSearch. 
-#'              Has to be either \code{"auc"} for a plot of the area under the 
-#'              curve (AUC) or \code{"loss"} for the model loss.
+#' @param plotType The type of plot that should be shown as character string. 
+#'             For plotEncDimSearch, it has to be either \code{"auc"} 
+#'             for a plot of the area under the curve (AUC) or 
+#'             \code{"loss"} for the model loss. For the correlation heatmap,
+#'             it can be either \code{"sampleCorrelation"} for a
+#'             sample-sample correlation heatmap or \code{"junctionSample"}
+#'             for a junction-sample correlation heatmap.
 #' @param onlyVariableIntrons Logical value indicating whether to show only 
 #'              introns that also pass the variability filter. Defaults to 
 #'              FALSE.
 #' @param onlyExpressedIntrons Logical value indicating whether to show only 
 #'              introns that also pass the expression filter. Defaults to 
 #'              FALSE.
+#'              
 #### Graphical parameters
 #' @param main Title for the plot, if missing a default title will be used.
 #' @param colGroup Group of samples that should be colored.
@@ -70,15 +75,12 @@
 #'             row or column names on the heatmap axes.
 #' @param annotation_col,annotation_row Row or column annotations that should be
 #'             plotted on the heatmap.
-#' @param plotType Character string indicating the type of correlation heatmap
-#'             that should be plotted. Can be either 'sampleCorrelation' for a
-#'             sample-sample correlation heatmap or 'junctionSample' for a
-#'             junction-sample correlation heatmap.
 #' @param topN,topJ Top x most variable junctions that should be used in the
 #'             heatmap. TopN is used for sample-sample correlation heatmaps and
 #'             topJ for junction-sample correlation heatmaps.
-#' @param minMedian,minDeltaPsi Minimal median value or minimal delta psi of a
-#'             junction to be considered for the correlation heatmap.
+#' @param minMedian,minCount,minDeltaPsi Minimal median (\eqn{m \ge 1}), 
+#'             delta psi (\eqn{|\Delta\psi| > 0.1}), read count (\eqn{n \ge 10})
+#'             value of a junction to be considered for the correlation heatmap.
 #' @param border_color Sets the border color of the heatmap
 #' @param plotMeanPsi,plotCov If \code{TRUE}, then the heatmap is annotated with
 #'             the mean psi values or the junction coverage.
@@ -102,7 +104,8 @@
 #'
 #' \code{plotExpression}: This function plots for a given site the
 #' read count at this site (i.e. K) against the total coverage (i.e. N) for the
-#' given psi type (psi5, psi3 or SE (psiSite)) for all samples.
+#' given psi type (\eqn{\psi_5, \psi_3, or \theta}{\psi5, \psi3, or \theta}
+#' (SE)) for all samples.
 #'
 #' \code{plotQQ}: the quantile-quantile plot for a given gene or if
 #' \code{global} is set to \code{TRUE} over the full data set. Here the
@@ -142,28 +145,39 @@
 #'             plotExpression plotCountCorHeatmap plotFilterExpression 
 #'             plotExpectedVsObservedPsi plotEncDimSearch
 #' @examples
-#' fds <- createTestFraserDataSet()
+#' # create full FRASER object 
+#' fds <- makeSimulatedFraserDataSet(m=40, j=200)
+#' fds <- calculatePSIValues(fds)
+#' fds <- filterExpressionAndVariability(fds, filter=FALSE)
+#' # this step should be done for all splicing metrics and more dimensions
+#' fds <- optimHyperParams(fds, "psi5", q_param=c(2,5,10,25))
+#' fds <- FRASER(fds)
 #' 
+#' # QC plotting
+#' plotFilterExpression(fds)
+#' plotFilterVariability(fds)
+#' plotCountCorHeatmap(fds, "theta")
+#' plotCountCorHeatmap(fds, "theta", normalized=TRUE)
 #' plotEncDimSearch(fds, type="psi5")
-#' plotAberrantPerSample(fds, padjCutoff=NA, zScoreCutoff=0.5)
+#' 
+#' # extract results 
+#' plotAberrantPerSample(fds)
 #' plotVolcano(fds, "sample1", "psi5")
 #' 
-#' # for this example a padj cutoff of 1 is used to get results for the small 
-#' # example dataset and be able to show the usage of the plot functions
-#' res <- results(fds, padjCutoff=1, zScoreCutoff=NA, deltaPsiCutoff=NA)
+#' # dive into gene/sample level results
+#' res <- results(fds)
 #' res
-#' plotExpression(fds, result=res[2], type="psi5")
+#' plotExpression(fds, result=res[1])
 #' plotQQ(fds, result=res[1])
-#' plotExpectedVsObservedPsi(fds, type="psi5", idx=5)
+#' plotExpectedVsObservedPsi(fds, type="psi5", res=res[1])
 #' 
-#' plotCountCorHeatmap(fds, "psiSite")
 #'
 NULL
 
 
-plotVolcano.FRASER <- function(object, sampleID, type=c("psi3", "psi5", "psiSite"), 
-                    basePlot=TRUE, aggregate=FALSE,
-                    main=NULL, label=NULL,
+plotVolcano.FRASER <- function(object, sampleID, 
+                    type=c("psi3", "psi5", "theta"), basePlot=TRUE, 
+                    aggregate=FALSE, main=NULL, label=NULL,
                     deltaPsiCutoff=0.3, padjCutoff=0.1, ...){
     
     type <- match.arg(type)
@@ -262,15 +276,15 @@ setMethod("plotVolcano", signature="FraserDataSet", plotVolcano.FRASER)
 
 
 plotAberrantPerSample.FRASER <- function(object, main, 
-                    type=c("psi3", "psi5", "psiSite"),
+                    type=c("psi3", "psi5", "theta"),
                     padjCutoff=0.1, zScoreCutoff=NA, deltaPsiCutoff=0.3,
-                    aggregated=TRUE, BPPARAM=bpparam(), ...){
+                    aggregate=TRUE, BPPARAM=bpparam(), ...){
 
     type <- match.arg(type, several.ok=TRUE)
 
     if(missing(main)){
         main <- paste('Aberrant events per sample')
-        if(isTRUE(aggregated)){
+        if(isTRUE(aggregate)){
             main <- paste(main, "by gene")
         }
     }
@@ -324,9 +338,9 @@ setMethod("plotAberrantPerSample", signature="FraserDataSet",
 #'
 #' @rdname plotFunctions
 #' @export
-plotExpression <- function(fds, type=c("psi5", "psi3", "psiSite"),
-                            site=NULL, result=NULL, colGroup=NULL, 
-                            basePlot=TRUE, main=NULL, label="aberrant", ...){
+plotExpression <- function(fds, type=c("psi5", "psi3", "theta"),
+                    site=NULL, result=NULL, colGroup=NULL, 
+                    basePlot=TRUE, main=NULL, label="aberrant", ...){
     if(!is.null(result)){
         type <- as.character(result$type)
         site <- getIndexFromResultTable(fds, result)
@@ -414,7 +428,7 @@ plotExpression <- function(fds, type=c("psi5", "psi3", "psiSite"),
 #'
 #' @rdname plotFunctions
 #' @export
-plotExpectedVsObservedPsi <- function(fds, type=c("psi5", "psi3", "psiSite"),
+plotExpectedVsObservedPsi <- function(fds, type=c("psi5", "psi3", "theta"),
                     idx=NULL, result=NULL, colGroup=NULL, main=NULL,
                     basePlot=TRUE, label="aberrant", ...){
     type <- match.arg(type)
@@ -623,7 +637,7 @@ plotQQ.FRASER <- function(object, type=NULL, idx=NULL, result=NULL,
                 qbeta(1-conf.alpha/2, rank, max(rank) - rank)), by=type]
         # only plot one psiType if multiple are existing
         if(length(unique(dt2p$type)) > 1){
-            typeOrder <- c("psiSite", "psi5", "psi3")
+            typeOrder <- c("theta", "psi5", "psi3")
             type2take <- min(which(typeOrder %in% unique(dt2p$type)))
             dt2p[type != typeOrder[type2take], 
                     c("upper", "lower"):=list(NA, NA)]
@@ -675,8 +689,8 @@ plotQQ.FRASER <- function(object, type=NULL, idx=NULL, result=NULL,
 setMethod("plotQQ", signature="FraserDataSet", plotQQ.FRASER)
 
 
-plotEncDimSearch.FRASER <- function(object, type=c("psi3", "psi5", "psiSite"), 
-                                plotType=c("auc", "loss")){
+plotEncDimSearch.FRASER <- function(object, type=c("psi3", "psi5", "theta"), 
+                    plotType=c("auc", "loss")){
     type <- match.arg(type)
     plotType <- match.arg(plotType)
     data <- hyperParams(object, type=type, all=TRUE)
@@ -695,8 +709,7 @@ plotEncDimSearch.FRASER <- function(object, type=c("psi3", "psi5", "psiSite"),
         
         g1 <- ggplot(data, aes(q, aroc, col=nsubset, linetype=noise)) +
             geom_point() +
-            geom_line() +
-            geom_smooth() +
+            geom_smooth(method="loess", formula=y~x) +
             ggtitle("Q estimation") +
             xlab("Estimated q") +
             ylab("Area under the PR curve") +
@@ -707,7 +720,6 @@ plotEncDimSearch.FRASER <- function(object, type=c("psi3", "psi5", "psiSite"),
 
         g2 <- ggplot(data, aes(q, eval, col=nsubset, linetype=noise)) +
             geom_point() +
-            geom_line() +
             geom_smooth() +
             ggtitle("Q estimation") +
             xlab("Estimated q") +
@@ -826,9 +838,9 @@ plotFilterVariability <- function(fds, bins=200, legend.position=c(0.8, 0.8),
 }
 
 
-plotCountCorHeatmap.FRASER <- function(object, 
-                    type=c("psi5", "psi3", "psiSite"),
-                    logit=FALSE, topN=50000, topJ=5000, minMedian=1,
+plotCountCorHeatmap.FRASER <- function(object,
+                    type=c("psi5", "psi3", "theta"), logit=FALSE, topN=50000, 
+                    topJ=5000, minMedian=1, minCount=10, 
                     main=NULL, normalized=FALSE, show_rownames=FALSE,
                     show_colnames=FALSE, minDeltaPsi=0.1, annotation_col=NA,
                     annotation_row=NA, border_color=NA, nClust=5,
@@ -844,11 +856,11 @@ plotCountCorHeatmap.FRASER <- function(object,
     counts(object, type=type, side="ofInterest", HDF5=FALSE) <-
         as.matrix(counts(object, type=type, side="ofInterest"))
 
-    kmat <- as.matrix(counts(object, type=type, side="ofIn"))
-    nmat <- kmat + as.matrix(counts(object, type=type, side="other"))
+    kmat <- K(object, type=type)
+    nmat <- N(object, type=type)
 
     expRowsMedian <- rowMedians(kmat) >= minMedian
-    expRowsMax    <- rowMax(kmat)     >= 10
+    expRowsMax    <- rowMax(kmat)     >= minCount
     table(expRowsMax & expRowsMedian)
 
     skmat <- kmat[expRowsMax & expRowsMedian,]
@@ -858,20 +870,24 @@ plotCountCorHeatmap.FRASER <- function(object,
     if(isTRUE(logit)){
         xmat <- qlogisWithCap(xmat)
     }
-    xmat_rc    <- xmat - rowMeans(xmat)
+    xmat[snmat < minCount] <- NA
+    xmat_rc    <- xmat - rowMeans(xmat, na.rm=TRUE)
 
-    xmat_rc_sd <- rowSds(xmat_rc)
+    xmat_rc_sd <- rowSds(xmat_rc, na.rm=TRUE)
     plotIdx <- rank(xmat_rc_sd) >= length(xmat_rc_sd) - topN
     xmat_rc_2_plot <- xmat_rc[plotIdx,]
-    cormatS <- cor(xmat_rc_2_plot)
+    cormatS <- cor(xmat_rc_2_plot, use="pairwise", method="spearman")
     if(isTRUE(normalized)){
         pred_mu <- as.matrix(predictedMeans(object, type=type)[
             expRowsMax & expRowsMedian,][plotIdx,])
-        pred_mu <- qlogisWithCap(pred_mu)
-        lpred_mu_rc <- pred_mu - rowMeans(pred_mu)
+        if(isTRUE(logit)){
+            pred_mu <- qlogisWithCap(pred_mu)
+        }
+        pred_mu[snmat < 10] <- NA
+        lpred_mu_rc <- pred_mu - rowMeans(pred_mu, na.rm=TRUE)
         xmat_rc_2_plot <- xmat_rc_2_plot - lpred_mu_rc
     }
-    cormat <- cor(xmat_rc_2_plot)
+    cormat <- cor(xmat_rc_2_plot, use="pairwise", method="spearman")
     breaks <- seq(-1, 1, length.out=50)
 
     if(plotType == "junctionSample"){
@@ -966,8 +982,8 @@ plotCountCorHeatmap.FRASER <- function(object,
     }
 
     if(is.null(main)){
-        main <- ifelse(normalized, "Normalized row-centered ", 
-                        "Raw row-centered ")
+        main <- ifelse(normalized, "Normalized intron-centered ", 
+                        "Raw intron-centered ")
         if(plotType == "sampleCorrelation"){
             if(isTRUE(logit)){
                 main <- paste0(main, "Logit(PSI) correlation (", type, ")")
@@ -1046,14 +1062,14 @@ ggplotLabelPsi <- function(type, asCharacter=FALSE){
             switch (x,
                     psi5 = c(bquote(psi[5])),
                     psi3 = c(bquote(psi[3])),
-                    psiSite = c(bquote(theta))),
+                    theta = c(bquote(theta))),
             FUN.VALUE=c(bquote(psi[3])))
     } else{
         vapply(type, FUN=function(x)
             switch (x,
                     psi5 = "psi[5]",
                     psi3 = "psi[3]",
-                    psiSite = "theta"),
+                    theta = "theta"),
             FUN.VALUE=character(1))
     }
 }

@@ -24,7 +24,7 @@ optimHyperParams(
 \arguments{
 \item{fds}{A \code{\link{FraserDataSet}} object}
 
-\item{type}{The type of PSI (psi5, psi3 or psiSite for theta/splicing 
+\item{type}{The type of PSI (psi5, psi3 or theta for theta/splicing 
 efficiency)}
 
 \item{implementation}{The method that should be used to correct for 

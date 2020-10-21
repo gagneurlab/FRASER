@@ -31,7 +31,7 @@
 #'         splicing types.
 #' @param implementation The method that should be used to correct for 
 #' confounders. 
-#' @param type The type of PSI (psi5, psi3 or psiSite for theta/splicing 
+#' @param type The type of PSI (psi5, psi3 or theta for theta/splicing 
 #' efficiency)
 #' @param iterations The maximal number of iterations. When the autoencoder has 
 #' not yet converged after these number of iterations, the fit stops anyway.
@@ -47,8 +47,7 @@
 #' # preprocessing
 #' fds <- createTestFraserDataSet()
 #' 
-#' # when running FRASER on a real dataset, one should run the following 
-#' # two commands first (not run here to make the example run faster):
+#' # filtering not expressed introns
 #' fds <- calculatePSIValues(fds)
 #' fds <- filterExpressionAndVariability(fds)
 #'
