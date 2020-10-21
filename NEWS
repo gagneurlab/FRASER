@@ -1,3 +1,11 @@
+CHANGES IN VERSION 1.1.6
+-------------------------
+    o Use proper S3/S4 methods to share functions between packages
+    o Minor API changes due to S3/S4 changes (e.g fds -> object)
+    o Switch from psiSite to theta
+    o Improved documentation
+    o Minor bugfixes
+
 CHANGES IN VERSION 1.1.3
 -------------------------
 
