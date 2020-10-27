@@ -616,7 +616,12 @@ resultsSingleSample <- function(sampleID, gr, pvals, padjs, zscores, psivals,
 
     # extract data
     mcols(ans)$sampleID        <- Rle(sampleID)
-    mcols(ans)$hgncSymbol      <- Rle(mcols(gr[goodCut])$hgnc_symbol)
+    if("hgnc_symbol" %in% colnames(mcols(gr))){
+        mcols(ans)$hgncSymbol <- Rle(mcols(gr[goodCut])$hgnc_symbol)
+    }
+    if("other_hgnc_symbol" %in% colnames(mcols(gr))){
+        mcols(ans)$addHgncSymbols <- Rle(mcols(gr[goodCut])$other_hgnc_symbol)
+    }
     mcols(ans)$type            <- Rle(psiType)
     mcols(ans)$pValue          <- signif(pval[goodCut], 5)
     mcols(ans)$padjust         <- signif(padj[goodCut], 5)

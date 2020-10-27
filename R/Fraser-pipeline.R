@@ -88,13 +88,13 @@ NULL
 FRASER <- function(fds, q, implementation=c("PCA", "PCA-BB-Decoder", 
                                         "AE-weighted", "AE", "BB"), 
                     iterations=15, BPPARAM=bpparam(), correction, ...){
+    # Check input
     implementation <- match.arg(implementation)
     if (!missing("correction")){
         warning("The argument correction is deprecated. Use implementation ",
                 "instead.")
         implementation <- correction
     }
-    # Check input
     checkFraserDataSet(fds)
 
     # compute stats if needed
@@ -102,21 +102,22 @@ FRASER <- function(fds, q, implementation=c("PCA", "PCA-BB-Decoder",
         fds <- calculatePSIValues(fds)
     }
 
-    # fit autoencoder
-    if(missing(q)){
-        warning("Please provide a fitted q to get better results!")
-        q <- ceiling(ncol(fds)/10)
-    }
-
     # fit each splicing type separately
     for(i in psiTypes){
 
         # get type specific q
-        currQ <- q
-        if(i %in% names(q)){
+        if(missing(q)){
+            currQ <- bestQ(fds, i)
+        } else if(i %in% names(q)){
             currQ <- q[i]
+        } else {
+            warning("You provided one q for all metric. ",
+                    "We recommend to estimate it per metric, ",
+                    "which will give better and more reliable results.")
+            currQ <- q
         }
 
+        # fit autoencoder
         message("\n", date(), ": Fit step for: '", i, "'.")
         fds <- fit(object=fds, implementation=implementation, q=currQ,
                 iterations=iterations, type=i, BPPARAM=BPPARAM, ...)

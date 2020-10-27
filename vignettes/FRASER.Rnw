@@ -6,7 +6,7 @@
 \documentclass[11pt]{article}
 
 <<style-knitr, eval=TRUE, echo=FALSE, results="asis">>=
-BiocStyle::latex(relative.path = TRUE)
+BiocStyle::latex()
 @
 
 <<parallel, echo=FALSE, cache=FALSE, results="hide">>=
@@ -25,7 +25,7 @@ opts_chunk$set(
     dpi=300,
     message=FALSE,
     warning=FALSE,
-    cache=TRUE
+    cache=FALSE
 )
 @
 
@@ -49,7 +49,6 @@ opts_chunk$set(
 
 <<include=FALSE>>=
 opts_chunk$set(concordance=TRUE)
-
 @
 
 \maketitle
@@ -205,14 +204,15 @@ fds <- calculatePSIValues(fds)
 fds <- filterExpressionAndVariability(fds, minExpressionInOneSample=20,
        minDeltaPsi=0.0, filter=TRUE)
 
-# use PCA to speed up the tutorial
-fds <- FRASER(fds, q=2, implementation="PCA")
+# fit the splicing model for each metric 
+# with a specific latentsapce dimension
+fds <- FRASER(fds, q=c(psi5=2, psi3=3, theta=3))
 
 # we provide two ways to anntoate introns with the corresponding gene symbols:
 # the first way uses TxDb-objects provided by the user as shown here
-require(TxDb.Hsapiens.UCSC.hg19.knownGene)
+library(TxDb.Hsapiens.UCSC.hg19.knownGene)
+library(org.Hs.eg.db)
 txdb <- TxDb.Hsapiens.UCSC.hg19.knownGene
-require(org.Hs.eg.db)
 orgDb <- org.Hs.eg.db
 fds <- annotateRangesWithTxDb(fds, txdb=txdb, orgDb=orgDb)
 
@@ -471,7 +471,7 @@ p-values and z-scores for all $\psi$ types. For more details see section
 
 <<model fitting, echo=TRUE>>=
 # This is computational heavy on real size datasets and can take awhile
-fds <- FRASER(fds, q=3)
+fds <- FRASER(fds, q=c(psi5=3, psi3=5, theta=2))
 @
 
 To check whether the correction worked, we can have a look at the correlation
@@ -496,9 +496,10 @@ $\psi$ values or both.
 
 <<result table, echo=TRUE>>=
 # annotate introns with the HGNC symbols of the corresponding gene
-require(TxDb.Hsapiens.UCSC.hg19.knownGene)
+library(TxDb.Hsapiens.UCSC.hg19.knownGene)
+library(org.Hs.eg.db)
+
 txdb <- TxDb.Hsapiens.UCSC.hg19.knownGene
-require(org.Hs.eg.db)
 orgDb <- org.Hs.eg.db
 fds <- annotateRangesWithTxDb(fds, txdb=txdb, orgDb=orgDb)
 # fds <- annotateRanges(fds) # alternative way using biomaRt

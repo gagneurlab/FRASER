@@ -42,10 +42,10 @@ NULL
 #' read support and introns that are not variable across samples. 
 #' @export
 filterExpressionAndVariability <- function(object, minExpressionInOneSample=20, 
-                                quantile=0.05, quantileMinExpression=1, 
-                                minDeltaPsi=0, filter=TRUE, 
-                                delayed=ifelse(ncol(object) <= 300, FALSE, TRUE),
-                                BPPARAM=bpparam()){
+                    quantile=0.05, quantileMinExpression=1, minDeltaPsi=0,
+                    filter=TRUE, 
+                    delayed=ifelse(ncol(object) <= 300, FALSE, TRUE),
+                    BPPARAM=bpparam()){
     # filter introns with low read support and corresponding splice sites
     object <- filterExpression(object, 
                     minExpressionInOneSample=minExpressionInOneSample, 
@@ -64,8 +64,8 @@ filterExpressionAndVariability <- function(object, minExpressionInOneSample=20,
     
 }
 
-filterExpression.FRASER <- function(object, minExpressionInOneSample=20, quantile=0.05,
-                    quantileMinExpression=1, filter=TRUE, 
+filterExpression.FRASER <- function(object, minExpressionInOneSample=20,
+                    quantile=0.05, quantileMinExpression=1, filter=TRUE, 
                     delayed=ifelse(ncol(object) <= 300, FALSE, TRUE),
                     BPPARAM=bpparam()){
 
@@ -119,7 +119,7 @@ filterExpression.FRASER <- function(object, minExpressionInOneSample=20, quantil
     # filter if requested
     if(isTRUE(filter)){
         object <- applyExpressionFilters(object, minExpressionInOneSample, 
-                                quantileMinExpression)
+                quantileMinExpression)
     }
 
     validObject(object)
@@ -136,8 +136,8 @@ setMethod("filterExpression", signature="FraserDataSet",
 #' splice sites which do not show variablity across samples.
 #' @export
 filterVariability <- function(object, minDeltaPsi=0, filter=TRUE, 
-                                delayed=ifelse(ncol(object) <= 300, FALSE, TRUE),
-                                BPPARAM=bpparam()){
+                    delayed=ifelse(ncol(object) <= 300, FALSE, TRUE),
+                    BPPARAM=bpparam()){
     
     message(date(), ": Filtering out non-variable introns ...")
     
