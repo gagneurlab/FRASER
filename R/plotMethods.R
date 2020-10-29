@@ -883,7 +883,7 @@ plotCountCorHeatmap.FRASER <- function(object,
         if(isTRUE(logit)){
             pred_mu <- qlogisWithCap(pred_mu)
         }
-        pred_mu[snmat < 10] <- NA
+        pred_mu[(snmat < minCount)[plotIdx,]] <- NA
         lpred_mu_rc <- pred_mu - rowMeans(pred_mu, na.rm=TRUE)
         xmat_rc_2_plot <- xmat_rc_2_plot - lpred_mu_rc
     }
