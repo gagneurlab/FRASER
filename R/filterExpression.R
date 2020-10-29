@@ -196,14 +196,12 @@ filterVariability <- function(object, minDeltaPsi=0, filter=TRUE,
                 all.x=TRUE, sort=FALSE)[,maxDTheta]
 
     # check which introns pass the filter
-    mcols(object, type="j")[['passedVariability']] <-
-        pmax(cutoffs$maxDPsi3, cutoffs$maxDPsi5, 
-                mcols(object, type="j")$maxDThetaDonor, 
-                mcols(object, type="j")$maxDThetaAcceptor) >= minDeltaPsi 
-    if(any(is.na(mcols(object, type="j")[['passedVariability']]))){
-        mcols(object, type="j")$passedVariability[
-            is.na(mcols(object, type="j")[['passedVariability']])] <- FALSE
-    }
+    mcols(object, type="j")[['passedVariability']] <- pmax(na.rm=TRUE,
+            cutoffs$maxDPsi3, 
+            cutoffs$maxDPsi5, 
+            mcols(object, type="j")$maxDThetaDonor, 
+            mcols(object, type="j")$maxDThetaAcceptor,
+            0) >= minDeltaPsi
     if("passedExpression" %in% colnames(mcols(object, type="j"))){
         mcols(object, type="j")[['passed']] <-  
             mcols(object, type="j")[['passedExpression']] & 

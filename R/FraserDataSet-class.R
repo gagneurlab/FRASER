@@ -264,6 +264,9 @@ FraserDataSet <- function(colData=NULL, junctions=NULL, spliceSites=NULL, ...) {
             stop("Please provdie splice site counts if you provide ",
                     "junction counts.")
         }
+        if(!"sampleID" %in% colnames(colData)){
+            stop("Please provide a column in colData specifying the sampleID.")
+        }
         if(is.character(junctions)){
             if(!file.exists(junctions))
                 stop("Junction file '", junctions, "' does not exists")
