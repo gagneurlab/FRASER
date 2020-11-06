@@ -27,27 +27,30 @@ annotateRangesWithTxDb(
 \item{fds}{FraserDataSet}
 
 \item{feature}{Defines which feature (default is HGNC symbol) should be 
-annotated.}
+annotated. Has to be the \code{biomaRt} feature name or a 
+column name in \code{orgDb}.}
 
-\item{featureName}{Name of the feature in the FraserDataSet mcols.}
+\item{featureName}{The column name of the feature in the FraserDataSet mcols.}
 
-\item{biotype}{The biotype.}
+\item{biotype}{The biotype for \code{biomaRt}.}
 
 \item{ensembl}{The ensembl that should be used. If NULL, the default one is 
 used (hsapiens_gene_ensembl, GRCh37).}
 
 \item{GRCh}{GRCh version to connect to. If this is NULL, then the current 
-GRCh38 is used. Otherwise, this can only be 37 (default) at the moment 
-(see \code{\link[biomaRt]{useEnsembl}}).}
+GRCh38 is used. Otherwise, this can only be 37 (default) 
+at the moment (see \code{\link[biomaRt]{useEnsembl}}).}
 
-\item{keytype}{The type of gene IDs in the \code{TxDb} object (see 
-AnnotationDbi::keytypes(orgDb) for a list of available ID types).}
+\item{keytype}{The keytype or column name of gene IDs in the \code{TxDb}
+object (see \code{\link[AnnotationDbi]{keytypes}} for a list
+of available ID types).}
 
 \item{txdb}{A \code{TxDb} object. If this is NULL, then the default 
-one is used, currently this is \code{TxDb.Hsapiens.UCSC.hg19.knownGene}.}
+one is used, currently this is 
+\code{TxDb.Hsapiens.UCSC.hg19.knownGene}.}
 
-\item{orgDb}{An \code{orgDb} object If this is NULL, then the 
-default one is used, currently this is \code{org.Hs.eg.db}.}
+\item{orgDb}{An \code{orgDb} object or a data table to map the feature names.
+If this is NULL, then \code{org.Hs.eg.db} is used as the default.}
 }
 \value{
 FraserDataSet

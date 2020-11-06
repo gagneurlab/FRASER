@@ -3,20 +3,23 @@
 #' 
 #' @param fds FraserDataSet
 #' @param feature Defines which feature (default is HGNC symbol) should be 
-#' annotated.
-#' @param featureName Name of the feature in the FraserDataSet mcols.
-#' @param biotype The biotype.
+#'             annotated. Has to be the \code{biomaRt} feature name or a 
+#'             column name in \code{orgDb}.
+#' @param featureName The column name of the feature in the FraserDataSet mcols.
+#' @param biotype The biotype for \code{biomaRt}.
 #' @param ensembl The ensembl that should be used. If NULL, the default one is 
-#' used (hsapiens_gene_ensembl, GRCh37).
+#'             used (hsapiens_gene_ensembl, GRCh37).
 #' @param GRCh GRCh version to connect to. If this is NULL, then the current 
-#' GRCh38 is used. Otherwise, this can only be 37 (default) at the moment 
-#' (see \code{\link[biomaRt]{useEnsembl}}).
+#'             GRCh38 is used. Otherwise, this can only be 37 (default) 
+#'             at the moment (see \code{\link[biomaRt]{useEnsembl}}).
 #' @param txdb A \code{TxDb} object. If this is NULL, then the default 
-#' one is used, currently this is \code{TxDb.Hsapiens.UCSC.hg19.knownGene}.
-#' @param orgDb An \code{orgDb} object If this is NULL, then the 
-#' default one is used, currently this is \code{org.Hs.eg.db}.
-#' @param keytype The type of gene IDs in the \code{TxDb} object (see 
-#' AnnotationDbi::keytypes(orgDb) for a list of available ID types).
+#'             one is used, currently this is 
+#'             \code{TxDb.Hsapiens.UCSC.hg19.knownGene}.
+#' @param orgDb An \code{orgDb} object or a data table to map the feature names.
+#'             If this is NULL, then \code{org.Hs.eg.db} is used as the default.
+#' @param keytype The keytype or column name of gene IDs in the \code{TxDb}
+#'             object (see \code{\link[AnnotationDbi]{keytypes}} for a list
+#'             of available ID types).
 #' 
 #' @return FraserDataSet
 #' 
@@ -99,9 +102,8 @@ annotateRanges <- function(fds, feature="hgnc_symbol", featureName=feature,
 #' @rdname annotateRanges
 #' @export
 annotateRangesWithTxDb <- function(fds, feature="SYMBOL", 
-                                    featureName="hgnc_symbol",
-                                    keytype="ENTREZID",
-                                    txdb=NULL, orgDb=NULL){
+                    featureName="hgnc_symbol", keytype="ENTREZID",
+                    txdb=NULL, orgDb=NULL){
     
     # check input
     stopifnot(is(fds, "FraserDataSet"))
@@ -130,12 +132,22 @@ annotateRangesWithTxDb <- function(fds, feature="SYMBOL",
         
         # get the annotation to compare to
         anno <- genes(txdb)
-        tmp  <- select(orgDb, keys=mcols(anno)[,"gene_id"], columns=feature, 
-                    keytype=keytype)
-        tmp  <- as.data.table(tmp)
+        if(is.data.table(orgDb)){
+            tmp <- merge(x=as.data.table(anno)[,.(gene_id)], y=orgDb, 
+                    by.y=keytype, by.x="gene_id", all.x=TRUE, sort=FALSE)[,
+                            .(gene_id, feature=get(feature))]
+            setnames(tmp, "feature", feature)
+        } else {
+            tmp  <- as.data.table(select(orgDb, keys=mcols(anno)[,"gene_id"], 
+                    columns=feature, keytype=keytype))
+        }
+        
+        # add the new feature to the annotation
         tmp[, uniqueID := .GRP, by=keytype]
         anno <- anno[tmp[,uniqueID]]
         mcols(anno)[[featureName]] <- tmp[,get(feature)]
+        
+        # clean up of NA and "" ids
         anno <- anno[!is.na(mcols(anno)[,featureName]),]
         anno <- anno[mcols(anno)[,featureName] != "",]
         if(any(strand(gr) == "*")){
@@ -197,7 +209,7 @@ getAnnotationFeature <- function(data, feature, annotation){
     # TODO: is there a nicer way to do this?
     suppressWarnings(hits <- findOverlaps(data, annotation))
 
-    # extract only the feature and group them with a ";"
+    # find overlap and extract it
     featureDT <- data.table(
             from=from(hits),
             feature=mcols(annotation[to(hits)])[[feature]]
@@ -208,10 +220,8 @@ getAnnotationFeature <- function(data, feature, annotation){
                 featureDT, data.table(from=missingValues, feature=NA)
         )
     }
-
-    # TODO only take first hit since it is tooo slow to merge them
-    # with more then 10k entries
-    # featureDT <- unique(featureDT, by="from")
+    
+    # extract only the feature and group them with a ";"
     featureDT <- featureDT[,
             list(first_feature=unique(feature)[1], 
                 other_features=paste(unique(feature)[-1], collapse = ";")),
