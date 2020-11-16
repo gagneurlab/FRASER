@@ -408,7 +408,10 @@ extractChromosomes <- function(bamFile){
 #' extracts the chromosome lengths within the given bamFile
 #' @noRd
 extractChromosomeLengths <- function(bamFile){
-    as.numeric(as.data.table(idxstatsBam(bamFile))[mapped > 0, seqlength])
+    chrL_dt <- as.data.table(idxstatsBam(bamFile))[mapped > 0,]
+    chrL <- as.numeric(chrL_dt[, seqlength])
+    names(chrL) <- chrL_dt[,seqnames]
+    return(chrL)
 }
 
 #'
@@ -483,7 +486,8 @@ countSplitReads <- function(sampleID, fds, NcpuPerSample=1, genome=NULL,
         }
         seqlevelsStyle(genome) <- seqlevelsStyle(chromosomes)[1]
         chrLengths <- extractChromosomeLengths(bamFile)
-        mismatchChrs <- which(seqlengths(genome)[chromosomes] != chrLengths)
+        mismatchChrs <- which(
+            seqlengths(genome)[chromosomes] != chrLengths[chromosomes])
         if(length(mismatchChrs) > 0){
             warning("Not counting chromosome(s) ",  
                     paste(chromosomes[mismatchChrs], collapse=", "),
