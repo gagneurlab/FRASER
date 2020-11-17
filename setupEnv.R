@@ -57,22 +57,23 @@ R.utils::withTimeout(timeout=2400, {
         INSTALL(ask=FALSE, type=BTYPE, Ncpus=NCPUS)
  
         print_log("Install dev package")
-        try({ devtools::install(".", dependencies=TRUE, type=BTYPE, Ncpus=NCPUS) })
+        try({ devtools::install(".", dependencies=TRUE, type=BTYPE) })
 
-        print_log("Install updated source package")
-        devtools::install_github("gagneurlab/OUTRIDER", dependencies=FALSE)
-        devtools::install_github("grimbough/biomaRt", dependencies=FALSE)
+        if(R.version[['major']] == "3"){
+            print_log("Install updated source package")
+            devtools::install_github("gagneurlab/OUTRIDER", dependencies=FALSE)
+        }
 
-        print_log("Install dev package")
-        devtools::install(".", dependencies=FALSE, type=BTYPE, Ncpus=NCPUS)
+        print_log("Install package")
+        devtools::install(".", dependencies=FALSE, type=BTYPE)
     })
 })
 
 # fix knitr for 3.6 for more details see BiocStyle issue 78
 # https://github.com/Bioconductor/BiocStyle/issues/78
 if(R.version[['major']] == "3"){
-    BiocManager::install("Bioconductor/BiocFileCache", "yihui/knitr@v1.29",
-            ask=FALSE, update=FALSE)
+    BiocManager::install(ask=FALSE, update=FALSE, c(
+            "Bioconductor/BiocFileCache", "grimbough/biomaRt", "yihui/knitr@v1.29"))
 }
 
 print(BiocManager::valid())
