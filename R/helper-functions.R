@@ -409,6 +409,7 @@ checkSeqLevelStyle <- function(gr, fds, sampleID, sampleSpecific=FALSE){
         }
     }
 
+    gr <- keepSeqlevels(gr, unique(seqnames(gr)))
     seqlevelsStyle(gr) <- style
     gr
 }
