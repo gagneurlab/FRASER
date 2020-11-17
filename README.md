@@ -46,6 +46,21 @@ at the Troubleshooting section or submit an issue on
 
 ### Toubleshooting
 
+#### Error in UseMethod("filter_")
+When using FRASER with R3.6 one might observe the following error:
+
+```
+fds <- annotateRanges(fds)
+# Error in UseMethod("filter_") :
+#   no applicable method for 'filter_' applied to an object of class "c('tbl_SQLiteConnection', 'tbl_dbi', 'tbl_sql', 'tbl_lazy', 'tbl')"
+```
+
+To overcome this error one needs to upgrade BiocFileCache.
+
+```
+BiocManager::install("Bioconductor/BiocFileCache", ask=FALSE, update=FALSE)
+```
+
 #### Missing libraries while compiling R packages
 
 On some Linux distributions we need the developer libraries for compiling the R packages.
