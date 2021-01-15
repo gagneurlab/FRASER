@@ -52,6 +52,7 @@ jobs:
       - name: Install system dependencies
         if: runner.os == 'Linux'
         run: |
+          sudo apt-get install libgit2-dev
           while read -r cmd
           do
             eval sudo $cmd
@@ -59,8 +60,9 @@ jobs:
 
       - name: Install dependencies
         run: |
-          Rscript setupEnv.R
-          R -e 'remotes::install_cran("rcmdcheck")'
+          source("setupEnv.R")
+          remotes::install_cran("rcmdcheck")
+        shell: Rscript {0}
         
         #run: |
         #  remotes::install_deps(dependencies = TRUE)
@@ -74,9 +76,10 @@ jobs:
             R CMD build --keep-empty-dirs --no-resave-data .
             R -e "BiocCheck::BiocCheck('.')"
             R CMD check --no-vignettes --timings *tar.gz
-            cd vignettes && R CMD Sweave --engine=knitr::knitr --pdf FRASER.Rnw
             R -e 'devtools::run_examples()'
             R -e 'devtools::test()'
+            # does not work without a tex installation
+            # cd vignettes && R CMD Sweave --engine=knitr::knitr --pdf FRASER.Rnw
             
         # rcmdcheck::rcmdcheck(args = c("--no-manual", "--as-cran"), error_on = "warning", check_dir = "check")
         # shell: Rscript {0}
