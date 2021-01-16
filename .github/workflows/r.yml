@@ -81,16 +81,17 @@ jobs:
         env:
           _R_CHECK_CRAN_INCOMING_REMOTE_: false
         run: |
-            R CMD build --no-build-vignettes --keep-empty-dirs --no-resave-data .
-            R -e "BiocCheck::BiocCheck('.')"
-            R CMD check --no-vignettes --timings *tar.gz
-            R -e 'devtools::run_examples()'
-            R -e 'devtools::test()'
-            # does not work without a tex installation
-            # cd vignettes && R CMD Sweave --engine=knitr::knitr --pdf FRASER.Rnw
-            
+          devtools::build(vignettes = FALSE)
+          BiocCheck::BiocCheck('.')
+          devtools::check(vignettes = FALSE, args = '--timings')
+          devtools::run_examples()
+          devtools::test()
+        shell: Rscript {0}
+          
+        # does not work without a tex installation
+        # cd vignettes && R CMD Sweave --engine=knitr::knitr --pdf FRASER.Rnw    
         # rcmdcheck::rcmdcheck(args = c("--no-manual", "--as-cran"), error_on = "warning", check_dir = "check")
-        # shell: Rscript {0}
+        
 
       - name: Upload check results
         if: failure()
