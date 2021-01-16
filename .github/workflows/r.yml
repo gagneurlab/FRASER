@@ -73,7 +73,7 @@ jobs:
         env:
           _R_CHECK_CRAN_INCOMING_REMOTE_: false
         run: |
-            R CMD build --keep-empty-dirs --no-resave-data .
+            R CMD build --no-vignettes --keep-empty-dirs --no-resave-data .
             R -e "BiocCheck::BiocCheck('.')"
             R CMD check --no-vignettes --timings *tar.gz
             R -e 'devtools::run_examples()'
