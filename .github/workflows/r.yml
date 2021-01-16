@@ -49,7 +49,7 @@ jobs:
           key: ${{ runner.os }}-${{ hashFiles('.github/R-version') }}-1-${{ hashFiles('.github/depends.Rds') }}
           restore-keys: ${{ runner.os }}-${{ hashFiles('.github/R-version') }}-1-
 
-      - name: Install system dependencies
+      - name: Install system dependencies (Linux)
         if: runner.os == 'Linux'
         run: |
           sudo apt-get install libgit2-dev
@@ -57,6 +57,14 @@ jobs:
           do
             eval sudo $cmd
           done < <(Rscript -e 'writeLines(remotes::system_requirements("ubuntu", "20.04"))')
+
+      - name: Install system dependencies (macOS)
+        if: runner.os == 'macos'
+        run: brew install libgit2
+
+      - uses: r-lib/actions/setup-tinytex@v1
+      - name: Init tex      
+        run: tlmgr --version
 
       - name: Install dependencies
         run: |
@@ -73,7 +81,7 @@ jobs:
         env:
           _R_CHECK_CRAN_INCOMING_REMOTE_: false
         run: |
-            R CMD build --no-vignettes --keep-empty-dirs --no-resave-data .
+            R CMD build --no-build-vignettes --keep-empty-dirs --no-resave-data .
             R -e "BiocCheck::BiocCheck('.')"
             R CMD check --no-vignettes --timings *tar.gz
             R -e 'devtools::run_examples()'
