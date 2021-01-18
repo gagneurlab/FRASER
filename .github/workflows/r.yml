@@ -15,10 +15,11 @@ jobs:
       matrix:
         config:
           - {os: windows-latest, r: 'release'}
-          - {os: macOS-latest, r: 'release'}
+          # - {os: macOS-latest, r: 'release'} # Due to gfortran installation issues
           - {os: ubuntu-20.04, r: 'release', rspm: "https://packagemanager.rstudio.com/cran/__linux__/focal/latest"}
           - {os: ubuntu-20.04, r: 'devel',   rspm: "https://packagemanager.rstudio.com/cran/__linux__/focal/latest"}
-          - {os: ubuntu-20.04, r: '3.6',     rspm: "https://packagemanager.rstudio.com/cran/__linux__/focal/latest"}
+         # due to biomaRt/httr compatibility issues
+         # - {os: ubuntu-20.04, r: '3.6',     rspm: "https://packagemanager.rstudio.com/cran/__linux__/focal/latest"}
 
     env:
       R_REMOTES_NO_ERRORS_FROM_WARNINGS: true
@@ -69,7 +70,7 @@ jobs:
         run: |
           system("tlmgr --version")
           install.packages("tinytex")
-          tinytex::tlmgr_install(pkgs = c("index", "marginfix", "bera", "nowidow", "parnotes", "titlesec"))
+          tinytex::tlmgr_install(pkgs = c("bera", "fancyhdr", "index", "marginfix", "nowidow", "parnotes", "titlesec"))
         shell: Rscript {0}
 
       - name: Install dependencies
