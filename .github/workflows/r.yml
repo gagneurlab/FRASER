@@ -60,7 +60,9 @@ jobs:
 
       - name: Install system dependencies (macOS)
         if: runner.os == 'macos'
-        run: brew install libgit2
+        run: |
+          brew install libgit2
+          brew reinstall gcc
 
       - uses: r-lib/actions/setup-tinytex@v1
       - name: Init tex      
@@ -77,21 +79,35 @@ jobs:
         #  remotes::install_cran("rcmdcheck")
         #shell: Rscript {0}
 
-      - name: Check
-        env:
-          _R_CHECK_CRAN_INCOMING_REMOTE_: false
+      - name: Check build
         run: |
           devtools::build(vignettes = FALSE)
+        shell: Rscript {0}
+        
+      - name: Check BiocCheck
+        run: |
           BiocCheck::BiocCheck('.')
+        shell: Rscript {0}
+        
+      - name: Check R check
+        run: |
           devtools::check(vignettes = FALSE, args = '--timings')
+        shell: Rscript {0}
+        
+      - name: Check Examples
+        run: |
           devtools::run_examples()
+        shell: Rscript {0}
+        
+      - name: Check tests
+        run: |
           devtools::test()
         shell: Rscript {0}
-          
-        # does not work without a tex installation
-        # cd vignettes && R CMD Sweave --engine=knitr::knitr --pdf FRASER.Rnw    
-        # rcmdcheck::rcmdcheck(args = c("--no-manual", "--as-cran"), error_on = "warning", check_dir = "check")
         
+      - name: Check vignette
+        run: |
+          devtools::build_vignettes()
+        shell: Rscript {0}
 
       - name: Upload check results
         if: failure()
