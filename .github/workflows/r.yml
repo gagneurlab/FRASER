@@ -68,7 +68,8 @@ jobs:
       - name: Init and install packages for tex
         run: |
           system("tlmgr --version")
-          tinytex::tlmgr_install(pkgs = c("index", "marginfix", "bera", "nowidow", "parnotes"))
+          install.packages("tinytex")
+          tinytex::tlmgr_install(pkgs = c("index", "marginfix", "bera", "nowidow", "parnotes", "titlesec"))
         shell: Rscript {0}
 
       - name: Install dependencies
