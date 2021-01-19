@@ -70,7 +70,7 @@ jobs:
         run: |
           system("tlmgr --version")
           install.packages("tinytex")
-          tinytex::tlmgr_install(pkgs = c("bera", "enumitem", "fancyhdr", "index", "marginfix", "nowidow", "parnotes", "parskip", "preprint", "titlesec"))
+          tinytex::tlmgr_install(pkgs = c("bera", "enumitem", "fancyhdr", "index", "marginfix", "nowidow", "parnotes", "parskip", "placeins", "preprint", "ragged2e", "side", "soul", "titlesec"))
         shell: Rscript {0}
 
       - name: Install dependencies
