@@ -97,6 +97,7 @@ Collate:
     find_encoding_dimensions.R
     getURLs.R
     helper-functions.R
+    mergeExternalData.R
     saveHDF5Objects.R
     RcppExports.R
     autoencoder.R
