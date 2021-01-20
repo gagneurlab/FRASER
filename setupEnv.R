@@ -33,7 +33,7 @@ if(!requireNamespace("XML", quietly=TRUE) & R.version[['major']] == "3"){
 if("windows" == .Platform$OS.type){
     print_log("Install XML on windows ...")
     BTYPE <- "win.binary"
-    installIfReq(p=c("XML", "xml2", "RSQLite", "progress", "tibble", "AnnotationDbi", "BiocCheck"))
+    installIfReq(p=c("XML", "xml2", "RSQLite", "progress", "tibble", "AnnotationDbi", "BiocCheck", "rtracklayer"))
     
     print_log("Install source packages only for windows ...")
     INSTALL(c("GenomeInfoDbData", "org.Hs.eg.db", "TxDb.Hsapiens.UCSC.hg19.knownGene"), type="both")
