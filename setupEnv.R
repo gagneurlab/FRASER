@@ -76,4 +76,6 @@ if(R.version[['major']] == "3"){
             "Bioconductor/BiocFileCache", "grimbough/biomaRt", "yihui/knitr@v1.29"))
 }
 
+# to get FRASER session info
+library(FRASER)
 print(BiocManager::valid())
