@@ -85,7 +85,7 @@
 #' @importFrom grDevices colorRampPalette
 #' @importFrom GenomeInfoDb keepStandardChromosomes seqlevels<- seqlevels
 #'          seqlengths seqlengths<- seqlevelsStyle<- seqlevelsStyle seqnames 
-#'          seqinfo standardChromosomes dropSeqlevels
+#'          seqinfo standardChromosomes dropSeqlevels keepSeqlevels
 #' @importFrom DelayedArray rowMaxs rowMeans path<- cbind plogis qlogis
 #' @importFrom DelayedMatrixStats colSds rowMedians rowSds colMeans2 rowMeans2
 #'          rowQuantiles

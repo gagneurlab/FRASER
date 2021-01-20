@@ -104,6 +104,7 @@ annotateRanges <- function(fds, feature="hgnc_symbol", featureName=feature,
 annotateRangesWithTxDb <- function(fds, feature="SYMBOL", 
                     featureName="hgnc_symbol", keytype="ENTREZID",
                     txdb=NULL, orgDb=NULL){
+    gene_id <- NULL
     
     # check input
     stopifnot(is(fds, "FraserDataSet"))
