@@ -90,7 +90,7 @@ mergeExternalData <- function(fds, countFiles, sampleIDs, annotation=NULL){
     }
     rownames(annotation) <- annotation[,"sampleID"]
     newColData <- DataFrame(rbind(fill=TRUE,
-            as.data.table(colData(fds_new)), 
+            as.data.table(colData(fds)), 
             as.data.table(annotation[sampleIDs,])))
     rownames(newColData) <- newColData[,"sampleID"]
     
@@ -99,7 +99,7 @@ mergeExternalData <- function(fds, countFiles, sampleIDs, annotation=NULL){
     # 
     extractExtData <- function(fds, countFun, type, ov, extData, extName){
         ans <- as.matrix(cbind(countFun(fds, type=type)[from(ov),],
-              mcols(extData[[extName]])[to(ov),]))
+                mcols(extData[[extName]])[to(ov),]))
         mode(ans) <- "integer"
         ans
     }
@@ -121,11 +121,11 @@ mergeExternalData <- function(fds, countFiles, sampleIDs, annotation=NULL){
     # merge theta data
     # 
     # find overlap
-    ov <- findOverlaps(rowRanges(fds, type="theta"), 
+    ovss <- findOverlaps(rowRanges(fds, type="theta"), 
             extCts[['k_theta']], type="equal")
     
-    newCtsK_theta <- extractExtData(fds, K, "theta", ov, extCts, "k_theta")
-    newCtsN_theta <- extractExtData(fds, N, "theta", ov, extCts, "n_theta")
+    newCtsK_theta <- extractExtData(fds, K, "theta", ovss, extCts, "k_theta")
+    newCtsN_theta <- extractExtData(fds, N, "theta", ovss, extCts, "n_theta")
     
     
     # 
@@ -137,9 +137,9 @@ mergeExternalData <- function(fds, countFiles, sampleIDs, annotation=NULL){
                     rawCountsSS=newCtsK_theta,
                     rawOtherCounts_theta=newCtsN_theta - newCtsK_theta),
             rowRanges=rowRanges(fds, type="theta")[
-                    from(ov),c("spliceSiteID", "type")])
+                    from(ovss),c("spliceSiteID", "type")])
     
-    final_fds <- new("FraserDataSet", 
+    ans <- new("FraserDataSet", 
             name = name(fds),
             bamParam = scanBamParam(fds),
             strandSpecific = strandSpecific(fds),
@@ -150,13 +150,13 @@ mergeExternalData <- function(fds, countFiles, sampleIDs, annotation=NULL){
                     rawOtherCounts_psi5=newCtsN_psi5 - newCtsK_J,
                     rawOtherCounts_psi3=newCtsN_psi3 - newCtsK_J)),
             nonSplicedReads = nsr,
-            rowRanges = rowRanges(fds_new)[,c("startID", "endID")],
+            rowRanges = rowRanges(fds)[from(ov),c("startID", "endID")],
             elementMetadata = DataFrame(newCtsK_J[,integer(0)]))
     
     # 
     # compute new psi values
     # 
-    final_fds <- calculatePSIValues(final_fds)
+    ans <- calculatePSIValues(ans)
     
-    final_fds
+    ans
 }
