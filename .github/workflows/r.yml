@@ -91,7 +91,7 @@ jobs:
         
       - name: Check BiocCheck
         run: |
-          BiocCheck::BiocCheck('.')
+          BiocCheck::BiocCheck('.', `quit-with-status`=TRUE)
         shell: Rscript {0}
         
       - name: Check R check
