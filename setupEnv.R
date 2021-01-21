@@ -74,6 +74,8 @@ R.utils::withTimeout(timeout=2400, {
 if(R.version[['major']] == "3"){
     BiocManager::install(ask=FALSE, update=FALSE, c(
             "Bioconductor/BiocFileCache", "grimbough/biomaRt", "yihui/knitr@v1.29"))
+} else {
+    BiocManager::install("grimbough/biomaRt", ref="RELEASE_3_12")
 }
 
 # to get FRASER session info
