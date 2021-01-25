@@ -75,7 +75,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          source("setupEnv.R")
+          source(".github/helperScripts/setupEnv.R")
           remotes::install_cran("rcmdcheck")
         shell: Rscript {0}
 
@@ -91,29 +91,21 @@ jobs:
         
       - name: Check R check
         run: |
-          new_config <- httr::config(ssl_verifypeer = FALSE)
-          httr::set_config(new_config, override = FALSE)
           devtools::check(vignettes = FALSE, args = '--timings')
         shell: Rscript {0}
         
       - name: Check Examples
         run: |
-          new_config <- httr::config(ssl_verifypeer = FALSE)
-          httr::set_config(new_config, override = FALSE)
           devtools::run_examples()
         shell: Rscript {0}
         
       - name: Check tests
         run: |
-          new_config <- httr::config(ssl_verifypeer = FALSE)
-          httr::set_config(new_config, override = FALSE)
           devtools::test()
         shell: Rscript {0}
         
       - name: Check vignette
         run: |
-          new_config <- httr::config(ssl_verifypeer = FALSE)
-          httr::set_config(new_config, override = FALSE)
           devtools::build_vignettes()
         shell: Rscript {0}
 
