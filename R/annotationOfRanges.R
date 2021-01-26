@@ -69,13 +69,11 @@ annotateRanges <- function(fds, feature="hgnc_symbol", featureName=feature,
         tryCatch({
             ensemblOutput <- capture.output(ensembl <- useEnsembl(
                     biomart="ensembl", dataset="hsapiens_gene_ensembl", 
-                    GRCh=GRCh
-            ))
+                    GRCh=GRCh))
         },
         error=function(e){
                 message("\nCheck if we have a internet connection!",
-                        " Could not connect to ENSEMBL."
-                )
+                        " Could not connect to ENSEMBL. With error: `", e, "`.")
         })
         if(is.null(ensembl)){
             message("Nothing was annotated!")
