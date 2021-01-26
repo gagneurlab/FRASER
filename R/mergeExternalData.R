@@ -65,7 +65,8 @@ mergeExternalData <- function(fds, countFiles, sampleIDs, annotation=NULL){
     
     # load external counts
     message("Loading provided counts")
-    extCts <- sapply(reqNames, function(id){
+    names(reqNames) <- reqNames
+    extCts <- lapply(reqNames, function(id){
         gr <- makeGRangesFromDataFrame(fread(countFiles[id]), 
                 keep.extra.columns=TRUE)
         if(any(!sampleIDs %in% colnames(mcols(gr)))){
