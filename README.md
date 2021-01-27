@@ -1,14 +1,17 @@
 # FRASER - Find RAre Splicing Events in RNA-seq
 
-[![Build Status](https://travis-ci.com/c-mertes/FRASER.svg?branch=master)](https://travis-ci.com/c-mertes/FRASER)
-[![AppVeyor build status](https://ci.appveyor.com/api/projects/status/371x22cn6fipu7bw/branch/master?svg=true)](https://ci.appveyor.com/project/c-mertes/fraser/branch/master)
+[![Build](https://github.com/c-mertes/FRASER/workflows/Build/badge.svg?branch=master)](https://github.com/c-mertes/FRASER/actions?query=workflow%3ABuild)
 [![Version](https://img.shields.io/github/v/release/c-mertes/FRASER)](https://github.com/c-mertes/FRASER/releases)
 [![Coverage status](https://codecov.io/gh/c-mertes/FRASER/branch/master/graph/badge.svg)](https://codecov.io/github/c-mertes/FRASER/branch/master)
 [![License](https://img.shields.io/github/license/mashape/apistatus.svg?maxAge=2592000)](https://github.com/c-mertes/FRASER/blob/master/LICENSE)
 
-FRASER is a tool to detect aberrant splicing events in RNA-seq data. The method is described in a preprint on [bioRxiv](https://www.biorxiv.org/content/10.1101/2019.12.18.866830v1) and available through [Bioconductor](http://bioconductor.org/packages/release/bioc/html/FRASER.html). It is also part of the [Detection of RNA Outlier Pipeline (DROP)](https://github.com/gagneurlab/drop). The DROP pipeline is described [here on Nature's protocol exchange](https://doi.org/10.21203/rs.2.19080/v1).
+FRASER is a tool to detect aberrant splicing events in RNA-seq data. The method is described and published in [Nature Communications](https://doi.org/doi:10.1038/s41467-020-20573-7) and available through [Bioconductor](https://doi.org/doi:10.18129/B9.bioc.FRASER). It is also part of the [Detection of RNA Outlier Pipeline (DROP)](https://github.com/gagneurlab/drop). The DROP pipeline is described and published in [Nature Protocols](https://doi.org/doi:10.1038/s41596-020-00462-5).
                                                                              
 The FRASER framework and workflow aims to assist the diagnostics in the field of rare diseases where RNA-seq is performed to identify aberrant splicing defects. For a short tutorial on how to use FRASER on a dataset please use the [vignette](http://bioconductor.org/packages/release/bioc/vignettes/FRASER/inst/doc/FRASER.pdf) or our Colab tutorial at: [http://tinyurl.com/RNA-ASHG-colab](http://tinyurl.com/RNA-ASHG-colab). The Colab is based on a workshop that we presented at ASHG 2019/2020.
+
+Please cite our method paper if you use it in a publication:
+
+> Mertes, C., Scheller, I.F., Yépez, V.A. *et al.* Detection of aberrant splicing events in RNA-seq data using FRASER. *Nat Commun* **12**, 529 (2021). https://doi.org/10.1038/s41467-020-20573-7
 
 ## Installation
 

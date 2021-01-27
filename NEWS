@@ -1,3 +1,8 @@
+CHANGES IN VERSION 1.2.1
+    o Add merging of external counts
+    o Add publication
+    o Minor bugfixes 
+    
 CHANGES IN VERSION 1.1.6
 -------------------------
     o Use proper S3/S4 methods to share functions between packages
