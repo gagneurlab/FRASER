@@ -106,8 +106,8 @@ package. If genome is of length 1, the same reference genome will be
 used for all samples. If \code{genome} is supplied and 
 \code{strandSpecific(fds) == 0L} (unstranded), then the strand
 information will be estimated by checking the dinucleotides found at the
-intron boundaries 
-(see \code{\link[GenomicAlignments]{summarizeJunctions}}
+intron boundaries (see 
+\code{\link[GenomicAlignments:junctions-methods]{summarizeJunctions}}
 in GenomicAlignments package for details). This can e.g. help to avoid 
 ambiguities when adding gene names from a gene annotation to the introns 
 in a later step.}

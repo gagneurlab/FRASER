@@ -53,19 +53,16 @@ for(p in c("getopt", "XML", "xml2", "testthat", "devtools", "covr",
 R.utils::withTimeout(timeout=2400, {
     try({
         print_log("Update packages")
-	BTYPE <- ifelse(.Platform$OS.type == 'unix', "source", "win.binary")
+        BTYPE <- ifelse(.Platform$OS.type == 'unix', "source", "win.binary")
         INSTALL(ask=FALSE, type=BTYPE, Ncpus=NCPUS)
  
-        print_log("Install dev package")
-        try({ devtools::install(".", dependencies=TRUE, type=BTYPE) })
-
         if(R.version[['major']] == "3"){
             print_log("Install updated source package")
-            devtools::install_github("gagneurlab/OUTRIDER", dependencies=FALSE)
+            devtools::install_github("gagneurlab/OUTRIDER", dependencies=TRUE)
         }
-
-        print_log("Install package")
-        devtools::install(".", dependencies=FALSE, type=BTYPE)
+        
+        print_log("Install dev package")
+        devtools::install(".", dependencies=TRUE, type=BTYPE)
     })
 })
 
@@ -74,6 +71,13 @@ R.utils::withTimeout(timeout=2400, {
 if(R.version[['major']] == "3"){
     BiocManager::install(ask=FALSE, update=FALSE, c(
             "Bioconductor/BiocFileCache", "grimbough/biomaRt", "yihui/knitr@v1.29"))
+} else {
+    inst_biomaRt_version <- as.character(utils::packageVersion("biomaRt"))
+    if(utils::compareVersion("2.46.2", inst_biomaRt_version) == 1){
+        BiocManager::install("grimbough/biomaRt", ref="3_12_testing")
+    }
 }
 
+# to get FRASER session info
+try({ library(FRASER) })
 print(BiocManager::valid())

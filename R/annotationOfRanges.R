@@ -18,8 +18,9 @@
 #' @param orgDb An \code{orgDb} object or a data table to map the feature names.
 #'             If this is NULL, then \code{org.Hs.eg.db} is used as the default.
 #' @param keytype The keytype or column name of gene IDs in the \code{TxDb}
-#'             object (see \code{\link[AnnotationDbi]{keytypes}} for a list
-#'             of available ID types).
+#'             object (see 
+#'             \code{\link[AnnotationDbi:AnnotationDb-class]{keytypes}}
+#'             for a list of available ID types).
 #' 
 #' @return FraserDataSet
 #' 
@@ -28,18 +29,24 @@
 #' fds <- createTestFraserDataSet()
 #' 
 #' ### Two ways to annotage ranges with gene names: 
-#' # either using biomart:
-#' fds <- annotateRanges(fds, GRCh=38)
-#' fds <- annotateRanges(fds, featureName="hgnc_symbol_37", GRCh=37)
-#' rowRanges(fds, type="psi5")[,c("hgnc_symbol", "hgnc_symbol_37")]
+#' # either using biomart with GRCh38
+#' try({
+#'   fds <- annotateRanges(fds, GRCh=38)
+#'   rowRanges(fds, type="psi5")[,c("hgnc_symbol")]
+#' })
+#' 
+#' # either using biomart with GRCh37
+#' try({
+#'   fds <- annotateRanges(fds, featureName="hgnc_symbol_37", GRCh=37)
+#'   rowRanges(fds, type="psi5")[,c("hgnc_symbol_37")]
+#' })
 #'  
-#' # or with a TxDb object
+#' # or with a provided TxDb object
 #' require(TxDb.Hsapiens.UCSC.hg19.knownGene)
 #' txdb <- TxDb.Hsapiens.UCSC.hg19.knownGene
 #' require(org.Hs.eg.db)
 #' orgDb <- org.Hs.eg.db
 #' fds <- annotateRangesWithTxDb(fds, txdb=txdb, orgDb=orgDb)
-#'
 #' rowRanges(fds, type="psi5")[,"hgnc_symbol"]
 #' 
 #' @rdname annotateRanges
@@ -63,13 +70,11 @@ annotateRanges <- function(fds, feature="hgnc_symbol", featureName=feature,
         tryCatch({
             ensemblOutput <- capture.output(ensembl <- useEnsembl(
                     biomart="ensembl", dataset="hsapiens_gene_ensembl", 
-                    GRCh=GRCh
-            ))
+                    GRCh=GRCh))
         },
         error=function(e){
                 message("\nCheck if we have a internet connection!",
-                        " Could not connect to ENSEMBL."
-                )
+                        " Could not connect to ENSEMBL. With error: `", e, "`.")
         })
         if(is.null(ensembl)){
             message("Nothing was annotated!")

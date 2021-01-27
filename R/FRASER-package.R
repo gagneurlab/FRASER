@@ -27,7 +27,7 @@
 #'          readGAlignmentPairs
 #' @importFrom SummarizedExperiment assay assay<- assays assays<- assayNames
 #'          colData colData<- rowData rowRanges rowRanges<- SummarizedExperiment
-#'          rbind
+#'          rbind Assays
 #' @importFrom GenomicRanges findOverlaps granges GRanges GRangesList
 #'          makeGRangesFromDataFrame invertStrand
 #' @importFrom IRanges subsetByOverlaps from to IRanges ranges

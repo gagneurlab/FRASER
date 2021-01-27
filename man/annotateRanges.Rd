@@ -42,8 +42,9 @@ GRCh38 is used. Otherwise, this can only be 37 (default)
 at the moment (see \code{\link[biomaRt]{useEnsembl}}).}
 
 \item{keytype}{The keytype or column name of gene IDs in the \code{TxDb}
-object (see \code{\link[AnnotationDbi]{keytypes}} for a list
-of available ID types).}
+object (see 
+\code{\link[AnnotationDbi:AnnotationDb-class]{keytypes}}
+for a list of available ID types).}
 
 \item{txdb}{A \code{TxDb} object. If this is NULL, then the default 
 one is used, currently this is 
@@ -63,18 +64,24 @@ Annotates the given FraserDataSet with the HGNC symbol with biomaRt
 fds <- createTestFraserDataSet()
 
 ### Two ways to annotage ranges with gene names: 
-# either using biomart:
-fds <- annotateRanges(fds, GRCh=38)
-fds <- annotateRanges(fds, featureName="hgnc_symbol_37", GRCh=37)
-rowRanges(fds, type="psi5")[,c("hgnc_symbol", "hgnc_symbol_37")]
+# either using biomart with GRCh38
+try({
+  fds <- annotateRanges(fds, GRCh=38)
+  rowRanges(fds, type="psi5")[,c("hgnc_symbol")]
+})
+
+# either using biomart with GRCh37
+try({
+  fds <- annotateRanges(fds, featureName="hgnc_symbol_37", GRCh=37)
+  rowRanges(fds, type="psi5")[,c("hgnc_symbol_37")]
+})
  
-# or with a TxDb object
+# or with a provided TxDb object
 require(TxDb.Hsapiens.UCSC.hg19.knownGene)
 txdb <- TxDb.Hsapiens.UCSC.hg19.knownGene
 require(org.Hs.eg.db)
 orgDb <- org.Hs.eg.db
 fds <- annotateRangesWithTxDb(fds, txdb=txdb, orgDb=orgDb)
-
 rowRanges(fds, type="psi5")[,"hgnc_symbol"]
 
 }
