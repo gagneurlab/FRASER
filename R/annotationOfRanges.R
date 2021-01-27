@@ -18,8 +18,9 @@
 #' @param orgDb An \code{orgDb} object or a data table to map the feature names.
 #'             If this is NULL, then \code{org.Hs.eg.db} is used as the default.
 #' @param keytype The keytype or column name of gene IDs in the \code{TxDb}
-#'             object (see \code{\link[AnnotationDbi]{keytypes}} for a list
-#'             of available ID types).
+#'             object (see 
+#'             \code{\link[AnnotationDbi:AnnotationDb-class]{keytypes}}
+#'             for a list of available ID types).
 #' 
 #' @return FraserDataSet
 #' 

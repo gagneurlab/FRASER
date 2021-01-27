@@ -42,8 +42,9 @@ GRCh38 is used. Otherwise, this can only be 37 (default)
 at the moment (see \code{\link[biomaRt]{useEnsembl}}).}
 
 \item{keytype}{The keytype or column name of gene IDs in the \code{TxDb}
-object (see \code{\link[AnnotationDbi]{keytypes}} for a list
-of available ID types).}
+object (see 
+\code{\link[AnnotationDbi:AnnotationDb-class]{keytypes}}
+for a list of available ID types).}
 
 \item{txdb}{A \code{TxDb} object. If this is NULL, then the default 
 one is used, currently this is 
