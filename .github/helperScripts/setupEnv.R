@@ -53,19 +53,16 @@ for(p in c("getopt", "XML", "xml2", "testthat", "devtools", "covr",
 R.utils::withTimeout(timeout=2400, {
     try({
         print_log("Update packages")
-	BTYPE <- ifelse(.Platform$OS.type == 'unix', "source", "win.binary")
+        BTYPE <- ifelse(.Platform$OS.type == 'unix', "source", "win.binary")
         INSTALL(ask=FALSE, type=BTYPE, Ncpus=NCPUS)
  
-        print_log("Install dev package")
-        try({ devtools::install(".", dependencies=TRUE, type=BTYPE) })
-
         if(R.version[['major']] == "3"){
             print_log("Install updated source package")
-            devtools::install_github("gagneurlab/OUTRIDER", dependencies=FALSE)
+            devtools::install_github("gagneurlab/OUTRIDER", dependencies=TRUE)
         }
-
-        print_log("Install package")
-        devtools::install(".", dependencies=FALSE, type=BTYPE)
+        
+        print_log("Install dev package")
+        devtools::install(".", dependencies=TRUE, type=BTYPE)
     })
 })
 
@@ -82,5 +79,5 @@ if(R.version[['major']] == "3"){
 }
 
 # to get FRASER session info
-library(FRASER)
+try({ library(FRASER) })
 print(BiocManager::valid())
