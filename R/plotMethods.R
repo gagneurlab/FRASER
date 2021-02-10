@@ -865,6 +865,22 @@ plotCountCorHeatmap.FRASER <- function(object,
 
     skmat <- kmat[expRowsMax & expRowsMedian,]
     snmat <- nmat[expRowsMax & expRowsMedian,]
+    
+    # check that we have at least 1 read for each sample
+    minCovColSums <- colSums(snmat > minCount)
+    if(any(minCovColSums < 2)){
+        message("Warning:",
+                " The following samples do not have at least 2 junctions",
+                " with the minimum read coverage after filtering!",
+                " They will be disregarded from the plot. ", 
+                "\nAffected IDs are: \n\t", paste(collapse=", ", 
+                        names(minCovColSums)[minCovColSums < 2]))
+        ids2plot <- logical(length(minCovColSums))
+        ids2plot[minCovColSums >= 2] <- TRUE
+        skmat <- skmat[,ids2plot]
+        snmat <- snmat[,ids2plot]
+        object <- object[,ids2plot]
+    }
 
     xmat <- (skmat + 1)/(snmat + 2)
     if(isTRUE(logit)){
@@ -908,8 +924,8 @@ plotCountCorHeatmap.FRASER <- function(object,
                                     probs=0.75) >= 10
         j2keep <- j2keepDP & j2keepVa
         xmat_rc_2_plot <- xmat_rc[j2keep,]
-        mostVarKeep <- subsetKMostVariableJunctions(object[j2keep,,by=type],
-                                                    type, topJ)
+        mostVarKeep <- subsetKMostVariableJunctions(
+                object[j2keep,,by=type], type, topJ)
         xmat_rc_2_plot <- xmat_rc_2_plot[mostVarKeep,]
         rownames(xmat_rc_2_plot) <- seq_len(nrow(xmat_rc_2_plot))
         breaks <- seq(-5, 5, length.out=50)
