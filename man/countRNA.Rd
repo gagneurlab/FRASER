@@ -170,10 +170,10 @@ present in the dataset for all samples.}
 \item{sampleID}{The ID of the sample to be counted.}
 
 \item{bamfile}{The BAM file to be used to extract the counts. Defaults to 
-the BAM file defined in the \link{\code{FraserDataSet}} object.}
+the BAM file defined in the \code{\link{FraserDataSet}} object.}
 
 \item{pairedend}{\code{TRUE} or \code{FALSE} if the BAM file is paired end.
-Defaults to the value specified in the \link{\code{FraserDataSet}} 
+Defaults to the value specified in the \code{\link{FraserDataSet}} 
 object.}
 
 \item{strandmode}{0 (no, default), 1 (stranded), or 2 (revers) to specify 
@@ -183,9 +183,9 @@ the used protocol for the RNA-seq experiment.}
 
 \item{scanbamparam}{The ScanBamParam object which is used for loading the 
 reads from the BAM file before counting. Defaults to the params
-stored in the \link{\code{FraserDataSet}} object.}
+stored in the \code{\link{FraserDataSet}} object.}
 
-\item{coldata}{The colData as given by the \link{\code{FraserDataSet}}
+\item{coldata}{The colData as given by the \code{\link{FraserDataSet}}
 object.}
 
 \item{countList}{A list of GRanges objects containing the counts that should
