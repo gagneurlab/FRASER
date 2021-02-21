@@ -59,7 +59,13 @@ countSplitReads(
   NcpuPerSample = 1,
   genome = NULL,
   recount = FALSE,
-  keepNonStandardChromosomes = TRUE
+  keepNonStandardChromosomes = TRUE,
+  bamfile = bamFile(fds[, sampleID]),
+  pairedend = pairedEnd(fds[, sampleID]),
+  strandmode = strandSpecific(fds),
+  cacheFile = getSplitCountCacheFile(sampleID, fds),
+  scanbamparam = scanBamParam(fds),
+  coldata = colData(fds)
 )
 
 mergeCounts(
@@ -162,6 +168,25 @@ position and non split read counts of all splice sites
 present in the dataset for all samples.}
 
 \item{sampleID}{The ID of the sample to be counted.}
+
+\item{bamfile}{The BAM file to be used to extract the counts. Defaults to 
+the BAM file defined in the \link{\code{FraserDataSet}} object.}
+
+\item{pairedend}{\code{TRUE} or \code{FALSE} if the BAM file is paired end.
+Defaults to the value specified in the \link{\code{FraserDataSet}} 
+object.}
+
+\item{strandmode}{0 (no, default), 1 (stranded), or 2 (revers) to specify 
+the used protocol for the RNA-seq experiment.}
+
+\item{cacheFile}{File path to the cache, where counts are stored.}
+
+\item{scanbamparam}{The ScanBamParam object which is used for loading the 
+reads from the BAM file before counting. Defaults to the params
+stored in the \link{\code{FraserDataSet}} object.}
+
+\item{coldata}{The colData as given by the \link{\code{FraserDataSet}}
+object.}
 
 \item{countList}{A list of GRanges objects containing the counts that should
 be merged into one object.}

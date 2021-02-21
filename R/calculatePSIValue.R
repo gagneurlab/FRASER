@@ -118,7 +118,7 @@ calculatePSIValuePrimeSite <- function(fds, psiType, overwriteCts, BPPARAM){
             
             # if no HDF5 is requested return it as matrix
             if(dontWriteHDF5(fds)){
-                return(as.matrix(countData[,.(o5,o3,psi5,psi3)]))
+                return(DelayedArray(as.matrix(countData[,.(o5,o3,psi5,psi3)])))
             }
             
             # write other counts and psi values to h5 file
@@ -241,7 +241,7 @@ calculateSitePSIValue <- function(fds, overwriteCts, BPPARAM){
             
             # if no HDF5 is requested return it as matrix
             if(dontWriteHDF5(fds)){
-                return(as.matrix(sdata[,.(os, psiValue)]))
+                return(DelayedArray(as.matrix(sdata[,.(os, psiValue)])))
             }
             
             # write other counts and psi values to h5 file

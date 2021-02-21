@@ -33,7 +33,8 @@ test_that("Strand spcific counting", {
     fds <- createTestFraserSettings()
     strandSpecific(fds) <- TRUE
     ans <- countSplitReadsPerChromosome("chrUn_gl000218", bamFile(fds)[1], 
-            pairedEnd=TRUE, settings=fds, genome=NULL)
+            pairedEnd=TRUE, strandMode=strandSpecific(fds), genome=NULL,
+            scanBamParam=scanBamParam(fds))
     expect_equivalent(ans, GRanges())
     
 })
