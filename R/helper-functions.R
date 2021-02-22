@@ -397,14 +397,15 @@ pasteTable <- function(x, ...){
 #' Map between individual seq level style and dataset common one
 #' for counting and aggregating the reads
 #' @noRd
-checkSeqLevelStyle <- function(gr, fds, sampleID, sampleSpecific=FALSE){
-    if(!"SeqLevelStyle" %in% colnames(colData(fds))){
+checkSeqLevelStyle <- function(gr, fds, sampleID, sampleSpecific=FALSE,
+                    coldata=colData(fds)){
+    if(!"SeqLevelStyle" %in% colnames(coldata)){
         return(gr)
     }
-    style <- colData(fds)[sampleID,"SeqLevelStyle"]
+    style <- coldata[sampleID,"SeqLevelStyle"]
     if(isFALSE(sampleSpecific)){
-        style <- names(sort(table(colData(fds)[,"SeqLevelStyle"]), TRUE)[1])
-        if(length(unique(colData(fds)[,"SeqLevelStyle"])) > 1){
+        style <- names(sort(table(coldata[,"SeqLevelStyle"]), TRUE)[1])
+        if(length(unique(coldata[,"SeqLevelStyle"])) > 1){
             gr <- keepStandardChromosomes(gr, pruning.mode="coarse")
         }
     }
