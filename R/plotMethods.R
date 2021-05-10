@@ -913,6 +913,7 @@ plotCountCorHeatmap.FRASER <- function(object,
                 expRowsMax & expRowsMedian,])
             if(isTRUE(logit)){
                 pred_mu <- qlogisWithCap(pred_mu)
+                breaks <- seq(-5, 5, length.out=50)
             }
             lpred_mu_rc <- pred_mu - rowMeans(pred_mu)
             xmat_rc <- xmat_rc - lpred_mu_rc
@@ -928,7 +929,6 @@ plotCountCorHeatmap.FRASER <- function(object,
                 object[j2keep,,by=type], type, topJ)
         xmat_rc_2_plot <- xmat_rc_2_plot[mostVarKeep,]
         rownames(xmat_rc_2_plot) <- seq_len(nrow(xmat_rc_2_plot))
-        breaks <- seq(-5, 5, length.out=50)
 
     }
 
@@ -964,9 +964,9 @@ plotCountCorHeatmap.FRASER <- function(object,
         xmat <- xmat[j2keep,]
         xmat <- xmat[mostVarKeep,]
         meanPsi <- if(isTRUE(logit)){
-            rowMeans(plogis(xmat))
+            rowMeans(plogis(xmat), na.rm=TRUE)
         } else{
-            rowMeans(xmat)
+            rowMeans(xmat, na.rm=TRUE)
         }
         meanPsiBins <- cut(meanPsi, breaks = c(0, 0.33, 0.66, 1),
                             include.lowest=TRUE)
