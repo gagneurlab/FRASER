@@ -814,7 +814,7 @@ resultsByGenes <- function(res, geneColumn="hgncSymbol", method="BY"){
         colnames(ans) <- c("features", "pval", "sampleID")
     } else {
         ans <- featureNames <- res[,.(
-                features=get(geneColumn), pval=pvalue, sampleID=sampleID)]
+                features=get(geneColumn), pval=pValue, sampleID=sampleID)]
     }
 
     # remove NAs
