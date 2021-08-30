@@ -441,7 +441,27 @@ injectOutliers <- function(fds, type=c("psi5", "psi3", "theta"),
                     freq=1E-3, minDpsi=0.2, minCoverage=2,
                     deltaDistr="uniformDistr", verbose=FALSE,
                     method=c('samplePSI', 'meanPSI', 'simulatedPSI'),
-                    BPPARAM=bpparam()){
+                    inj_func=c("groups", "all"), BPPARAM=bpparam()){
+    
+    inj_func <- match.arg(inj_func)
+    if(inj_func == "groups"){
+        fds <- injectOutliersOld(fds=fds, type=type, freq=freq, 
+                    minDpsi=minDpsi, minCoverage=minCoverage, 
+                    deltaDistr=deltaDistr, verbose=verbose, method=method, 
+                    BPPARAM=BPPARAM)
+    } else{
+        fds <- injectOutliersNew(fds=fds, type=type, freq=freq, 
+                    minDpsi=minDpsi, minCoverage=minCoverage, 
+                    deltaDistr=deltaDistr, verbose=verbose, method=method)
+    } 
+    return(fds)
+}
+
+injectOutliersOld <- function(fds, type=c("psi5", "psi3", "theta"),
+                           freq=1E-3, minDpsi=0.2, minCoverage=2,
+                           deltaDistr="uniformDistr", verbose=FALSE,
+                           method=c('samplePSI', 'meanPSI', 'simulatedPSI'),
+                           BPPARAM=bpparam()){
     type <- match.arg(type, several.ok=TRUE)
     method <- match.arg(method)
     
@@ -767,4 +787,242 @@ restoreInjectedOutliers <- function(fds, type){
 # log2 fold change of measured psi vs AE predicted psi
 log2fc <- function(realPsi, predictedPsi){
     return( log2(realPsi) - log2(predictedPsi) )
+}
+
+injectOutliersNew <- function(fds, type=c("psi5", "psi3", "theta"),
+                              freq=1E-3, minDpsi=0.2, minCoverage=2,
+                              deltaDistr="uniformDistr", verbose=FALSE,
+                              method=c('meanPSI', 'samplePSI', 'simulatedPSI')){
+    type <- match.arg(type, several.ok=TRUE)
+    method <- match.arg(method)
+    
+    if(length(type) > 1){
+        for(t in type){
+            fds <- injectOutliers(fds, type=t, freq=freq, minDpsi=minDpsi,
+                                  minCoverage=minCoverage, deltaDistr=deltaDistr,
+                                  verbose=verbose, method=method)
+        }
+        return(fds)
+    }
+    
+    # get infos from the fds
+    if(paste0("originalCounts_", type) %in% assayNames(fds)){
+        message("Use existing original counts and reinject outliers.")
+        k <- as.matrix(getAssayMatrix(fds, type=type, "originalCounts"))
+        o <- as.matrix(getAssayMatrix(fds, type=type, "originalOtherCounts"))
+    } else {
+        k <- as.matrix(counts(fds, type=type, side="ofI"))
+        o <- as.matrix(counts(fds, type=type, side="other"))
+    }
+    n <- k + o
+    m <- ncol(k)
+    j <- nrow(k)
+    
+    # compute psi
+    psi <- switch(method,
+                  samplePSI    = (k + pseudocount())/(n + 2*pseudocount()),
+                  meanPSI      = matrix(nrow=j, ncol=m,
+                                        rowMeans( (k + pseudocount())/(n + 2*pseudocount()) )),
+                  simulatedPSI = getAssayMatrix(fds, "truePSI", type=type))
+    
+    # 
+    # matrix of donor/acceptor for possible injection
+    # 
+    tmpIndex <- getSiteIndex(fds, type)
+    dt <- as.data.table(rowRanges(fds, type=type))[,.(
+        chr=seqnames, start, end, strand, idxInCount=.I, 
+        junctionID=tmpIndex)]
+    dt[,nPerGroup:=.N,by=junctionID]
+    # consider only sites with multiple junctions for injection
+    dt <- dt[nPerGroup > ifelse(type == "theta", 0, 1),]
+    dt[,idxGroup:=.GRP, by=junctionID]
+    dt[,idxInGroup:=seq_len(.N),by=junctionID]
+    
+    if(max(dt$idxGroup) * m * freq < 10){
+        freq <- 10/(max(dt$idxGroup) * m)
+        warning("Injection-frequency is to low. Increasing it to `",
+                signif(freq, 2), "` so we can inject at least 10 events ",
+                "into the data set!")
+    }
+    
+    # where do we inject and how
+    indexOut_groups <- matrix(ncol=m, sample(c(0,1,-1),
+                                             max(dt$idxGroup)*m, replace=TRUE, 
+                                             prob=c(1-freq, freq/2, freq/2)))
+    
+    # positions where outliers will be injected
+    list_index <- which(indexOut_groups != 0, arr.ind=TRUE)
+    
+    
+    # sample primary injection
+    primary <- NULL
+    primaryInjection <- merge(as.data.table(list_index), dt,
+                              sort=FALSE, by.x="row", by.y="idxGroup", 
+                              allow.cartesian=TRUE)
+    primaryInjection[,primary:=idxInGroup==sample(idxInGroup,1),by="row,col"]
+    primaryInjection[,n:=n[cbind(idxInCount, col)]]
+    primaryInjection[,k:=k[cbind(idxInCount, col)]]
+    primaryInjection[,nOk:=length(unique(n)) == 1, by="row,col"]
+    if(nrow(primaryInjection[nOk == FALSE]) / nrow(primaryInjection) > 0.05){
+        # this can happen in the lower range if the prediction of the direction
+        # did not work properly. Where the donor/acceptor goes the wrong way.
+        # But this should not be too frequent. So ignore if it is below 5%
+        warning("It looks like you have a problem with your indexes. ",
+                "Please report it on github to the developer.")
+    }
+    primaryInjection <- primaryInjection[nOk == TRUE]
+    primaryInjection[,I:=cumsum(primary)]
+    primaryInjection[,I:=max(I),by="row,col"]
+    
+    
+    # get matrix accessors (row, col) aka (junctionID, sampleID)
+    primaryIndexInReal <- as.matrix(
+        primaryInjection[primary == TRUE, .(idxInCount, col)])
+    primaryIndexInGroup <- as.matrix(
+        primaryInjection[primary == TRUE, .(row, col)])
+    secondaryIndexInReal <- as.matrix(
+        primaryInjection[primary != TRUE, .(idxInCount, col)])
+    secondaryIndexInGroup <- as.matrix(
+        primaryInjection[primary != TRUE, .(row, col)])
+    # init with empty for theta. Function rep does not 
+    # support times of length zero eg: rep(1, integer(0))
+    secondaryPrimaryIndex <- as.matrix(primaryInjection[FALSE,.(
+        row, col, idxInCount, junctionID, nPerGroup, I, rep=integer(.N))])
+    if(nrow(primaryInjection[primary == TRUE & nPerGroup > 1]) > 0){
+        secondaryPrimaryIndex <- as.matrix(primaryInjection[
+            primary == TRUE & nPerGroup > 1, .(
+                idxInCount, junctionID, nPerGroup, I, 
+                rep=rep(TRUE, nPerGroup-1)),
+            by="row,col"])
+    }
+    
+    # get direction of injection
+    injDirection <- indexOut_groups[primaryIndexInGroup]
+    # table(injDirection)
+    
+    # get current psi of this junction and calculate maximal possible delta psi
+    junction_psi <- psi[primaryIndexInReal]
+    maxDpsi <- ifelse(injDirection > 0, 1 - junction_psi, junction_psi)
+    
+    # if not possible to inject here with at least minDpsi, 
+    # change injection direction
+    injectionPossible <- maxDpsi > minDpsi
+    # table(injectionPossible)
+    injDirection[!injectionPossible] <- -injDirection[!injectionPossible]
+    maxDpsi <- ifelse(injDirection > 0, 1 - junction_psi, junction_psi)
+    
+    # ensure that injected points becomes an outlier by adding
+    # mean delta psi as an offset
+    meanDpsi <- rowMeans2(abs(psi[primaryIndexInReal[,"idxInCount"],] - 
+                                  rowMeans2(psi[primaryIndexInReal[,"idxInCount"],])))
+    
+    # sample delta psi for injection from uniform distribution between 
+    # min and max dpsi
+    injMinDpsi <- ifelse(minDpsi + meanDpsi < maxDpsi,
+                         minDpsi + meanDpsi, maxDpsi)
+    injDpsi <- injDirection * switch(deltaDistr,
+                                     uniformDistr = runif(length(injMinDpsi), injMinDpsi, maxDpsi),
+                                     ifelse(deltaDistr > maxDpsi, maxDpsi, deltaDistr))
+    
+    # get N of this junction
+    n_ji <- n[primaryIndexInReal]
+    
+    # inject new primary k_ij -> change k based on n and new_psi 
+    # (and take pseudocounts into account): (k+1)/(n+2)=psi -> k = psi*(n+2)-1
+    new_primary_psi <- junction_psi + injDpsi
+    new_primary_k   <- pmax(pmin(round(
+        new_primary_psi*(n_ji + 2*pseudocount()) - pseudocount()), n_ji), 0)
+    
+    # inject secondary k_ij -> change k based on n and the new_psi
+    second_delta_psi <- - injDpsi[secondaryPrimaryIndex[,"I"]] * (
+        psi[secondaryIndexInReal] / (
+            1-psi[secondaryPrimaryIndex[,c("idxInCount", "col"),drop=FALSE]]))
+    new_second_psi <- psi[secondaryIndexInReal] + second_delta_psi
+    
+    # sanity check for injected psi
+    if(any(new_second_psi < -0.0001) | any(new_second_psi > 1.0001)){
+        warning("Have to cut injected delta psi for: ", 
+                sum(new_second_psi < -0.0001), " and ", 
+                sum(new_second_psi > 1.0001), " instances!")
+    }
+    new_second_psi <- pmin(pmax(new_second_psi, 0), 1)
+    new_second_k <- pmax(pmin(round(new_second_psi * ((
+        n[secondaryIndexInReal] + 2 * pseudocount()) - 
+            pseudocount())), 
+        n[secondaryIndexInReal]), 0)
+    
+    # 
+    # check if we really have an outlier or not
+    # and get primiary/secondary injections
+    # 
+    goodInjections <- n[primaryIndexInReal] >= minCoverage &
+        abs(k[primaryIndexInReal] - new_primary_k) > 2
+    goodJunctionIds <- primaryInjection[primary == TRUE][
+        goodInjections,junctionID]
+    goodSecondary <- primaryInjection[primary == FALSE][,
+                                                        junctionID %in% goodJunctionIds]
+    
+    message(paste0(date(), ": Injecting outliers: ", sum(goodInjections), 
+                   " / ", sum(goodSecondary), " (primary/secondary)"))
+    
+    # 
+    # prepare the injection into the dataset only for those which passed QC
+    # 
+    
+    # set counts (k and o)
+    k[primaryIndexInReal[goodInjections,,drop=FALSE]]  <- 
+        new_primary_k[goodInjections]
+    k[secondaryIndexInReal[goodSecondary,,drop=FALSE]] <- 
+        new_second_k[goodSecondary]
+    o <- n - k
+    
+    # set injection status (direction, primary, secondary)
+    indexOut <- matrix(0, nrow=nrow(k), ncol=ncol(k))
+    indexOut[primaryIndexInReal[goodInjections,]] <- 
+        injDirection[goodInjections]
+    indexOut[secondaryIndexInReal[goodSecondary,]] <- 
+        2 * injDirection[secondaryPrimaryIndex[,"I"][goodSecondary]]
+    
+    # set injected delta psi
+    indexDeltaPsi <- matrix(0, nrow=nrow(k), ncol=ncol(k))
+    indexDeltaPsi[primaryIndexInReal[goodInjections,]] <- 
+        injDpsi[goodInjections]
+    indexDeltaPsi[secondaryIndexInReal[goodSecondary,]] <- 
+        second_delta_psi[goodSecondary]
+    
+    # 
+    # do the injection and save the additional informations in the object
+    # 
+    
+    # copy original k and o
+    if(type == "theta"){
+        setAssayMatrix(fds, type="theta", "originalCounts", 
+                       withDimnames=FALSE) <- 
+            counts(fds, type="theta", side="ofInterest")
+        setAssayMatrix(fds, type="theta", "originalOtherCounts",
+                       withDimnames=FALSE) <-
+            counts(fds, type="theta", side="other")
+    } else {
+        setAssayMatrix(fds, type=type, "originalCounts",
+                       withDimnames=FALSE) <- 
+            counts(fds, type=type, side="ofInterest")
+        setAssayMatrix(fds, type="psi5", "originalOtherCounts",
+                       withDimnames=FALSE) <- 
+            counts(fds, type="psi5", side="other")
+        setAssayMatrix(fds, type="psi3", "originalOtherCounts",
+                       withDimnames=FALSE) <-
+            counts(fds, type="psi3", side="other")
+    }
+    
+    # store new k and o counts including the outlier counts
+    counts(fds, type=type, side="ofInterest", withDimnames=FALSE) <- k
+    counts(fds, type=type, side="other", withDimnames=FALSE) <- o
+    
+    # store positions of true outliers and their true delta PSI value
+    setAssayMatrix(fds=fds, name="trueOutliers", type=type,
+                   withDimnames=FALSE) <- indexOut
+    setAssayMatrix(fds=fds, name="trueDeltaPSI", type=type,
+                   withDimnames=FALSE) <- indexDeltaPsi
+    
+    return(fds)
 }

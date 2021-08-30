@@ -382,6 +382,7 @@ hyperParams <- function(fds, type=currentType(fds), all=FALSE){
     }
     if(isFALSE(all)){
         ans <- ans[aroc == max(aroc)][1]
+        # ans <- ans[mse == min(mse)][1]
     }
     ans
 }

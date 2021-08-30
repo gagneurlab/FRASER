@@ -59,6 +59,27 @@ eval_prot <- function(fds, type){
     return(pr$auc.integral)
 }
 
+eval_mse <- function(fds, type){
+
+    message(date(), ": Calculating difference to injected delta psi ...")
+    dpsi_injected <- assay(fds, paste0("trueDeltaPSI_", type))
+    psi_expected <- predictedMeans(fds, type=type)
+    psi_with_injections <- (K(fds, type=type) + pseudocount()) / (
+                            N(fds, type=type) + 2*pseudocount())
+    dpsi_observed <- psi_with_injections - psi_expected
+    
+    # subset to only positions with injections
+    dpsi_injected <- dpsi_injected[assay(fds, 
+                                        paste0("trueOutliers_", type)) != 0]
+    dpsi_observed <- dpsi_observed[assay(fds, 
+                                        paste0("trueOutliers_", type)) != 0]
+    
+    mse <- mean((dpsi_injected - dpsi_observed)^2)
+    rSquared <- summary(lm(dpsi_injected ~ dpsi_observed))$r.squared
+    
+    return(list(mse=mse, rSquared=rSquared))
+}
+
 
 findEncodingDim <- function(i, fds, type, params, implementation,
                             internalBPPARAM=1, iterations){
@@ -76,9 +97,13 @@ findEncodingDim <- function(i, fds, type, params, implementation,
     res_pvals <- predict_outliers(res_fit$fds, implementation=implementation,
             type=type, BPPARAM=iBPPARAM)
     evals <- eval_prot(res_pvals, type=type)
+    medianPvals <- median(-log10(pVals(res_pvals, type=type)[
+        assay(res_pvals, paste0("trueOutliers_", type)) != 0]))
+    eval_mse <- eval_mse(res_fit$fds, type=type)
 
     return(list(q=q_guess, noiseRatio=noiseRatio, loss=res_fit$evaluation, 
-                aroc=evals))
+                aroc=evals, mse=eval_mse$mse, rSquared=eval_mse$rSquared,
+                medianPvals=medianPvals))
 }
 
 #'
@@ -123,7 +148,7 @@ findEncodingDim <- function(i, fds, type, params, implementation,
 optimHyperParams <- function(fds, type, implementation="PCA",
                     q_param=seq(2, min(40, ncol(fds)), by=3),
                     noise_param=0, minDeltaPsi=0.1,
-                    iterations=5, setSubset=15000, injectFreq=1e-2,
+                    iterations=5, setSubset=50000, injectFreq=1e-2,
                     BPPARAM=bpparam(), internalThreads=1, plot=TRUE, 
                     delayed=ifelse(ncol(fds) <= 300, FALSE, TRUE), ...){
     if(isFALSE(needsHyperOpt(implementation))){
@@ -215,7 +240,10 @@ optimHyperParams <- function(fds, type, implementation="PCA",
             noise=vapply(res, "[[", "noiseRatio", FUN.VALUE=numeric(1)),
             nsubset=nsub,
             eval=vapply(res, "[[", "loss", FUN.VALUE=numeric(1)),
-            aroc=vapply(res, "[[", "aroc", FUN.VALUE=numeric(1)))
+            aroc=vapply(res, "[[", "aroc", FUN.VALUE=numeric(1)),
+            mse=vapply(res, "[[", "mse", FUN.VALUE=numeric(1)),
+            rSquared=vapply(res, "[[", "rSquared", FUN.VALUE=numeric(1)),
+            medianPvals=vapply(res, "[[", "medianPvals", FUN.VALUE=numeric(1)))
 
         optData <- rbind(optData, data)
     }
