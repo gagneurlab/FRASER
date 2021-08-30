@@ -493,35 +493,14 @@ injectOutliers <- function(fds, type=c("psi5", "psi3", "theta"),
         freq <- freq/10
     }
 
-    # data table with information about chr, start, end, 
-    # ... for calculating groups
-    dt <- if(type == "theta"){
-        data.table(
-            junctionID = seq_len(j),
-            chr = as.factor(seqnames(nonSplicedReads(fds))),
-            start = start(nonSplicedReads(fds)),
-            end = end(nonSplicedReads(fds)),
-            strand = as.factor(strand(nonSplicedReads(fds))) )
-    }else{
-        data.table(
-            junctionID = seq_len(j),
-            chr = as.factor(seqnames(fds)),
-            start = start(fds),
-            end = end(fds),
-            strand = as.factor(strand(fds)) )
-    }
-    dt[, donorGroupSize:=length(junctionID), by=c("chr", "start", "strand")]
-    dt[, acceptorGroupSize:=length(junctionID), by=c("chr", "end", "strand")]
-    dt[, donorGroupID := .GRP, by=c("chr", "start", "strand")]
-    dt[, acceptorGroupID:=.GRP, by=c("chr", "end", "strand")]
+    # data table with information for calculating groups
+    dt <- data.table(
+            junctionID = seq_len(j), 
+            groupID = getSiteIndex(fds, type))
+    dt[,groupSize:=.N, by=groupID]
 
     # Get groups where outlier can be injected
-    available_groups <- switch(type,
-            psi3 = dt[acceptorGroupSize > 1, acceptorGroupID, 
-                    by=acceptorGroupID]$acceptorGroupID,
-            psi5 = dt[donorGroupSize > 1, donorGroupID, 
-                    by=donorGroupID]$donorGroupID,
-            theta = seq_len(j))
+    available_groups <- dt[groupSize > ifelse(type == "theta", 0, 1), unique(groupID)]
     
     # e.g. for psi3/5: no donor/acceptor 
     # groups with at least 2 junctions (e.g in simulationBB)
@@ -562,17 +541,14 @@ injectOutliers <- function(fds, type=c("psi5", "psi3", "theta"),
                 injDirection    <- indexOut_groups[row, sample]
 
                 # sample one junction from all junction within this group
-                group_junctions <- if(type == "psi3"){ 
-                            dt[acceptorGroupID == group, junctionID] }
-                        else {
-                            dt[donorGroupID == group, junctionID] }
+                group_junctions <- dt[groupID == group, junctionID]
                 junction <- if(length(group_junctions)==1){ 
-                            group }
+                            group_junctions } # group }
                         else {
                             sample(group_junctions, 1) }
 
                 # get current psi of this junction and calculate
-                # maximla possible value of delta psi for the injection
+                # maximal possible value of delta psi for the injection
                 junction_psi    <- psi[junction, sample]
                 maxDpsi <- if(injDirection > 0){ 
                             1 - junction_psi }
@@ -631,6 +607,10 @@ injectOutliers <- function(fds, type=c("psi5", "psi3", "theta"),
                         # also store position of other junction used in swap
                         indOut[i]      <- -injDirection * 2
                         indexDpsi[i]   <- deltaPSI_k
+                        
+                        if(deltaPSI_k > 1 | deltaPSI_k < -1){
+                            warning("Calculated a injected |deltaPSI| > 1!")
+                        }
                     }
                     # for SE: ensure new_k <= n_ij 
                     # (so that o=n-k is always >= 0) 

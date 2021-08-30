@@ -75,9 +75,11 @@
 #'             row or column names on the heatmap axes.
 #' @param annotation_col,annotation_row Row or column annotations that should be
 #'             plotted on the heatmap.
-#' @param topN,topJ Top x most variable junctions that should be used in the
-#'             heatmap. TopN is used for sample-sample correlation heatmaps and
-#'             topJ for junction-sample correlation heatmaps.
+#' @param topN Top x most variable junctions that should be used for the
+#'             calculation of sample x sample correlations. 
+#' @param topJ Top x most variable junctions that should be displayed in the
+#'             junction-sample correlation heatmap. Only applies if plotType 
+#'             is "junctionSample".
 #' @param minMedian,minCount,minDeltaPsi Minimal median (\eqn{m \ge 1}), 
 #'             delta psi (\eqn{|\Delta\psi| > 0.1}), read count (\eqn{n \ge 10})
 #'             value of a junction to be considered for the correlation heatmap.
@@ -292,7 +294,8 @@ plotAberrantPerSample.FRASER <- function(object, main,
     # extract outliers
     outliers <- bplapply(type, aberrant, object=object, by="sample",
             padjCutoff=padjCutoff, zScoreCutoff=zScoreCutoff,
-            deltaPsiCutoff=deltaPsiCutoff, ..., BPPARAM=BPPARAM)
+            deltaPsiCutoff=deltaPsiCutoff, aggregate=aggregate, ..., 
+            BPPARAM=BPPARAM)
     dt2p <- rbindlist(lapply(seq_along(outliers), function(idx){
         vals <- outliers[[idx]]
         data.table(type=type[idx], value=sort(vals), median=median(vals),
@@ -888,8 +891,10 @@ plotCountCorHeatmap.FRASER <- function(object,
     }
     xmat[snmat < minCount] <- NA
     xmat_rc    <- xmat - rowMeans(xmat, na.rm=TRUE)
-
+    
     xmat_rc_sd <- rowSds(xmat_rc, na.rm=TRUE)
+    nrNonNA <- rowSums(!is.na(xmat_rc))
+    xmat_rc_sd[nrNonNA > 0.5*ncol(xmat_rc)] <- min(xmat_rc_sd)
     plotIdx <- rank(xmat_rc_sd) >= length(xmat_rc_sd) - topN
     xmat_rc_2_plot <- xmat_rc[plotIdx,]
     cormatS <- cor(xmat_rc_2_plot, use="pairwise", method="spearman")
