@@ -163,7 +163,7 @@
 #' plotEncDimSearch(fds, type="psi5")
 #' 
 #' # extract results 
-#' plotAberrantPerSample(fds)
+#' plotAberrantPerSample(fds, aggregate=FALSE)
 #' plotVolcano(fds, "sample1", "psi5")
 #' 
 #' # dive into gene/sample level results

@@ -198,9 +198,12 @@ FALSE.}
 
 \item{logit}{If TRUE, the default, psi values are plotted in logit space.}
 
-\item{topN, topJ}{Top x most variable junctions that should be used in the
-heatmap. TopN is used for sample-sample correlation heatmaps and
-topJ for junction-sample correlation heatmaps.}
+\item{topN}{Top x most variable junctions that should be used for the
+calculation of sample x sample correlations.}
+
+\item{topJ}{Top x most variable junctions that should be displayed in the
+junction-sample correlation heatmap. Only applies if plotType 
+is "junctionSample".}
 
 \item{minMedian, minCount, minDeltaPsi}{Minimal median (\eqn{m \ge 1}), 
 delta psi (\eqn{|\Delta\psi| > 0.1}), read count (\eqn{n \ge 10})
@@ -332,7 +335,7 @@ plotCountCorHeatmap(fds, "theta", normalized=TRUE)
 plotEncDimSearch(fds, type="psi5")
 
 # extract results 
-plotAberrantPerSample(fds)
+plotAberrantPerSample(fds, aggregate=FALSE)
 plotVolcano(fds, "sample1", "psi5")
 
 # dive into gene/sample level results
