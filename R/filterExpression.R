@@ -42,7 +42,7 @@ NULL
 #' read support and introns that are not variable across samples. 
 #' @export
 filterExpressionAndVariability <- function(object, minExpressionInOneSample=20, 
-                    quantile=0.95, quantileMinExpression=1, minDeltaPsi=0,
+                    quantile=0.95, quantileMinExpression=10, minDeltaPsi=0.05,
                     filter=TRUE, 
                     delayed=ifelse(ncol(object) <= 300, FALSE, TRUE),
                     BPPARAM=bpparam()){
@@ -65,7 +65,7 @@ filterExpressionAndVariability <- function(object, minExpressionInOneSample=20,
 }
 
 filterExpression.FRASER <- function(object, minExpressionInOneSample=20,
-                    quantile=0.95, quantileMinExpression=1, filter=TRUE, 
+                    quantile=0.95, quantileMinExpression=10, filter=TRUE, 
                     delayed=ifelse(ncol(object) <= 300, FALSE, TRUE),
                     BPPARAM=bpparam()){
 
@@ -105,7 +105,7 @@ filterExpression.FRASER <- function(object, minExpressionInOneSample=20,
     
     mcols(object, type="j")[['passedExpression']] <-
             cutoffs$maxCount >= minExpressionInOneSample &
-            (cutoffs$quantileValue5 >= quantileMinExpression |
+            (cutoffs$quantileValue5 >= quantileMinExpression &
                 cutoffs$quantileValue3 >= quantileMinExpression) 
     if("passedVariability" %in% colnames(mcols(object, type="j"))){
         mcols(object, type="j")[['passed']] <-  
@@ -135,7 +135,7 @@ setMethod("filterExpression", signature="FraserDataSet",
 #' @describeIn filtering This function filters out introns and corresponding 
 #' splice sites which do not show variablity across samples.
 #' @export
-filterVariability <- function(object, minDeltaPsi=0, filter=TRUE, 
+filterVariability <- function(object, minDeltaPsi=0.05, filter=TRUE, 
                     delayed=ifelse(ncol(object) <= 300, FALSE, TRUE),
                     BPPARAM=bpparam()){
     
@@ -232,7 +232,7 @@ applyExpressionFilters <- function(fds, minExpressionInOneSample,
     # report rare junctions that passed minExpression filter but not 
     # quantileFilter as SE obj
     junctionsToReport <- maxCount >= minExpressionInOneSample & 
-                        !(quantileValue5 >= quantileMinExpression |
+                        !(quantileValue5 >= quantileMinExpression &
                                 quantileValue3 >= quantileMinExpression) 
     outputDir <- file.path(workingDir(fds), "savedObjects", nameNoSpace(fds))
     
@@ -258,7 +258,7 @@ applyExpressionFilters <- function(fds, minExpressionInOneSample,
                     "cannot be restored.")
             rJ_stored <- loadHDF5SummarizedExperiment(dir=rareJctsDir)
             toReport <- mcols(rJ_stored)$maxCount >= minExpressionInOneSample & 
-                !(mcols(rJ_stored)$quantileValue5 >= quantileMinExpression |
+                !(mcols(rJ_stored)$quantileValue5 >= quantileMinExpression &
                     mcols(rJ_stored)$quantileValue3 >= quantileMinExpression) 
             
             rJ_tmp <- rbind(rJ_stored[toReport,], rareJunctions)
