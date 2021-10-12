@@ -109,11 +109,6 @@ calculatePvalues <- function(fds, type=currentType(fds),
         pvals <- 2 * pmin(pval, 1 - pval + dval, 0.5)
         pVals(fds, dist="BetaBinomial", level="junction", 
                 withDimnames=FALSE) <- pvals
-        fwer_pval <- bplapply(seq_col(pvals), adjust_FWER_PValues,
-                pvals=pvals, index, BPPARAM=BPPARAM)
-        fwer_pvals <- do.call(cbind, fwer_pval)
-        pVals(fds, dist="BetaBinomial", level="site", 
-                withDimnames=FALSE) <- fwer_pvals
     }
     
     if("binomial" %in% distributions){
@@ -125,11 +120,6 @@ calculatePvalues <- function(fds, type=currentType(fds),
         pvals <- 2 * pmin(pval, 1 - pval + dval, 0.5)
         pVals(fds, dist="Binomial", level="junction", 
                 withDimnames=FALSE) <- pvals
-        fwer_pval <- bplapply(seq_col(pvals), adjust_FWER_PValues,
-                pvals=pvals, index, BPPARAM=BPPARAM)
-        fwer_pvals <- do.call(cbind, fwer_pval)
-        pVals(fds, dist="Binomial", level="site", 
-                withDimnames=FALSE) <- fwer_pvals
     }
     
     if("normal" %in% distributions){
@@ -142,19 +132,17 @@ calculatePvalues <- function(fds, type=currentType(fds),
         pvals <- 2 * pmin(pval, 1 - pval, 0.5)
         pVals(fds, dist="Normal", level="junction", 
                 withDimnames=FALSE) <- pvals
-        fwer_pval <- bplapply(seq_col(pvals), adjust_FWER_PValues,
-                pvals=pvals, index, BPPARAM=BPPARAM)
-        fwer_pvals <- do.call(cbind, fwer_pval)
-        pVals(fds, dist="Normal", level="site", 
-                withDimnames=FALSE) <- fwer_pvals
     }
     
     fds
 }
 
-adjust_FWER_PValues <- function(i, pvals=pvals, index=index){
-    dt <- data.table(p=pvals[,i], idx=index)
-    dt2 <- dt[,.(pa=min(p.adjust(p, method="holm"), na.rm=TRUE)),by=idx]
+adjust_FWER_PValues <- function(i, pvals, index, rho, rhoCutoff, 
+                                method="holm"){
+    dt <- data.table(p=pvals[,i], idx=index, rho=rho)
+    dt[rho > rhoCutoff, p:=NA]
+    dt2 <- dt[,.(pa=min(p.adjust(p, method=method), na.rm=TRUE)),by=idx]
+    dt2[is.infinite(pa), pa:=NA]
     setkey(dt2, "idx")[J(index)][,pa]
 }
 
@@ -193,25 +181,98 @@ singlePvalueBinomial <- function(idx, k, n, mu){
 #' @param method The p.adjust method that should be used. 
 #' 
 #' @export
-calculatePadjValues <- function(fds, type=currentType(fds), method="BY"){
+calculatePadjValues <- function(fds, type=currentType(fds), method="BY",
+                                rhoCutoff=0.1, 
+                                BPPARAM=bpparam()){
     currentType(fds) <- type
     index <- getSiteIndex(fds, type=type)
     idx   <- !duplicated(index)
     
     for(i in c("BetaBinomial", "Binomial", "Normal")){
         # only do it if it exists
-        if(!paste0("pvalues", i, "_", type) %in% assayNames(fds)){
+        if(!paste0("pvalues", i, "_junction_", type) %in% assayNames(fds)){
             next
         }
         
-        pvals <- pVals(fds, dist=i)
-        padj <- apply(pvals[idx,], 2, p.adjust, method=method)
+        pvals <- pVals(fds, dist=i, level="junction")
+        rho <- rho(fds, type=type)
+        
+        # splice site-level pval correction
+        message(date(), ":  adjusting junction-level pvalues ...")
+        fwer_pval <- bplapply(seq_col(pvals), adjust_FWER_PValues,
+                                pvals=pvals, index, BPPARAM=BPPARAM,
+                                method="holm", rho=rho, rhoCutoff=rhoCutoff)
+        fwer_pvals <- do.call(cbind, fwer_pval)
+        pVals(fds, dist=i, level="site", filters=list(rho=rhoCutoff),
+                withDimnames=FALSE) <- fwer_pvals
+        
+        # junction-level FDR correction
+        padj <- apply(fwer_pvals[idx,], 2, p.adjust, method=method)
         padjDT <- data.table(cbind(i=unique(index), padj), key="i")[J(index)]
         padjDT[,i:=NULL]
-        padjVals(fds, dist=i, withDimnames=FALSE) <- as.matrix(padjDT)
+        padjVals(fds, dist=i, level="site", filters=list(rho=rhoCutoff),
+                withDimnames=FALSE) <- as.matrix(padjDT)
+        
+        # gene-level pval correction and FDR
+        if("hgnc_symbol" %in% colnames(mcols(fds, type=type))){
+            message(date(), ":  calculating gene-level pvalues ...")
+            gene_pvals <- getPvalsPerGene(fds=fds, type=type, pvals=fwer_pvals,
+                                            method="holm", FDRmethod=method, 
+                                            BPPARAM=BPPARAM)
+            pVals(fds, dist=i, level="gene", filters=list(rho=rhoCutoff),
+                    withDimnames=FALSE) <- gene_pvals[["pvals"]]
+            padjVals(fds, dist=i, level="gene", filters=list(rho=rhoCutoff),
+                    withDimnames=FALSE) <- gene_pvals[["padj"]]
+        }
     }
     
     return(fds)
+}
+
+getPvalsPerGene <- function(fds, type, 
+                    pvals=pVals(fds, type=type, level="site"),
+                    sampleID=NULL, method="holm", FDRmethod="BY", 
+                    BPPARAM=bpparam()){
+    # extract data and take only the first index of per site
+    samples <- samples(fds)
+    if(is.null(colnames(pvals))){
+        colnames(pvals) <- samples
+    }
+    dt <- data.table(
+            idx=getSiteIndex(fds, type=type),
+            geneID=getGeneIDs(fds, type=type, unique=FALSE),
+            as.data.table(pvals))
+    dt <- dt[!is.na(geneID)]
+    geneIDs <- dt[,unique(geneID)]
+    setkey(dt, geneID)
+    
+    # extract samples
+    if(!is.null(sampleID)){
+        samples <- sampleID
+    }
+    
+    # aggregate pvalues to gene level per sample
+    pvalsPerGene <- matrix(unlist(bplapply(samples, BPPARAM=BPPARAM,
+        function(i){
+                dttmp <- dt[,min(p.adjust(.SD[!duplicated(idx),get(i)], 
+                                        method=method), na.rm=TRUE),
+                            by=geneID]
+                setkey(dttmp, geneID)
+                dttmp[J(geneIDs), V1]
+        })), ncol=length(samples))
+    
+    colnames(pvalsPerGene) <- samples
+    rownames(pvalsPerGene) <- geneIDs
+    
+    # compute FDR
+    gene_padj <- apply(pvalsPerGene, 2, p.adjust, method=FDRmethod)
+    
+    # blow up back to original assay size
+    pvalsPerGene <- mapGeneToJunctionAssay(fds, type, pvalsPerGene)
+    padjPerGene <- mapGeneToJunctionAssay(fds, type, gene_padj)
+    
+    return(list(pvals=pvalsPerGene, padj=padjPerGene))
+
 }
 
 getSiteIndex <- function(fds, type){
@@ -242,39 +303,13 @@ getGeneIDs <- function(fds, type, unique=TRUE){
     geneIDs
 }
 
-getPvalsPerGene <- function(fds, type, pvals=pVals(fds, type=type),
-                    sampleID=NULL, method="holm", BPPARAM=bpparam()){
-    # extract data and take only the first index of per site
-    dt <- data.table(
-            idx=getSiteIndex(fds, type=type),
-            geneID=getGeneIDs(fds, type=type, unique=FALSE),
-            as.data.table(pvals))
-    dt <- dt[!duplicated(idx) & !is.na(geneID)]
-    setkey(dt, geneID)
-    
-    samples <- samples(fds)
-    if(!is.null(sampleID)){
-        samples <- sampleID
-    }
-    
-    pvalsPerGene <- matrix(unlist(bplapply(samples, BPPARAM=BPPARAM,
-        function(i){
-                dttmp <- dt[,min(p.adjust(get(i), method=method)),by=geneID]
-                setkey(dttmp, geneID)
-                dttmp[J(getGeneIDs(fds, type=type)), V1]
-        })), ncol=length(samples))
-    
-    colnames(pvalsPerGene) <- samples
-    rownames(pvalsPerGene) <- getGeneIDs(fds, type=type)
-    
-    return(pvalsPerGene)
-
-}
-
-getPadjPerGene <- function(pvals, method="BY"){
-
-    padjPerGene <- apply(pvals, 2, p.adjust, method=method)
-
-    return(padjPerGene)
-
+mapGeneToJunctionAssay <- function(fds, type, pvalMat){
+    # blow up back to original assay size
+    pvalDT <- data.table(geneID=rownames(pvalMat),
+                        as.data.table(pvalMat) )
+    setkey(pvalDT, "geneID")
+    pvalDT <- pvalDT[J(getGeneIDs(fds, type=type, unique=FALSE))]
+    fullMat <- as.matrix(pvalDT[, -1])
+    rownames(fullMat) <- pvalDT[, geneID]
+    return(fullMat)
 }

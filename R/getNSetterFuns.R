@@ -248,8 +248,9 @@ zScores <- function(fds, type=currentType(fds), byGroup=FALSE, ...){
 #' @describeIn getter_setter_functions This returns the calculated p-values.
 #' @export
 pVals <- function(fds, type=currentType(fds), level="site", 
+                    filters=list(rho=0.1),
                     dist="BetaBinomial", ...){
-    level <- match.arg(level, choices=c("site", "junction"))
+    level <- match.arg(level, choices=c("site", "junction", "gene"))
     dist <- match.arg(dist, choices=c("BetaBinomial", "Binomial", "Normal"))
     aname <- paste0("pvalues", dist)
     if(level == "junction"){
@@ -260,17 +261,39 @@ pVals <- function(fds, type=currentType(fds), level="site",
             warning("Did not find junction-level p values. ",
                     "Using site-level p values instead.")
         }
+    } else{ 
+        aname <- ifelse(level == "gene", paste0(aname, "_gene"), aname)
+        # add information on used filters
+        for(n in sort(names(filters))){
+            aname <- paste0(aname, "_", n, filters[[n]])
+        }
+        if(level == "gene"){
+            if(!paste(aname, type, sep="_") %in% assayNames(fds)){
+                stop("Did not find gene-level p values. ",
+                        "Please compute them first.")
+            }
+        }
     }
+    
     getAssayMatrix(fds, aname, type=type, ...)
 }
 
 `pVals<-` <- function(fds, type=currentType(fds), level="site",
+                    filters=list(rho=0.1),
                     dist="BetaBinomial", ..., value){
-    level <- match.arg(level, choices=c("site", "junction"))
+    level <- match.arg(level, choices=c("site", "junction", "gene"))
     dist <- match.arg(dist, choices=c("BetaBinomial", "Binomial", "Normal"))
     aname <- paste0("pvalues", dist)
     if(level == "junction"){
         aname <- paste0(aname, "_junction")
+        setAssayMatrix(fds, name=aname, type=type, ...) <- value
+        return(fds)
+    } else if(level == "gene"){
+        aname <- paste0(aname, "_gene")
+    }
+    # add information on used filters
+    for(n in sort(names(filters))){
+        aname <- paste0(aname, "_", n, filters[[n]])
     }
     setAssayMatrix(fds, name=aname, type=type, ...) <- value
     return(fds)
@@ -278,15 +301,36 @@ pVals <- function(fds, type=currentType(fds), level="site",
 
 #' @describeIn getter_setter_functions This returns the adjusted p-values.
 #' @export
-padjVals <- function(fds, type=currentType(fds), dist=c("BetaBinomial"), ...){
+padjVals <- function(fds, type=currentType(fds), dist=c("BetaBinomial"), 
+                    level="site", filters=list(rho=0.1), ...){
+    level <- match.arg(level, choices=c("site", "gene"))
     dist <- match.arg(dist, choices=c("BetaBinomial", "Binomial", "Normal"))
-    return(getAssayMatrix(fds, paste0("padj", dist), type=type, ...))
+    aname <- paste0("padj", dist)
+    aname <- ifelse(level == "gene", paste0(aname, "_gene"), aname)
+    # add information on used filters
+    for(n in sort(names(filters))){
+        aname <- paste0(aname, "_", n, filters[[n]])
+    }
+    if(level == "gene"){
+        if(!paste(aname, type, sep="_") %in% assayNames(fds)){
+            stop("Did not find gene-level p values. ",
+                "Please compute them first.")
+        }
+    }
+    return(getAssayMatrix(fds, aname, type=type, ...))
 }
 
-`padjVals<-` <- function(fds, type=currentType(fds),
-                    dist="BetaBinomial", ..., value){
+`padjVals<-` <- function(fds, type=currentType(fds), level="site",
+                    dist="BetaBinomial", filters=list(rho=0.1), ..., value){
+    level <- match.arg(level, choices=c("site", "gene"))
     dist <- match.arg(dist, choices=c("BetaBinomial", "Binomial", "Normal"))
-    setAssayMatrix(fds, name=paste0("padj", dist), type=type, ...) <- value
+    aname <- paste0("padj", dist)
+    aname <- ifelse(level == "gene", paste0(aname, "_gene"), aname)
+    # add information on used filters
+    for(n in sort(names(filters))){
+        aname <- paste0(aname, "_", n, filters[[n]])
+    }
+    setAssayMatrix(fds, name=aname, type=type, ...) <- value
     return(fds)
 }
 
@@ -589,32 +633,29 @@ getPlottingDT <- function(fds, axis=c("row", "col"), type=NULL, result=NULL,
             padj      = c(padjVals(fds, type=type)[idxrow, idxcol]),
             zscore    = c(zScores(fds, type=type)[idxrow, idxcol]),
             obsPsi    = c((k + pseudocount())/(n + 2*pseudocount())),
-            predPsi   = c(predictedMeans(fds, type)[idxrow, idxcol]))
+            predPsi   = c(predictedMeans(fds, type)[idxrow, idxcol]),
+            rho       = rep(rho(fds, type=type)[idxrow], 
+                            ifelse(isTRUE(idxcol), ncol(fds), length(idxcol))) 
+    )
     dt[, deltaPsi:=obsPsi - predPsi]
 
     # add aberrant information to it
     aberrantVec <- aberrant(fds, ..., padjVals=dt[,.(padj)],
-        dPsi=dt[,.(deltaPsi)], zscores=dt[,.(zscore)], n=dt[,.(n)])
+        dPsi=dt[,.(deltaPsi)], zscores=dt[,.(zscore)], n=dt[,.(n)], 
+        rhoVals=dt[,.(rho)])
     dt[,aberrant:=aberrantVec]
 
     # if requested return gene p values (correct for multiple testing again)
     if(isTRUE(aggregate)){
+        dt[, pval:=c(pVals(fds, type=type, 
+                            level="gene")[idxrow, idxcol])]
+        dt[, padj:=c(padjVals(fds, type=type, 
+                            level="gene")[idxrow, idxcol]),]
         dt <- dt[!is.na(featureID)]
-
-        # correct by gene and take the smallest p value
-        dt <- rbindlist(bplapply(unique(dt[,sampleID]), 
-            BPPARAM=getBPParam(Ncpus, length(unique(dt[,sampleID]))),
-            FUN=function(x){
-                    dttmp <- dt[sampleID == x]
-                    dttmp[, pval:=p.adjust(pval, method="holm"),
-                            by="sampleID,featureID,type"]
-                    dttmp <- dttmp[order(sampleID, featureID, type, -aberrant,
-                                            pval, -abs(deltaPsi))][
-                            !duplicated(data.table(sampleID, featureID, type))]
-                    dttmp <- dttmp[, padj:=p.adjust(pval, method="BY"),
-                            by="sampleID,type"]
-                    dttmp
-            }))
+        
+        dt <- dt[order(sampleID, featureID, type, -aberrant,
+                        padj, -abs(deltaPsi))][
+                !duplicated(data.table(sampleID, featureID, type))]
     }
 
     # return object
@@ -622,7 +663,7 @@ getPlottingDT <- function(fds, axis=c("row", "col"), type=NULL, result=NULL,
 }
 
 
-#' @describeIn getter_setter_functions Dependend on the level of verbosity 
+#' @describeIn getter_setter_functions Dependent on the level of verbosity 
 #' the algorithm reports more or less to the user. 0 means being quiet 
 #' and 10 means everything.
 #' @export

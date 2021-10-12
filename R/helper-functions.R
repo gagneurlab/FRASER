@@ -548,3 +548,46 @@ getStrandString <- function(fds){
     strand <- switch(strandSpecific(fds)+1L, "no", "yes", "reverse")
     return(strand)
 }
+
+#'
+#' Check if adjusted pvalues have been computed for a given set of filters.
+#' @noRd
+checkPadjAvailableForFilters <- function(fds, type, filters=list(),
+                                        dist="BetaBinomial", aggregate=FALSE){
+    dist <- match.arg(dist, choices=c("BetaBinomial", "Binomial", "Normal"))
+    aname <- paste0("padj", dist)
+    aname <- ifelse(isTRUE(aggregate), paste0(aname, "_gene"), aname)
+    # add information on used filters
+    for(n in sort(names(filters))){
+        aname <- paste0(aname, "_", n, filters[[n]])
+    }
+    pvalsAvailable <- paste(aname, type, sep="_") %in% assayNames(fds)
+    return(pvalsAvailable)
+}
+
+#'
+#' Find most aberrant junction for each gene
+#' @noRd
+findJunctionsForAberrantGenes <- function(gr, genes, pvals, dpsi, minCount, 
+                                            rho, filters=list()){
+    geneJunctions <- mcols(gr)$hgnc_symbol %in% genes
+    dt <- data.table(idx=which(geneJunctions == TRUE), 
+                        geneID=mcols(gr)$hgnc_symbol[geneJunctions],
+                        pval=pvals[geneJunctions], 
+                        dpsi=abs(dpsi[geneJunctions]),
+                        minCount=minCount[geneJunctions],
+                        rho=rho[geneJunctions] )
+    
+    # mask junctions that don't pass filters (minCount, dPsi, rho)
+    for(n in names(filters)){
+        if(n == "rho"){
+            dt[rho > filters[["rho"]], pval:=NA]
+        } else{
+            dt[get(n) < filters[[n]], pval:=NA]
+        }
+    }
+    
+    # sort per gene by lowest pvalue / highest deltaPsi and return index
+    dt <- dt[order(geneID, pval, -dpsi)]
+    return(dt[!duplicated(dt, by="geneID"),idx])
+}
