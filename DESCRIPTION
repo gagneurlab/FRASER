@@ -28,7 +28,7 @@ biocViews:
 License: MIT + file LICENSE
 URL: https://github.com/gagneurlab/FRASER
 BugRepots: https://github.com/gagneurlab/FRASER/issues
-RoxygenNote: 7.1.1
+RoxygenNote: 7.1.2
 Encoding: UTF-8
 VignetteBuilder: knitr
 Depends:

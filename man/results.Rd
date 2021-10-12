@@ -2,7 +2,6 @@
 % Please edit documentation in R/AllGenerics.R
 \name{results,FraserDataSet-method}
 \alias{results,FraserDataSet-method}
-\alias{resultsByGenes}
 \alias{aberrant,FraserDataSet-method}
 \title{Extracting results and aberrant splicing events}
 \usage{
@@ -12,14 +11,15 @@
   padjCutoff = 0.05,
   zScoreCutoff = NA,
   deltaPsiCutoff = 0.3,
+  rhoCutoff = 0.1,
+  aggregate = FALSE,
+  collapse = TRUE,
   minCount = 5,
   psiType = c("psi3", "psi5", "theta"),
   additionalColumns = NULL,
   BPPARAM = bpparam(),
   ...
 )
-
-resultsByGenes(res, geneColumn = "hgncSymbol", method = "BY")
 
 \S4method{aberrant}{FraserDataSet}(
   object,
@@ -28,6 +28,7 @@ resultsByGenes(res, geneColumn = "hgncSymbol", method = "BY")
   deltaPsiCutoff = 0.3,
   zScoreCutoff = NA,
   minCount = 5,
+  rhoCutoff = 0.1,
   by = c("none", "sample", "feature"),
   aggregate = FALSE,
   ...
@@ -44,6 +45,17 @@ retrieved}
 \item{zScoreCutoff}{The z-score cutoff to be applied or NA if not requested.}
 
 \item{deltaPsiCutoff}{The cutoff on delta psi or NA if not requested.}
+
+\item{rhoCutoff}{The cutoff value on the fitted rho value 
+(overdispersion parameter of the betabinomial) above which 
+junctions are filtered}
+
+\item{aggregate}{If TRUE the returned object is aggregated to the feature 
+level (i.e. gene level).}
+
+\item{collapse}{Only takes effect if \code{aggregate=TRUE}. 
+If TRUE (default), collapses results across the different psi 
+types to return only one row per feature (gene) and sample.}
 
 \item{minCount}{The minimum count value of the total coverage of an intron 
 to be considered as significant.
@@ -62,6 +74,12 @@ are included.}
 "padjVals" or "dPsi" is given, the values of those arguments
 are used to define the aberrant events.}
 
+\item{type}{Splicing type (psi5, psi3 or theta)}
+
+\item{by}{By default \code{none} which means no grouping. But if 
+\code{sample} or \code{feature} is specified the sum by 
+sample or feature is returned}
+
 \item{res}{Result as created with \code{results()}}
 
 \item{geneColumn}{The name of the column in \code{mcols(res)} that contains 
@@ -69,15 +87,6 @@ the gene symbols.}
 
 \item{method}{The p.adjust method that is being used to adjust p values per
 sample.}
-
-\item{type}{Splicing type (psi5, psi3 or theta)}
-
-\item{by}{By default \code{none} which means no grouping. But if 
-\code{sample} or \code{feature} is specified the sum by 
-sample or feature is returned}
-
-\item{aggregate}{If TRUE the returned object is based on the grouped 
-features}
 }
 \value{
 For \code{results}: GRanges object containing significant results.
@@ -102,7 +111,8 @@ res
 
 # aggregate the results by genes (gene symbols need to be annotated first 
 # using annotateRanges() function)
-resultsByGenes(res)
+results(fds, padjCutoff=NA, zScoreCutoff=3, deltaPsiCutoff=0.05, 
+        aggregate=TRUE)
 
 # get aberrant events per sample: on the example data, nothing is aberrant
 # based on the adjusted p-value

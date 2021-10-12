@@ -567,6 +567,18 @@ checkPadjAvailableForFilters <- function(fds, type, filters=list(),
 
 #'
 #' Find most aberrant junction for each gene
+#' 
+#' @param gr GRanges object with information about junctions.
+#' @param genes Significant genes for which the corresponding junction should 
+#'     be extracted. 
+#' @param pvals Vector of pvalues (for one sample).
+#' @param dpsi Vector of delta psi values (for one sample).
+#' @param minCount Vector of total counts (N) to which minCount filter will be 
+#'     applied.
+#' @param rho Vector of rho values (for all junctions).
+#' @param filters The filters which will be used for masked junctions during 
+#'     extraction (possible options: dpsi, minCount, rho).
+#' 
 #' @noRd
 findJunctionsForAberrantGenes <- function(gr, genes, pvals, dpsi, minCount, 
                                             rho, filters=list()){
@@ -581,13 +593,25 @@ findJunctionsForAberrantGenes <- function(gr, genes, pvals, dpsi, minCount,
     # mask junctions that don't pass filters (minCount, dPsi, rho)
     for(n in names(filters)){
         if(n == "rho"){
+            if(is.na(filters[["rho"]])){
+                filters[["rho"]] <- 1
+            }
             dt[rho > filters[["rho"]], pval:=NA]
         } else{
+            if(is.na(filters[[n]])){
+                filters[[n]] <- 0
+            }
             dt[get(n) < filters[[n]], pval:=NA]
         }
     }
     
     # sort per gene by lowest pvalue / highest deltaPsi and return index
     dt <- dt[order(geneID, pval, -dpsi)]
-    return(dt[!duplicated(dt, by="geneID"),idx])
+    dt <- dt[!duplicated(dt, by="geneID"),]
+    
+    # remove gene-level significant result if no junction in that gene passed
+    # the filters
+    dt <- dt[!is.na(pval),]
+    
+    return(dt[,idx])
 }

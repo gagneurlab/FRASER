@@ -677,11 +677,12 @@ resultsSingleSample <- function(sampleID, gr, pvals, padjs, zscores,
 
 FRASER.results <- function(object, sampleIDs, fdrCutoff, zscoreCutoff, 
                             dPsiCutoff, minCount, rhoCutoff, psiType, 
-                            maxCols=20, aggregate=FALSE,
+                            maxCols=20, aggregate=FALSE, collapse=TRUE,
                             BPPARAM=bpparam(), additionalColumns=NULL){
     
     stopifnot(is(object, "FraserDataSet"))
     stopifnot(all(sampleIDs %in% samples(object)))
+    message(date(), " collapse = ", collapse)
     
     resultsls <- bplapply(psiType, BPPARAM=BPPARAM, function(type){
         message(date(), ": Collecting results for: ", type)
@@ -766,6 +767,19 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff, zscoreCutoff,
         ans <- ans[order(ans$pValue)]
     }
     
+    # collapse into one row per gene if requested
+    if(isTRUE(aggregate) && isTRUE(collapse) && length(ans) > 0){
+        
+        ans <- ans[order(ans$pValueGene, ans$pValue)]
+        naIdx <- is.na(ans$hgncSymbol)
+        ansNoNA <- ans[!is.na(ans$hgncSymbol),]
+        
+        # get final result table
+        dupIdx <- duplicated(data.table(as.vector(ansNoNA$hgncSymbol), 
+                                        as.vector(ansNoNA$sampleID)))
+        ans <- ans[!naIdx,][!dupIdx,]
+    }
+    
     # return only the results
     return(ans)
 }
@@ -787,6 +801,9 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff, zscoreCutoff,
 #' @param minCount The minimum count value of the total coverage of an intron 
 #' to be considered as significant.
 #' result
+#' @param rhoCutoff The cutoff value on the fitted rho value 
+#' (overdispersion parameter of the betabinomial) above which 
+#' junctions are filtered 
 #' @param psiType The psi types for which the results should be retrieved.
 #' @param additionalColumns Character vector containing the names of additional 
 #' columns from mcols(fds) that should appear in the result table 
@@ -802,8 +819,11 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff, zscoreCutoff,
 #' @param by By default \code{none} which means no grouping. But if 
 #'              \code{sample} or \code{feature} is specified the sum by 
 #'              sample or feature is returned
-#' @param aggregate If TRUE the returned object is based on the grouped 
-#'              features
+#' @param aggregate If TRUE the returned object is aggregated to the feature 
+#'              level (i.e. gene level).
+#' @param collapse Only takes effect if \code{aggregate=TRUE}. 
+#'              If TRUE (default), collapses results across the different psi 
+#'              types to return only one row per feature (gene) and sample.
 #' @param ... Further arguments can be passed to the method. If "zscores", 
 #'              "padjVals" or "dPsi" is given, the values of those arguments
 #'              are used to define the aberrant events.
@@ -826,7 +846,8 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff, zscoreCutoff,
 #' 
 #' # aggregate the results by genes (gene symbols need to be annotated first 
 #' # using annotateRanges() function)
-#' resultsByGenes(res)
+#' results(fds, padjCutoff=NA, zScoreCutoff=3, deltaPsiCutoff=0.05, 
+#'         aggregate=TRUE)
 #'
 #' # get aberrant events per sample: on the example data, nothing is aberrant
 #' # based on the adjusted p-value
@@ -843,42 +864,16 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff, zscoreCutoff,
 setMethod("results", "FraserDataSet", function(object, 
                     sampleIDs=samples(object), padjCutoff=0.05,
                     zScoreCutoff=NA, deltaPsiCutoff=0.3,
-                    rhoCutoff=0.1, aggregate=FALSE,
+                    rhoCutoff=0.1, aggregate=FALSE, collapse=TRUE,
                     minCount=5, psiType=c("psi3", "psi5", "theta"),
                     additionalColumns=NULL, BPPARAM=bpparam(), ...){
     FRASER.results(object=object, sampleIDs=sampleIDs, fdrCutoff=padjCutoff,
             zscoreCutoff=zScoreCutoff, dPsiCutoff=deltaPsiCutoff, 
             rhoCutoff=rhoCutoff, minCount=minCount, 
             psiType=match.arg(psiType, several.ok=TRUE),
-            aggregate=aggregate,
+            aggregate=aggregate, collapse=collapse,
             additionalColumns=additionalColumns, BPPARAM=BPPARAM)
 })
-
-#' @rdname results
-#' @export
-resultsByGenes <- function(res, geneColumn="hgncSymbol"){
-    # sort by gene pvalue
-    res <- res[order(res$pValueGene)]
-
-    # extract subset
-    if(is(res, "GRanges")){
-        ans <- as.data.table(mcols(res)[,c(geneColumn, "sampleID")])
-        colnames(ans) <- c("features", "sampleID")
-    } else {
-        ans <- featureNames <- res[,.(
-                features=get(geneColumn), sampleID=sampleID)]
-    }
-
-    # remove NAs and 
-    # keep only one row per gene with lowest pvalue over all psiTypes
-    naIdx <- ans[,is.na(features)]
-    ansNoNA <- ans[!is.na(features)]
-    dupIdx <- duplicated(ansNoNA[,.(features,sampleID)])
-
-    # get final result table
-    finalAns <- res[!naIdx][!dupIdx]
-    finalAns
-}
 
 aberrant.FRASER <- function(object, type=currentType(object), 
                                 padjCutoff=0.05, deltaPsiCutoff=0.3, 
@@ -957,7 +952,7 @@ aberrant.FRASER <- function(object, type=currentType(object),
         aberrantEvents[is.na(aberrantEvents)] <- FALSE
         
     } else{
-        dt <- data.table(geneID=mcols(fds, type=type)$hgnc_symbol, padj)
+        dt <- data.table(geneID=mcols(object, type=type)$hgnc_symbol, padj)
         dt <- dt[!duplicated(dt, by="geneID") & !is.na(geneID)]
         padj <- as.matrix(dt[, -1])
         rownames(padj) <- dt[,geneID]

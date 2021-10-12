@@ -33,7 +33,7 @@ calculateZscore <- function(fds, type=currentType(fds), logit=TRUE){
 
 #' @describeIn FRASER This function calculates two-sided p-values based on 
 #' the beta-binomial distribution (or binomial or normal if desired). The 
-#' returned p values are already adjusted with Holm's method per donor or 
+#' returned p values are not yet adjusted with Holm's method per donor or 
 #' acceptor site, respectively. 
 #' 
 #' @param distributions The distribution based on which the p-values are 
@@ -141,7 +141,8 @@ adjust_FWER_PValues <- function(i, pvals, index, rho, rhoCutoff,
                                 method="holm"){
     dt <- data.table(p=pvals[,i], idx=index, rho=rho)
     dt[rho > rhoCutoff, p:=NA]
-    dt2 <- dt[,.(pa=min(p.adjust(p, method=method), na.rm=TRUE)),by=idx]
+    suppressWarnings(dt2 <- dt[,.(pa=min(p.adjust(p, method=method), 
+                                        na.rm=TRUE)),by=idx])
     dt2[is.infinite(pa), pa:=NA]
     setkey(dt2, "idx")[J(index)][,pa]
 }
@@ -176,13 +177,22 @@ singlePvalueBinomial <- function(idx, k, n, mu){
 }
 
 #' @describeIn FRASER This function adjusts the previously calculated 
-#' p-values per sample for multiple testing.
+#' p-values per sample for multiple testing. First, the previoulsy calculated 
+#' junction-level p values are adjusted with Holm's method per donor or 
+#' acceptor site, respectively. Then, if gene symbols have been annotated to 
+#' junctions (and not otherwise requested), gene-level p values are computed.
 #' 
-#' @param method The p.adjust method that should be used. 
+#' @param method The p.adjust method that should be used for genome-wide 
+#' multiple testing correction.
+#' @param rhoCutoff The cutoff value on the fitted rho value 
+#'     (overdispersion parameter of the betabinomial) above which junctions are 
+#'     masked with NA during p value adjustment. 
+#' @param geneLevel Logical value indiciating whether gene-level p values 
+#'     should be calculated. Defaults to TRUE.
 #' 
 #' @export
 calculatePadjValues <- function(fds, type=currentType(fds), method="BY",
-                                rhoCutoff=0.1, 
+                                rhoCutoff=0.1, geneLevel=TRUE,
                                 BPPARAM=bpparam()){
     currentType(fds) <- type
     index <- getSiteIndex(fds, type=type)
@@ -214,7 +224,8 @@ calculatePadjValues <- function(fds, type=currentType(fds), method="BY",
                 withDimnames=FALSE) <- as.matrix(padjDT)
         
         # gene-level pval correction and FDR
-        if("hgnc_symbol" %in% colnames(mcols(fds, type=type))){
+        if("hgnc_symbol" %in% colnames(mcols(fds, type=type)) && 
+                isTRUE(geneLevel)){
             message(date(), ":  calculating gene-level pvalues ...")
             gene_pvals <- getPvalsPerGene(fds=fds, type=type, pvals=fwer_pvals,
                                             method="holm", FDRmethod=method, 
@@ -254,11 +265,14 @@ getPvalsPerGene <- function(fds, type,
     # aggregate pvalues to gene level per sample
     pvalsPerGene <- matrix(unlist(bplapply(samples, BPPARAM=BPPARAM,
         function(i){
+            suppressWarnings(
                 dttmp <- dt[,min(p.adjust(.SD[!duplicated(idx),get(i)], 
                                         method=method), na.rm=TRUE),
                             by=geneID]
-                setkey(dttmp, geneID)
-                dttmp[J(geneIDs), V1]
+            )
+            dttmp[is.infinite(V1), V1:=NA]
+            setkey(dttmp, geneID)
+            dttmp[J(geneIDs), V1]
         })), ncol=length(samples))
     
     colnames(pvalsPerGene) <- samples

@@ -10,11 +10,14 @@
 #' @param level Indicates if the retrieved p values should be adjusted on the 
 #'          donor/acceptor site-level (default) or if unadjusted junction-level 
 #'          p values should be returned.
+#' @param filters A named list giving the filters that were applied for masking 
+#'          during p value correction. Used for storing and retrieving the 
+#'          correct set of requested p values.
 #' @param value The new value to be assigned.
 #' @param all Logical value indicating whether \code{hyperParams(fds)} should 
 #'          return the results of all evaluated parameter combinations or only 
 #'          for the optimal parameter combination.
-#' @param ... Internally used parameteres. 
+#' @param ... Internally used parameters. 
 #' @return A (delayed) matrix or vector dependent on the type of data retrieved.
 #' 
 #' @name getter_setter_functions

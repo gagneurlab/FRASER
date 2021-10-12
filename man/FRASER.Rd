@@ -28,7 +28,14 @@ calculatePvalues(
   capN = 5 * 1e+05
 )
 
-calculatePadjValues(fds, type = currentType(fds), method = "BY")
+calculatePadjValues(
+  fds,
+  type = currentType(fds),
+  method = "BY",
+  rhoCutoff = 0.1,
+  geneLevel = TRUE,
+  BPPARAM = bpparam()
+)
 }
 \arguments{
 \item{fds}{A \code{\link{FraserDataSet}} object}
@@ -62,7 +69,15 @@ calculated. Possible are beta-binomial, binomial and normal.}
 \item{capN}{Counts are capped at this value to speed up the p-value 
 calculation}
 
-\item{method}{The p.adjust method that should be used.}
+\item{method}{The p.adjust method that should be used for genome-wide 
+multiple testing correction.}
+
+\item{rhoCutoff}{The cutoff value on the fitted rho value 
+(overdispersion parameter of the betabinomial) above which junctions are 
+masked with NA during p value adjustment.}
+
+\item{geneLevel}{Logical value indiciating whether gene-level p values 
+should be calculated. Defaults to TRUE.}
 }
 \value{
 FraserDataSet
@@ -104,11 +119,14 @@ psi.
 
 \item \code{calculatePvalues}: This function calculates two-sided p-values based on 
 the beta-binomial distribution (or binomial or normal if desired). The 
-returned p values are already adjusted with Holm's method per donor or 
+returned p values are not yet adjusted with Holm's method per donor or 
 acceptor site, respectively.
 
 \item \code{calculatePadjValues}: This function adjusts the previously calculated 
-p-values per sample for multiple testing.
+p-values per sample for multiple testing. First, the previoulsy calculated 
+junction-level p values are adjusted with Holm's method per donor or 
+acceptor site, respectively. Then, if gene symbols have been annotated to 
+junctions (and not otherwise requested), gene-level p values are computed.
 }}
 
 \examples{

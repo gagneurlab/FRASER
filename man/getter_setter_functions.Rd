@@ -35,9 +35,23 @@ rho(fds, type = currentType(fds))
 
 zScores(fds, type = currentType(fds), byGroup = FALSE, ...)
 
-pVals(fds, type = currentType(fds), level = "site", dist = "BetaBinomial", ...)
+pVals(
+  fds,
+  type = currentType(fds),
+  level = "site",
+  filters = list(rho = 0.1),
+  dist = "BetaBinomial",
+  ...
+)
 
-padjVals(fds, type = currentType(fds), dist = c("BetaBinomial"), ...)
+padjVals(
+  fds,
+  type = currentType(fds),
+  dist = c("BetaBinomial"),
+  level = "site",
+  filters = list(rho = 0.1),
+  ...
+)
 
 predictedMeans(fds, type = currentType(fds))
 
@@ -70,11 +84,15 @@ verbose(fds) <- value
 
 \item{byGroup}{If TRUE, aggregation by donor/acceptor site will be done.}
 
-\item{...}{Internally used parameteres.}
+\item{...}{Internally used parameters.}
 
 \item{level}{Indicates if the retrieved p values should be adjusted on the 
 donor/acceptor site-level (default) or if unadjusted junction-level 
 p values should be returned.}
+
+\item{filters}{A named list giving the filters that were applied for masking 
+during p value correction. Used for storing and retrieving the 
+correct set of requested p values.}
 
 \item{dist}{Distribution for which the p-values should be extracted.}
 
@@ -140,7 +158,7 @@ assays should be stored as hdf5 files.
 \item \code{dontWriteHDF5<-}: Sets whether the assays should be stored 
 as hdf5 files.
 
-\item \code{verbose}: Dependend on the level of verbosity 
+\item \code{verbose}: Dependent on the level of verbosity 
 the algorithm reports more or less to the user. 0 means being quiet 
 and 10 means everything.
 

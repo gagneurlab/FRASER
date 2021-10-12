@@ -965,19 +965,9 @@ readJunctionMap <- function(junctionMap){
 #' @noRd
 extractSpliceSiteCoordinates <- function(junctions, fds){
     
-    # if(strandSpecific(fds) >= 1L){
-    #     spliceSiteCoords <- unlist(GRangesList(
-    #         extractSpliceSiteCoordsPerStrand(junctions, "+"),
-    #         extractSpliceSiteCoordsPerStrand(junctions, "-")
-    #     ))
-    # } else {
-    #     strand(junctions) <- "*"
-    #     spliceSiteCoords <- extractSpliceSiteCoordsPerStrand(junctions, "*")
-    # }
-    
     spliceSiteCoords <- unlist(GRangesList(
         lapply(unique(strand(junctions)), extractSpliceSiteCoordsPerStrand, 
-               junctions=junctions)
+                junctions=junctions)
     ))
     
     return(unique(sort(spliceSiteCoords)))

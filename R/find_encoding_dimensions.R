@@ -27,6 +27,8 @@ predict_outliers <- function(fds, type, implementation, BPPARAM){
 
     fds <- calculatePvalues(fds, type=type, implementation=implementation,
             BPPARAM=BPPARAM)
+    fds <- calculatePadjValues(fds, type=type, geneLevel=FALSE, 
+            BPPARAM=BPPARAM)
 
     return(fds)
 }
@@ -50,7 +52,7 @@ eval_prot <- function(fds, type){
     }, FUN.VALUE=logical(length(unique(index))) ) ) + 0
 
     if(any(is.na(scores))){
-        warning(sum(is.na(scores)), " P-values where NAs.")
+        # warning(sum(is.na(scores)), " P-values where NAs.")
         scores[is.na(scores)] <- min(scores, na.rm=TRUE)-1
     }
     pr <- pr.curve(scores, weights.class0=labels)
