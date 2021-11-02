@@ -271,10 +271,11 @@ pVals <- function(fds, type=currentType(fds), level="site",
             aname <- paste0(aname, "_", n, filters[[n]])
         }
         if(level == "gene"){
-            if(!paste(aname, type, sep="_") %in% assayNames(fds)){
+            if(!paste(aname, type, sep="_") %in% names(metadata(fds))){
                 stop("Did not find gene-level p values. ",
                         "Please compute them first.")
             }
+            return(metadata(fds)[[paste(aname, type, sep="_")]])
         }
     }
     
@@ -298,7 +299,15 @@ pVals <- function(fds, type=currentType(fds), level="site",
     for(n in sort(names(filters))){
         aname <- paste0(aname, "_", n, filters[[n]])
     }
-    setAssayMatrix(fds, name=aname, type=type, ...) <- value
+    
+    if(level == "gene"){
+        if(is.null(rownames(value))){
+            stop("Missing rownames when storing gene-level pvalues.")
+        }
+        metadata(fds)[[paste(aname, type, sep="_")]] <- value    
+    } else{
+        setAssayMatrix(fds, name=aname, type=type, ...) <- value
+    }
     return(fds)
 }
 
@@ -315,10 +324,11 @@ padjVals <- function(fds, type=currentType(fds), dist=c("BetaBinomial"),
         aname <- paste0(aname, "_", n, filters[[n]])
     }
     if(level == "gene"){
-        if(!paste(aname, type, sep="_") %in% assayNames(fds)){
-            stop("Did not find gene-level p values. ",
+        if(!paste(aname, type, sep="_") %in% names(metadata(fds))){
+            stop("Did not find gene-level padj values. ",
                 "Please compute them first.")
         }
+        return(metadata(fds)[[paste(aname, type, sep="_")]])
     }
     return(getAssayMatrix(fds, aname, type=type, ...))
 }
@@ -333,7 +343,14 @@ padjVals <- function(fds, type=currentType(fds), dist=c("BetaBinomial"),
     for(n in sort(names(filters))){
         aname <- paste0(aname, "_", n, filters[[n]])
     }
-    setAssayMatrix(fds, name=aname, type=type, ...) <- value
+    if(level == "gene"){
+        if(is.null(rownames(value))){
+            stop("Missing rownames when storing gene-level pvalues.")
+        }
+        metadata(fds)[[paste(aname, type, sep="_")]] <- value
+    } else{
+        setAssayMatrix(fds, name=aname, type=type, ...) <- value
+    }
     return(fds)
 }
 
@@ -589,7 +606,8 @@ getIndexFromResultTable <- function(fds, resultTable, padj.method="holm"){
 }
 
 getPlottingDT <- function(fds, axis=c("row", "col"), type=NULL, result=NULL,
-                    idx=NULL, aggregate=FALSE, pvalLevel="site", Ncpus=3, ...){
+                    idx=NULL, aggregate=FALSE, pvalLevel="site", Ncpus=3, 
+                    geneColumn="hgnc_symbol", ...){
     if(!is.null(result)){
         type <- as.character(result$type)
         idx  <- getIndexFromResultTable(fds, result)
@@ -611,8 +629,8 @@ getPlottingDT <- function(fds, axis=c("row", "col"), type=NULL, result=NULL,
     
     spliceID <- getSiteIndex(fds, type=type)[idxrow]
     feature_names <- rownames(mcols(fds, type=type))[idxrow]
-    if("hgnc_symbol" %in% colnames(mcols(fds, type=type))){
-        feature_names <- mcols(fds, type=type)[idxrow,"hgnc_symbol"]
+    if(geneColumn %in% colnames(mcols(fds, type=type))){
+        feature_names <- mcols(fds, type=type)[idxrow, geneColumn]
     }
     if(is.null(feature_names)){
         feature_names <- as.character(seq_row(mcols(fds, type=type)))[idxrow]
@@ -638,29 +656,53 @@ getPlottingDT <- function(fds, axis=c("row", "col"), type=NULL, result=NULL,
             obsPsi    = c((k + pseudocount())/(n + 2*pseudocount())),
             predPsi   = c(predictedMeans(fds, type)[idxrow, idxcol]),
             rho       = rep(rho(fds, type=type)[idxrow], 
-                            ifelse(isTRUE(idxcol), ncol(fds), length(idxcol))) 
+                            ifelse(isTRUE(idxcol), ncol(fds), sum(idxcol))) 
     )
     dt[, deltaPsi:=obsPsi - predPsi]
 
     # add aberrant information to it
     aberrantVec <- aberrant(fds, ..., padjVals=dt[,.(padj)],
         dPsi=dt[,.(deltaPsi)], zscores=dt[,.(zscore)], n=dt[,.(n)], 
-        rhoVals=dt[,.(rho)])
+        rhoVals=dt[,.(rho)], aggregate=FALSE)
     dt[,aberrant:=aberrantVec]
 
-    # if requested return gene p values (correct for multiple testing again)
+    # if requested return gene p values
     if(isTRUE(aggregate)){
-        dt[, pval:=c(pVals(fds, type=type, 
-                            level="gene")[idxrow, idxcol])]
-        dt[, padj:=c(padjVals(fds, type=type, 
-                            level="gene")[idxrow, idxcol]),]
         dt <- dt[!is.na(featureID)]
+        # split featureID into several rows if more than one
+        dt[, dt_idx:=seq_len(.N)]
+        dt_tmp <- dt[, splitGenes(featureID), by="dt_idx"]
+        dt <- dt[dt_tmp$dt_idx,]
+        dt[,`:=`(featureID=dt_tmp$V1, dt_idx=NULL)]
         
+        # get gene-level pvalue matrices
+        pvalsGene <- lapply(c("pval", "padj"), function(x){
+            if(x == "pval"){
+                pvalsGene <- pVals(fds, type=type, 
+                                    level="gene")[,idxcol,drop=FALSE]
+            } else {
+                pvalsGene <- padjVals(fds, type=type, 
+                                    level="gene")[,idxcol,drop=FALSE]
+            }
+            pvalsGene <- data.table(featureID=rownames(pvalsGene), pvalsGene)
+            pvalsGene <- melt(pvalsGene, value.name=paste0("gene_", x), 
+                                id.vars="featureID", variable.name="sampleID")
+            return(pvalsGene)
+        })
+        pvalsGene <- merge(pvalsGene[[1]], pvalsGene[[2]], 
+                            by=c("featureID", "sampleID"))
+        
+        # merge with gene pval matrix
+        dt <- merge(dt, pvalsGene, by=c("featureID", "sampleID"))
+        dt[,`:=`(pval=gene_pval, padj=gene_padj, 
+                gene_pval=NULL, gene_padj=NULL)]
+        
+        # sort
         dt <- dt[order(sampleID, featureID, type, -aberrant,
                         padj, -abs(deltaPsi))][
                 !duplicated(data.table(sampleID, featureID, type))]
     }
-
+    
     # return object
     dt
 }

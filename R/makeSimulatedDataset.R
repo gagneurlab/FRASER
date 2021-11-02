@@ -500,7 +500,8 @@ injectOutliers <- function(fds, type=c("psi5", "psi3", "theta"),
     dt[,groupSize:=.N, by=groupID]
 
     # Get groups where outlier can be injected
-    available_groups <- dt[groupSize > ifelse(type == "theta", 0, 1), unique(groupID)]
+    available_groups <- dt[groupSize > ifelse(type == "theta", 0, 1), 
+                            unique(groupID)]
     
     # e.g. for psi3/5: no donor/acceptor 
     # groups with at least 2 junctions (e.g in simulationBB)

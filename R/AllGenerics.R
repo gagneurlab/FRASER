@@ -616,16 +616,19 @@ resultsSingleSample <- function(sampleID, gr, pvals, padjs, zscores,
                                 psivals, rawCts, rawTotalCts, deltaPsiVals, 
                                 psiType, rowMeansK, rowMeansN, aberrant, 
                                 aggregate, rho, pvalsGene=NULL, padjsGene=NULL, 
-                                additionalColumns, filters=list()){
-    
+                                aberrantGene, additionalColumns,
+                                geneColumn="hgnc_symbol"){
+    mcols(gr)$idx <- seq_along(gr)
     # if gene level results, find the most aberrant junction per gene first
     if(isTRUE(aggregate)){
-        goodGenes <- rownames(aberrant)[aberrant[,sampleID]]
-        geneJunctions <- findJunctionsForAberrantGenes(gr=gr, genes=goodGenes, 
+        goodGenes <- rownames(aberrantGene)[aberrantGene[,sampleID] & 
+                                        !is.na(aberrantGene[,sampleID])]
+        geneJunctions <- findJunctionsForAberrantGenes(gr=gr, 
+                            aberrantGenes=goodGenes, 
                             pvals=pvals[,sampleID], 
                             dpsi=deltaPsiVals[,sampleID],
-                            minCount=rawTotalCts[,sampleID], rho=rho,
-                            filters=filters)    
+                            geneColumn=geneColumn,
+                            aberrantJunctions=aberrant[,sampleID])    
         goodCut <- rep(FALSE, nrow(pvals))
         goodCut[geneJunctions] <- TRUE
     } else{
@@ -637,33 +640,43 @@ resultsSingleSample <- function(sampleID, gr, pvals, padjs, zscores,
     if(!any(goodCut)){
         return(ans)
     }
+    mcols(ans)$idx <- mcols(gr)$idx[goodCut]
     
-    if(!"hgnc_symbol" %in% colnames(mcols(gr))){
-        mcols(gr)$hgnc_symbol <- NA_character_
+    if(!geneColumn %in% colnames(mcols(gr))){
+        mcols(gr)[,geneColumn] <- NA_character_
     }
     
     # extract data
     mcols(ans)$sampleID        <- Rle(sampleID)
     if("hgnc_symbol" %in% colnames(mcols(gr))){
-        mcols(ans)$hgncSymbol <- Rle(mcols(gr[goodCut])$hgnc_symbol)
+        mcols(ans)$hgncSymbol <- Rle(mcols(gr[goodCut])[,geneColumn])
     }
-    if("other_hgnc_symbol" %in% colnames(mcols(gr))){
-        mcols(ans)$addHgncSymbols <- Rle(mcols(gr[goodCut])$other_hgnc_symbol)
-    }
+    
     mcols(ans)$type            <- Rle(psiType)
     mcols(ans)$pValue          <- signif(pvals[goodCut,sampleID], 5)
     mcols(ans)$padjust         <- signif(padjs[goodCut,sampleID], 5)
     mcols(ans)$zScore          <- Rle(round(zscores[goodCut,sampleID], 2))
     mcols(ans)$psiValue        <- Rle(round(psivals[goodCut,sampleID], 2))
-    mcols(ans)$deltaPsi        <- Rle(round(deltaPsiVals[goodCut,sampleID], 2))
-    mcols(ans)$meanCounts      <- Rle(round(rowMeansK[goodCut], 2))
-    mcols(ans)$meanTotalCounts <- Rle(round(rowMeansN[goodCut], 2))
+    mcols(ans)$deltaPsi        <- round(deltaPsiVals[goodCut,sampleID], 2)
     mcols(ans)$counts          <- Rle(rawCts[goodCut, sampleID])
     mcols(ans)$totalCounts     <- Rle(rawTotalCts[goodCut, sampleID])
+    mcols(ans)$meanCounts      <- Rle(round(rowMeansK[goodCut], 2))
+    mcols(ans)$meanTotalCounts <- Rle(round(rowMeansN[goodCut], 2))
     
     if(isTRUE(aggregate)){
-        mcols(ans)$pValueGene  <- signif(pvalsGene[goodCut,sampleID], 5)
-        mcols(ans)$padjustGene <- signif(padjsGene[goodCut,sampleID], 5)
+        # report junction more than once if it is significant for several genes
+        nrGenesPerJunction <- table(geneJunctions)
+        ans <- rep(ans, nrGenesPerJunction[as.character(mcols(ans)$idx)])
+        mcols(ans)$hgncSymbol <- 
+            as.data.table(ans)[, names(geneJunctions)[geneJunctions == idx], 
+                                by = eval(colnames(mcols(ans)))][,V1]
+        
+        # add gene level pvalue    
+        mcols(ans)$pValueGene  <- 
+            signif(pvalsGene[mcols(ans)$hgncSymbol,sampleID], 5)
+        mcols(ans)$padjustGene <- 
+            signif(padjsGene[mcols(ans)$hgncSymbol,sampleID], 5)
+        mcols(ans)$hgncSymbol <- Rle(mcols(ans)$hgncSymbol)
     }
     
     if(!is.null(additionalColumns)){
@@ -672,17 +685,21 @@ resultsSingleSample <- function(sampleID, gr, pvals, padjs, zscores,
         }
     }
     
-    return(ans[order(mcols(ans)$pValue)])
+    # remove helper column
+    mcols(ans)$idx <- NULL
+    
+    
+    return(ans[order(mcols(ans)$pValue, -abs(mcols(ans)$deltaPsi))])
 }
 
 FRASER.results <- function(object, sampleIDs, fdrCutoff, zscoreCutoff, 
                             dPsiCutoff, minCount, rhoCutoff, psiType, 
-                            maxCols=20, aggregate=FALSE, collapse=TRUE,
-                            BPPARAM=bpparam(), additionalColumns=NULL){
+                            maxCols=20, aggregate=FALSE, collapse=FALSE,
+                            geneColumn="hgnc_symbol", BPPARAM=bpparam(), 
+                            additionalColumns=NULL){
     
     stopifnot(is(object, "FraserDataSet"))
     stopifnot(all(sampleIDs %in% samples(object)))
-    message(date(), " collapse = ", collapse)
     
     resultsls <- bplapply(psiType, BPPARAM=BPPARAM, function(type){
         message(date(), ": Collecting results for: ", type)
@@ -713,7 +730,7 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff, zscoreCutoff,
             muPsi        <- as.matrix(predictedMeans(tmp_x))
             psivals_pc   <- (rawCts + pseudocount()) /
                 (rawTotalCts + 2*pseudocount())
-            deltaPsiVals <- psivals_pc - muPsi
+            deltaPsiVals <- deltaPsiValue(tmp_x, type)
             rho          <- rho(tmp_x, type)
             aberrant     <- aberrant.FRASER(tmp_x, type=type, 
                                                 padjCutoff=fdrCutoff, 
@@ -721,13 +738,23 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff, zscoreCutoff,
                                                 deltaPsiCutoff=dPsiCutoff, 
                                                 minCount=minCount, 
                                                 rhoCutoff=rhoCutoff,
-                                                aggregate=aggregate)
+                                                aggregate=FALSE,
+                                                geneColumn=geneColumn)
             if(isTRUE(aggregate)){
                 pvalsGene    <- as.matrix(pVals(tmp_x, level="gene"))
                 padjsGene    <- as.matrix(padjVals(tmp_x, level="gene"))
+                aberrantGene <- aberrant.FRASER(tmp_x, type=type, 
+                                                padjCutoff=fdrCutoff, 
+                                                zScoreCutoff=zscoreCutoff, 
+                                                deltaPsiCutoff=dPsiCutoff, 
+                                                minCount=minCount, 
+                                                rhoCutoff=rhoCutoff,
+                                                aggregate=TRUE,
+                                                geneColumn=geneColumn)
             } else{
                 pvalsGene    <- NULL
                 padjsGene    <- NULL
+                aberrantGene <- NULL
             }
             
             if(length(sc) == 1){
@@ -745,12 +772,10 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff, zscoreCutoff,
                                 rawCts=rawCts, rawTotalCts=rawTotalCts, 
                                 rowMeansK=rowMeansK, rowMeansN=rowMeansN, 
                                 aberrant=aberrant, aggregate=aggregate,
-                                rho=rho, 
+                                rho=rho, geneColumn=geneColumn,
                                 pvalsGene=pvalsGene, padjsGene=padjsGene,
-                                additionalColumns=additionalColumns,
-                                filters=list(dpsi=dPsiCutoff, 
-                                            minCount=minCount, 
-                                            rho=rhoCutoff))
+                                aberrantGene=aberrantGene, 
+                                additionalColumns=additionalColumns)
             
             # return combined result
             return(unlist(GRangesList(sampleRes)))
@@ -768,16 +793,8 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff, zscoreCutoff,
     }
     
     # collapse into one row per gene if requested
-    if(isTRUE(aggregate) && isTRUE(collapse) && length(ans) > 0){
-        
-        ans <- ans[order(ans$pValueGene, ans$pValue)]
-        naIdx <- is.na(ans$hgncSymbol)
-        ansNoNA <- ans[!is.na(ans$hgncSymbol),]
-        
-        # get final result table
-        dupIdx <- duplicated(data.table(as.vector(ansNoNA$hgncSymbol), 
-                                        as.vector(ansNoNA$sampleID)))
-        ans <- ans[!naIdx,][!dupIdx,]
+    if(isTRUE(aggregate) && isTRUE(collapse)){
+        ans <- collapseResTablePerGene(ans)
     }
     
     # return only the results
@@ -810,11 +827,6 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff, zscoreCutoff,
 #' (e.g. ensembl_gene_id). Default is \code{NULL}, so no additional columns 
 #' are included. 
 #' @param BPPARAM The BiocParallel parameter.
-#' @param res Result as created with \code{results()}
-#' @param geneColumn The name of the column in \code{mcols(res)} that contains 
-#'     the gene symbols.   
-#' @param method The p.adjust method that is being used to adjust p values per
-#'     sample.
 #' @param type Splicing type (psi5, psi3 or theta)
 #' @param by By default \code{none} which means no grouping. But if 
 #'              \code{sample} or \code{feature} is specified the sum by 
@@ -822,11 +834,13 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff, zscoreCutoff,
 #' @param aggregate If TRUE the returned object is aggregated to the feature 
 #'              level (i.e. gene level).
 #' @param collapse Only takes effect if \code{aggregate=TRUE}. 
-#'              If TRUE (default), collapses results across the different psi 
+#'              If TRUE, collapses results across the different psi 
 #'              types to return only one row per feature (gene) and sample.
-#' @param ... Further arguments can be passed to the method. If "zscores", 
-#'              "padjVals" or "dPsi" is given, the values of those arguments
-#'              are used to define the aberrant events.
+#' @param geneColumn The column name of the column that has the gene annotation 
+#'              that will be used for gene-level pvalue computation.
+#' @param ... Further arguments can be passed to the method. If "n", "zscores", 
+#'              "padjVals", "dPsi" or "rhoVals" are given, the values of those 
+#'              arguments are used to define the aberrant events.
 #'
 #' @return For \code{results}: GRanges object containing significant results.
 #'     For \code{aberrant}: Either a of logical values of size 
@@ -839,15 +853,20 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff, zscoreCutoff,
 #' # get data, fit and compute p-values and z-scores
 #' fds <- createTestFraserDataSet()
 #' 
-#' # extract results: for this example dataset, z score cutoff of 2 is used to
-#' # get at least one result and show the output
-#' res <- results(fds, padjCutoff=NA, zScoreCutoff=3, deltaPsiCutoff=0.05)
+#' # extract results: for this example dataset, z score cutoff of 1 and delta 
+#' # psi cutoff of 0.2 is used to get at least one result and show the output
+#' res <- results(fds, padjCutoff=NA, zScoreCutoff=1, deltaPsiCutoff=0.2)
 #' res
 #' 
 #' # aggregate the results by genes (gene symbols need to be annotated first 
 #' # using annotateRanges() function)
-#' results(fds, padjCutoff=NA, zScoreCutoff=3, deltaPsiCutoff=0.05, 
+#' results(fds, padjCutoff=NA, zScoreCutoff=1, deltaPsiCutoff=0.1, 
 #'         aggregate=TRUE)
+#'
+#' # aggregate the results by genes and collapse over all psi types to obtain 
+#' # only one row per gene in the results table 
+#' results(fds, padjCutoff=NA, zScoreCutoff=1, deltaPsiCutoff=0.1, 
+#'         aggregate=TRUE, collapse=TRUE)
 #'
 #' # get aberrant events per sample: on the example data, nothing is aberrant
 #' # based on the adjusted p-value
@@ -864,14 +883,15 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff, zscoreCutoff,
 setMethod("results", "FraserDataSet", function(object, 
                     sampleIDs=samples(object), padjCutoff=0.05,
                     zScoreCutoff=NA, deltaPsiCutoff=0.3,
-                    rhoCutoff=0.1, aggregate=FALSE, collapse=TRUE,
+                    rhoCutoff=0.1, aggregate=FALSE, collapse=FALSE,
                     minCount=5, psiType=c("psi3", "psi5", "theta"),
-                    additionalColumns=NULL, BPPARAM=bpparam(), ...){
+                    geneColumn="hgnc_symbol",
+                    additionalColumns=NULL, BPPARAM=bpparam()){
     FRASER.results(object=object, sampleIDs=sampleIDs, fdrCutoff=padjCutoff,
             zscoreCutoff=zScoreCutoff, dPsiCutoff=deltaPsiCutoff, 
             rhoCutoff=rhoCutoff, minCount=minCount, 
             psiType=match.arg(psiType, several.ok=TRUE),
-            aggregate=aggregate, collapse=collapse,
+            aggregate=aggregate, collapse=collapse, geneColumn=geneColumn,
             additionalColumns=additionalColumns, BPPARAM=BPPARAM)
 })
 
@@ -879,7 +899,7 @@ aberrant.FRASER <- function(object, type=currentType(object),
                                 padjCutoff=0.05, deltaPsiCutoff=0.3, 
                                 zScoreCutoff=NA, minCount=5, rhoCutoff=0.1,
                                 by=c("none", "sample", "feature"), 
-                                aggregate=FALSE, ...){
+                                aggregate=FALSE, geneColumn="hgnc_symbol", ...){
     
     checkNaAndRange(padjCutoff,     min=0, max=1,   scalar=TRUE,   na.ok=TRUE)
     checkNaAndRange(zScoreCutoff,   min=0, max=Inf, scalar=TRUE,   na.ok=TRUE)
@@ -911,8 +931,7 @@ aberrant.FRASER <- function(object, type=currentType(object),
                     "Please compute them first by running the ",
                     "calculatePadjValues function with the requested filters.")
         }
-        pvalLevel <- ifelse(isTRUE(aggregate), "gene", "site")
-        padj <- padjVals(object, type=type, level=pvalLevel, 
+        padj <- padjVals(object, type=type, level="site", 
                         filters=list(rho=rhoCutoff))
     }
     if("dPsi" %in% names(dots)){
@@ -926,38 +945,59 @@ aberrant.FRASER <- function(object, type=currentType(object),
         rho <- matrix(rho(object, type=type), 
                         nrow=nrow(dpsi), ncol=ncol(dpsi))
     } 
+    if(isTRUE(aggregate)){
+        if("padjGeneVals" %in% names(dots)){
+            padj_gene <- dots[['padjGeneVals']]
+        } else{
+            padj_gene <- padjVals(object, type=type, level="gene", 
+                                filters=list(rho=rhoCutoff))    
+        }
+        
+    }
     
     if(is.na(padjCutoff)){
         padjCutoff <- 1
     }
     
-    if(isFALSE(aggregate)){
-        aberrantEvents <- padj <= padjCutoff
+    aberrantEvents <- as.matrix(padj) <= padjCutoff
+    
+    # check each cutoff if in use (not NA)
+    if(!is.na(minCount)){
+        aberrantEvents <- aberrantEvents & as.matrix(n >= minCount)
+    }
+    if(!is.na(zScoreCutoff)){
+        aberrantEvents <- aberrantEvents & 
+            as.matrix(abs(zscores) > zScoreCutoff)
+    }
+    if(!is.na(deltaPsiCutoff)){
+        aberrantEvents <- aberrantEvents & 
+            as.matrix(abs(dpsi) > deltaPsiCutoff)
+    }
+    if(!is.na(rhoCutoff)){
+        aberrantEvents <- aberrantEvents & as.matrix(rho < rhoCutoff)
+    }
+    aberrantEvents[is.na(aberrantEvents)] <- FALSE
         
-        # check each cutoff if in use (not NA)
-        if(!is.na(minCount)){
-            aberrantEvents <- aberrantEvents & as.matrix(n >= minCount)
+    if(isTRUE(aggregate)){
+        if(is.null(rownames(padj_gene))){
+            stop("Missing rownames for gene-level padj values.")
         }
-        if(!is.na(zScoreCutoff)){
-            aberrantEvents <- aberrantEvents & 
-                                as.matrix(abs(zscores) > zScoreCutoff)
-        }
-        if(!is.na(deltaPsiCutoff)){
-            aberrantEvents <- aberrantEvents & 
-                                as.matrix(abs(dpsi) > deltaPsiCutoff)
-        }
-        if(!is.na(rhoCutoff)){
-            aberrantEvents <- aberrantEvents & as.matrix(rho < rhoCutoff)
-        }
-        aberrantEvents[is.na(aberrantEvents)] <- FALSE
+        # reduce aberrant matrix to one row per gene 
+        # (TRUE if any junction is aberrant for each sample)
+        ab_dt <- data.table(geneID=getGeneIDs(object, type=type, unique=FALSE,
+                                                geneColumn=geneColumn), 
+                            aberrantEvents)
+        ab_dt[, dt_idx:=seq_len(.N)]
+        dt_tmp <- ab_dt[!is.na(geneID), splitGenes(geneID), by="dt_idx"]
+        ab_dt <- ab_dt[dt_tmp$dt_idx]
+        ab_dt[,`:=`(geneID=dt_tmp$V1, dt_idx=NULL)]
+        ab_dt <- ab_dt[,lapply(.SD, any), by="geneID"]
+        aberrantEvents <- as.matrix(ab_dt[,-1])
+        rownames(aberrantEvents) <- ab_dt[,geneID]
         
-    } else{
-        dt <- data.table(geneID=mcols(object, type=type)$hgnc_symbol, padj)
-        dt <- dt[!duplicated(dt, by="geneID") & !is.na(geneID)]
-        padj <- as.matrix(dt[, -1])
-        rownames(padj) <- dt[,geneID]
-        
-        aberrantEvents <- padj <= padjCutoff
+        aberrantEvents <- aberrantEvents & as.matrix(
+                padj_gene[rownames(aberrantEvents),colnames(aberrantEvents)]
+            ) <= padjCutoff
     }
     
     return(switch(match.arg(by),

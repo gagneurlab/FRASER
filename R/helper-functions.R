@@ -561,57 +561,102 @@ checkPadjAvailableForFilters <- function(fds, type, filters=list(),
     for(n in sort(names(filters))){
         aname <- paste0(aname, "_", n, filters[[n]])
     }
-    pvalsAvailable <- paste(aname, type, sep="_") %in% assayNames(fds)
+    aname <- paste(aname, type, sep="_")
+    if(isTRUE(aggregate)){
+        pvalsAvailable <- aname %in% names(metadata(fds))
+    } else{
+        pvalsAvailable <- aname %in% assayNames(fds)
+    }
     return(pvalsAvailable)
 }
 
 #'
-#' Find most aberrant junction for each gene
+#' Find most aberrant junction for each aberrant gene
 #' 
 #' @param gr GRanges object with information about junctions.
-#' @param genes Significant genes for which the corresponding junction should 
-#'     be extracted. 
+#' @param aberrantGenes Significant genes for which the corresponding junction 
+#'     should be extracted. 
 #' @param pvals Vector of pvalues (for one sample).
 #' @param dpsi Vector of delta psi values (for one sample).
-#' @param minCount Vector of total counts (N) to which minCount filter will be 
-#'     applied.
-#' @param rho Vector of rho values (for all junctions).
-#' @param filters The filters which will be used for masked junctions during 
-#'     extraction (possible options: dpsi, minCount, rho).
-#' 
+#' @param aberrantJunctions Vector indicating which junctions are considered 
+#'     aberrant. 
+#' @param geneColumn Name of the column in mcols(fds) that has gene annotation.
 #' @noRd
-findJunctionsForAberrantGenes <- function(gr, genes, pvals, dpsi, minCount, 
-                                            rho, filters=list()){
-    geneJunctions <- mcols(gr)$hgnc_symbol %in% genes
-    dt <- data.table(idx=which(geneJunctions == TRUE), 
-                        geneID=mcols(gr)$hgnc_symbol[geneJunctions],
-                        pval=pvals[geneJunctions], 
-                        dpsi=abs(dpsi[geneJunctions]),
-                        minCount=minCount[geneJunctions],
-                        rho=rho[geneJunctions] )
-    
-    # mask junctions that don't pass filters (minCount, dPsi, rho)
-    for(n in names(filters)){
-        if(n == "rho"){
-            if(is.na(filters[["rho"]])){
-                filters[["rho"]] <- 1
-            }
-            dt[rho > filters[["rho"]], pval:=NA]
-        } else{
-            if(is.na(filters[[n]])){
-                filters[[n]] <- 0
-            }
-            dt[get(n) < filters[[n]], pval:=NA]
-        }
-    }
+findJunctionsForAberrantGenes <- function(gr, aberrantGenes, pvals, dpsi, 
+                                aberrantJunctions, geneColumn="hgnc_symbol"){
+    dt <- data.table(idx=mcols(gr)$idx, 
+                        geneID=mcols(gr)[,geneColumn],
+                        pval=pvals, 
+                        dpsi=abs(dpsi),
+                        aberrant=aberrantJunctions)
+    dt[, dt_idx:=seq_len(.N)]
+    dt_tmp <- dt[, splitGenes(geneID), by="dt_idx"]
+    dt <- dt[dt_tmp$dt_idx,]
+    dt[,`:=`(geneID=dt_tmp$V1, dt_idx=NULL)]
+    dt <- dt[geneID %in% aberrantGenes,]
+    dt <- dt[!is.na(aberrant) & aberrant == TRUE,]
     
     # sort per gene by lowest pvalue / highest deltaPsi and return index
-    dt <- dt[order(geneID, pval, -dpsi)]
+    dt <- dt[order(geneID, -aberrant, pval, -dpsi)]
     dt <- dt[!duplicated(dt, by="geneID"),]
     
     # remove gene-level significant result if no junction in that gene passed
     # the filters
     dt <- dt[!is.na(pval),]
     
-    return(dt[,idx])
+    junctionsToReport <- dt[,idx]
+    names(junctionsToReport) <- dt[,geneID]
+    junctionsToReport <- sort(junctionsToReport)
+    return(junctionsToReport)
+}
+
+collapseResTablePerGene <- function(res, geneColumn="hgncSymbol"){
+    if(length(res) == 0){
+        return(res)
+    }
+    if(!is.data.table(res)){
+        res <- as.data.table(res)
+    }
+    
+    if(any(!c("pValue", "pValueGene", geneColumn) %in% colnames(res))){
+        stop("For collapsing per gene, the results table needs to contain ",
+            "the columns pValue, pValueGene and ", geneColumn, ".")
+    }
+    
+    res <- res[order(res$pValueGene, res$pValue)]
+    naIdx <- is.na(res[, get(geneColumn)])
+    ansNoNA <- res[!is.na(res[, get(geneColumn)]),]
+    
+    # get final result table
+    dupIdx <- duplicated(data.table(as.vector(ansNoNA[, get(geneColumn)]), 
+                                    as.vector(ansNoNA$sampleID)))
+    ans <- res[!naIdx,][!dupIdx,]
+    return(ans)
+}
+
+#' ignores NA in unique if other values than NA are present
+#' @noRd
+uniqueIgnoreNA <- function(x){
+    uniq <- unique(x)
+    if(length(uniq) > 1) uniq <- uniq[!is.na(uniq)]
+    return(uniq)
+}
+
+#' split string of gene names into vector
+#' @noRd
+splitGenes <- function(x, sep=";"){
+    return(unlist(strsplit(as.character(x), sep, fixed=TRUE)))
+}
+
+#' cap string of gene names to show max 3 gene names
+#' @noRd
+limitGeneNamesList <- function(gene_names, maxLength=3){
+    gene_names <- as.character(gene_names)
+    numFeatures <- unlist(lapply(gene_names, function(x) length(splitGenes(x))))
+    gene_names[numFeatures > maxLength] <- 
+        unlist(lapply(gene_names[numFeatures > maxLength], function(x){
+            paste(c(splitGenes(x)[seq_len(maxLength)], "..."), 
+                    collapse=";") 
+        } ))
+    return(gene_names)
 }

@@ -352,6 +352,8 @@ plotExpression <- function(fds, type=c("psi5", "psi3", "theta"),
     }
 
     dt <- getPlottingDT(fds, axis="row", type=type, idx=site, ...)
+    dt[,featureID:=limitGeneNamesList(featureID, maxLength=3)]
+    
     if(!is.null(colGroup)){
         if(all(colGroup %in% samples(fds))){
             colGroup <- samples(fds) %in% colGroup
@@ -441,6 +443,7 @@ plotExpectedVsObservedPsi <- function(fds, type=c("psi5", "psi3", "theta"),
             idx=idx, ...)
     type <- as.character(unique(dt$type))
     idx  <- unique(dt$idx)
+    dt[,featureID:=limitGeneNamesList(featureID, maxLength=3)]
     
     if(is.null(main)){
         if(isTRUE(basePlot)){
@@ -562,6 +565,7 @@ plotQQ.FRASER <- function(object, type=NULL, idx=NULL, result=NULL,
         } else {
             type <- as.character(dt[,unique(type)])
             featureID <- as.character(dt[,unique(featureID)])
+            featureID <- limitGeneNamesList(featureID, maxLength=3)
             if(isTRUE(basePlot)){
                 main <- as.expression(bquote(bold(paste(
                         .(ggplotLabelPsi(type)[[1]]),

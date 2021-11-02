@@ -13,12 +13,12 @@
   deltaPsiCutoff = 0.3,
   rhoCutoff = 0.1,
   aggregate = FALSE,
-  collapse = TRUE,
+  collapse = FALSE,
   minCount = 5,
   psiType = c("psi3", "psi5", "theta"),
+  geneColumn = "hgnc_symbol",
   additionalColumns = NULL,
-  BPPARAM = bpparam(),
-  ...
+  BPPARAM = bpparam()
 )
 
 \S4method{aberrant}{FraserDataSet}(
@@ -31,6 +31,7 @@
   rhoCutoff = 0.1,
   by = c("none", "sample", "feature"),
   aggregate = FALSE,
+  geneColumn = "hgnc_symbol",
   ...
 )
 }
@@ -54,7 +55,7 @@ junctions are filtered}
 level (i.e. gene level).}
 
 \item{collapse}{Only takes effect if \code{aggregate=TRUE}. 
-If TRUE (default), collapses results across the different psi 
+If TRUE, collapses results across the different psi 
 types to return only one row per feature (gene) and sample.}
 
 \item{minCount}{The minimum count value of the total coverage of an intron 
@@ -63,6 +64,9 @@ result}
 
 \item{psiType}{The psi types for which the results should be retrieved.}
 
+\item{geneColumn}{The column name of the column that has the gene annotation 
+that will be used for gene-level pvalue computation.}
+
 \item{additionalColumns}{Character vector containing the names of additional 
 columns from mcols(fds) that should appear in the result table 
 (e.g. ensembl_gene_id). Default is \code{NULL}, so no additional columns 
@@ -70,23 +74,15 @@ are included.}
 
 \item{BPPARAM}{The BiocParallel parameter.}
 
-\item{...}{Further arguments can be passed to the method. If "zscores", 
-"padjVals" or "dPsi" is given, the values of those arguments
-are used to define the aberrant events.}
-
 \item{type}{Splicing type (psi5, psi3 or theta)}
 
 \item{by}{By default \code{none} which means no grouping. But if 
 \code{sample} or \code{feature} is specified the sum by 
 sample or feature is returned}
 
-\item{res}{Result as created with \code{results()}}
-
-\item{geneColumn}{The name of the column in \code{mcols(res)} that contains 
-the gene symbols.}
-
-\item{method}{The p.adjust method that is being used to adjust p values per
-sample.}
+\item{...}{Further arguments can be passed to the method. If "n", "zscores", 
+"padjVals", "dPsi" or "rhoVals" are given, the values of those 
+arguments are used to define the aberrant events.}
 }
 \value{
 For \code{results}: GRanges object containing significant results.
@@ -104,15 +100,20 @@ aberrant splicing events based on the given cutoffs.
 # get data, fit and compute p-values and z-scores
 fds <- createTestFraserDataSet()
 
-# extract results: for this example dataset, z score cutoff of 2 is used to
-# get at least one result and show the output
-res <- results(fds, padjCutoff=NA, zScoreCutoff=3, deltaPsiCutoff=0.05)
+# extract results: for this example dataset, z score cutoff of 1 and delta 
+# psi cutoff of 0.2 is used to get at least one result and show the output
+res <- results(fds, padjCutoff=NA, zScoreCutoff=1, deltaPsiCutoff=0.2)
 res
 
 # aggregate the results by genes (gene symbols need to be annotated first 
 # using annotateRanges() function)
-results(fds, padjCutoff=NA, zScoreCutoff=3, deltaPsiCutoff=0.05, 
+results(fds, padjCutoff=NA, zScoreCutoff=1, deltaPsiCutoff=0.1, 
         aggregate=TRUE)
+
+# aggregate the results by genes and collapse over all psi types to obtain 
+# only one row per gene in the results table 
+results(fds, padjCutoff=NA, zScoreCutoff=1, deltaPsiCutoff=0.1, 
+        aggregate=TRUE, collapse=TRUE)
 
 # get aberrant events per sample: on the example data, nothing is aberrant
 # based on the adjusted p-value

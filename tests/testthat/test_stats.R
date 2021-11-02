@@ -52,31 +52,31 @@ test_that("Gene p value calculation with NAs", {
     fds <- calculatePadjValues(fds, type="psi5", rhoCutoff=0.1)
     fds <- calculatePadjValues(fds, type="psi3", rhoCutoff=0.1)
     
+    # check dimension of junction-, site- and gene-level pval matrices
+    expect_equal(nrow(pVals(fds, type="psi5", level="junction", 
+                            filters=list(rho=0.1))), nrow(fds))
+    expect_equal(nrow(pVals(fds, type="psi5", level="site", 
+                            filters=list(rho=0.1))), nrow(fds))
+    expect_equal(nrow(pVals(fds, type="psi5", level="gene", 
+                            filters=list(rho=0.1))), 3)
+    
     # check psi5 pvals are partly NAs
-    expect_equal(pVals(fds, type="psi5", level="site", 
-                        filters=list(rho=0.1))[4:7,1],
-                 as.double(rep(NA, 4)))
-    expect_equal(pVals(fds, type="psi5", level="gene", 
-                        filters=list(rho=0.1))[4:7,2],
-                 as.double(rep(NA, 4)))
-    expect_equal(padjVals(fds, type="psi5", level="site", 
-                        filters=list(rho=0.1))[4:7,1],
-                 as.double(rep(NA, 4)))
-    expect_equal(padjVals(fds, type="psi5", level="gene", 
-                        filters=list(rho=0.1))[4:7,2],
-                 as.double(rep(NA, 4)))
+    expect_true(all(is.na(pVals(fds, type="psi5", level="site", 
+                                filters=list(rho=0.1))[4:7,])))
+    expect_true(all(is.na(pVals(fds, type="psi5", level="gene", 
+                                filters=list(rho=0.1))["geneB",])))
+    expect_true(all(is.na(padjVals(fds, type="psi5", level="site", 
+                                filters=list(rho=0.1))[4:7,])))
+    expect_true(all(is.na(padjVals(fds, type="psi5", level="gene", 
+                                filters=list(rho=0.1))["geneB",])))
     
     # check psi3 pvals are all NAs
-    expect_equal(pVals(fds, type="psi3", level="site", 
-                        filters=list(rho=0.1))[,1],
-                 as.double(rep(NA, nrow(fds))))
-    expect_equal(pVals(fds, type="psi3", level="gene", 
-                        filters=list(rho=0.1))[,2],
-                 as.double(rep(NA, nrow(fds))))
-    expect_equal(padjVals(fds, type="psi3", level="site", 
-                        filters=list(rho=0.1))[,1],
-                 as.double(rep(NA, nrow(fds))))
-    expect_equal(padjVals(fds, type="psi3", level="gene", 
-                        filters=list(rho=0.1))[,2],
-                 as.double(rep(NA, nrow(fds))))
+    expect_true(all(is.na(pVals(fds, type="psi3", level="site", 
+                                filters=list(rho=0.1)))))
+    expect_true(all(is.na(pVals(fds, type="psi3", level="gene", 
+                                filters=list(rho=0.1)))))
+    expect_true(all(is.na(padjVals(fds, type="psi3", level="site", 
+                                filters=list(rho=0.1)))))
+    expect_true(all(is.na(padjVals(fds, type="psi3", level="gene", 
+                                filters=list(rho=0.1)))))
 })

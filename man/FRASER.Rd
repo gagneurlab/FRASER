@@ -34,6 +34,7 @@ calculatePadjValues(
   method = "BY",
   rhoCutoff = 0.1,
   geneLevel = TRUE,
+  geneColumn = "hgnc_symbol",
   BPPARAM = bpparam()
 )
 }
@@ -78,6 +79,9 @@ masked with NA during p value adjustment.}
 
 \item{geneLevel}{Logical value indiciating whether gene-level p values 
 should be calculated. Defaults to TRUE.}
+
+\item{geneColumn}{The column name of the column that has the gene annotation 
+that will be used for gene-level pvalue computation.}
 }
 \value{
 FraserDataSet

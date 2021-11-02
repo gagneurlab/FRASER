@@ -147,6 +147,42 @@ adjust_FWER_PValues <- function(i, pvals, index, rho, rhoCutoff,
     setkey(dt2, "idx")[J(index)][,pa]
 }
 
+adjust_FWER_PValues_per_idx <- function(i, pvals, index, rho, rhoCutoff, 
+                                method="holm"){
+    pvals[rho > rhoCutoff,] <- NA
+    dttmp <- data.table(idx=index, rho=rho, 
+                        apply(pvals, 2, as.numeric))[idx == i,]
+    suppressWarnings(
+        pa <- apply(as.matrix(dttmp[,-c("idx", "rho")]), 2,
+                        function(x) min(p.adjust(x, method=method), 
+                                        na.rm = TRUE) )
+    )
+    pa[is.infinite(pa)] <- NA
+    return(pa)
+}
+
+getFWERpvals_bySample <- function(pvals, index, rho, method="holm", 
+                                rhoCutoff=0.1, BPPARAM=bpparam()){
+    fwer_pval <- bplapply(seq_col(pvals), adjust_FWER_PValues,
+                    pvals=pvals, index, BPPARAM=BPPARAM,
+                    method=method, rho=rho, rhoCutoff=rhoCutoff)
+    fwer_pvals <- do.call(cbind, fwer_pval)
+    return(fwer_pvals)
+}
+
+getFWERpvals_byIdx <- function(pvals, index, rho, method="holm", 
+                                rhoCutoff=0.1, BPPARAM=bpparam()){
+    unique_idx <- unique(index)
+    fwer_pval <- bplapply(unique_idx, adjust_FWER_PValues_per_idx,
+                    pvals=pvals, index, BPPARAM=BPPARAM,
+                    method=method, rho=rho, rhoCutoff=rhoCutoff)
+    fwer_pvals <- do.call(rbind, fwer_pval)
+    fwer_pvals <- as.matrix(
+        setkey(data.table(idx=unique_idx, fwer_pvals), 
+                "idx")[J(index)][,-c("idx")])
+    return(fwer_pvals)
+}
+
 singlePvalueBetaBinomial <- function(idx, k, n, mu, rho){
 
     ki <- k[idx,]
@@ -189,11 +225,13 @@ singlePvalueBinomial <- function(idx, k, n, mu){
 #'     masked with NA during p value adjustment. 
 #' @param geneLevel Logical value indiciating whether gene-level p values 
 #'     should be calculated. Defaults to TRUE.
+#' @param geneColumn The column name of the column that has the gene annotation 
+#'              that will be used for gene-level pvalue computation.
 #' 
 #' @export
 calculatePadjValues <- function(fds, type=currentType(fds), method="BY",
-                                rhoCutoff=0.1, geneLevel=TRUE,
-                                BPPARAM=bpparam()){
+                                rhoCutoff=0.1, geneLevel=TRUE, 
+                                geneColumn="hgnc_symbol", BPPARAM=bpparam()){
     currentType(fds) <- type
     index <- getSiteIndex(fds, type=type)
     idx   <- !duplicated(index)
@@ -209,14 +247,15 @@ calculatePadjValues <- function(fds, type=currentType(fds), method="BY",
         
         # splice site-level pval correction
         message(date(), ":  adjusting junction-level pvalues ...")
-        fwer_pval <- bplapply(seq_col(pvals), adjust_FWER_PValues,
-                                pvals=pvals, index, BPPARAM=BPPARAM,
-                                method="holm", rho=rho, rhoCutoff=rhoCutoff)
-        fwer_pvals <- do.call(cbind, fwer_pval)
+        # fwer_pvals <- getFWERpvals_byIdx(pvals, index, rho, method="holm", 
+        #                                 rhoCutoff=rhoCutoff, BPPARAM=BPPARAM)
+        fwer_pvals <- getFWERpvals_bySample(pvals, index, rho, method="holm", 
+                                        rhoCutoff=rhoCutoff, BPPARAM=BPPARAM)
         pVals(fds, dist=i, level="site", filters=list(rho=rhoCutoff),
                 withDimnames=FALSE) <- fwer_pvals
         
         # junction-level FDR correction
+        message(date(), ":  genome-wide FDR for junction-level pvalues ...")
         padj <- apply(fwer_pvals[idx,], 2, p.adjust, method=method)
         padjDT <- data.table(cbind(i=unique(index), padj), key="i")[J(index)]
         padjDT[,i:=NULL]
@@ -224,16 +263,22 @@ calculatePadjValues <- function(fds, type=currentType(fds), method="BY",
                 withDimnames=FALSE) <- as.matrix(padjDT)
         
         # gene-level pval correction and FDR
-        if("hgnc_symbol" %in% colnames(mcols(fds, type=type)) && 
+        if(geneColumn %in% colnames(mcols(fds, type=type)) && 
                 isTRUE(geneLevel)){
             message(date(), ":  calculating gene-level pvalues ...")
             gene_pvals <- getPvalsPerGene(fds=fds, type=type, pvals=fwer_pvals,
                                             method="holm", FDRmethod=method, 
+                                            geneColumn=geneColumn,
                                             BPPARAM=BPPARAM)
             pVals(fds, dist=i, level="gene", filters=list(rho=rhoCutoff),
                     withDimnames=FALSE) <- gene_pvals[["pvals"]]
             padjVals(fds, dist=i, level="gene", filters=list(rho=rhoCutoff),
                     withDimnames=FALSE) <- gene_pvals[["padj"]]
+        } else{
+            warning("Gene-level pvalues could not be calculated as column ",
+                    geneColumn, "\nwas not found for the given fds object. ", 
+                    "Please annotate gene symbols \nfirst using the ", 
+                    "annotateRanges function.")
         }
     }
     
@@ -243,18 +288,27 @@ calculatePadjValues <- function(fds, type=currentType(fds), method="BY",
 getPvalsPerGene <- function(fds, type, 
                     pvals=pVals(fds, type=type, level="site"),
                     sampleID=NULL, method="holm", FDRmethod="BY", 
-                    BPPARAM=bpparam()){
+                    geneColumn="hgnc_symbol", BPPARAM=bpparam()){
     # extract data and take only the first index of per site
+    message(date(), ":   starting gene-level pval computation for type ", type)
     samples <- samples(fds)
     if(is.null(colnames(pvals))){
         colnames(pvals) <- samples
     }
     dt <- data.table(
             idx=getSiteIndex(fds, type=type),
-            geneID=getGeneIDs(fds, type=type, unique=FALSE),
+            geneID=getGeneIDs(fds, type=type, unique=FALSE, 
+                                geneColumn=geneColumn),
             as.data.table(pvals))
     dt <- dt[!is.na(geneID)]
-    geneIDs <- dt[,unique(geneID)]
+    geneIDs <- getGeneIDs(fds, type=type, unique=TRUE, 
+                            geneColumn=geneColumn)
+    
+    # separate geneIDs into rows
+    dt[, dt_idx:=seq_len(.N)]
+    dt_tmp <- dt[, splitGenes(geneID), by="dt_idx"]
+    dt <- dt[dt_tmp$dt_idx,]
+    dt[,`:=`(geneID=dt_tmp$V1, dt_idx=NULL)]
     setkey(dt, geneID)
     
     # extract samples
@@ -263,28 +317,16 @@ getPvalsPerGene <- function(fds, type,
     }
     
     # aggregate pvalues to gene level per sample
-    pvalsPerGene <- matrix(unlist(bplapply(samples, BPPARAM=BPPARAM,
-        function(i){
-            suppressWarnings(
-                dttmp <- dt[,min(p.adjust(.SD[!duplicated(idx),get(i)], 
-                                        method=method), na.rm=TRUE),
-                            by=geneID]
-            )
-            dttmp[is.infinite(V1), V1:=NA]
-            setkey(dttmp, geneID)
-            dttmp[J(geneIDs), V1]
-        })), ncol=length(samples))
-    
-    colnames(pvalsPerGene) <- samples
-    rownames(pvalsPerGene) <- geneIDs
+    message(date(), ":   gene-level pval computation per gene (n=", 
+            length(geneIDs), ")")
+    pvalsPerGene <- genePvalsByGeneID(dt, samples=samples, geneIDs=geneIDs, 
+                                        method=method, BPPARAM=BPPARAM)
     
     # compute FDR
-    gene_padj <- apply(pvalsPerGene, 2, p.adjust, method=FDRmethod)
+    message(date(), ":   genome-wide FDR for gene-level pvals for type ", type)
+    padjPerGene <- apply(pvalsPerGene, 2, p.adjust, method=FDRmethod)
     
-    # blow up back to original assay size
-    pvalsPerGene <- mapGeneToJunctionAssay(fds, type, pvalsPerGene)
-    padjPerGene <- mapGeneToJunctionAssay(fds, type, gene_padj)
-    
+    message(date(), ":   finished gene-level pval computation for type ", type)
     return(list(pvals=pvalsPerGene, padj=padjPerGene))
 
 }
@@ -308,22 +350,29 @@ getSiteIndex <- function(fds, type){
     ans[selectionMat]
 }
 
-getGeneIDs <- function(fds, type, unique=TRUE){
-    geneIDs <- mcols(fds, type=type)$hgnc_symbol
+getGeneIDs <- function(fds, type, unique=TRUE, geneColumn="hgnc_symbol"){
+    geneIDs <- mcols(fds, type=type)[[geneColumn]]
     if(isTRUE(unique)){
-        geneIDs <- unique(geneIDs)
+        geneIDs <- unique(unlist(lapply(geneIDs, FUN=function(g){
+            unlist(strsplit(g, ";"))}) ))
         geneIDs <- geneIDs[!is.na(geneIDs)]
     }
     geneIDs
 }
 
-mapGeneToJunctionAssay <- function(fds, type, pvalMat){
-    # blow up back to original assay size
-    pvalDT <- data.table(geneID=rownames(pvalMat),
-                        as.data.table(pvalMat) )
-    setkey(pvalDT, "geneID")
-    pvalDT <- pvalDT[J(getGeneIDs(fds, type=type, unique=FALSE))]
-    fullMat <- as.matrix(pvalDT[, -1])
-    rownames(fullMat) <- pvalDT[, geneID]
-    return(fullMat)
+genePvalsByGeneID <- function(dt, samples, geneIDs, method, BPPARAM){
+    pvalsPerGene <- bplapply(geneIDs, BPPARAM=BPPARAM,
+        FUN=function(g) {
+            dttmp <- dt[geneID == g][!duplicated(idx)]
+            suppressWarnings(
+                pval_g <- apply(as.matrix(dttmp[,-c("idx", "geneID")]), 2,
+                    function(x) min(p.adjust(x, method=method), na.rm = TRUE) )
+            )
+            pval_g[is.infinite(pval_g)] <- NA
+            pval_g
+        })
+    pvalsPerGene <- do.call(rbind, pvalsPerGene)
+    rownames(pvalsPerGene) <- geneIDs
+    return(pvalsPerGene)
 }
+
