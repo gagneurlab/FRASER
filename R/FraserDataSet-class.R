@@ -22,7 +22,7 @@ setClass("FraserDataSet",
         name            = "Data Analysis",
         bamParam        = ScanBamParam(mapqFilter=0),
         strandSpecific  = 0L,
-        workingDir      = file.path(tempdir(), "FRASER"),
+        workingDir      = "FRASER_output",
         nonSplicedReads = SummarizedExperiment(rowRanges=GRanges())
     )
 )
@@ -84,22 +84,17 @@ validateStrandSpecific <- function(object) {
 validateWorkingDir <- function(object) {
     if(!isScalarCharacter(object@workingDir)){
         return(paste("The path to the working directory needs",
-                "to be a set as a character."
-        ))
+                "to be a set as a character."))
     }
     if(object@workingDir == ""){
         return("The working directory can not be empty.")
     }
-    if(!dir.exists(object@workingDir)){
-        message(date(), ": The given working directory '", object@workingDir,
-                "' does not exists. We will create it."
-        )
-        dir.create(object@workingDir, recursive = TRUE)
-    }
-    if(file.access(object@workingDir, mode = 4) != 0){
-        return(paste("Make sure we can write to the given working directory '",
-                object@workingDir, "'."
-        ))
+    if(dir.exists(object@workingDir)){
+        if(file.access(object@workingDir, mode = 4) != 0){
+            return(paste(
+                    "Make sure we can write to the given working directory '",
+                    object@workingDir, "'."))
+        }
     }
     NULL
 }
