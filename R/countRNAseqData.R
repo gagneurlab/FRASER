@@ -298,9 +298,7 @@ getSplitReadCountsForAllSamples <- function(fds, NcpuPerSample=1,
     rowRanges(counts) <- annotateSpliceSite(rowRanges(counts))
     
     # save summarized experiment
-    if(!dir.exists(outDir)){
-        dir.create(outDir, recursive=TRUE)
-    }
+    checkForAndCreateDir(NA, outDir)
     message(date(), ": Writing split counts to folder: ", outDir)
     saveHDF5SummarizedExperiment(counts, dir=outDir, replace=TRUE)
     
@@ -377,9 +375,7 @@ getNonSplitReadCountsForAllSamples <- function(fds, splitCountRanges,
                                 spliceSiteCoords=spliceSiteCoords )
     
     # save summarized experiment
-    if(!dir.exists(outDir)){
-        dir.create(outDir, recursive=TRUE)
-    }
+    checkForAndCreateDir(NA, outDir)
     message(date(), ": Writing non-split counts to folder: ", outDir)
     saveHDF5SummarizedExperiment(siteCounts, dir=outDir, replace=TRUE)
     
@@ -437,9 +433,7 @@ getSplitCountCacheFile <- function(sampleID, settings){
     
     # cache folder
     cachedir <- file.path(workingDir(settings), "cache", "splitCounts")
-    if(!dir.exists(cachedir)){
-        dir.create(cachedir, recursive=TRUE)
-    }
+    checkForAndCreateDir(NA, cachedir)
     
     # file name
     filename <- paste0("splitCounts-", sampleID, ".RDS")
@@ -800,9 +794,7 @@ getNonSplicedCountCacheFolder <- function(settings){
     # cache folder
     cachedir <- file.path(workingDir(settings), "cache", "nonSplicedCounts", 
                             nameNoSpace(name(settings)))
-    if(!dir.exists(cachedir)){
-        dir.create(cachedir, recursive=TRUE)
-    }
+    checkForAndCreateDir(NA, cachedir)
     
     # return it
     return(cachedir)
@@ -1088,9 +1080,7 @@ setMaxThreads <- function(BPPARAM, maxWorkers=bpworkers(BPPARAM),
 #' writes a GRanges object with the counts as a tsv (or tsv.gz) file.
 #' @noRd
 writeCountsToTsv <- function(counts, file="counts.tsv.gz"){
-    if(!dir.exists(dirname(file))){
-        dir.create(dirname(file), recursive=TRUE)
-    }
+    checkForAndCreateDir(NA, dirname(file))
     message(date(), ": Writing counts to file: ", file)
     fwrite(as.data.table(counts), file=file, sep = "\t")
 }
