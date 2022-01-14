@@ -548,3 +548,25 @@ getStrandString <- function(fds){
     strand <- switch(strandSpecific(fds)+1L, "no", "yes", "reverse")
     return(strand)
 }
+
+checkForAndCreateDir <- function(object, dir){
+    verbose <- 0
+    if(is(object, "FraserDataSet")){
+        verbose <- verbose(object)
+        if(missing(dir)){
+            dir <- workdingDir(object)
+        }
+    }
+    if(!dir.exists(dir)){
+        if(verbose > 1){
+            message(date(), ": The given working directory '", 
+                    dir, "' does not exists. We will create it.")
+        }
+        dir.create(dir, recursive=TRUE)
+    }
+    if(!dir.exists(dir)){
+        stop("Can not create workding directory: ", dir)
+    }
+    return(TRUE)
+}
+
