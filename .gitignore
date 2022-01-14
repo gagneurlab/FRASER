@@ -32,9 +32,12 @@ vignettes/unsrturl.bst
 *.so
 *.dll
 *.db
+
+# ignore random files
 .nfs000*
 .Rsubread*
 kremer_ae_*.pdf
 doc
 Meta
 .Rproj.user
+FRASER_output
