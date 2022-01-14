@@ -814,7 +814,7 @@ resultsByGenes <- function(res, geneColumn="hgncSymbol", method="BY"){
         colnames(ans) <- c("features", "pval", "sampleID")
     } else {
         ans <- featureNames <- res[,.(
-                features=get(geneColumn), pval=pvalue, sampleID=sampleID)]
+                features=get(geneColumn), pval=pValue, sampleID=sampleID)]
     }
 
     # remove NAs
@@ -853,6 +853,10 @@ resultsByGenes <- function(res, geneColumn="hgncSymbol", method="BY"){
 mapSeqlevels <- function(fds, style="UCSC", ...){
 
     mappings <- na.omit(GenomeInfoDb::mapSeqlevels(seqlevels(fds), style, ...))
+    # fix missing names() when fds has only a single chromosome
+    if(is.null(names(mappings))){ 
+        names(mappings) <- seqlevels(fds)
+    }
 
     if(length(mappings) != length(seqlevels(fds))){
         message(date(), ": Drop non standard chromosomes for compatibility.")

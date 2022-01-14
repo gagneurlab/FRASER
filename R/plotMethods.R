@@ -75,9 +75,11 @@
 #'             row or column names on the heatmap axes.
 #' @param annotation_col,annotation_row Row or column annotations that should be
 #'             plotted on the heatmap.
-#' @param topN,topJ Top x most variable junctions that should be used in the
-#'             heatmap. TopN is used for sample-sample correlation heatmaps and
-#'             topJ for junction-sample correlation heatmaps.
+#' @param topN Top x most variable junctions that should be used for the
+#'             calculation of sample x sample correlations. 
+#' @param topJ Top x most variable junctions that should be displayed in the
+#'             junction-sample correlation heatmap. Only applies if plotType 
+#'             is "junctionSample".
 #' @param minMedian,minCount,minDeltaPsi Minimal median (\eqn{m \ge 1}), 
 #'             delta psi (\eqn{|\Delta\psi| > 0.1}), read count (\eqn{n \ge 10})
 #'             value of a junction to be considered for the correlation heatmap.
@@ -161,7 +163,7 @@
 #' plotEncDimSearch(fds, type="psi5")
 #' 
 #' # extract results 
-#' plotAberrantPerSample(fds)
+#' plotAberrantPerSample(fds, aggregate=FALSE)
 #' plotVolcano(fds, "sample1", "psi5")
 #' 
 #' # dive into gene/sample level results
@@ -292,7 +294,8 @@ plotAberrantPerSample.FRASER <- function(object, main,
     # extract outliers
     outliers <- bplapply(type, aberrant, object=object, by="sample",
             padjCutoff=padjCutoff, zScoreCutoff=zScoreCutoff,
-            deltaPsiCutoff=deltaPsiCutoff, ..., BPPARAM=BPPARAM)
+            deltaPsiCutoff=deltaPsiCutoff, aggregate=aggregate, ..., 
+            BPPARAM=BPPARAM)
     dt2p <- rbindlist(lapply(seq_along(outliers), function(idx){
         vals <- outliers[[idx]]
         data.table(type=type[idx], value=sort(vals), median=median(vals),
@@ -865,6 +868,22 @@ plotCountCorHeatmap.FRASER <- function(object,
 
     skmat <- kmat[expRowsMax & expRowsMedian,]
     snmat <- nmat[expRowsMax & expRowsMedian,]
+    
+    # check that we have at least 1 read for each sample
+    minCovColSums <- colSums(snmat > minCount)
+    if(any(minCovColSums < 2)){
+        message("Warning:",
+                " The following samples do not have at least 2 junctions",
+                " with the minimum read coverage after filtering!",
+                " They will be disregarded from the plot. ", 
+                "\nAffected IDs are: \n\t", paste(collapse=", ", 
+                        names(minCovColSums)[minCovColSums < 2]))
+        ids2plot <- logical(length(minCovColSums))
+        ids2plot[minCovColSums >= 2] <- TRUE
+        skmat <- skmat[,ids2plot]
+        snmat <- snmat[,ids2plot]
+        object <- object[,ids2plot]
+    }
 
     xmat <- (skmat + 1)/(snmat + 2)
     if(isTRUE(logit)){
@@ -872,8 +891,10 @@ plotCountCorHeatmap.FRASER <- function(object,
     }
     xmat[snmat < minCount] <- NA
     xmat_rc    <- xmat - rowMeans(xmat, na.rm=TRUE)
-
+    
     xmat_rc_sd <- rowSds(xmat_rc, na.rm=TRUE)
+    nrNonNA <- rowSums(!is.na(xmat_rc))
+    xmat_rc_sd[nrNonNA > 0.5*ncol(xmat_rc)] <- min(xmat_rc_sd)
     plotIdx <- rank(xmat_rc_sd) >= length(xmat_rc_sd) - topN
     xmat_rc_2_plot <- xmat_rc[plotIdx,]
     cormatS <- cor(xmat_rc_2_plot, use="pairwise", method="spearman")
@@ -897,6 +918,7 @@ plotCountCorHeatmap.FRASER <- function(object,
                 expRowsMax & expRowsMedian,])
             if(isTRUE(logit)){
                 pred_mu <- qlogisWithCap(pred_mu)
+                breaks <- seq(-5, 5, length.out=50)
             }
             lpred_mu_rc <- pred_mu - rowMeans(pred_mu)
             xmat_rc <- xmat_rc - lpred_mu_rc
@@ -908,11 +930,10 @@ plotCountCorHeatmap.FRASER <- function(object,
                                     probs=0.75) >= 10
         j2keep <- j2keepDP & j2keepVa
         xmat_rc_2_plot <- xmat_rc[j2keep,]
-        mostVarKeep <- subsetKMostVariableJunctions(object[j2keep,,by=type],
-                                                    type, topJ)
+        mostVarKeep <- subsetKMostVariableJunctions(
+                object[j2keep,,by=type], type, topJ)
         xmat_rc_2_plot <- xmat_rc_2_plot[mostVarKeep,]
         rownames(xmat_rc_2_plot) <- seq_len(nrow(xmat_rc_2_plot))
-        breaks <- seq(-5, 5, length.out=50)
 
     }
 
@@ -948,9 +969,9 @@ plotCountCorHeatmap.FRASER <- function(object,
         xmat <- xmat[j2keep,]
         xmat <- xmat[mostVarKeep,]
         meanPsi <- if(isTRUE(logit)){
-            rowMeans(plogis(xmat))
+            rowMeans(plogis(xmat), na.rm=TRUE)
         } else{
-            rowMeans(xmat)
+            rowMeans(xmat, na.rm=TRUE)
         }
         meanPsiBins <- cut(meanPsi, breaks = c(0, 0.33, 0.66, 1),
                             include.lowest=TRUE)

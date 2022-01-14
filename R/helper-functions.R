@@ -397,14 +397,15 @@ pasteTable <- function(x, ...){
 #' Map between individual seq level style and dataset common one
 #' for counting and aggregating the reads
 #' @noRd
-checkSeqLevelStyle <- function(gr, fds, sampleID, sampleSpecific=FALSE){
-    if(!"SeqLevelStyle" %in% colnames(colData(fds))){
+checkSeqLevelStyle <- function(gr, fds, sampleID, sampleSpecific=FALSE,
+                    coldata=colData(fds)){
+    if(!"SeqLevelStyle" %in% colnames(coldata)){
         return(gr)
     }
-    style <- colData(fds)[sampleID,"SeqLevelStyle"]
+    style <- coldata[sampleID,"SeqLevelStyle"]
     if(isFALSE(sampleSpecific)){
-        style <- names(sort(table(colData(fds)[,"SeqLevelStyle"]), TRUE)[1])
-        if(length(unique(colData(fds)[,"SeqLevelStyle"])) > 1){
+        style <- names(sort(table(coldata[,"SeqLevelStyle"]), TRUE)[1])
+        if(length(unique(coldata[,"SeqLevelStyle"])) > 1){
             gr <- keepStandardChromosomes(gr, pruning.mode="coarse")
         }
     }
@@ -547,3 +548,25 @@ getStrandString <- function(fds){
     strand <- switch(strandSpecific(fds)+1L, "no", "yes", "reverse")
     return(strand)
 }
+
+checkForAndCreateDir <- function(object, dir){
+    verbose <- 0
+    if(is(object, "FraserDataSet")){
+        verbose <- verbose(object)
+        if(missing(dir)){
+            dir <- workdingDir(object)
+        }
+    }
+    if(!dir.exists(dir)){
+        if(verbose > 1){
+            message(date(), ": The given working directory '", 
+                    dir, "' does not exists. We will create it.")
+        }
+        dir.create(dir, recursive=TRUE)
+    }
+    if(!dir.exists(dir)){
+        stop("Can not create workding directory: ", dir)
+    }
+    return(TRUE)
+}
+

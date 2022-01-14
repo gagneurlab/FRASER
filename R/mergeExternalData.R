@@ -99,9 +99,9 @@ mergeExternalData <- function(fds, countFiles, sampleIDs, annotation=NULL){
     # merge psi5/psi3 data
     # 
     extractExtData <- function(fds, countFun, type, ov, extData, extName){
-        ans <- cbind(
-                as.matrix(countFun(fds, type=type)[from(ov),]),
-                as.matrix(mcols(extData[[extName]])[to(ov),]))
+        ctsOri <- as.matrix(countFun(fds, type=type)[from(ov),])
+        ctsExt <- as.matrix(mcols(extData[[extName]])[to(ov),])
+        ans <- cbind(ctsOri, ctsExt)
         mode(ans) <- "integer"
         ans
     }
@@ -153,7 +153,8 @@ mergeExternalData <- function(fds, countFiles, sampleIDs, annotation=NULL){
                     rawOtherCounts_psi3=newCtsN_psi3 - newCtsK_J)),
             nonSplicedReads = nsr,
             rowRanges = rowRanges(fds)[from(ov),c("startID", "endID")],
-            elementMetadata = DataFrame(newCtsK_J[,integer(0)]))
+            elementMetadata = DataFrame(newCtsK_J[,integer(0)]),
+            metadata=metadata(fds))
     
     # 
     # compute new psi values

@@ -83,6 +83,19 @@
 #'              position and non split read counts of all splice sites 
 #'              present in the dataset for all samples.
 #' @param sampleID The ID of the sample to be counted.
+#' @param bamfile The BAM file to be used to extract the counts. Defaults to 
+#'         the BAM file defined in the \code{\link{FraserDataSet}} object. 
+#' @param pairedend \code{TRUE} or \code{FALSE} if the BAM file is paired end.
+#'         Defaults to the value specified in the \code{\link{FraserDataSet}} 
+#'         object. 
+#' @param strandmode 0 (no, default), 1 (stranded), or 2 (revers) to specify 
+#'         the used protocol for the RNA-seq experiment.
+#' @param scanbamparam The ScanBamParam object which is used for loading the 
+#'         reads from the BAM file before counting. Defaults to the params
+#'         stored in the \code{\link{FraserDataSet}} object.
+#' @param cacheFile File path to the cache, where counts are stored.
+#' @param coldata The colData as given by the \code{\link{FraserDataSet}}
+#'         object.
 #' @param spliceSiteCoords A GRanges object containing the positions of the 
 #'         splice sites. If it is NULL, then splice sites coordinates are 
 #'         calculated first based on the positions of the junctions defined 
@@ -285,9 +298,7 @@ getSplitReadCountsForAllSamples <- function(fds, NcpuPerSample=1,
     rowRanges(counts) <- annotateSpliceSite(rowRanges(counts))
     
     # save summarized experiment
-    if(!dir.exists(outDir)){
-        dir.create(outDir, recursive=TRUE)
-    }
+    checkForAndCreateDir(NA, outDir)
     message(date(), ": Writing split counts to folder: ", outDir)
     saveHDF5SummarizedExperiment(counts, dir=outDir, replace=TRUE)
     
@@ -364,9 +375,7 @@ getNonSplitReadCountsForAllSamples <- function(fds, splitCountRanges,
                                 spliceSiteCoords=spliceSiteCoords )
     
     # save summarized experiment
-    if(!dir.exists(outDir)){
-        dir.create(outDir, recursive=TRUE)
-    }
+    checkForAndCreateDir(NA, outDir)
     message(date(), ": Writing non-split counts to folder: ", outDir)
     saveHDF5SummarizedExperiment(siteCounts, dir=outDir, replace=TRUE)
     
@@ -424,9 +433,7 @@ getSplitCountCacheFile <- function(sampleID, settings){
     
     # cache folder
     cachedir <- file.path(workingDir(settings), "cache", "splitCounts")
-    if(!dir.exists(cachedir)){
-        dir.create(cachedir, recursive=TRUE)
-    }
+    checkForAndCreateDir(NA, cachedir)
     
     # file name
     filename <- paste0("splitCounts-", sampleID, ".RDS")
@@ -441,15 +448,18 @@ getSplitCountCacheFile <- function(sampleID, settings){
 #' @return \code{\link{countSplitReads}} returns a GRanges object.
 #' @export
 countSplitReads <- function(sampleID, fds, NcpuPerSample=1, genome=NULL, 
-                            recount=FALSE, keepNonStandardChromosomes=TRUE){
-    bamFile <- bamFile(fds[,samples(fds) == sampleID])[[1]]
-    pairedEnd <- pairedEnd(fds[,samples(fds) == sampleID])[[1]]
+                    recount=FALSE, keepNonStandardChromosomes=TRUE,
+                    bamfile=bamFile(fds[,sampleID]),
+                    pairedend=pairedEnd(fds[,sampleID]),
+                    strandmode=strandSpecific(fds),
+                    cacheFile=getSplitCountCacheFile(sampleID, fds),
+                    scanbamparam=scanBamParam(fds),
+                    coldata=colData(fds)){
     
     # check cache if available
-    cacheFile <- getSplitCountCacheFile(sampleID, fds)
     if(isFALSE(recount) && !is.null(cacheFile) && file.exists(cacheFile)){
         cache <- readRDS(cacheFile)
-        bamWhich <- unlist(bamWhich(scanBamParam(fds)))
+        bamWhich <- unlist(bamWhich(scanbamparam))
         if(length(bamWhich) > 0){
             userTargetGR <- GRanges(seqnames=names(unlist(bamWhich)),
                                     ranges=unlist(bamWhich), strand="*")
@@ -460,16 +470,16 @@ countSplitReads <- function(sampleID, fds, NcpuPerSample=1, genome=NULL,
             message(date(), ": Using existing split read counts for sample: ", 
                     sampleID)
             if(isFALSE(keepNonStandardChromosomes)){
-                cache <- keepStandardChromosomes(cache,  pruning.mode="coarse")
+                cache <- keepStandardChromosomes(cache, pruning.mode="coarse")
             }
-            return(checkSeqLevelStyle(cache, fds, sampleID,
-                                        sampleSpecific=FALSE))
+            return(checkSeqLevelStyle(gr=cache, sampleID=sampleID, 
+                    sampleSpecific=FALSE, coldata=coldata))
         }
     }
     message(date(), ": Count split reads for sample: ", sampleID)
     
     # parallelize over chromosomes
-    chromosomes <- extractChromosomes(bamFile)
+    chromosomes <- extractChromosomes(bamfile)
     
     if(isFALSE(keepNonStandardChromosomes)){
         chr_gr <- GRanges(seqnames=paste0(chromosomes, ":1-2"))
@@ -487,7 +497,7 @@ countSplitReads <- function(sampleID, fds, NcpuPerSample=1, genome=NULL,
             genome <- getBSgenome(genome)
         }
         seqlevelsStyle(genome) <- seqlevelsStyle(chromosomes)[1]
-        chrLengths <- extractChromosomeLengths(bamFile)
+        chrLengths <- extractChromosomeLengths(bamfile)
         mismatchChrs <- which(
             seqlengths(genome)[chromosomes] != chrLengths[chromosomes])
         if(length(mismatchChrs) > 0){
@@ -510,48 +520,50 @@ countSplitReads <- function(sampleID, fds, NcpuPerSample=1, genome=NULL,
     
     # extract the counts per chromosome
     countsList <- bplapply(chromosomes, FUN=countSplitReadsPerChromosome,
-            bamFile=bamFile, pairedEnd=pairedEnd, settings=fds, genome=genome,
+            bamFile=bamfile, pairedEnd=pairedend, genome=genome,
+            strandMode=strandmode, scanBamParam=scanbamparam,
             BPPARAM=getBPParam(NcpuPerSample, length(chromosomes)))
 
     # sort and merge the results befor returning/saving
     countsGR <- sort(unlist(GRangesList(countsList)))
     saveRDS(countsGR, cacheFile)
     
-    return(checkSeqLevelStyle(countsGR, fds, sampleID, sampleSpecific=FALSE))
+    return(checkSeqLevelStyle(gr=countsGR, sampleID=sampleID, 
+            sampleSpecific=FALSE, coldata=coldata))
 }
 
 
 #'
 #' counting the split reads per chromosome
 #' @noRd
-countSplitReadsPerChromosome <- function(chromosome, bamFile, pairedEnd, 
-                                            settings, genome){
+countSplitReadsPerChromosome <- function(chromosome, bamFile, 
+                pairedEnd, strandMode, genome, scanBamParam){
     # restrict to the chromosome only
     which=GRanges(
         seqnames=chromosome,
         ranges=IRanges(0, 536870912)
     )
-    param <- mergeBamParams(bamParam=scanBamParam(settings), which=which)
+    param <- mergeBamParams(bamParam=scanBamParam, which=which)
     if(is.null(param)){
         return(GRanges())
     }
     
     # get reads from bam file
-    if(isFALSE(as.logical(strandSpecific(settings))) || isFALSE(pairedEnd)){
+    if(isFALSE(as.logical(strandMode)) || isFALSE(pairedEnd)){
         galignment <- readGAlignments(bamFile, param=param)
     } else{
-        galignment <- readGAlignmentPairs(bamFile, param=param, 
-                                            strandMode=strandSpecific(settings))
+        galignment <- readGAlignmentPairs(
+                bamFile, param=param, strandMode=strandMode)
     }
     
     # remove the strand information if unstranded data
-    if(isFALSE(as.logical(strandSpecific(settings)))){
+    if(isFALSE(as.logical(strandMode))){
         strand(galignment) <- "*"
     }
     # invert the strand information for reverse strand specific protocols
     # (only needed for single-end reads as real strand is already set for 
     # paired-end reads in the readGAlignmentPairs function)
-    if(isFALSE(pairedEnd) && strandSpecific(settings) == 2L){
+    if(isFALSE(pairedEnd) && strandMode == 2L){
         galignment <- invertStrand(galignment)
     }
     
@@ -583,14 +595,14 @@ countSplitReadsPerChromosome <- function(chromosome, bamFile, pairedEnd,
     
     # get the junction positions and their counts
     jc <- summarizeJunctions(galignment, genome=genome, 
-            with.revmap=(as.logical(strandSpecific(settings)) && pairedEnd) )
+            with.revmap=(as.logical(strandMode) && pairedEnd) )
     
     if(length(jc) == 0){
         return(GRanges())
     }
     
     # for strand specific counting: split result into counts for + and - strand
-    if(isTRUE(as.logical(strandSpecific(settings)))){
+    if(isTRUE(as.logical(strandMode))){
         
         # for paired-end reads: ensure that each read pair is only counted once
         if(isTRUE(pairedEnd)){
@@ -620,7 +632,7 @@ countSplitReadsPerChromosome <- function(chromosome, bamFile, pairedEnd,
     
     # set predicted strand if present or set it to + if NA
 
-    if(isFALSE(as.logical(strandSpecific(settings))) && !is.null(genome) && 
+    if(isFALSE(as.logical(strandMode)) && !is.null(genome) && 
                 length(ans) > 0){
         strand(ans) <- jc$intron_strand
         ans$intron_motif <- jc$intron_motif
@@ -782,9 +794,7 @@ getNonSplicedCountCacheFolder <- function(settings){
     # cache folder
     cachedir <- file.path(workingDir(settings), "cache", "nonSplicedCounts", 
                             nameNoSpace(name(settings)))
-    if(!dir.exists(cachedir)){
-        dir.create(cachedir, recursive=TRUE)
-    }
+    checkForAndCreateDir(NA, cachedir)
     
     # return it
     return(cachedir)
@@ -1070,9 +1080,7 @@ setMaxThreads <- function(BPPARAM, maxWorkers=bpworkers(BPPARAM),
 #' writes a GRanges object with the counts as a tsv (or tsv.gz) file.
 #' @noRd
 writeCountsToTsv <- function(counts, file="counts.tsv.gz"){
-    if(!dir.exists(dirname(file))){
-        dir.create(dirname(file), recursive=TRUE)
-    }
+    checkForAndCreateDir(NA, dirname(file))
     message(date(), ": Writing counts to file: ", file)
     fwrite(as.data.table(counts), file=file, sep = "\t")
 }

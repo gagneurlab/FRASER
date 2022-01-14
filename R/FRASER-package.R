@@ -86,7 +86,8 @@
 #' @importFrom GenomeInfoDb keepStandardChromosomes seqlevels<- seqlevels
 #'          seqlengths seqlengths<- seqlevelsStyle<- seqlevelsStyle seqnames 
 #'          seqinfo standardChromosomes dropSeqlevels keepSeqlevels
-#' @importFrom DelayedArray rowMaxs rowMeans path<- cbind plogis qlogis
+#' @importFrom DelayedArray rowMaxs rowMeans path<- cbind plogis qlogis 
+#'          DelayedArray
 #' @importFrom DelayedMatrixStats colSds rowMedians rowSds colMeans2 rowMeans2
 #'          rowQuantiles
 #' @importFrom matrixStats colMaxs colMedians colMins colAnys
@@ -112,14 +113,14 @@ NULL
 globalVariables(c(".", "J", ".N", ".asDataFrame", "End", "first_feature", 
         "FN", "HTML", "other_features", "Start", 
         "TP", "deltaPsi", "curgr", "gene", "lty", "hgnc_symbol", "id",
-        "ldat", "mapped", "p.adj", "pval", "pvalue", "sampleID", "sampleGroup", 
-        "chr",
+        "ldat", "mapped", "p.adj", "pval", "pValue", "sampleID", "sampleGroup", 
+        "chr", 
         "symbol", "type", "pseudocount", "known_intron", "known_start", 
         "known_end", "..columns2Write", "maxVal", "idxGroup", "idxInCount", 
         "idxInGroup", "lower", "nOk", "nPerGroup", "nsubset", "obs", "p", 
         "plotPoint", "rn", "upper", 
-        "..sum_cols", "acceptorGroupID", "acceptorGroupSize", "Aggregation",
-        "aroc", "donorGroupID", "donorGroupSize", "dpsi", "exMask", "fact",
+        "..sum_cols", "groupID", "groupSize", "Aggregation",
+        "aroc", "dpsi", "exMask", "fact",
         "fdrByFeature", "fds_inputK", "fds_inputN", "fds_new", "fds_rhoIn",
         "featureID", "features", "flog.debug", "flog.error", "flog.fatal",
         "flog.info", "flog.namespace", "flog.trace", "flog.warn", "geneID",
