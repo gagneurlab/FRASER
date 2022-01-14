@@ -303,8 +303,7 @@ bamFiles <- system.file(sampleTable[,bamFile], package="FRASER", mustWork=TRUE)
 sampleTable[,bamFile:=bamFiles]
 
 # create FRASER object
-settings <- FraserDataSet(colData=sampleTable,
-        workingDir=tempdir())
+settings <- FraserDataSet(colData=sampleTable, workingDir="FRASER_output")
 
 # show the FraserSettings object
 settings
@@ -366,7 +365,7 @@ head(spliceSiteCts)
 
 # create FRASER object
 fds <- FraserDataSet(colData=sampleTable, junctions=junctionCts,
-        spliceSites=spliceSiteCts, workingDir=tempdir())
+        spliceSites=spliceSiteCts, workingDir="FRASER_output")
 fds
 @
 
@@ -579,7 +578,7 @@ A \fds{} object can be easily saved and reloaded at any time as follows:
 
 <<save_load, echo=TRUE>>=
 # saving a fds
-workingDir(fds) <- tempdir()
+workingDir(fds) <- "FRASER_output"
 name(fds) <- "ExampleAnalysis"
 saveFraserDataSet(fds, dir=workingDir(fds), name=name(fds))
 
