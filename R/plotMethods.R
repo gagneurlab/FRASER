@@ -178,7 +178,7 @@ NULL
 
 
 plotVolcano.FRASER <- function(object, sampleID, 
-                    type=c("psi3", "psi5", "theta"), basePlot=TRUE, 
+                    type=c("psi3", "psi5", "theta", "intron_jaccard"), basePlot=TRUE, 
                     aggregate=FALSE, main=NULL, label=NULL,
                     deltaPsiCutoff=0.3, padjCutoff=0.1, ...){
     
@@ -278,7 +278,7 @@ setMethod("plotVolcano", signature="FraserDataSet", plotVolcano.FRASER)
 
 
 plotAberrantPerSample.FRASER <- function(object, main, 
-                    type=c("psi3", "psi5", "theta"),
+                    type=c("psi3", "psi5", "theta", "intron_jaccard"),
                     padjCutoff=0.1, zScoreCutoff=NA, deltaPsiCutoff=0.3,
                     aggregate=TRUE, BPPARAM=bpparam(), ...){
 
@@ -341,7 +341,7 @@ setMethod("plotAberrantPerSample", signature="FraserDataSet",
 #'
 #' @rdname plotFunctions
 #' @export
-plotExpression <- function(fds, type=c("psi5", "psi3", "theta"),
+plotExpression <- function(fds, type=c("psi5", "psi3", "theta", "intron_jaccard"),
                     site=NULL, result=NULL, colGroup=NULL, 
                     basePlot=TRUE, main=NULL, label="aberrant", ...){
     if(!is.null(result)){
@@ -433,7 +433,7 @@ plotExpression <- function(fds, type=c("psi5", "psi3", "theta"),
 #'
 #' @rdname plotFunctions
 #' @export
-plotExpectedVsObservedPsi <- function(fds, type=c("psi5", "psi3", "theta"),
+plotExpectedVsObservedPsi <- function(fds, type=c("psi5", "psi3", "theta", "intron_jaccard"),
                     idx=NULL, result=NULL, colGroup=NULL, main=NULL,
                     basePlot=TRUE, label="aberrant", ...){
     type <- match.arg(type)
