@@ -28,7 +28,7 @@ biocViews:
 License: MIT + file LICENSE
 URL: https://github.com/gagneurlab/FRASER
 BugRepots: https://github.com/gagneurlab/FRASER/issues
-RoxygenNote: 7.1.1
+RoxygenNote: 7.1.2
 Encoding: UTF-8
 VignetteBuilder: knitr
 Depends:
@@ -82,9 +82,10 @@ Suggests:
     covr,
     TxDb.Hsapiens.UCSC.hg19.knownGene,
     org.Hs.eg.db,
+    rtracklayer
 LinkingTo:
-    Rcpp,
-    RcppArmadillo
+    RcppArmadillo,
+    Rcpp
 Collate:
     variables.R
     getNSetterFuns.R
@@ -114,3 +115,4 @@ Collate:
     fitCorrectionMethods.R
     plotMethods.R
     zzz.R
+    resultAnnotations.R

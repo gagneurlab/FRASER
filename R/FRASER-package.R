@@ -22,7 +22,8 @@
 #'
 ### GRange/Experiment/bamFile packages
 #' @importFrom BiocGenerics updateObject counts counts<- strand strand<- which
-#' @importFrom GenomicFeatures makeTxDbFromGFF intronsByTranscript genes
+#' @importFrom GenomicFeatures makeTxDbFromGFF intronsByTranscript genes exons
+#'          fiveUTRsByTranscript threeUTRsByTranscript
 #' @importFrom GenomicAlignments junctions readGAlignments summarizeJunctions
 #'          readGAlignmentPairs
 #' @importFrom SummarizedExperiment assay assay<- assays assays<- assayNames
@@ -40,7 +41,7 @@
 #'
 #' @importFrom biomaRt useEnsembl getBM
 #' @importFrom AnnotationDbi select
-#'
+#' @importFrom rtracklayer import
 #'
 ### Plotting
 #'
