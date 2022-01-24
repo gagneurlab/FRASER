@@ -80,6 +80,16 @@ validateStrandSpecific <- function(object) {
     NULL
 }
 
+validatePairedEnd <- function(object) {
+    sampleData <- as.data.table(colData(object))
+    if("pairedEnd" %in% colnames(sampleData) && 
+            any(!is.logical(sampleData[,pairedEnd]))){
+        return(paste("The 'pairedEnd' column in the sample annotation in",
+                    "'colData(fds)' must only contain logical values ",
+                    "(TRUE or FALSE)."))
+    }
+    NULL
+}
 
 validateWorkingDir <- function(object) {
     if(!isScalarCharacter(object@workingDir)){
@@ -134,6 +144,7 @@ validateAssays <- function(object){
 validateFraserDataSet <- function(object) {
     c(
         validateSampleAnnotation(object),
+        validatePairedEnd(object),
         validateName(object),
         validateBamParam(object),
         validateStrandSpecific(object),
