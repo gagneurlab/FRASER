@@ -72,7 +72,7 @@
 #'   res_dt <- as.data.table(res)
 #'   
 #'   # annotate the type of splice event and UTR overlap
-#'   res_dt <- annotateSpliceEventType(result=res_dt, txdb=txdb)
+#'   res_dt <- annotateSpliceEventType(result=res_dt, txdb=txdb, fds=fds)
 #'   
 #'   # annotate overlap with blacklist regions
 #'   res_dt <- flagBlacklistRegions(result=res_dt, assemblyVersion="hg19")
@@ -114,7 +114,7 @@ annotateIntronReferenceOverlap <- function(fds, txdb, BPPARAM=bpparam()){
     # Do the annotation just for the intron with highest median expression
     print("start calculating annotations")    
     overlaps <- findOverlaps(fds_junctions, anno_introns_ranges, select="first")
-    annotations <- bplapply(1:length(fds_junctions), function(i){
+    annotations <- bplapply(seq_len(length(fds_junctions)), function(i){
         # only select first intron as already ordered by medianCount beforehand
         overlap <- overlaps[i]
         if(is.na(overlap)) return("none") #no overlap with any intron
@@ -147,7 +147,7 @@ annotateIntronReferenceOverlap <- function(fds, txdb, BPPARAM=bpparam()){
 #' @describeIn spliceTypeAnnotations This method annotates the splice event 
 #'     type to junctions in the given results table.
 #' @export
-annotateSpliceEventType <- function(result, txdb, addSpliceType=TRUE, 
+annotateSpliceEventType <- function(result, txdb, fds, addSpliceType=TRUE, 
                                     addUTRoverlap=TRUE, BPPARAM=bpparam()){
     
     # Create basic annotation of overlap with reference
@@ -200,7 +200,7 @@ flagBlacklistRegions <- function(result, blacklist_regions=NULL,
             blacklist_regions)
     }
     print("Importing blacklist regions ...")
-    blacklist_gr <- import(blacklist_regions, format = "BED")
+    blacklist_gr <- rtracklayer::import(blacklist_regions, format = "BED")
     result <- addBlacklistLabels(result, blacklist_gr)  
     return(result)
 }
@@ -260,7 +260,7 @@ addSpliceTypeLabels <- function(junctions_dt, fds, txdb){
     psi_positions <- which(junctions_dt$type != "theta")
     colnames(junctions_dt)[which(names(junctions_dt) == "STRAND")] <- "strand2"
     junctions_gr <- makeGRangesFromDataFrame(junctions_dt[psi_positions], 
-                                                keep.extra.columns = T)
+                                                keep.extra.columns = TRUE)
     seqlevelsStyle(txdb) <- seqlevelsStyle(junctions_gr)
     
     introns_tmp <- unique(unlist(intronsByTranscript(txdb)))
@@ -286,7 +286,7 @@ addSpliceTypeLabels <- function(junctions_dt, fds, txdb){
     junctions_dt[annotatedJunction == "both" & deltaPsi >= 0, 
                     spliceType := "annotatedIntron_increasedUsage"]
     junctions_dt[annotatedJunction == "both" & deltaPsi < 0, 
-                 spliceType := "annotatedIntron_reducedUsage"]
+                    spliceType := "annotatedIntron_reducedUsage"]
     junctions_dt[annotatedJunction == "both", causesFrameshift := "unlikely"]
     
     # TODO check for intron retention
@@ -342,10 +342,10 @@ addSpliceTypeLabels <- function(junctions_dt, fds, txdb){
         })
         maxExpr <- which.max(expre)
         
-        # returns type of exon splicing, frameshift T/F, amount of shift
-        st = compareStarts(junctions_gr, i, overlap[maxExpr], T, 
+        # returns type of exon splicing, frameshift TRUE/FALSE, amount of shift
+        st = compareStarts(junctions_gr, i, overlap[maxExpr], TRUE, 
                             intron_ranges, exons)
-        en = compareEnds(junctions_gr, i, overlap[maxExpr], T, 
+        en = compareEnds(junctions_gr, i, overlap[maxExpr], TRUE, 
                             intron_ranges, exons)
         
         # merge, start and end results
@@ -355,7 +355,7 @@ addSpliceTypeLabels <- function(junctions_dt, fds, txdb){
         # if one is notYet -> return notYet
         if((st[1] == "singleExonSkipping" & !(en[1] %in% 
                                 c("singleExonSkipping", "exonSkipping"))) ||
-           (en[1] == "singleExonSkipping" & !(st[1] %in% 
+            (en[1] == "singleExonSkipping" & !(st[1] %in% 
                                 c("singleExonSkipping", "exonSkipping")))){
             ## only one is single exonSkipping, the other is trunc/elong
             if((as.integer(st[3])+as.integer(en[3])) %% 3 != 0){
@@ -446,10 +446,15 @@ addSpliceTypeLabels <- function(junctions_dt, fds, txdb){
     none_results <- sapply(nones, function(i){
         if(length(findOverlaps(junctions_gr[i], refseq.genes)) > 0) return(NA)
         #return("intergenic")
-        if(start(refseq.genes[nearest(junctions_gr[i], refseq.genes)]) > start(junctions_gr[i])){
-            ifelse(strand(junctions_gr[i]) == "+", return("upstreamOfNearestGene"), return("downstreamOfNearestGene"))
+        if(start(refseq.genes[nearest(junctions_gr[i], 
+                                    refseq.genes)]) > start(junctions_gr[i])){
+            ifelse(strand(junctions_gr[i]) == "+", 
+                    return("upstreamOfNearestGene"), 
+                    return("downstreamOfNearestGene"))
         }else{
-            ifelse(strand(junctions_gr[i]) == "+", return("downstreamOfNearestGene"), return("upstreamOfNearestGene"))
+            ifelse(strand(junctions_gr[i]) == "+", 
+                    return("downstreamOfNearestGene"), 
+                    return("upstreamOfNearestGene"))
         }
     })
     junctions_dt[thetas[nones], spliceType := none_results]
@@ -462,12 +467,13 @@ addSpliceTypeLabels <- function(junctions_dt, fds, txdb){
     down <- which(junctions_dt$spliceType == "downstreamOfNearestGene")
     
     # create full grange object containing psi and theta
-    junctions_gr <- makeGRangesFromDataFrame(junctions_dt, keep.extra.columns = T)
+    junctions_gr <- makeGRangesFromDataFrame(junctions_dt, 
+                                                keep.extra.columns = TRUE)
     
     print("Calculate distances")
     if(length(up) > 0){
         distanceNearestGene_up <- sapply(up, function(i){
-            min(distance(junctions_gr[i], refseq.genes), na.rm = T)})
+            min(distance(junctions_gr[i], refseq.genes), na.rm = TRUE)})
         if(length(distanceNearestGene_up > 0)){
             junctions_dt[psi_positions[up], 
                             distNearestGene := distanceNearestGene_up]
@@ -479,7 +485,7 @@ addSpliceTypeLabels <- function(junctions_dt, fds, txdb){
     
     if(length(down) > 0){
         distanceNearestGene_down <- sapply(down, function(i){
-            min(distance(junctions_gr[i], refseq.genes), na.rm = T)})
+            min(distance(junctions_gr[i], refseq.genes), na.rm = TRUE)})
         if(length(distanceNearestGene_down > 0)){
             junctions_dt[psi_positions[down], 
                             distNearestGene := distanceNearestGene_down]
@@ -593,7 +599,7 @@ compareStarts <- function(junctions_gr, i, max_lap, shift_needed,
                     #    elongation 
                     
                     shift = (-1)*(end(exons[exonChoices[1]]) - 
-                                     start(exons[exonChoices[1]]) + 1) + 
+                                        start(exons[exonChoices[1]]) + 1) + 
                         ss_start - start(intron_ranges[secItrChoices[maxExpr]])
                     
                     frs = ifelse(shift %% 3 == 0,"unlikely","likely")
@@ -753,7 +759,7 @@ checkIntergenic <- function(junctions_gr, i, refseq.genes){
     
     # check if distance to nearest is > 1000 -> intergenic
     # otherwise up/downstream
-    dist = min(distance(test_junction, refseq.genes), na.rm = T)
+    dist = min(distance(test_junction, refseq.genes), na.rm = TRUE)
     if(dist > 0){
         # if(dist > 1000){
         #     print("intergenic")
@@ -781,7 +787,7 @@ checkExonSkipping <- function(junctions_dt, txdb){
     psi_positions <- which(junctions_dt$type != "theta")
     colnames(junctions_dt)[which(names(junctions_dt) == "STRAND")] <- "strand2"
     junctions_gr <- makeGRangesFromDataFrame(junctions_dt[psi_positions], 
-                                                keep.extra.columns = T)
+                                                keep.extra.columns = TRUE)
     seqlevelsStyle(txdb) <- seqlevelsStyle(junctions_gr)
     
     refseq.genes<- genes(txdb)
@@ -857,7 +863,7 @@ checkInconclusive <- function(junctions_dt, txdb){
     psi_positions <- which(junctions_dt$type != "theta")
     colnames(junctions_dt)[which(names(junctions_dt) == "STRAND")] <- "strand2"
     junctions_gr <- makeGRangesFromDataFrame(junctions_dt[psi_positions], 
-                                                keep.extra.columns = T)
+                                                keep.extra.columns = TRUE)
     seqlevelsStyle(txdb) <- seqlevelsStyle(junctions_gr)
     
     refseq.genes<- genes(txdb)

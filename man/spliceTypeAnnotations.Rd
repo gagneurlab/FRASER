@@ -12,6 +12,7 @@ annotateIntronReferenceOverlap(fds, txdb, BPPARAM = bpparam())
 annotateSpliceEventType(
   result,
   txdb,
+  fds,
   addSpliceType = TRUE,
   addUTRoverlap = TRUE,
   BPPARAM = bpparam()
@@ -116,7 +117,7 @@ the given results table.
   res_dt <- as.data.table(res)
   
   # annotate the type of splice event and UTR overlap
-  res_dt <- annotateSpliceEventType(result=res_dt, txdb=txdb)
+  res_dt <- annotateSpliceEventType(result=res_dt, txdb=txdb, fds=fds)
   
   # annotate overlap with blacklist regions
   res_dt <- flagBlacklistRegions(result=res_dt, assemblyVersion="hg19")
