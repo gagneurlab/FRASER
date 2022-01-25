@@ -30,7 +30,7 @@
 #'          colData colData<- rowData rowRanges rowRanges<- SummarizedExperiment
 #'          rbind Assays
 #' @importFrom GenomicRanges findOverlaps granges GRanges GRangesList
-#'          makeGRangesFromDataFrame invertStrand
+#'          makeGRangesFromDataFrame invertStrand start end start<- end<-
 #' @importFrom IRanges subsetByOverlaps from to IRanges ranges nearest distance
 #' @importFrom Rsamtools ScanBamParam scanBamHeader bamMapqFilter
 #'          bamWhich bamWhich<- BamFile idxstatsBam

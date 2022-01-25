@@ -347,7 +347,7 @@ addSpliceTypeLabels <- function(junctions_dt, fds, txdb){
             elementMetadata(intron_ranges[j])$medianCount
         })
         maxExpr <- which.max(expre)
-        return(compareEnds(junctions_gr, i, overlap[maxExpr], F, 
+        return(compareEnds(junctions_gr, i, overlap[maxExpr], FALSE, 
                             intron_ranges, exons))
     })
     junctions_dt[psi_positions[starts], 
@@ -364,7 +364,7 @@ addSpliceTypeLabels <- function(junctions_dt, fds, txdb){
             elementMetadata(intron_ranges[j])$medianCount
         })
         maxExpr <- which.max(expre)
-        return(compareStarts(junctions_gr, i, overlap[maxExpr], F, 
+        return(compareStarts(junctions_gr, i, overlap[maxExpr], FALSE, 
                                 intron_ranges, exons))
         
     })
