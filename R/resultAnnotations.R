@@ -27,7 +27,10 @@
 #' 
 #' \code{\link{flagBlacklistRegions}} flags introns in the results table on 
 #'     whether or not they are located in a blacklist region of the genome. By
-#'     default, the blacklist regions as reported in \cite{...} are used.
+#'     default, the blacklist regions as reported in 
+#'     \cite{Amemiya, Kundaje & Boyle (2019)} and downloaded from 
+#'     \href{https://www.encodeproject.org/annotations/ENCSR636HFF/}{here} 
+#'     are used.
 #'
 #' @param fds A FraserDataSet
 #' @param txdb A txdb object providing the reference annotation.
@@ -38,9 +41,12 @@
 #'     should be added to the results table. Defaults to \code{TRUE}.
 #' @param addUTRoverlap Logical, indicating if the overlap with UTR regions
 #'     should checked and added to the results table. Defaults to \code{TRUE}.
+#' @param minoverlap Integer value defining the number of base pairs around the
+#'     splice site that need to overlap with UTR or blacklist region, 
+#'     respectivly, to be considered matching. Defaults to 5 bp. 
 #' @param blacklist_regions A BED file that contains the blacklist regions. 
 #'     If \code{NULL} (default), the BED files that are packaged with FRASER 
-#'     are used. 
+#'     are used (see Details for more information). 
 #' @param assemblyVersion Indicates the genome assembly version of the intron 
 #'     coordinates. Only used if blacklist_regions is NULL. For other versions, 
 #'     please provide the BED file containing the blacklist regions directly.
@@ -56,9 +62,8 @@
 #'   fds <- createTestFraserDataSet()
 #'   
 #'   # load reference annotation
-#'   requireNamespace("TxDb.Hsapiens.UCSC.hg19.knownGene")
-#'   txdb <- 
-#'     TxDb.Hsapiens.UCSC.hg19.knownGene::TxDb.Hsapiens.UCSC.hg19.knownGene 
+#'   library(TxDb.Hsapiens.UCSC.hg19.knownGene)
+#'   txdb <- TxDb.Hsapiens.UCSC.hg19.knownGene 
 #'     
 #'   # add basic annotations for overlap with the reference annotation
 #'   # run this function before creating the results table
@@ -66,19 +71,16 @@
 #' 
 #'   # extract results: for this small example dataset, only a z score cutoff 
 #'   # of 1 is used to get at least one result. 
-#'   # Make sure to include the additional column in the results table
-#'   res <- results(fds, padjCutoff=NA, zScoreCutoff=1, deltaPsiCutoff=NA, 
-#'                   additionalColumns = 'annotatedJunction')
-#'   res_dt <- as.data.table(res)
+#'   res <- results(fds, padjCutoff=NA, zScoreCutoff=1, deltaPsiCutoff=NA)
 #'   
 #'   # annotate the type of splice event and UTR overlap
-#'   res_dt <- annotateSpliceEventType(result=res_dt, txdb=txdb, fds=fds)
+#'   res <- annotateSpliceEventType(result=res, txdb=txdb, fds=fds)
 #'   
 #'   # annotate overlap with blacklist regions
-#'   res_dt <- flagBlacklistRegions(result=res_dt, assemblyVersion="hg19")
+#'   res <- flagBlacklistRegions(result=res, assemblyVersion="hg19")
 #'   
 #'   # show results table containing additional annotations
-#'   res_dt
+#'   res
 #'   
 NULL
 
@@ -88,7 +90,7 @@ NULL
 #'     \code{annotatedJunction} in \code{mcols(fds)}. 
 #' @export
 annotateIntronReferenceOverlap <- function(fds, txdb, BPPARAM=bpparam()){
-    print("loading introns")
+    message("loading introns ...")
     #seqlevelsStyle(fds) <- seqlevelsStyle(txdb)[1]
     introns <- unique(unlist(intronsByTranscript(txdb)))
     # reduce the introns to only the actually expressed introns
@@ -99,10 +101,9 @@ annotateIntronReferenceOverlap <- function(fds, txdb, BPPARAM=bpparam()){
     
     # calculate extra columns with mean/median intron expression count
     # add the new columns
-    print("adding median count to introns")
-    sampleCounts <- K(fds_known, type = "j")
+    sampleCounts <- as.matrix(K(fds_known, type = "j"))
     anno_introns[, meanCount := rowMeans(sampleCounts)]
-    anno_introns[, medianCount := rowMedians(as.matrix(sampleCounts))]
+    anno_introns[, medianCount := rowMedians(sampleCounts)]
     # order by medianCount (highest first)
     setorderv(anno_introns, "medianCount", order=-1) 
     anno_introns_ranges <- makeGRangesFromDataFrame(anno_introns, 
@@ -112,9 +113,10 @@ annotateIntronReferenceOverlap <- function(fds, txdb, BPPARAM=bpparam()){
     fds_junctions <- rowRanges(fds, type = "j")
     
     # Do the annotation just for the intron with highest median expression
-    print("start calculating annotations")    
+    message("start calculating basic annotations ...")    
     overlaps <- findOverlaps(fds_junctions, anno_introns_ranges, select="first")
-    annotations <- bplapply(seq_len(length(fds_junctions)), function(i){
+    annotations <- bplapply(seq_len(length(fds_junctions)), 
+            function(i, overlaps, fds_junctions, anno_introns_ranges){
         # only select first intron as already ordered by medianCount beforehand
         overlap <- overlaps[i]
         if(is.na(overlap)) return("none") #no overlap with any intron
@@ -135,12 +137,13 @@ annotateIntronReferenceOverlap <- function(fds, txdb, BPPARAM=bpparam()){
         
         # overlaps but no start/end match
         return("none") 
-    }, BPPARAM=BPPARAM) 
+    }, overlaps=overlaps, fds_junctions=fds_junctions, 
+        anno_introns_ranges=anno_introns_ranges, BPPARAM=BPPARAM) 
     annotations <- unlist(annotations)
     
     rowRanges(fds)$annotatedJunction <- annotations
     mcols(fds, type="ss")$annotatedJunction <- "not computed"
-    print("annotations done")
+    message("basic annotations done")
     return(fds)
 }
 
@@ -148,44 +151,56 @@ annotateIntronReferenceOverlap <- function(fds, txdb, BPPARAM=bpparam()){
 #'     type to junctions in the given results table.
 #' @export
 annotateSpliceEventType <- function(result, txdb, fds, addSpliceType=TRUE, 
-                                    addUTRoverlap=TRUE, BPPARAM=bpparam()){
-    
-    # Create basic annotation of overlap with reference
-    if(!("annotatedJunction" %in% colnames(result))){
-        stop("Column 'annotatedJunction' not found in the results table!\n",
-            "Please run fds <- annotateIntronReferenceOverlap(fds, txdb) ",
-            "first and add it \nto the results table with ",
-            "results(..., additionalColumns = 'annotatedJunction')\n", 
-            "(see examples) before calling this function.")
-    }
+                                    addUTRoverlap=TRUE, minoverlap=5, 
+                                    BPPARAM=bpparam()){
     
     # convert to data.table if not already
     if(!is.data.table(result)){
-        result <- as.data.table(result)
+        annoResult <- as.data.table(result)
+    } else{
+        annoResult <- result
+    }
+    
+    # Create basic annotation of overlap with reference
+    if(!("annotatedJunction" %in% colnames(annoResult))){
+        stop("Column 'annotatedJunction' not found in the results table!\n",
+            "Please run 'fds <- annotateIntronReferenceOverlap(fds, txdb)' ",
+            "first and then extract \nthe results table using the ",
+            "'results(fds, ...)' function before calling this function.")
     }
     
     # Calculate splice types and frameshift
     if(isTRUE(addSpliceType)){
-        result <- addSpliceTypeLabels(result, fds, txdb)
+        annoResult <- addSpliceTypeLabels(annoResult, fds, txdb)
     }
     
     # Add UTR labels
     if(isTRUE(addUTRoverlap)){
-        result <- addUTRLabels(result, txdb)
+        annoResult <- addUTRLabels(annoResult, txdb)
     }
     
-    return(result)
+    if(is(result, "GenomicRanges")){
+        annoResult <- makeGRangesFromDataFrame(annoResult, 
+                                                keep.extra.columns=TRUE)
+    } 
+    
+    return(annoResult)
 }
 
-#' @describeIn spliceTypeAnnotations This method flags blacklist regions in 
-#'     the given results table. 
+#' @describeIn spliceTypeAnnotations This method flags all introns and 
+#'     splice sites in the given results table for which at least one splice 
+#'     site (donor or acceptor) is located in a blacklist region. Blacklist 
+#'     regions of the genome are determined from the provided BED file.  
 #' @export
 flagBlacklistRegions <- function(result, blacklist_regions=NULL,
-                                assemblyVersion=c('hg19', 'hg38')){
+                                assemblyVersion=c('hg19', 'hg38'),
+                                minoverlap=5){
     
     # convert to data.table if not already
     if(!is.data.table(result)){
-        result <- as.data.table(result)
+        annoResult <- as.data.table(result)
+    } else{
+        annoResult <- result
     }
     
     assemblyVersion <- match.arg(assemblyVersion)
@@ -199,55 +214,82 @@ flagBlacklistRegions <- function(result, blacklist_regions=NULL,
         stop("BED file with blacklist regions does not exist: ", 
             blacklist_regions)
     }
-    print("Importing blacklist regions ...")
+    message("Importing blacklist regions ...")
     blacklist_gr <- rtracklayer::import(blacklist_regions, format = "BED")
-    result <- addBlacklistLabels(result, blacklist_gr)  
-    return(result)
+    annoResult <- addBlacklistLabels(annoResult, blacklist_gr)  
+    
+    if(is(result, "GenomicRanges")){
+        annoResult <- makeGRangesFromDataFrame(annoResult, 
+                                                keep.extra.columns=TRUE)
+    }
+    
+    return(annoResult)
 }
 
 ############# helper functions ##############################
 
 #' blacklist annotation for aberrant splicing events  
 #' @noRd
-addBlacklistLabels <- function(junctions_dt, blacklist_gr){
+addBlacklistLabels <- function(junctions_dt, blacklist_gr, minoverlap=5){
     # add the blacklist information
-    print("Set up aberrant splicing granges")
     colnames(junctions_dt)[which(names(junctions_dt) == "STRAND")] <- "strand2"
     junctions_gr <- makeGRangesFromDataFrame(junctions_dt)
+    
+    # get gr with start/end positions of each intron
+    gr_start_ss <- junctions_gr
+    end(gr_start_ss) <- start(gr_start_ss) + minoverlap - 1
+    start(gr_start_ss) <- start(gr_start_ss) - minoverlap
+    gr_end_ss <- junctions_gr
+    start(gr_end_ss) <- end(gr_end_ss) - minoverlap + 1
+    end(gr_end_ss) <- end(gr_end_ss) + minoverlap
     
     # set to the same seqlevelsstyle
     seqlevelsStyle(blacklist_gr) <- seqlevelsStyle(junctions_gr)
     
     ## create overlap with blacklist and annotate extra column
-    print("find blacklist overlap")
-    black_hits <- unique(from(findOverlaps(junctions_gr, blacklist_gr)))
+    message("finding blacklist overlap ...")
+    black_hits_start_ss <- unique(from(findOverlaps(gr_start_ss, blacklist_gr)))
+    black_hits_end_ss <- unique(from(findOverlaps(gr_end_ss, blacklist_gr)))
     junctions_dt[, blacklist := FALSE]
     
-    junctions_dt[black_hits, blacklist := TRUE]
+    junctions_dt[black_hits_start_ss | black_hits_end_ss, blacklist := TRUE]
     colnames(junctions_dt)[which(names(junctions_dt) == "strand2")] <- "STRAND"
     
-    print("blacklist labels done")
+    message("blacklist labels done")
     return(junctions_dt)
 }
 
 #' adds UTR overlap annotation to results table
 #' @noRd
-addUTRLabels <- function(junctions_dt, txdb){
+addUTRLabels <- function(junctions_dt, txdb, minoverlap=5){
     colnames(junctions_dt)[which(names(junctions_dt) == "STRAND")] <- "strand2"
     junctions_gr <- makeGRangesFromDataFrame(junctions_dt)
     seqlevelsStyle(txdb) <- seqlevelsStyle(junctions_gr)
+    
+    # get gr with start/end positions of each intron
+    gr_start_ss <- junctions_gr
+    end(gr_start_ss) <- start(gr_start_ss) + minoverlap - 1
+    start(gr_start_ss) <- start(gr_start_ss) - minoverlap
+    gr_end_ss <- junctions_gr
+    start(gr_end_ss) <- end(gr_end_ss) - minoverlap + 1
+    end(gr_end_ss) <- end(gr_end_ss) + minoverlap
+    
     ### UTR labels based on txdb file
     ### add 5' 3' UTR labels
-    print("find UTR overlap")
-    threes <- unique(from(findOverlaps(junctions_gr, 
+    message("finding UTR overlap ...")
+    threes_start <- unique(from(findOverlaps(gr_start_ss, 
                             threeUTRsByTranscript(txdb, use.names = TRUE))))
-    fives <- unique(from(findOverlaps(junctions_gr, 
+    threes_end <- unique(from(findOverlaps(gr_end_ss, 
+                            threeUTRsByTranscript(txdb, use.names = TRUE))))
+    fives_start <- unique(from(findOverlaps(gr_start_ss, 
+                            fiveUTRsByTranscript(txdb, use.names = TRUE))))
+    fives_end <- unique(from(findOverlaps(gr_end_ss, 
                             fiveUTRsByTranscript(txdb, use.names = TRUE))))
     junctions_dt[, UTR_overlap := "no"]
-    junctions_dt[threes, UTR_overlap := "3'-UTR"]
-    junctions_dt[fives, UTR_overlap := "5'-UTR"]
+    junctions_dt[threes_start | threes_end, UTR_overlap := "3'-UTR"]
+    junctions_dt[fives_start | fives_end, UTR_overlap := "5'-UTR"]
     colnames(junctions_dt)[which(names(junctions_dt) == "strand2")] <- "STRAND"
-    print("UTR labels done")
+    message("UTR labels done")
     return(junctions_dt)
 }
 
@@ -256,7 +298,7 @@ addUTRLabels <- function(junctions_dt, txdb){
 #' adds type of splicing to each intron in the results table
 #' @noRd
 addSpliceTypeLabels <- function(junctions_dt, fds, txdb){
-    print("preparing ...")
+    message("preparing ...")
     psi_positions <- which(junctions_dt$type != "theta")
     colnames(junctions_dt)[which(names(junctions_dt) == "STRAND")] <- "strand2"
     junctions_gr <- makeGRangesFromDataFrame(junctions_dt[psi_positions], 
@@ -295,8 +337,8 @@ addSpliceTypeLabels <- function(junctions_dt, fds, txdb){
     ends <- which(junctions_dt[psi_positions]$annotatedJunction=="end")
     nones <- which(junctions_dt[psi_positions]$annotatedJunction=="none")
     
-    print("calculating aberrant splice types")
-    print("start junctions")
+    message("calculating splice types ...")
+    # start junctions
     start_results <- sapply(starts, function(i){
         # find the most freq intron that overlaps again
         overlap <- to(findOverlaps(junctions_gr[i], intron_ranges, 
@@ -313,7 +355,7 @@ addSpliceTypeLabels <- function(junctions_dt, fds, txdb){
     junctions_dt[psi_positions[starts], 
                     spliceType := start_results[1,]]
     
-    print("end junctions")
+    # end junctions
     end_results <- sapply(ends, function(i){
         # find the most freq intron that overlaps again
         overlap <- to(findOverlaps(junctions_gr[i], intron_ranges, 
@@ -329,7 +371,7 @@ addSpliceTypeLabels <- function(junctions_dt, fds, txdb){
     junctions_dt[psi_positions[ends], causesFrameshift:=end_results[2,]]
     junctions_dt[psi_positions[ends], spliceType := end_results[1,]]
     
-    print("none junctions pt1")
+    # none junctions pt1
     none_results <- sapply(nones, function(i){
         # find most freq intron
         # check start and end
@@ -384,7 +426,7 @@ addSpliceTypeLabels <- function(junctions_dt, fds, txdb){
     noLaps <-which(junctions_dt[psi_positions]$spliceType=="noOverlap")
     refseq.genes<- genes(txdb)
     
-    print("none junctions pt2")
+    # none junctions pt2
     noLaps_results <- sapply(noLaps, function(i){
         overlap <- to(findOverlaps(junctions_gr[i], exons))
         # no overlap with an intron or an exon
@@ -414,7 +456,6 @@ addSpliceTypeLabels <- function(junctions_dt, fds, txdb){
                     spliceType := noLaps_results[1,]]
     
     # theta annotations
-    print("Annotate theta junctions")
     thetas <- which(junctions_dt$type == "theta")
     junctions_gr <- makeGRangesFromDataFrame(junctions_dt[thetas,], 
                                             keep.extra.columns = TRUE)
@@ -441,7 +482,6 @@ addSpliceTypeLabels <- function(junctions_dt, fds, txdb){
     junctions_dt[thetas[exonic], spliceType := exonic_results]
     
     # check cases that don't overlap with an exon/intron
-    print("nones")
     nones <- which(is.na(junctions_dt[thetas,]$spliceType))
     none_results <- sapply(nones, function(i){
         if(length(findOverlaps(junctions_gr[i], refseq.genes)) > 0) return(NA)
@@ -458,11 +498,10 @@ addSpliceTypeLabels <- function(junctions_dt, fds, txdb){
         }
     })
     junctions_dt[thetas[nones], spliceType := none_results]
-    print("thetas done")
     
     # add distance to closest neighbour gene for intergenic results 
     # (both psi and theta)
-    print("adding distances to nearest gene")
+    message("adding distances to nearest gene ...")
     up <- which(junctions_dt$spliceType == "upstreamOfNearestGene")
     down <- which(junctions_dt$spliceType == "downstreamOfNearestGene")
     
@@ -470,7 +509,7 @@ addSpliceTypeLabels <- function(junctions_dt, fds, txdb){
     junctions_gr <- makeGRangesFromDataFrame(junctions_dt, 
                                                 keep.extra.columns = TRUE)
     
-    print("Calculate distances")
+    # Calculate distances
     if(length(up) > 0){
         distanceNearestGene_up <- sapply(up, function(i){
             min(distance(junctions_gr[i], refseq.genes), na.rm = TRUE)})
@@ -479,9 +518,9 @@ addSpliceTypeLabels <- function(junctions_dt, fds, txdb){
                             distNearestGene := distanceNearestGene_up]
         } else{
             junctions_dt[psi_positions[up], distNearestGene := NA]
-            print("No distances found for upstream")
+            message("No distances found for upstream")
         }
-    }else{print("No upstream targets")}
+    }else{message("No upstream targets")}
     
     if(length(down) > 0){
         distanceNearestGene_down <- sapply(down, function(i){
@@ -491,12 +530,12 @@ addSpliceTypeLabels <- function(junctions_dt, fds, txdb){
                             distNearestGene := distanceNearestGene_down]
         }else{
             junctions_dt[psi_positions[down], distNearestGene := NA]
-            print("No distances found for downstream")
+            message("No distances found for downstream")
         }
-    }else{print("No downstream targets")}
+    }else{message("No downstream targets")}
     
     colnames(junctions_dt)[which(names(junctions_dt) == "strand2")] <- "STRAND"
-    print("done calculating aberrant splice types")
+    message("done calculating splice types")
     
     # Add the subtypes for exonSkipping and inconclusive
     junctions_dt <- checkExonSkipping(junctions_dt, txdb)
@@ -761,11 +800,6 @@ checkIntergenic <- function(junctions_gr, i, refseq.genes){
     # otherwise up/downstream
     dist = min(distance(test_junction, refseq.genes), na.rm = TRUE)
     if(dist > 0){
-        # if(dist > 1000){
-        #     print("intergenic")
-        #     return(c("intergenic", "unlikely"))
-        # }else{
-        
         # find nearest and compare starts
         if(start(refseq.genes[nearest(junctions_gr[i], 
                                         refseq.genes)]) > start){
@@ -795,7 +829,7 @@ checkExonSkipping <- function(junctions_dt, txdb){
     exonSkip <- which(junctions_dt[psi_positions]$spliceType %in% 
                             c("exonSkipping", "singleExonSkipping"))
     
-    print("start checking exonSkipping")
+    message("start checking exonSkipping")
     newSkip_results <- sapply(exonSkip, function(i){
         start = start(junctions_gr[i]) 
         end = end(junctions_gr[i])
@@ -838,7 +872,7 @@ checkExonSkipping <- function(junctions_dt, txdb){
         return("multigenicSplicing")
     })
     
-    print("checking exonSkipping done")
+    # checking exonSkipping done
     if(length(exonSkip) > 0){
         junctions_dt[psi_positions[exonSkip], 
                         spliceType2 := newSkip_results]
@@ -870,7 +904,6 @@ checkInconclusive <- function(junctions_dt, txdb){
     
     inconclusive <- which(junctions_dt[psi_positions
                                         ]$spliceType == "complex")
-    print("start checking inconclusive")
     
     inconclusive_results <- sapply(inconclusive, function(i){
         start = start(junctions_gr[i]) 
@@ -915,7 +948,7 @@ checkInconclusive <- function(junctions_dt, txdb){
     })
     
     colnames(junctions_dt)[which(names(junctions_dt) == "strand2")] <- "STRAND"
-    print("done checking inconclusive")
+
     if(length(inconclusive) > 0){
         junctions_dt[psi_positions[inconclusive], 
                         spliceType := inconclusive_results]

@@ -7,6 +7,7 @@ Authors@R: c(
     person("Christian", "Mertes", role=c("aut", "cre"), 
             email="mertes@in.tum.de"),
     person("Ines", "Scheller",  role=c("aut"), email="scheller@in.tum.de"),
+    person("Karoline", "Lutz", role=c("aut"))
     person("Vicente", "Yepez", role=c("ctb"), email="yepez@in.tum.de"),
     person("Julien", "Gagneur", role=c("aut"), email="gagneur@in.tum.de"))
 Description: Detection of rare aberrant splicing events in transcriptome 

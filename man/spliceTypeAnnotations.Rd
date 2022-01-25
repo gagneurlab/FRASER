@@ -15,13 +15,15 @@ annotateSpliceEventType(
   fds,
   addSpliceType = TRUE,
   addUTRoverlap = TRUE,
+  minoverlap = 5,
   BPPARAM = bpparam()
 )
 
 flagBlacklistRegions(
   result,
   blacklist_regions = NULL,
-  assemblyVersion = c("hg19", "hg38")
+  assemblyVersion = c("hg19", "hg38"),
+  minoverlap = 5
 )
 }
 \arguments{
@@ -42,9 +44,13 @@ should be added to the results table. Defaults to \code{TRUE}.}
 \item{addUTRoverlap}{Logical, indicating if the overlap with UTR regions
 should checked and added to the results table. Defaults to \code{TRUE}.}
 
+\item{minoverlap}{Integer value defining the number of base pairs around the
+splice site that need to overlap with UTR or blacklist region, 
+respectivly, to be considered matching. Defaults to 5 bp.}
+
 \item{blacklist_regions}{A BED file that contains the blacklist regions. 
 If \code{NULL} (default), the BED files that are packaged with FRASER 
-are used.}
+are used (see Details for more information).}
 
 \item{assemblyVersion}{Indicates the genome assembly version of the intron 
 coordinates. Only used if blacklist_regions is NULL. For other versions, 
@@ -80,7 +86,10 @@ These functions work on the result table and add additional
 
 \code{\link{flagBlacklistRegions}} flags introns in the results table on 
     whether or not they are located in a blacklist region of the genome. By
-    default, the blacklist regions as reported in \cite{...} are used.
+    default, the blacklist regions as reported in 
+    \cite{Amemiya, Kundaje & Boyle (2019)} and downloaded from 
+    \href{https://www.encodeproject.org/annotations/ENCSR636HFF/}{here} 
+    are used.
 }
 \section{Functions}{
 \itemize{
@@ -92,8 +101,10 @@ for the full fds. The overlap type is added as a new column
 \item \code{annotateSpliceEventType}: This method annotates the splice event 
 type to junctions in the given results table.
 
-\item \code{flagBlacklistRegions}: This method flags blacklist regions in 
-the given results table.
+\item \code{flagBlacklistRegions}: This method flags all introns and 
+splice sites in the given results table for which at least one splice 
+site (donor or acceptor) is located in a blacklist region. Blacklist 
+regions of the genome are determined from the provided BED file.
 }}
 
 \examples{
@@ -101,9 +112,8 @@ the given results table.
   fds <- createTestFraserDataSet()
   
   # load reference annotation
-  requireNamespace("TxDb.Hsapiens.UCSC.hg19.knownGene")
-  txdb <- 
-    TxDb.Hsapiens.UCSC.hg19.knownGene::TxDb.Hsapiens.UCSC.hg19.knownGene 
+  library(TxDb.Hsapiens.UCSC.hg19.knownGene)
+  txdb <- TxDb.Hsapiens.UCSC.hg19.knownGene 
     
   # add basic annotations for overlap with the reference annotation
   # run this function before creating the results table
@@ -111,18 +121,15 @@ the given results table.
 
   # extract results: for this small example dataset, only a z score cutoff 
   # of 1 is used to get at least one result. 
-  # Make sure to include the additional column in the results table
-  res <- results(fds, padjCutoff=NA, zScoreCutoff=1, deltaPsiCutoff=NA, 
-                  additionalColumns = 'annotatedJunction')
-  res_dt <- as.data.table(res)
+  res <- results(fds, padjCutoff=NA, zScoreCutoff=1, deltaPsiCutoff=NA)
   
   # annotate the type of splice event and UTR overlap
-  res_dt <- annotateSpliceEventType(result=res_dt, txdb=txdb, fds=fds)
+  res <- annotateSpliceEventType(result=res, txdb=txdb, fds=fds)
   
   # annotate overlap with blacklist regions
-  res_dt <- flagBlacklistRegions(result=res_dt, assemblyVersion="hg19")
+  res <- flagBlacklistRegions(result=res, assemblyVersion="hg19")
   
   # show results table containing additional annotations
-  res_dt
+  res
   
 }
