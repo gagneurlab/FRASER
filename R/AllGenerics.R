@@ -655,7 +655,7 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff, zscoreCutoff,
     stopifnot(is(object, "FraserDataSet"))
     stopifnot(all(sampleIDs %in% samples(object)))
     
-    if("annotatedJunction" %in% colnames(mcols(fds, type="j")) && 
+    if("annotatedJunction" %in% colnames(mcols(object, type="j")) && 
             !("annotatedJunction" %in% additionalColumns)){
         additionalColumns <- c(additionalColumns, "annotatedJunction")
     }
