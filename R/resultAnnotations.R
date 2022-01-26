@@ -252,7 +252,8 @@ addBlacklistLabels <- function(junctions_dt, blacklist_gr, minoverlap=5){
     black_hits_end_ss <- unique(from(findOverlaps(gr_end_ss, blacklist_gr)))
     junctions_dt[, blacklist := FALSE]
     
-    junctions_dt[black_hits_start_ss | black_hits_end_ss, blacklist := TRUE]
+    junctions_dt[black_hits_start_ss, blacklist := TRUE]
+    junctions_dt[black_hits_end_ss, blacklist := TRUE]
     colnames(junctions_dt)[which(names(junctions_dt) == "strand2")] <- "STRAND"
     
     message("blacklist labels done")
@@ -286,8 +287,10 @@ addUTRLabels <- function(junctions_dt, txdb, minoverlap=5){
     fives_end <- unique(from(findOverlaps(gr_end_ss, 
                             fiveUTRsByTranscript(txdb, use.names = TRUE))))
     junctions_dt[, UTR_overlap := "no"]
-    junctions_dt[threes_start | threes_end, UTR_overlap := "3'-UTR"]
-    junctions_dt[fives_start | fives_end, UTR_overlap := "5'-UTR"]
+    junctions_dt[threes_start, UTR_overlap := "3'-UTR"]
+    junctions_dt[threes_end, UTR_overlap := "3'-UTR"]
+    junctions_dt[fives_start, UTR_overlap := "5'-UTR"]
+    junctions_dt[fives_end, UTR_overlap := "5'-UTR"]
     colnames(junctions_dt)[which(names(junctions_dt) == "strand2")] <- "STRAND"
     message("UTR labels done")
     return(junctions_dt)
