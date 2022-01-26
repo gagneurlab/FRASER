@@ -37,7 +37,8 @@ calculatePSIValues <- function(fds, types=psiTypes, overwriteCts=FALSE,
     }
     
     # calculate intron jaccard index
-    fds <- calculateIntronJaccardIndex(fds)
+    fds <- calculateIntronNonsplitSum(fds, overwriteCts=overwriteCts)
+    fds <- calculateJaccardIntronIndex(fds, overwriteCts=overwriteCts)
     
     # calculate the delta psi value
     for(psiType in types){
@@ -326,155 +327,97 @@ getOtherCountsCacheFolder <- function(fds){
 }
 
 #'
-#' calculates the intron jaccard index values for all junctions
-#' @inheritParams countRNA
-#' 
-calculateIntronJaccardIndex <- function(fds){
-    # retrieve junction and splice site annotation with count information
-    junction_dt <- data.table(
-        as.data.table(rowRanges(fds, type="j"))[,.(seqnames, start, end, 
-                                                   strand, startID, endID)], 
-        as.matrix(K(fds, type="psi5")))
-    ss_dt <- data.table(
-        as.data.table(rowRanges(fds, type="ss"))[,.(seqnames, start, end, 
-                                                    strand, spliceSiteID)], 
-        as.matrix(N(fds, type="theta")))
+#' calculates the jaccard intron value for the given junctions
+#'
+#' @noRd
+calculateJaccardIntronIndex <- function(fds, overwriteCts){
+    stopifnot(is(fds, "FraserDataSet"))
     
-    # melt to have one row per sample - junction combination
-    junction_dt <- melt(junction_dt, variable.name="sampleID", value.name="k", 
-                        id.vars=c("seqnames", "start", "end", "strand", 
-                                  "startID", "endID"))
-    ss_dt <- melt(ss_dt, variable.name="sampleID", value.name="n", 
-                  id.vars=c("seqnames", "start", "end", "strand", 
-                            "spliceSiteID"))
+    message(date(), ": Calculate the Jaccard Intron values ...")
     
-    # merge junction information with splice site annotation (theta)
-    junction_dt <- merge(junction_dt, ss_dt[,.(spliceSiteID, sampleID, n)], 
-                         all.x=TRUE, by.x=c("startID", "sampleID"), 
-                         by.y=c("spliceSiteID", "sampleID"), sort=FALSE)
-    setnames(junction_dt, "n", "n_donor")
-    junction_dt <- merge(junction_dt, ss_dt[,.(spliceSiteID, sampleID, n)], 
-                         all.x=TRUE, by.x=c("endID", "sampleID"), 
-                         by.y=c("spliceSiteID", "sampleID"), sort=FALSE)
-    setnames(junction_dt, "n", "n_acceptor")
-    rm(ss_dt)
-    gc()
+    # check if we have computed N_psi3, N_psi5 and K_nonsplit already
+    if(!all(c(paste0("rawOtherCounts_psi", c(5, 3)), "rawCountsJnonsplit") %in% 
+            assayNames(fds))){
+        stop("Please calculate N_psi3, N_psi5 and K_nonsplit first before ", 
+                "calling this function.")
+    }
     
-    # TODO deal with missing endIDs (why do we have them? lost in filtering?)
-    # for now: replace n_donor with N from psi5 (and same for n_acceptor and psi3)
-    junction_dt_nacceptor <- data.table(
-        as.data.table(rowRanges(fds, type="j"))[,.(startID, endID)], 
-        as.matrix(N(fds, type="psi3")))
-    junction_dt_nacceptor <- melt(junction_dt_nacceptor, 
-                        variable.name="sampleID", value.name="n_psi3", 
-                        id.vars=c("startID", "endID"))
-    junction_dt[, n_psi3:=junction_dt_nacceptor[,n_psi3]]
-    rm(junction_dt_nacceptor)
-    gc()
-    junction_dt_ndonor <- data.table(
-        as.data.table(rowRanges(fds, type="j"))[,.(startID, endID)], 
-        as.matrix(N(fds, type="psi5")))
-    junction_dt_ndonor <- melt(junction_dt_ndonor, 
-                               variable.name="sampleID", value.name="n_psi5", 
-                               id.vars=c("startID", "endID"))
-    junction_dt[, n_psi5:=junction_dt_ndonor[,n_psi5]]
-    rm(junction_dt_ndonor)
-    gc()
+    # calculate intron jaccard value
+    jaccard_denom <- N(fds, "psi3") + N(fds, "psi5") + 
+                        assay(fds, "rawCountsJnonsplit") - K(fds, type="j")
+    jaccardValues <- K(fds, type="j") / jaccard_denom 
+    otherCounts_jaccard <- jaccard_denom - K(fds, type="j")
     
-    # replace n (with non-split counts) by n_psi3/n_psi5 if NA
-    junction_dt[is.na(n_acceptor), n_acceptor:=n_psi3]
-    junction_dt[is.na(n_donor), n_donor:=n_psi5]
-    junction_dt[n_acceptor < n_psi3, n_acceptor:=n_psi3]
-    junction_dt[n_donor < n_psi5, n_donor:=n_psi5]
+    # TODO also calculate it with nonsplit counts in the nominator 
     
-    # calculate intron_jaccard
-    junction_dt[, denominator:=(n_donor + n_acceptor - k)]
-    junction_dt[, intron_jaccard:= k / denominator]
-    junction_dt[is.nan(intron_jaccard), intron_jaccard:=1] # n_donor = n_acceptor = 0
+    # assign it to our object
+    assay(fds, type="j", "intron_jaccard", withDimnames=FALSE) <- jaccardValues
     
-    # convert to matrix to store it as assay in the fds
-    intron_jaccard <- matrix(junction_dt[,intron_jaccard], nrow=nrow(fds), ncol=ncol(fds), byrow=FALSE)
-    rownames(intron_jaccard) <- rownames(fds)
-    colnames(intron_jaccard) <- colnames(fds)
-    assay(fds, type="j", "intron_jaccard", withDimnames=FALSE) <- intron_jaccard
+    if(isTRUE(overwriteCts) || 
+            !("rawOtherCounts_intron_jaccard" %in% assayNames(fds))){
+        assay(fds, type="j", "rawOtherCounts_intron_jaccard", 
+                withDimnames=FALSE) <- otherCounts_jaccard
+    }
     
-    # store denominator
-    jaccard_denom <- matrix(junction_dt[,denominator], nrow=nrow(fds), ncol=ncol(fds), byrow=FALSE)
-    rownames(jaccard_denom) <- rownames(fds)
-    colnames(jaccard_denom) <- colnames(fds)
-    assay(fds, type="j", "rawOtherCounts_intron_jaccard", 
-            withDimnames=FALSE) <- jaccard_denom - matrix(junction_dt[,k], 
-                                                            nrow=nrow(fds), 
-                                                            ncol=ncol(fds), 
-                                                            byrow=FALSE)
     return(fds)
 }
 
-calculatePhi <- function(fds){
-    # retrieve junction and splice site annotation with count information
-    junction_dt <- data.table(
-        as.data.table(rowRanges(fds, type="j"))[,.(seqnames, start, end, 
-                                                   strand, startID, endID)], 
-        as.matrix(K(fds, type="psi5")))
-    ss_dt <- data.table(
-        as.data.table(rowRanges(fds, type="ss"))[,.(seqnames, start, end, 
-                                                    strand, spliceSiteID)], 
-        as.matrix(N(fds, type="theta")))
+#' Calculates the sum of nonsplit reads overlapping either the donor or acceptor 
+#' splice site and stores it as a new assay (one value for each junction and 
+#' sample).
+#' 
+#' @noRd
+calculateIntronNonsplitSum <- function(fds, overwriteCts){
+    stopifnot(is(fds, "FraserDataSet"))
     
-    # melt to have one row per sample - junction combination
-    junction_dt <- melt(junction_dt, variable.name="sampleID", value.name="k", 
-                        id.vars=c("seqnames", "start", "end", "strand", 
-                                  "startID", "endID"))
-    ss_dt <- melt(ss_dt, variable.name="sampleID", value.name="n", 
-                  id.vars=c("seqnames", "start", "end", "strand", 
-                            "spliceSiteID"))
+    message(date(), ": Calculate the total nonsplict counts for each intron ", 
+                "...")
     
-    # merge junction information with splice site annotation (theta)
-    junction_dt <- merge(junction_dt, ss_dt[,.(spliceSiteID, sampleID, n)], 
-                         all.x=TRUE, by.x=c("startID", "sampleID"), 
-                         by.y=c("spliceSiteID", "sampleID"), sort=FALSE)
-    setnames(junction_dt, "n", "n_donor")
-    junction_dt <- merge(junction_dt, ss_dt[,.(spliceSiteID, sampleID, n)], 
-                         all.x=TRUE, by.x=c("endID", "sampleID"), 
-                         by.y=c("spliceSiteID", "sampleID"), sort=FALSE)
-    setnames(junction_dt, "n", "n_acceptor")
-    rm(ss_dt)
-    gc()
     
-    # deal with missing endIDs
-    junction_dt_nacceptor <- data.table(
-        as.data.table(rowRanges(fds, type="j"))[,.(startID, endID)], 
-        as.matrix(N(fds, type="psi3")))
-    junction_dt_nacceptor <- melt(junction_dt_nacceptor, 
-                                  variable.name="sampleID", value.name="n_psi3", 
-                                  id.vars=c("startID", "endID"))
-    junction_dt[, n_psi3:=junction_dt_nacceptor[,n_psi3]]
-    rm(junction_dt_nacceptor)
-    gc()
-    junction_dt_ndonor <- data.table(
-        as.data.table(rowRanges(fds, type="j"))[,.(startID, endID)], 
-        as.matrix(N(fds, type="psi5")))
-    junction_dt_ndonor <- melt(junction_dt_ndonor, 
-                               variable.name="sampleID", value.name="n_psi5", 
-                               id.vars=c("startID", "endID"))
-    junction_dt[, n_psi5:=junction_dt_ndonor[,n_psi5]]
-    rm(junction_dt_ndonor)
-    gc()
+    # get splice site nonsplit counts
+    nsr_ss <- K(fds, "theta")
     
-    # replace n (with non-split counts) by n_psi3/n_psi5 if NA
-    junction_dt[is.na(n_acceptor), n_acceptor:=n_psi3]
-    junction_dt[is.na(n_donor), n_donor:=n_psi5]
-    junction_dt[n_acceptor < n_psi3, n_acceptor:=n_psi3]
-    junction_dt[n_donor < n_psi5, n_donor:=n_psi5]
+    # retrieve junction and splice site annotation
+    junction_dt <- as.data.table(rowRanges(fds, type="j"))[,
+                                                    .(seqnames, start, end, 
+                                                    strand, startID, endID)]
+    ss_map <- data.table(spliceSiteID=rowRanges(fds, type="ss")$spliceSiteID, 
+                            nsr_idx=seq_len(nrow(nonSplicedReads(fds))))
     
-    # calculate phi
-    junction_dt[, phi:= k / ((n_donor + n_acceptor)/2)]
-    junction_dt[is.nan(phi), phi:=0] # n_donor = n_acceptor = 0
+    junction_dt <- merge(junction_dt, ss_map, 
+                            by.x="startID", by.y="spliceSiteID",
+                            all.x=TRUE)
+    setnames(junction_dt, "nsr_idx", "start_idx")
+    junction_dt <- merge(junction_dt, ss_map, 
+                            by.x="endID", by.y="spliceSiteID", 
+                            all.x=TRUE)
+    setnames(junction_dt, "nsr_idx", "end_idx")
     
-    # convert to matrix to store it as assay in the fds
-    phi <- matrix(junction_dt[,phi], nrow=nrow(fds), ncol=ncol(fds), byrow=FALSE)
-    rownames(phi) <- rownames(fds)
-    colnames(phi) <- colnames(fds)
-    assay(fds, "phi", type="psi5", withDimnames=FALSE) <- phi
+    # for each junction, find the two rows in K_theta corresponding to its 
+    # donor and acceptor splice site
+    donor_sites <-  junction_dt$start_idx
+    acc_sites <- junction_dt$end_idx
+    nsr_donor <- nsr_ss[donor_sites,]
+    nsr_acc <- nsr_ss[acc_sites,]
+    
+    # set nsr counts to 0 for junctions for which no mapping by spliceSiteID 
+    # could be found
+    nsr_donor[is.na(nsr_donor)] <- 0
+    nsr_acc[is.na(nsr_acc)] <- 0
+    
+    # sum them
+    nsr_j <- nsr_donor + nsr_acc
+    
+    if(nrow(nsr_j) != nrow(fds)){
+        warning("Unequal number of junctions in fds and junctions with ",
+                "computed nonsplit count sum!")
+    }
+    
+    # assign it to our object
+    if(isTRUE(overwriteCts) || 
+            !("rawCountsJnonsplit" %in% assayNames(fds))){
+        assay(fds, type="j", "rawCountsJnonsplit", withDimnames=FALSE) <- nsr_j
+    }
+    
     return(fds)
 }
