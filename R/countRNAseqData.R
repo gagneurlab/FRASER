@@ -141,6 +141,7 @@ countRNAData <- function(fds, NcpuPerSample=1, minAnchor=5, recount=FALSE,
     
     # Check input TODO
     stopifnot(is(fds, "FraserDataSet"))
+    validObject(fds)
     stopifnot(is.numeric(NcpuPerSample) && NcpuPerSample > 0)
     stopifnot(is.numeric(minAnchor) & minAnchor >= 1)
     minAnchor <- as.integer(minAnchor)
@@ -212,6 +213,9 @@ getSplitReadCountsForAllSamples <- function(fds, NcpuPerSample=1,
                                                         "savedObjects", 
                                                         nameNoSpace(name(fds)),
                                                         "splitCounts")){
+    
+    # check for valid fds
+    validObject(fds)
     
     # check if outDir with mergedCounts already exists
     # if so, don't recalculate the split counts
@@ -320,6 +324,9 @@ getNonSplitReadCountsForAllSamples <- function(fds, splitCountRanges,
                             workingDir(fds), "savedObjects", 
                             nameNoSpace(name(fds)), "nonSplitCounts")){
     
+    # check for valid fds
+    validObject(fds)
+    
     # check if outDir with mergedCounts already exists
     # if so, don't recalculate the non split counts
     if(file.exists(outDir) && isFALSE(recount)){
@@ -395,6 +402,9 @@ getNonSplitReadCountsForAllSamples <- function(fds, splitCountRanges,
 #' @export
 addCountsToFraserDataSet <- function(fds, splitCounts, nonSplitCounts){
     
+    # check for valid fds
+    validObject(fds)
+    
     # create final FRASER dataset
     fds <- new("FraserDataSet",
                 splitCounts,
@@ -461,6 +471,9 @@ countSplitReads <- function(sampleID, fds, NcpuPerSample=1, genome=NULL,
                     cacheFile=getSplitCountCacheFile(sampleID, fds),
                     scanbamparam=scanBamParam(fds),
                     coldata=colData(fds)){
+    
+    # check for valid fds
+    validObject(fds)
     
     # check cache if available
     if(isFALSE(recount) && !is.null(cacheFile) && file.exists(cacheFile)){
@@ -683,6 +696,9 @@ mergeBamParams <- function(bamParam, which, override=FALSE){
 mergeCounts <- function(countList, fds, junctionMap=NULL, assumeEqual=FALSE,
                         spliceSiteCoords=NULL, BPPARAM=SerialParam()){
     
+    # check for valid fds
+    validObject(fds)
+    
     # prepare range object
     sample_names <- names(countList)
     
@@ -831,6 +847,9 @@ GRanges2SAF <- function(gr, minAnchor=1){
 countNonSplicedReads <- function(sampleID, splitCountRanges, fds,
                     NcpuPerSample=1, minAnchor=5, recount=FALSE,
                     spliceSiteCoords=NULL, longRead=FALSE){
+    
+    # check for valid fds
+    validObject(fds)
     
     if(is.null(spliceSiteCoords) | !is(spliceSiteCoords, "GRanges")){
         
