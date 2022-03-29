@@ -125,7 +125,7 @@ findEncodingDim <- function(i, fds, type, params, implementation,
 optimHyperParams <- function(fds, type, implementation="PCA",
                     q_param=seq(2, min(40, ncol(fds)), by=3),
                     noise_param=0, minDeltaPsi=0.1,
-                    iterations=5, setSubset=15000, injectFreq=1e-2,
+                    iterations=5, setSubset=50000, injectFreq=1e-2,
                     BPPARAM=bpparam(), internalThreads=1, plot=TRUE, 
                     delayed=ifelse(ncol(fds) <= 300, FALSE, TRUE), ...){
     if(isFALSE(needsHyperOpt(implementation))){

@@ -351,11 +351,11 @@ calculateJaccardIntronIndex <- function(fds, overwriteCts){
     # TODO also calculate it with nonsplit counts in the nominator 
     
     # assign it to our object
-    assay(fds, type="j", "intron_jaccard", withDimnames=FALSE) <- jaccardValues
+    assay(fds, type="j", "jaccard", withDimnames=FALSE) <- jaccardValues
     
     if(isTRUE(overwriteCts) || 
-            !("rawOtherCounts_intron_jaccard" %in% assayNames(fds))){
-        assay(fds, type="j", "rawOtherCounts_intron_jaccard", 
+            !("rawOtherCounts_jaccard" %in% assayNames(fds))){
+        assay(fds, type="j", "rawOtherCounts_jaccard", 
                 withDimnames=FALSE) <- otherCounts_jaccard
     }
     
@@ -381,6 +381,7 @@ calculateIntronNonsplitSum <- function(fds, overwriteCts){
     junction_dt <- as.data.table(rowRanges(fds, type="j"))[,
                                                     .(seqnames, start, end, 
                                                     strand, startID, endID)]
+    junction_dt[, j_idx:=seq_len(.N)]
     ss_map <- data.table(spliceSiteID=rowRanges(fds, type="ss")$spliceSiteID, 
                             nsr_idx=seq_len(nrow(nonSplicedReads(fds))))
     
@@ -395,15 +396,18 @@ calculateIntronNonsplitSum <- function(fds, overwriteCts){
     
     # for each junction, find the two rows in K_theta corresponding to its 
     # donor and acceptor splice site
-    donor_sites <-  junction_dt$start_idx
-    acc_sites <- junction_dt$end_idx
-    nsr_donor <- nsr_ss[donor_sites,]
-    nsr_acc <- nsr_ss[acc_sites,]
+    donor_sites <-  junction_dt[!is.na(start_idx),]
+    acc_sites <- junction_dt[!is.na(end_idx),]
     
     # set nsr counts to 0 for junctions for which no mapping by spliceSiteID 
     # could be found
-    nsr_donor[is.na(nsr_donor)] <- 0
-    nsr_acc[is.na(nsr_acc)] <- 0
+    nsr_donor <- matrix(0, nrow=nrow(fds), ncol=ncol(fds))
+    nsr_acc <- matrix(0, nrow=nrow(fds), ncol=ncol(fds))
+    
+    nsr_donor[donor_sites[,j_idx],] <- 
+        as.matrix(nsr_ss[donor_sites[,start_idx],])
+    nsr_acc[acc_sites[,j_idx],] <- 
+        as.matrix(nsr_ss[acc_sites[,end_idx],])
     
     # sum them
     nsr_j <- nsr_donor + nsr_acc

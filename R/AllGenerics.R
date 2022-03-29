@@ -537,7 +537,7 @@ setMethod("counts", "FraserDataSet", function(object, type=NULL,
     type <- whichPSIType(type)
     if(length(type) == 0 | length(type) > 1){
         stop(paste0("Please provide a correct psi type: psi5, psi3, ",
-                    "theta or intron_jaccard. Not the given one: '", 
+                    "theta or jaccard. Not the given one: '", 
                     type, "'."))
     }
     aname <- paste0("rawOtherCounts_", type)
@@ -724,8 +724,10 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff, zscoreCutoff,
             # extract values
             rawCts       <- as.matrix(K(tmp_x))
             rawTotalCts  <- as.matrix(N(tmp_x))
-            pvals        <- as.matrix(pVals(tmp_x))
-            padjs        <- as.matrix(padjVals(tmp_x))
+            pvals        <- as.matrix(pVals(tmp_x, 
+                                            filters=list(rho=rhoCutoff)))
+            padjs        <- as.matrix(padjVals(tmp_x, 
+                                            filters=list(rho=rhoCutoff)))
             zscores      <- as.matrix(zScores(tmp_x))
             psivals      <- as.matrix(assay(tmp_x, type))
             muPsi        <- as.matrix(predictedMeans(tmp_x))
@@ -886,7 +888,7 @@ setMethod("results", "FraserDataSet", function(object,
                     zScoreCutoff=NA, deltaPsiCutoff=0.3,
                     rhoCutoff=0.1, aggregate=FALSE, collapse=FALSE,
                     minCount=5, psiType=c("psi3", "psi5", "theta", 
-                                            "intron_jaccard"),
+                                            "jaccard"),
                     geneColumn="hgnc_symbol",
                     additionalColumns=NULL, BPPARAM=bpparam()){
     FRASER.results(object=object, sampleIDs=sampleIDs, fdrCutoff=padjCutoff,

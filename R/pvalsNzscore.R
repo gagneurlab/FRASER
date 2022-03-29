@@ -336,6 +336,10 @@ getSiteIndex <- function(fds, type){
         return(mcols(fds, type=type)[['spliceSiteID']])
     }
     
+    if(type == "jaccard"){
+        return(seq_len(nrow(fds)))
+    }
+    
     startId <- mcols(fds, type=type)[,"startID"]
     endId   <- mcols(fds, type=type)[,"endID"]
     strand  <- strand(rowRanges(fds, type=type))

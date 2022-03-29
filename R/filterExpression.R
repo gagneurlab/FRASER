@@ -382,6 +382,9 @@ filterExpressionAndVariability_jaccard <- function(object,
     
 }
 
+#' @describeIn filtering This function filters out introns and corresponding 
+#' splice sites which are expressed at very low levels across samples.
+#' @export
 filterExpression_jaccard <- function(object, minExpressionInOneSample=20,
                             quantile=0.95, quantileMinExpression=1, filter=TRUE, 
                             delayed=ifelse(ncol(object) <= 300, FALSE, TRUE),
@@ -393,7 +396,7 @@ filterExpression_jaccard <- function(object, minExpressionInOneSample=20,
     
     # extract counts
     cts  <- K(object, type="j")
-    ctsN <- N(object, type="intron_jaccard")
+    ctsN <- N(object, type="jaccard")
     
     if(isFALSE(delayed)){
         cts <- as.matrix(cts)
@@ -451,17 +454,17 @@ filterVariability_jaccard <- function(object, minDelta=0, filter=TRUE,
     
     # extract counts
     cts    <- K(object, type="j")
-    ctsN  <- N(object, type="intron_jaccard")
+    ctsN  <- N(object, type="jaccard")
     
     if(isFALSE(delayed)){
         cts <- as.matrix(cts)
-        ctsN <- as.matrix(ctsN5)
+        ctsN <- as.matrix(ctsN)
     }
     
     # cutoff functions
-    f1 <- function(cts, ctsN3, ...) {
-        intron_jaccard <- cts/ctsN
-        rowMaxs(abs(intron_jaccard - rowMeans2(intron_jaccard, na.rm=TRUE)), 
+    f1 <- function(cts, ctsN, ...) {
+        jaccard <- cts/ctsN
+        rowMaxs(abs(jaccard - rowMeans2(jaccard, na.rm=TRUE)), 
                 na.rm=TRUE) }
     
     funs <- c(maxDJaccard=f1)
@@ -520,7 +523,7 @@ applyExpressionFilters_jaccard <- function(fds, minExpressionInOneSample,
         for(aname in assayNames(rareJunctions)){
             if(!(aname %in% c("rawCountsJ", "rawOtherCounts_psi5", 
                               "rawOtherCounts_psi3", "psi5", "psi3", 
-                              "delta_psi5", "delta_psi3", "intron_jaccard",
+                              "delta_psi5", "delta_psi3", "jaccard",
                               "rawOtherCounts_intron_jaccard"))){
                 assay(rareJunctions, aname) <- NULL
             }
@@ -583,7 +586,7 @@ applyVariabilityFilters <- function(fds, minDelta){
         for(aname in assayNames(nonVariableJunctions)){
             if(!(aname %in% c("rawCountsJ", "rawOtherCounts_psi5", 
                               "rawOtherCounts_psi3", "psi5", "psi3", 
-                              "delta_psi5", "delta_psi3", "intron_jaccard",
+                              "delta_psi5", "delta_psi3", "jaccard",
                               "rawOtherCounts_intron_jaccard"))){
                 assay(nonVariableJunctions, aname) <- NULL
             }

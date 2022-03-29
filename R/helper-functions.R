@@ -79,7 +79,7 @@ checkReadType <- function(fds, type){
     }
     type <- unique(type)
     stopifnot(isScalarCharacter(type))
-    correctTypes <- c(psi3="j", psi5="j", theta="ss", intron_jaccard="j")
+    correctTypes <- c(psi3="j", psi5="j", theta="ss", jaccard="j")
 
     # check if it is already the correct type
     if(type %in% correctTypes) return(type)
@@ -109,7 +109,7 @@ checkReadType <- function(fds, type){
 #'
 #' @noRd
 whichPSIType <- function(type){
-    unlist(regmatches(type, gregexpr("psi(3|5)|theta|intron_jaccard", type, perl=TRUE)))
+    unlist(regmatches(type, gregexpr("psi(3|5)|theta|jaccard", type, perl=TRUE)))
 }
 
 #'
@@ -123,7 +123,7 @@ whichReadType <- function(fds, name){
     if(name == "ss" | endsWith(name, "theta"))
         return("ss")
     if(name == "j"  | endsWith(name, "psi5") | endsWith(name, "psi3") | 
-            endsWith(name, "intron_jaccard"))
+            endsWith(name, "jaccard"))
         return("j")
 
     # check assay names

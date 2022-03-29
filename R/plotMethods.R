@@ -178,7 +178,7 @@ NULL
 
 
 plotVolcano.FRASER <- function(object, sampleID, 
-                    type=c("psi3", "psi5", "theta", "intron_jaccard"), basePlot=TRUE, 
+                    type=c("psi3", "psi5", "theta", "jaccard"), basePlot=TRUE, 
                     aggregate=FALSE, main=NULL, label=NULL,
                     deltaPsiCutoff=0.3, padjCutoff=0.1, ...){
     
@@ -278,7 +278,7 @@ setMethod("plotVolcano", signature="FraserDataSet", plotVolcano.FRASER)
 
 
 plotAberrantPerSample.FRASER <- function(object, main, 
-                    type=c("psi3", "psi5", "theta", "intron_jaccard"),
+                    type=c("psi3", "psi5", "theta", "jaccard"),
                     padjCutoff=0.1, zScoreCutoff=NA, deltaPsiCutoff=0.3,
                     aggregate=TRUE, BPPARAM=bpparam(), ...){
 
@@ -341,7 +341,7 @@ setMethod("plotAberrantPerSample", signature="FraserDataSet",
 #'
 #' @rdname plotFunctions
 #' @export
-plotExpression <- function(fds, type=c("psi5", "psi3", "theta", "intron_jaccard"),
+plotExpression <- function(fds, type=c("psi5", "psi3", "theta", "jaccard"),
                     site=NULL, result=NULL, colGroup=NULL, 
                     basePlot=TRUE, main=NULL, label="aberrant", ...){
     if(!is.null(result)){
@@ -433,7 +433,7 @@ plotExpression <- function(fds, type=c("psi5", "psi3", "theta", "intron_jaccard"
 #'
 #' @rdname plotFunctions
 #' @export
-plotExpectedVsObservedPsi <- function(fds, type=c("psi5", "psi3", "theta", "intron_jaccard"),
+plotExpectedVsObservedPsi <- function(fds, type=c("psi5", "psi3", "theta", "jaccard"),
                     idx=NULL, result=NULL, colGroup=NULL, main=NULL,
                     basePlot=TRUE, label="aberrant", ...){
     type <- match.arg(type)
@@ -696,7 +696,8 @@ plotQQ.FRASER <- function(object, type=NULL, idx=NULL, result=NULL,
 setMethod("plotQQ", signature="FraserDataSet", plotQQ.FRASER)
 
 
-plotEncDimSearch.FRASER <- function(object, type=c("psi3", "psi5", "theta"), 
+plotEncDimSearch.FRASER <- function(object, 
+                    type=c("psi3", "psi5", "theta", "jaccard"), 
                     plotType=c("auc", "loss")){
     type <- match.arg(type)
     plotType <- match.arg(plotType)
@@ -1085,6 +1086,7 @@ ggplotLabelPsi <- function(type, asCharacter=FALSE){
     if(isFALSE(asCharacter)){
         vapply(type, FUN=function(x)
             switch (x,
+                    jaccard = c(bquote(jaccard~intron~index)),
                     psi5 = c(bquote(psi[5])),
                     psi3 = c(bquote(psi[3])),
                     theta = c(bquote(theta))),
@@ -1092,6 +1094,7 @@ ggplotLabelPsi <- function(type, asCharacter=FALSE){
     } else{
         vapply(type, FUN=function(x)
             switch (x,
+                    jaccard = "jaccard-intron-index",
                     psi5 = "psi[5]",
                     psi3 = "psi[3]",
                     theta = "theta"),
