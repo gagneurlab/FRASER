@@ -41,6 +41,10 @@ truncNLL_rho <- function(rho, yi, ki, ni) {
     .Call('_FRASER_truncNLL_rho', PACKAGE = 'FRASER', rho, yi, ki, ni)
 }
 
+truncNLL_rho_penalized <- function(logit_rho, yi, ki, ni, lambda) {
+    .Call('_FRASER_truncNLL_rho_penalized', PACKAGE = 'FRASER', logit_rho, yi, ki, ni, lambda)
+}
+
 fullNLL <- function(y, rho, k, n, D, lambda, byRows = FALSE) {
     .Call('_FRASER_fullNLL', PACKAGE = 'FRASER', y, rho, k, n, D, lambda, byRows)
 }

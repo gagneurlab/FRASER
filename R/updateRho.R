@@ -8,11 +8,14 @@ updateRho <- function(fds, type, rhoRange, BPPARAM, verbose){
     n <- N(fds)
     y <- predictY(fds, noiseAlpha=currentNoiseAlpha(fds))
     
-    fitparameters <- bplapply(seq_len(nrow(k)), estRho, nll=truncNLL_rho,
-            k=k, n=n, y=y, rhoRange=rhoRange, BPPARAM=BPPARAM)
+    # fitparameters <- bplapply(seq_len(nrow(k)), estRho, nll=truncNLL_rho,
+    #         k=k, n=n, y=y, rhoRange=rhoRange, BPPARAM=BPPARAM)
+    fitparameters <- bplapply(seq_len(nrow(k)), estRho, nll=trunc_negLogLikelihoodRho_penalized,
+                              k=k, n=n, y=y, rhoRange=rhoRange, lambda=0,
+                              BPPARAM=BPPARAM)
     
-    rho(fds) <- vapply(fitparameters, "[[", 
-            double(1), "minimum")
+    rho(fds) <- plogis(vapply(fitparameters, "[[", 
+            double(1), "minimum"))
     
     if(isTRUE(verbose)){
         stxt <- capture.output(summary(rho(fds)))
@@ -23,12 +26,15 @@ updateRho <- function(fds, type, rhoRange, BPPARAM, verbose){
     return(fds)
 }
 
-estRho <- function(idx, k, n, y, rhoRange, nll, control=list()){
+estRho <- function(idx, k, n, y, rhoRange, nll, control=list(), lambda=0){
     ki <- k[idx,]
     ni <- n[idx,]
     yi <- y[idx,]
     
-    est <- optimize(f=nll, interval=rhoRange, yi=yi, ki=ki, ni=ni, 
+    # est <- optimize(f=nll, interval=rhoRange, yi=yi, ki=ki, ni=ni, 
+    #                 maximum=FALSE, tol=0.0000001)
+    # est
+    est <- optimize(f=nll, interval=c(-40, 40), mui=plogis(yi), ki=ki, ni=ni, lambda=lambda,
                     maximum=FALSE, tol=0.0000001)
     est
 }
@@ -61,6 +67,21 @@ trunc_negLogLikelihoodRho <- function(rho, ki, ni, mui){
     
     #mean negative log likelihood with pseudocounts
     mean(alpha + beta - alphaK - betaNK )
+}
+
+trunc_negLogLikelihoodRho_penalized <- function(logit_rho, ki, ni, mui, lambda){
+    #-mean(dbetabinom(ki + 0.5, ni + 1, mu, rho, log=TRUE))
+    
+    rho <- plogis(logit_rho)
+    r  <- (1-rho)/rho
+    eps <- 0.5
+    alpha  <- lgamma(mui*r)
+    alphaK <- lgamma(mui*r + ki + eps)
+    beta   <- lgamma((mui-1)*(-r))
+    betaNK <- lgamma((mui-1)*(-r) + (ni - ki + eps))
+    
+    #mean negative log likelihood with pseudocounts
+    mean(alpha + beta - alphaK - betaNK ) + lambda * sqrt(logit_rho)
 }
 
 
