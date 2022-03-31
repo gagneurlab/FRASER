@@ -21,7 +21,7 @@
 \S4method{plotVolcano}{FraserDataSet}(
   object,
   sampleID,
-  type = c("psi3", "psi5", "theta"),
+  type = c("psi3", "psi5", "theta", "jaccard"),
   basePlot = TRUE,
   aggregate = FALSE,
   main = NULL,
@@ -34,7 +34,7 @@
 \S4method{plotAberrantPerSample}{FraserDataSet}(
   object,
   main,
-  type = c("psi3", "psi5", "theta"),
+  type = c("psi3", "psi5", "theta", "jaccard"),
   padjCutoff = 0.1,
   zScoreCutoff = NA,
   deltaPsiCutoff = 0.3,
@@ -45,7 +45,7 @@
 
 plotExpression(
   fds,
-  type = c("psi5", "psi3", "theta"),
+  type = c("psi5", "psi3", "theta", "jaccard"),
   site = NULL,
   result = NULL,
   colGroup = NULL,
@@ -57,7 +57,7 @@ plotExpression(
 
 plotExpectedVsObservedPsi(
   fds,
-  type = c("psi5", "psi3", "theta"),
+  type = c("psi5", "psi3", "theta", "jaccard"),
   idx = NULL,
   result = NULL,
   colGroup = NULL,
@@ -85,7 +85,7 @@ plotExpectedVsObservedPsi(
 
 \S4method{plotEncDimSearch}{FraserDataSet}(
   object,
-  type = c("psi3", "psi5", "theta"),
+  type = c("psi3", "psi5", "theta", "jaccard"),
   plotType = c("auc", "loss")
 )
 

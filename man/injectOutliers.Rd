@@ -6,7 +6,7 @@
 \usage{
 injectOutliers(
   fds,
-  type = c("psi5", "psi3", "theta"),
+  type = c("psi5", "psi3", "theta", "jaccard"),
   freq = 0.001,
   minDpsi = 0.2,
   minCoverage = 2,

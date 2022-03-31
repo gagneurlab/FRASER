@@ -15,7 +15,7 @@
   aggregate = FALSE,
   collapse = FALSE,
   minCount = 5,
-  psiType = c("psi3", "psi5", "theta"),
+  psiType = c("psi3", "psi5", "theta", "jaccard"),
   geneColumn = "hgnc_symbol",
   additionalColumns = NULL,
   BPPARAM = bpparam()

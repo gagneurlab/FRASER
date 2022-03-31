@@ -5,6 +5,9 @@
 \alias{filterExpressionAndVariability}
 \alias{filterExpression,FraserDataSet-method}
 \alias{filterVariability}
+\alias{filterExpressionAndVariability_jaccard}
+\alias{filterExpression_jaccard}
+\alias{filterVariability_jaccard}
 \title{Filtering FraserDataSets}
 \usage{
 filterExpressionAndVariability(
@@ -31,6 +34,35 @@ filterExpressionAndVariability(
 filterVariability(
   object,
   minDeltaPsi = 0,
+  filter = TRUE,
+  delayed = ifelse(ncol(object) <= 300, FALSE, TRUE),
+  BPPARAM = bpparam()
+)
+
+filterExpressionAndVariability_jaccard(
+  object,
+  minExpressionInOneSample = 20,
+  quantile = 0.95,
+  quantileMinExpression = 1,
+  minDelta = 0.05,
+  filter = TRUE,
+  delayed = ifelse(ncol(object) <= 300, FALSE, TRUE),
+  BPPARAM = bpparam()
+)
+
+filterExpression_jaccard(
+  object,
+  minExpressionInOneSample = 20,
+  quantile = 0.95,
+  quantileMinExpression = 1,
+  filter = TRUE,
+  delayed = ifelse(ncol(object) <= 300, FALSE, TRUE),
+  BPPARAM = bpparam()
+)
+
+filterVariability_jaccard(
+  object,
+  minDelta = 0,
   filter = TRUE,
   delayed = ifelse(ncol(object) <= 300, FALSE, TRUE),
   BPPARAM = bpparam()
@@ -79,6 +111,15 @@ read support and introns that are not variable across samples.
 splice sites that have low read support in all samples.
 
 \item \code{filterVariability}: This function filters out introns and corresponding 
+splice sites which do not show variablity across samples.
+
+\item \code{filterExpressionAndVariability_jaccard}: This functions filters out both introns with low 
+read support and introns that are not variable across samples.
+
+\item \code{filterExpression_jaccard}: This function filters out introns and corresponding 
+splice sites which are expressed at very low levels across samples.
+
+\item \code{filterVariability_jaccard}: This function filters out introns and corresponding 
 splice sites which do not show variablity across samples.
 }}
 
