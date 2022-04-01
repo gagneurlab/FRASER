@@ -145,9 +145,9 @@ double truncNLL_db(arma::vec par, arma::mat H, arma::vec k, arma::vec n, double 
   
   arma::uvec infPosA2, infPosB2;
   infPosA2 = arma::find_nonfinite(alphaK);
-  alpha.elem( infPosA2 ) = estLgammaAlpha(y, infPosA2, rhoa);
+  alphaK.elem( infPosA2 ) = estLgammaAlpha(y, infPosA2, rhoa);
   infPosB2 = arma::find_nonfinite(betaNK);
-  beta.elem( infPosB2 ) = estLgammaBeta(y, infPosB2, rhob);
+  betaNK.elem( infPosB2 ) = estLgammaBeta(y, infPosB2, rhob);
 
   nll = arma::accu(alpha + beta - alphaK - betaNK)/k.n_elem;
 
@@ -272,6 +272,12 @@ double truncNLL_e(arma::vec par, arma::mat x, arma::mat D, arma::vec b,
     beta.elem( infPosB ) = abs.elem( infPosB );
     // beta.elem( infPosB ) = estLgammaBeta(y, infPosB, rhob);
 
+    arma::uvec infPosA2, infPosB2;
+    infPosA2 = arma::find_nonfinite(alphaK);
+    alphaK.elem( infPosA2 ) = abs.elem( infPosA2 );
+    infPosB2 = arma::find_nonfinite(betaNK);
+    betaNK.elem( infPosB2 ) = abs.elem( infPosB2 );
+
     nll = arma::accu(alpha + beta - alphaK - betaNK)/k.n_elem;
 
     return arma::as_scalar(nll);
@@ -367,6 +373,13 @@ double truncNLL_rho(double rho, arma::vec yi, arma::vec ki, arma::vec ni){
   // beta.elem( infPosB ) = abs.elem( infPosB );
   beta.elem( infPosB ) = estLgammaBeta(yi, infPosB, rhob);
 
+  arma::uvec infPosA2, infPosB2;
+  infPosA2 = arma::find_nonfinite(alphaK);
+  alphaK.elem( infPosA2 ) = estLgammaAlpha(yi, infPosA2, rhoa);
+  infPosB2 = arma::find_nonfinite(betaNK);
+  betaNK.elem( infPosB2 ) = estLgammaBeta(yi, infPosB2, rhob);
+
+
   nll = arma::accu(alpha + beta - alphaK - betaNK + alphaBeta)/ki.n_elem;
 
   return arma::as_scalar(nll);
@@ -399,6 +412,13 @@ double truncNLL_rho_penalized(double logit_rho, arma::vec yi, arma::vec ki, arma
     // beta.elem( infPosB ) = abs.elem( infPosB );
     beta.elem( infPosB ) = estLgammaBeta(yi, infPosB, rhob);
     
+    arma::uvec infPosA2, infPosB2;
+    infPosA2 = arma::find_nonfinite(alphaK);
+    alphaK.elem( infPosA2 ) = estLgammaAlpha(yi, infPosA2, rhoa);
+    infPosB2 = arma::find_nonfinite(betaNK);
+    betaNK.elem( infPosB2 ) = estLgammaBeta(yi, infPosB2, rhob);
+
+
     nll = arma::accu(alpha + beta - alphaK - betaNK + alphaBeta)/ki.n_elem;
     nll = nll + lambda * (logit_rho*logit_rho);
     
@@ -434,6 +454,11 @@ arma::vec fullNLL(arma::mat y, arma::mat rho, arma::mat k, arma::mat n, arma::ma
   infPosB = arma::find_nonfinite(beta);
   beta.elem( infPosB ) = abs.elem( infPosB );
   // beta.elem( infPosB ) = estLgammaBeta(y, infPosB, rhob);
+  arma::uvec infPosA2, infPosB2;
+  infPosA2 = arma::find_nonfinite(alphaK);
+  alphaK.elem( infPosA2 ) = abs.elem( infPosA2 );
+  infPosB2 = arma::find_nonfinite(betaNK);
+  betaNK.elem( infPosB2 ) = abs.elem( infPosB2 );
 
   if(byRows){
     nll = rowMeans(alpha + beta - alphaK - betaNK + nonTruncTerms);
@@ -509,6 +534,12 @@ double truncWeightedNLL_db(arma::vec par, arma::mat H, arma::vec k, arma::vec n,
   infPosB = arma::find_nonfinite(beta);
   // beta.elem( infPosB ) = abs.elem( infPosB );
   beta.elem( infPosB ) = estLgammaBeta(y, infPosB, rhob);
+
+  arma::uvec infPosA2, infPosB2;
+  infPosA2 = arma::find_nonfinite(alphaK);
+  alphaK.elem( infPosA2 ) = estLgammaAlpha(y, infPosA2, rhoa);
+  infPosB2 = arma::find_nonfinite(betaNK);
+  betaNK.elem( infPosB2 ) = estLgammaBeta(y, infPosB2, rhob);
 
   nll = arma::accu((alpha + beta - alphaK - betaNK)%w)/k.n_elem;
 

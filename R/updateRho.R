@@ -70,18 +70,17 @@ trunc_negLogLikelihoodRho <- function(rho, ki, ni, mui){
 }
 
 trunc_negLogLikelihoodRho_penalized <- function(logit_rho, ki, ni, mui, lambda){
-    #-mean(dbetabinom(ki + 0.5, ni + 1, mu, rho, log=TRUE))
+    #-mean(dbetabinom(ki, ni, mui, rho, log=TRUE))
     
     rho <- plogis(logit_rho)
     r  <- (1-rho)/rho
-    eps <- 0.5
     alpha  <- lgamma(mui*r)
-    alphaK <- lgamma(mui*r + ki + eps)
+    alphaK <- lgamma(mui*r + ki)
     beta   <- lgamma((mui-1)*(-r))
-    betaNK <- lgamma((mui-1)*(-r) + (ni - ki + eps))
+    betaNK <- lgamma((mui-1)*(-r) + (ni - ki))
     
     #mean negative log likelihood with pseudocounts
-    mean(alpha + beta - alphaK - betaNK ) + lambda * sqrt(logit_rho)
+    mean(alpha + beta - alphaK - betaNK ) + lambda * (logit_rho*logit_rho)
 }
 
 
