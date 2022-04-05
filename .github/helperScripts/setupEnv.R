@@ -1,5 +1,5 @@
-BTYPE <- ifelse(.Platform$OS.type == 'unix', "source", "both")
-NCPUS <- ifelse(.Platform$OS.type == 'unix', 6, 1)
+BTYPE <- "both"
+NCPUS <- 3
 Sys.setenv(MAKEFLAGS = "-j3")
 BIOC_VERSION <- Sys.getenv("BIOC_VERSION")
 START_TIME <- Sys.time()
