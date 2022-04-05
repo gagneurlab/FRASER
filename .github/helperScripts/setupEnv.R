@@ -34,8 +34,6 @@ if("windows" == .Platform$OS.type){
     print_log("Install source packages only for windows ...")
     BiocManager::install(c("GenomeInfoDbData", "org.Hs.eg.db", "TxDb.Hsapiens.UCSC.hg19.knownGene"), 
             type="both", version=BIOC_VERSION)
-} else {
-    BTYPE <- "source"
 }
 
 # install needed packages
@@ -50,7 +48,6 @@ for(p in c("getopt", "XML", "xml2", "testthat", "devtools", "covr",
 R.utils::withTimeout(timeout=2400, {
     try({
         print_log("Update packages")
-        BTYPE <- ifelse(.Platform$OS.type == 'unix', "source", "win.binary")
         BiocManager::install(ask=FALSE, type=BTYPE, Ncpus=NCPUS, version=BIOC_VERSION)
  
         print_log("Install dev package")
