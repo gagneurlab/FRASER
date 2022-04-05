@@ -48,7 +48,7 @@ for(p in c("getopt", "XML", "xml2", "testthat", "devtools", "covr",
 R.utils::withTimeout(timeout=2400, {
     try({
         print_log("Update packages")
-        BTYPE <- options("pkgType")
+        BTYPE <- options()$pkgType
         BiocManager::install(ask=FALSE, type=BTYPE, Ncpus=NCPUS, version=BIOC_VERSION)
  
         print_log("Install dev package")
