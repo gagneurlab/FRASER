@@ -23,6 +23,7 @@ if(!requireNamespace("BiocManager", quietly=TRUE)){
     print_log("Install BiocManager")
     install.packages("BiocManager", Ncpus=NCPUS)
 }
+BiocManager::install("BiocVersion", version=BIOC_VERSION)
 
 # because of https://github.com/r-windows/rtools-installer/issues/3
 if("windows" == .Platform$OS.type){
