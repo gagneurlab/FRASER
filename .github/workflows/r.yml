@@ -64,7 +64,7 @@ jobs:
         if: runner.os == 'macos'
         run: |
           brew install libgit2
-          brew reinstall --overwrite gcc
+          brew install --force --overwrite gcc
 
       - uses: r-lib/actions/setup-tinytex@v1
       - name: Init and install packages for tex
