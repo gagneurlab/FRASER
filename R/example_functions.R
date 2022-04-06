@@ -67,14 +67,13 @@ createTestFraserDataSet <- function(workingDir="FRASER_output", rerun=FALSE){
                 return(fds)
             }
         }
-        cleanCache(createTestFraserSettings(workingDir), all=TRUE)
     }
     
     # get test sample annotation
     fds <- createTestFraserSettings(workingDir)
     
     # count data
-    fds <- countRNAData(fds, filter=FALSE)
+    fds <- countRNAData(fds, filter=FALSE, recount=rerun)
     
     # filter expression
     fds <- calculatePSIValues(fds)
