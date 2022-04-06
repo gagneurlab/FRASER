@@ -554,7 +554,7 @@ checkForAndCreateDir <- function(object, dir){
     if(is(object, "FraserDataSet")){
         verbose <- verbose(object)
         if(missing(dir)){
-            dir <- workdingDir(object)
+            dir <- workingDir(object)
         }
     }
     if(!dir.exists(dir)){
