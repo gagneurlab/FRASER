@@ -920,13 +920,13 @@ aberrant.FRASER <- function(object, type=currentType(object), padjCutoff=0.05,
         goodCutoff <- goodCutoff & as.matrix(n >= minCount)
     }
     if(!is.na(zScoreCutoff)){
-        goodCutoff <- goodCutoff & as.matrix(abs(zscores) > zScoreCutoff)
+        goodCutoff <- goodCutoff & as.matrix(abs(zscores) >= zScoreCutoff)
     }
     if(!is.na(deltaPsiCutoff)){
-        goodCutoff <- goodCutoff & as.matrix(abs(dpsi) > deltaPsiCutoff)
+        goodCutoff <- goodCutoff & as.matrix(abs(dpsi) >= deltaPsiCutoff)
     }
     if(!is.na(padjCutoff)){
-        goodCutoff <- goodCutoff & as.matrix(padj < padjCutoff)
+        goodCutoff <- goodCutoff & as.matrix(padj <= padjCutoff)
     }
     goodCutoff[is.na(goodCutoff)] <- FALSE
     
