@@ -2,15 +2,15 @@
 #' Create a test dataset
 #' 
 #' Create a test case dataset based on the test sample annotation to be 
-#' used in the vignette and to explore the functionallity of the 
+#' used in the vignette and to explore the functionality of the 
 #' FRASER package. Dependent on the request only the sample annotation 
 #' or a full fitted model is returned.
 #' 
-#' @param workingDir directory where to store HDF5 and RDS files. Defaults to
-#'                the current tempory R session folder.
+#' @param workingDir Directory where to store HDF5 and RDS files. Defaults to
+#'                \code{FRASER_output} in the current working directory.
 #' @param rerun Defaults to \code{FALSE}. If set to \code{TRUE} it reruns the
 #'                full fit of the model.
-#' @return a FraserDataSet object which contains a test case 
+#' @return A FraserDataSet object that contains a test case 
 #' 
 #' @examples
 #' fds <- createTestFraserSettings()
@@ -22,7 +22,7 @@
 #' @rdname createTestFraserDataSet
 #' @aliases createTestFraserSettings createTestFraserDataSet
 #' @export
-createTestFraserSettings <- function(workingDir=tempdir()){
+createTestFraserSettings <- function(workingDir="FRASER_output"){
 
     # get sample data table
     sampleTable <- fread(system.file(
@@ -54,7 +54,7 @@ createTestFraserSettings <- function(workingDir=tempdir()){
 
 #' @rdname createTestFraserDataSet
 #' @export
-createTestFraserDataSet <- function(workingDir=tempdir(), rerun=FALSE){
+createTestFraserDataSet <- function(workingDir="FRASER_output", rerun=FALSE){
     # check if file exists already
     hdf5Files <- file.path(workingDir, "savedObjects", "Data_Analysis", 
             "fds-object.RDS")
@@ -67,14 +67,13 @@ createTestFraserDataSet <- function(workingDir=tempdir(), rerun=FALSE){
                 return(fds)
             }
         }
-        cleanCache(createTestFraserSettings(workingDir), all=TRUE)
     }
     
     # get test sample annotation
     fds <- createTestFraserSettings(workingDir)
     
     # count data
-    fds <- countRNAData(fds, filter=FALSE)
+    fds <- countRNAData(fds, filter=FALSE, recount=rerun)
     
     # filter expression
     fds <- calculatePSIValues(fds)
