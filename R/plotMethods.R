@@ -213,8 +213,8 @@ plotVolcano.FRASER <- function(object, sampleID,
     }
     
     if(!is.na(padjCutoff)){
-        if(dt[,any(padj < padjCutoff)]){
-            padj_line <- min(dt[padj < padjCutoff, -log10(pval)])
+        if(dt[,any(padj <= padjCutoff)]){
+            padj_line <- min(dt[padj <= padjCutoff, -log10(pval)])
         }
         if(!"padj_line" %in% ls() || padj_line > 10 || is.na(padj_line)){
             padj_line <- 6
