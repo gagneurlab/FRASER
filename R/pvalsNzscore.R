@@ -196,7 +196,7 @@ singlePvalueBetaBinomial <- function(idx, k, n, mu, rho){
     pvals <- pmin(1, pbbinom(ki, ni, alphai, betai))
 
     if(any(is.na(pvals))){
-        message(date(), " : ", idx)
+        message(date(), ": obtained NA pvalues for junction ", idx)
     }
 
     return (pvals)

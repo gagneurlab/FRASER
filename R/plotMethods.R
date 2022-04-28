@@ -25,7 +25,7 @@
 #' @param type The psi type: either psi5, psi3 or theta (for SE).
 #' @param sampleID A sample ID which should be plotted. Can also be a vector.
 #'             Integers are treated as indices.
-#' @param idx,site A junction site ID or gene ID or one of both, which
+#' @param idx A junction site ID or gene ID or one of both, which
 #'             should be plotted. Can also be a vector. Integers are treated
 #'             as indices.
 #' @param padjCutoff,zScoreCutoff,deltaPsiCutoff Significance, Z-score or delta
@@ -342,16 +342,16 @@ setMethod("plotAberrantPerSample", signature="FraserDataSet",
 #' @rdname plotFunctions
 #' @export
 plotExpression <- function(fds, type=c("psi5", "psi3", "theta", "jaccard"),
-                    site=NULL, result=NULL, colGroup=NULL, 
+                    idx=NULL, result=NULL, colGroup=NULL, 
                     basePlot=TRUE, main=NULL, label="aberrant", ...){
     if(!is.null(result)){
         type <- as.character(result$type)
-        site <- getIndexFromResultTable(fds, result)
+        idx <- getIndexFromResultTable(fds, result)
     } else {
         type <- match.arg(type)
     }
 
-    dt <- getPlottingDT(fds, axis="row", type=type, idx=site, ...)
+    dt <- getPlottingDT(fds, axis="row", type=type, idx=idx, ...)
     dt[,featureID:=limitGeneNamesList(featureID, maxLength=3)]
     
     if(!is.null(colGroup)){

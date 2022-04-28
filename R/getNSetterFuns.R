@@ -653,7 +653,7 @@ getPlottingDT <- function(fds, axis=c("row", "col"), type=NULL, result=NULL,
                                 level=pvalLevel)[idxrow, idxcol]),
             padj      = c(padjVals(fds, type=type)[idxrow, idxcol]),
             zscore    = c(zScores(fds, type=type)[idxrow, idxcol]),
-            obsPsi    = c((k + pseudocount())/(n + 2*pseudocount())),
+            obsPsi    = c(k/n),
             predPsi   = c(predictedMeans(fds, type)[idxrow, idxcol]),
             rho       = rep(rho(fds, type=type)[idxrow], 
                             ifelse(isTRUE(idxcol), ncol(fds), sum(idxcol))) 
