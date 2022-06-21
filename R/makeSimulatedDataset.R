@@ -109,7 +109,6 @@ makeSimulatedFraserDataSet_BetaBinomial <- function(m=200, j=10000, q=10,
         rowRanges=GRanges(seqnames=rep("chr1", j),
                 ranges=IRanges(start=seq_len(j), width=1 )))
     
-    print("START")
     fds <- new("FraserDataSet",
             junctionData,
             name            = name(fds),
