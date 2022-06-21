@@ -114,8 +114,13 @@ validateNonSplicedReadsType <- function(object) {
         return("'nonSplicedReads' must be a RangedSummarizedExperiment object")
     }
     if(length(object) != 0 && dim(object@nonSplicedReads)[2] != dim(object)[2]){
-        return("The NSR dimensions are not correct. This is a internal error!")
+        return("The nonSplicedReads dimensions are not correct. This is a internal error!")
     }
+    if(length(intersect(rowData(object@nonSplicedReads)$spliceSiteID, 
+                      c(rowData(object)$startID,rowData(object)$endID))) != dim(object@nonSplicedReads)[1]){
+        return("The nonSplicedReads do not have corresponding splitReads. This is probably the result of merging")
+    }
+
     ans <- validObject(object@nonSplicedReads)
     if(!isScalarLogical(ans) || ans == FALSE){
         return(ans)

@@ -117,29 +117,41 @@ mergeExternalData <- function(fds, countFiles, sampleIDs, annotation=NULL){
     newCtsK_J    <- extractExtData(fds, K, "j",    ov, extCts, "k_j")
     newCtsN_psi5 <- extractExtData(fds, N, "psi5", ov, extCts, "n_psi5")
     newCtsN_psi3 <- extractExtData(fds, N, "psi3", ov, extCts, "n_psi3")
-    
-    
-    # 
+
+    # get ranges after merging
+    SR_ranges <- rowRanges(fds)[from(ov),c("startID", "endID")]
+  
+  
+    #
     # merge theta data
-    # 
+    #
     # find overlap
-    ovss <- findOverlaps(rowRanges(fds, type="theta"), 
-            extCts[['k_theta']], type="equal")
-    
+    ovss <- findOverlaps(rowRanges(fds, type="theta"),
+                         extCts[['k_theta']], type="equal")
+  
     newCtsK_theta <- extractExtData(fds, K, "theta", ovss, extCts, "k_theta")
     newCtsN_theta <- extractExtData(fds, N, "theta", ovss, extCts, "n_theta")
-    
-    
-    # 
+    NSR_ranges <- rowRanges(fds, type="theta")[from(ovss),c("spliceSiteID", "type")]
+  
+    # Find the overlaps of the NSR with SR after merging/filtering
+    NSR_ov <- findOverlaps(NSR_ranges, SR_ranges, type = "any")
+    NSR_index <- unique(from(NSR_ov))
+  
+    # Only take NSR that have at least 1 split read over the same junction.
+    NSR_ranges <- NSR_ranges[NSR_index]
+    newCtsK_theta <- newCtsK_theta[NSR_index,]
+    newCtsN_theta <- newCtsN_theta[NSR_index,]
+  
+    #
     # finalize merged FraserDataObject
-    # 
+    #
     nsr <- SummarizedExperiment(
             colData=newColData,
             assays=SimpleList(
-                    rawCountsSS=newCtsK_theta,
-                    rawOtherCounts_theta=newCtsN_theta - newCtsK_theta),
-            rowRanges=rowRanges(fds, type="theta")[
-                    from(ovss),c("spliceSiteID", "type")])
+              rawCountsSS=newCtsK_theta,
+              rawOtherCounts_theta=(newCtsN_theta - newCtsK_theta)),
+            rowRanges=NSR_ranges
+            )
     
     ans <- new("FraserDataSet", 
             name = name(fds),
@@ -154,7 +166,8 @@ mergeExternalData <- function(fds, countFiles, sampleIDs, annotation=NULL){
             nonSplicedReads = nsr,
             rowRanges = rowRanges(fds)[from(ov),c("startID", "endID")],
             elementMetadata = DataFrame(newCtsK_J[,integer(0)]),
-            metadata=metadata(fds))
+            metadata=metadata(fds)
+            )
     
     # 
     # compute new psi values
