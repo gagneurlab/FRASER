@@ -17,7 +17,7 @@ installIfReq <- function(p, Ncpus=NCPUS, ...){
 # install Bioconductor
 if(!requireNamespace("BiocManager", quietly=TRUE))
     install.packages("BiocManager", Ncpus=NCPUS)
-BiocManager::install("BiocVersion", version=BIOC_VERSION)
+BiocManager::install("BiocVersion", version=BIOC_VERSION,ask = FALSE)
 
 
 # install needed packages
