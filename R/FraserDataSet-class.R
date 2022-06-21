@@ -116,11 +116,6 @@ validateNonSplicedReadsType <- function(object) {
     if(length(object) != 0 && dim(object@nonSplicedReads)[2] != dim(object)[2]){
         return("The nonSplicedReads dimensions are not correct. This is a internal error!")
     }
-    if(length(intersect(rowData(object@nonSplicedReads)$spliceSiteID, 
-                      c(rowData(object)$startID,rowData(object)$endID))) != dim(object@nonSplicedReads)[1]){
-        return("The nonSplicedReads do not have corresponding splitReads. This is probably the result of merging")
-    }
-
     ans <- validObject(object@nonSplicedReads)
     if(!isScalarLogical(ans) || ans == FALSE){
         return(ans)
@@ -139,6 +134,21 @@ validateAssays <- function(object){
     NULL
 }
 
+# for non-empty fds objects check if non-spliced reads are overlapping with at least 1 donor/acceptor site
+validateNonSplicedReadsSanity <- function(object){
+    if(all(dim(object) > c(0,0))){
+        if(any("startID" == names(rowData(object))) && any("endID" == names(rowData(object)))){
+            if(any("spliceSiteID" == names(rowData(object@nonSplicedReads)))){
+                if(length(intersect(rowData(object@nonSplicedReads)$spliceSiteID, c(rowData(object)$startID,rowData(object)$endID)))
+                      != dim(object@nonSplicedReads)[1]){
+                return("The HERE nonSplicedReads do not have corresponding splitReads. This is probably the result of merging")
+                }
+            }
+        }
+    }
+    NULL
+}
+
 
 ## general validate function
 validateFraserDataSet <- function(object) {
@@ -150,6 +160,7 @@ validateFraserDataSet <- function(object) {
         validateStrandSpecific(object),
         validateWorkingDir(object),
         validateNonSplicedReadsType(object),
+        validateNonSplicedReadsSanity(object),
         validateAssays(object)
     )
 }
@@ -317,8 +328,9 @@ FraserDataSet <- function(colData=NULL, junctions=NULL, spliceSites=NULL, ...) {
     }
     
     metadata(obj)[["version"]] <- packageVersion("FRASER")
+
     validObject(obj)
-    
+   
     return(obj)
 }
 
