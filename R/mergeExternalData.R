@@ -164,7 +164,7 @@ mergeExternalData <- function(fds, countFiles, sampleIDs, annotation=NULL){
                     rawOtherCounts_psi5=newCtsN_psi5 - newCtsK_J,
                     rawOtherCounts_psi3=newCtsN_psi3 - newCtsK_J)),
             nonSplicedReads = nsr,
-            rowRanges = rowRanges(fds)[from(ov),c("startID", "endID")],
+            rowRanges = SR_ranges,
             elementMetadata = DataFrame(newCtsK_J[,integer(0)]),
             metadata=metadata(fds)
             )
