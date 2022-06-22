@@ -1,4 +1,4 @@
-
+#' 
 #' Merge external data
 #' 
 #' To boost its own sequencing data, one can download existing and precounted 
@@ -36,89 +36,89 @@
 #' 
 #' @export
 mergeExternalData <- function(fds, countFiles, sampleIDs, annotation=NULL){
-  
-  # check input
-  checkFraserDataSet(fds)
-  checkCountData(fds)
-  
-  if(length(countFiles) != 5){
-    stop("You have to provide 5 files, but only ", length(countFiles), 
-         " were provided.")
-  }
-  if(is.null(names(countFiles))){
-    names(countFiles) <- gsub("(_counts)?.tsv.gz", "", basename(countFiles))
-  }
-  reqNames <- c("k_j", "k_theta", "n_psi3", "n_psi5", "n_theta")
-  if(any(!reqNames %in% unique(names(countFiles)))){
-    stop("Please name the input or the files correctly. We are missing: ", 
-         paste(collapse=", ",
-               reqNames[!reqNames %in% names(countFiles)]))
-  }
-  if(any(!file.exists(countFiles))){
-    stop("Provided files are missing! We are missing: ",
-         paste(collapse=", ", countFiles[!file.exists(countFiles)]))
-  }
-  if(any(unique(sampleIDs) != sampleIDs)){
-    stop("Provided sampleIDs have to be unique!")
-  }
-  sampleIDs <- as.character(sampleIDs)
-  
-  # load external counts
-  message("Loading provided counts")
-  names(reqNames) <- reqNames
-  extCts <- lapply(reqNames, function(id){
-    gr <- makeGRangesFromDataFrame(fread(countFiles[id]), 
-                                   keep.extra.columns=TRUE)
-    if(any(!sampleIDs %in% colnames(mcols(gr)))){
-      stop("Can not find provided sampleID in count data. Missing IDs: ",
-           paste(collapse=", ", 
-                 sampleIDs[!sampleIDs %in% colnames(mcols(gr))]))
+    
+    # check input
+    checkFraserDataSet(fds)
+    checkCountData(fds)
+    
+    if(length(countFiles) != 5){
+        stop("You have to provide 5 files, but only ", length(countFiles), 
+                " were provided.")
     }
-    gr[,sampleIDs]
-  })
-  stopifnot(all(granges(extCts[['k_j']]) == granges(extCts[['n_psi3']])))
-  stopifnot(all(granges(extCts[['k_j']]) == granges(extCts[['n_psi5']])))
-  stopifnot(all(granges(extCts[['k_theta']]) == granges(extCts[['n_theta']])))
-  
-  # 
-  # merging colData
-  # 
-  message(date(), ": Merging data ...")
-  if(!is.null(annotation)){
-    annotation <- DataFrame(annotation)
-  } else {
-    annotation <- DataFrame(sampleID=as.character(sampleIDs))
-  }
-  rownames(annotation) <- annotation[,"sampleID"]
-  newColData <- DataFrame(rbind(fill=TRUE,
-                                as.data.table(colData(fds)), 
-                                as.data.table(annotation[sampleIDs,])))
-  rownames(newColData) <- newColData[,"sampleID"]
-  
-  # 
-  # merge psi5/psi3 data
-  # 
-  extractExtData <- function(fds, countFun, type, ov, extData, extName){
-    ctsOri <- as.matrix(countFun(fds, type=type)[from(ov),])
-    ctsExt <- as.matrix(mcols(extData[[extName]])[to(ov),])
-    ans <- cbind(ctsOri, ctsExt)
-    mode(ans) <- "integer"
-    ans
-  }
-  
-  # find overlap
-  if(all(strand(rowRanges(fds, type="j")) == "*")){
-    for(id in reqNames){
-      strand(extCts[[id]]) <- "*"
+    if(is.null(names(countFiles))){
+        names(countFiles) <- gsub("(_counts)?.tsv.gz", "", basename(countFiles))
     }
-  }
-  ov <- findOverlaps(rowRanges(fds, type="j"), extCts[['k_j']], type="equal")
-  
-  newCtsK_J    <- extractExtData(fds, K, "j",    ov, extCts, "k_j")
-  newCtsN_psi5 <- extractExtData(fds, N, "psi5", ov, extCts, "n_psi5")
-  newCtsN_psi3 <- extractExtData(fds, N, "psi3", ov, extCts, "n_psi3")
-  
-  # get ranges after merging
+    reqNames <- c("k_j", "k_theta", "n_psi3", "n_psi5", "n_theta")
+    if(any(!reqNames %in% unique(names(countFiles)))){
+        stop("Please name the input or the files correctly. We are missing: ", 
+                paste(collapse=", ",
+                        reqNames[!reqNames %in% names(countFiles)]))
+    }
+    if(any(!file.exists(countFiles))){
+        stop("Provided files are missing! We are missing: ",
+                paste(collapse=", ", countFiles[!file.exists(countFiles)]))
+    }
+    if(any(unique(sampleIDs) != sampleIDs)){
+        stop("Provided sampleIDs have to be unique!")
+    }
+    sampleIDs <- as.character(sampleIDs)
+    
+    # load external counts
+    message("Loading provided counts")
+    names(reqNames) <- reqNames
+    extCts <- lapply(reqNames, function(id){
+        gr <- makeGRangesFromDataFrame(fread(countFiles[id]), 
+                keep.extra.columns=TRUE)
+        if(any(!sampleIDs %in% colnames(mcols(gr)))){
+            stop("Can not find provided sampleID in count data. Missing IDs: ",
+                    paste(collapse=", ", 
+                            sampleIDs[!sampleIDs %in% colnames(mcols(gr))]))
+        }
+        gr[,sampleIDs]
+    })
+    stopifnot(all(granges(extCts[['k_j']]) == granges(extCts[['n_psi3']])))
+    stopifnot(all(granges(extCts[['k_j']]) == granges(extCts[['n_psi5']])))
+    stopifnot(all(granges(extCts[['k_theta']]) == granges(extCts[['n_theta']])))
+    
+    # 
+    # merging colData
+    # 
+    message(date(), ": Merging data ...")
+    if(!is.null(annotation)){
+        annotation <- DataFrame(annotation)
+    } else {
+        annotation <- DataFrame(sampleID=as.character(sampleIDs))
+    }
+    rownames(annotation) <- annotation[,"sampleID"]
+    newColData <- DataFrame(rbind(fill=TRUE,
+            as.data.table(colData(fds)), 
+            as.data.table(annotation[sampleIDs,])))
+    rownames(newColData) <- newColData[,"sampleID"]
+    
+    # 
+    # merge psi5/psi3 data
+    # 
+    extractExtData <- function(fds, countFun, type, ov, extData, extName){
+        ctsOri <- as.matrix(countFun(fds, type=type)[from(ov),])
+        ctsExt <- as.matrix(mcols(extData[[extName]])[to(ov),])
+        ans <- cbind(ctsOri, ctsExt)
+        mode(ans) <- "integer"
+        ans
+    }
+    
+    # find overlap
+    if(all(strand(rowRanges(fds, type="j")) == "*")){
+        for(id in reqNames){
+            strand(extCts[[id]]) <- "*"
+        }
+    }
+    ov <- findOverlaps(rowRanges(fds, type="j"), extCts[['k_j']], type="equal")
+    
+    newCtsK_J    <- extractExtData(fds, K, "j",    ov, extCts, "k_j")
+    newCtsN_psi5 <- extractExtData(fds, N, "psi5", ov, extCts, "n_psi5")
+    newCtsN_psi3 <- extractExtData(fds, N, "psi3", ov, extCts, "n_psi3")
+    
+    # get ranges after merging
   SR_ranges <- rowRanges(fds)[from(ov),c("startID", "endID")]
   
   
@@ -134,10 +134,9 @@ mergeExternalData <- function(fds, countFiles, sampleIDs, annotation=NULL){
   NSR_ranges <- rowRanges(fds, type="theta")[from(ovss),c("spliceSiteID", "type")]
   
   # Find the overlaps of the NSR with SR after merging/filtering
-  matching_NSR_IDs <- intersect(NSR_ranges$spliceSiteID, c(SR_ranges$startID,SR_ranges$endID))
-  # get granges index of the spliceSiteIDs that match
+  NSR_hits <- intersect(NSR_ranges$spliceSiteID, c(SR_ranges$startID,SR_ranges$endID))
   NSR_index <- unique(
-                 sapply(matching_NSR_IDs,function(x){
+                 sapply(NSR_hits,function(x){
                    which(x == NSR_ranges$spliceSiteID)
                    }))
   
@@ -180,4 +179,3 @@ mergeExternalData <- function(fds, countFiles, sampleIDs, annotation=NULL){
   
   ans
 }
-
