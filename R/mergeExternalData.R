@@ -1,4 +1,4 @@
-
+#'
 #' Merge external data
 #' 
 #' To boost its own sequencing data, one can download existing and precounted 
