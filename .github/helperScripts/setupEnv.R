@@ -34,7 +34,7 @@ if("windows" == .Platform$OS.type){
             type="both", version=BIOC_VERSION)
 }
 
-print_log(f"Update packages for: {BIOC_VERSION}")
+print_log("Update Packages")
 BiocManager::install(ask=FALSE, Ncpus=NCPUS, version=BIOC_VERSION)
 
 print_log("Install dev package")
