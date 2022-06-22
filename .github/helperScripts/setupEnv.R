@@ -34,8 +34,7 @@ if("windows" == .Platform$OS.type){
             type="both", version=BIOC_VERSION)
 }
 
-# install package with its dependencies with a timeout due to travis 50 min
-print_log("Update packages")
+print_log(f"Update packages for: {BIOC_VERSION}")
 BiocManager::install(ask=FALSE, Ncpus=NCPUS, version=BIOC_VERSION)
 
 print_log("Install dev package")
