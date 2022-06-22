@@ -146,11 +146,11 @@ mergeExternalData <- function(fds, countFiles, sampleIDs, annotation=NULL){
     # finalize merged FraserDataObject
     #
     nsr <- SummarizedExperiment(
-            colData=newColData,
-            assays=SimpleList(
-              rawCountsSS=newCtsK_theta,
-              rawOtherCounts_theta=(newCtsN_theta - newCtsK_theta)),
-            rowRanges=NSR_ranges
+            colData = newColData,
+            assays = SimpleList(
+              rawCountsSS = newCtsK_theta,
+              rawOtherCounts_theta = (newCtsN_theta - newCtsK_theta)),
+            rowRanges= NSR_ranges
             )
     
     ans <- new("FraserDataSet", 
@@ -159,14 +159,14 @@ mergeExternalData <- function(fds, countFiles, sampleIDs, annotation=NULL){
             strandSpecific = strandSpecific(fds),
             workingDir = workingDir(fds),
             colData = newColData,
-            assays=Assays(SimpleList(
-                    rawCountsJ=newCtsK_J,
-                    rawOtherCounts_psi5=newCtsN_psi5 - newCtsK_J,
-                    rawOtherCounts_psi3=newCtsN_psi3 - newCtsK_J)),
+            assays = Assays(SimpleList(
+                    rawCountsJ = newCtsK_J,
+                    rawOtherCounts_psi5 = newCtsN_psi5 - newCtsK_J,
+                    rawOtherCounts_psi3 = newCtsN_psi3 - newCtsK_J)),
             nonSplicedReads = nsr,
             rowRanges = SR_ranges,
             elementMetadata = DataFrame(newCtsK_J[,integer(0)]),
-            metadata=metadata(fds)
+            metadata = metadata(fds)
             )
     
     # 
