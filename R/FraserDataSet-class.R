@@ -136,15 +136,18 @@ validateAssays <- function(object){
 
 # for non-empty fds objects check if non-spliced reads are overlapping with at least 1 donor/acceptor site
 validateNonSplicedReadsSanity <- function(object){
+    # fds object must have samples and junctions
     if(all(dim(object) > c(0,0))){
-        if(any("startID" == names(rowData(object))) && any("endID" == names(rowData(object)))){
-            if(any("spliceSiteID" == names(rowData(object@nonSplicedReads)))){
+        # fds object must be annotated with start/end/spliceSite indexes
+        if(any("startID" == names(rowData(object))) && any("endID" == names(rowData(object))) &&
+           any("spliceSiteID" == names(rowData(object@nonSplicedReads))) ){
+
+                # check that the each spliceSiteID matches either a start or end index
                 if(length(intersect(rowData(object@nonSplicedReads)$spliceSiteID, c(rowData(object)$startID,rowData(object)$endID)))
                       != dim(object@nonSplicedReads)[1]){
-                return("The HERE nonSplicedReads do not have corresponding splitReads. This is probably the result of merging")
+                return("The nonSplicedReads do not have corresponding splitReads. This is probably the result of merging")
                 }
             }
-        }
     }
     NULL
 }
