@@ -16,9 +16,9 @@ jobs:
       fail-fast: false
       matrix:
         config:
-          - {os: windows-latest, r: '4.1', bioc: '3.14'}
-          - {os: macOS-latest,   r: '4.1', bioc: '3.14'} # Due to gfortran installation issues
-          - {os: ubuntu-20.04,   r: '4.1', bioc: '3.14',  rspm: "https://packagemanager.rstudio.com/cran/__linux__/focal/latest"}
+          - {os: windows-latest, r: 'release', bioc: '3.15'}
+          - {os: macOS-latest,   r: 'release', bioc: '3.15'} # Due to gfortran installation issues
+          - {os: ubuntu-20.04,   r: 'release', bioc: '3.15',  rspm: "https://packagemanager.rstudio.com/cran/__linux__/focal/latest"}
           - {os: ubuntu-20.04,   r: 'next',    bioc: 'devel', rspm: "https://packagemanager.rstudio.com/cran/__linux__/focal/latest"}
 
     env:
@@ -93,21 +93,29 @@ jobs:
       - name: Check R check
         run: |
           devtools::check(vignettes = FALSE, args = '--timings')
+        with:
+          error-on: '"error"'
         shell: Rscript {0}
         
       - name: Check Examples
         run: |
           devtools::run_examples()
+        with:
+          error-on: '"error"'
         shell: Rscript {0}
         
       - name: Check tests
         run: |
           devtools::test()
+        with:
+          error-on: '"error"'
         shell: Rscript {0}
         
       - name: Check vignette
         run: |
           devtools::build_vignettes()
+        with:
+          error-on: '"error"'
         shell: Rscript {0}
 
       - name: Upload check results
