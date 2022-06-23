@@ -138,6 +138,7 @@ validateAssays <- function(object){
 validateNonSplicedReadsSanity <- function(object){
     # fds object must have samples and junctions
     if(all(dim(object) > c(0,0))){
+
         # fds object must be annotated with start/end/spliceSite indexes
         if(any("startID" == names(rowData(object))) && any("endID" == names(rowData(object))) &&
            any("spliceSiteID" == names(rowData(object@nonSplicedReads))) ){
