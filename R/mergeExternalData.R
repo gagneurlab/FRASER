@@ -134,11 +134,7 @@ mergeExternalData <- function(fds, countFiles, sampleIDs, annotation=NULL){
   NSR_ranges <- rowRanges(fds, type="theta")[from(ovss),c("spliceSiteID", "type")]
   
   # Find the overlaps of the NSR with SR after merging/filtering
-  NSR_hits <- intersect(NSR_ranges$spliceSiteID, c(SR_ranges$startID,SR_ranges$endID))
-  NSR_index <- unique(
-                 sapply(NSR_hits,function(x){
-                   which(x == NSR_ranges$spliceSiteID)
-                   }))
+  NSR_index <- which(NSR_ranges$spliceSiteID %in% c(SR_ranges$startID, SR_ranges$endID))
   
   # Only take NSR that have at least 1 split read over the same junction.
   NSR_ranges <- NSR_ranges[NSR_index]
