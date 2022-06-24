@@ -143,7 +143,7 @@ validateNonSplicedReadsSanity <- function(object){
         if(any("startID" == names(rowData(object))) && any("endID" == names(rowData(object))) &&
            any("spliceSiteID" == names(rowData(object@nonSplicedReads))) ){
 
-                # check that the each spliceSiteID matches either a start or end index
+                # check that every spliceSiteID matches either a start or end index
                 if(length(intersect(rowData(object@nonSplicedReads)$spliceSiteID, c(rowData(object)$startID,rowData(object)$endID)))
                       != dim(object@nonSplicedReads)[1]){
                 return("The nonSplicedReads do not have corresponding splitReads. This is probably the result of merging")
