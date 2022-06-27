@@ -140,8 +140,8 @@ validateNonSplicedReadsSanity <- function(object){
     if(all(dim(object) > c(0,0))){
 
         # fds object must be annotated with start/end/spliceSite indexes
-        if(any("startID" == names(rowData(object))) && any("endID" == names(rowData(object))) &&
-           any("spliceSiteID" == names(rowData(object@nonSplicedReads))) ){
+        if("startID" %in% names(mcols(object)) && "endID" %in% names(mcols(object)) &&
+           "spliceSiteID" %in% names(mcols(object, type="theta"))){
 
                 # check that every spliceSiteID matches either a start or end index
                 if(length(intersect(rowData(object@nonSplicedReads)$spliceSiteID, c(rowData(object)$startID,rowData(object)$endID)))
