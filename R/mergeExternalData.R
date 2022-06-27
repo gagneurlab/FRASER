@@ -119,59 +119,59 @@ mergeExternalData <- function(fds, countFiles, sampleIDs, annotation=NULL){
     newCtsN_psi3 <- extractExtData(fds, N, "psi3", ov, extCts, "n_psi3")
     
     # get ranges after merging
-  SR_ranges <- rowRanges(fds)[from(ov),c("startID", "endID")]
-  
-  
-  #
-  # merge theta data
-  #
-  # find overlap
-  ovss <- findOverlaps(rowRanges(fds, type="theta"),
-                       extCts[['k_theta']], type="equal")
-  
-  newCtsK_theta <- extractExtData(fds, K, "theta", ovss, extCts, "k_theta")
-  newCtsN_theta <- extractExtData(fds, N, "theta", ovss, extCts, "n_theta")
-  NSR_ranges <- rowRanges(fds, type="theta")[from(ovss),c("spliceSiteID", "type")]
-  
-  # Find the overlaps of the NSR with SR after merging/filtering
-  NSR_index <- which(NSR_ranges$spliceSiteID %in% c(SR_ranges$startID, SR_ranges$endID))
-  
-  # Only take NSR that have at least 1 split read over the same junction.
-  NSR_ranges <- NSR_ranges[NSR_index]
-  newCtsK_theta <- newCtsK_theta[NSR_index,]
-  newCtsN_theta <- newCtsN_theta[NSR_index,]
-  
-  #
-  # finalize merged FraserDataObject
-  #
-  nsr <- SummarizedExperiment(
-    colData = newColData,
-    assays = SimpleList(
-      rawCountsSS = newCtsK_theta,
-      rawOtherCounts_theta = (newCtsN_theta - newCtsK_theta)),
-    rowRanges= NSR_ranges
-  )
-  
-  ans <- new("FraserDataSet", 
-             name = name(fds),
-             bamParam = scanBamParam(fds),
-             strandSpecific = strandSpecific(fds),
-             workingDir = workingDir(fds),
-             colData = newColData,
-             assays = Assays(SimpleList(
-               rawCountsJ = newCtsK_J,
-               rawOtherCounts_psi5 = newCtsN_psi5 - newCtsK_J,
-               rawOtherCounts_psi3 = newCtsN_psi3 - newCtsK_J)),
-             nonSplicedReads = nsr,
-             rowRanges = SR_ranges,
-             elementMetadata = DataFrame(newCtsK_J[,integer(0)]),
-             metadata = metadata(fds)
-  )
-  
-  # 
-  # compute new psi values
-  # 
-  ans <- calculatePSIValues(ans)
-  
-  ans
+    SR_ranges <- rowRanges(fds)[from(ov),c("startID", "endID")]
+    
+    
+    #
+    # merge theta data
+    #
+    # find overlap
+    ovss <- findOverlaps(rowRanges(fds, type="theta"),
+            extCts[['k_theta']], type="equal")
+    
+    newCtsK_theta <- extractExtData(fds, K, "theta", ovss, extCts, "k_theta")
+    newCtsN_theta <- extractExtData(fds, N, "theta", ovss, extCts, "n_theta")
+    NSR_ranges <- rowRanges(fds, type="theta")[from(ovss),c("spliceSiteID", "type")]
+    
+    # Find the overlaps of the NSR with SR after merging/filtering
+    NSR_index <- which(NSR_ranges$spliceSiteID %in% c(SR_ranges$startID, SR_ranges$endID))
+    
+    # Only take NSR that have at least 1 split read over the same junction.
+    NSR_ranges <- NSR_ranges[NSR_index]
+    newCtsK_theta <- newCtsK_theta[NSR_index,]
+    newCtsN_theta <- newCtsN_theta[NSR_index,]
+    
+    #
+    # finalize merged FraserDataObject
+    #
+    nsr <- SummarizedExperiment(
+            colData = newColData,
+            assays = SimpleList(
+                    rawCountsSS = newCtsK_theta,
+                    rawOtherCounts_theta = (newCtsN_theta - newCtsK_theta)),
+            rowRanges= NSR_ranges
+    )
+    
+    ans <- new("FraserDataSet", 
+            name = name(fds),
+            bamParam = scanBamParam(fds),
+            strandSpecific = strandSpecific(fds),
+            workingDir = workingDir(fds),
+            colData = newColData,
+            assays = Assays(SimpleList(
+                    rawCountsJ = newCtsK_J,
+                    rawOtherCounts_psi5 = newCtsN_psi5 - newCtsK_J,
+                    rawOtherCounts_psi3 = newCtsN_psi3 - newCtsK_J)),
+            nonSplicedReads = nsr,
+            rowRanges = SR_ranges,
+            elementMetadata = DataFrame(newCtsK_J[,integer(0)]),
+            metadata = metadata(fds)
+    )
+    
+    # 
+    # compute new psi values
+    # 
+    ans <- calculatePSIValues(ans)
+    
+    ans
 }
