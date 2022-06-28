@@ -1,3 +1,7 @@
+CHANGES IN VERSION 1.8.1
+-------------------------
+    o Bugfix in merging splicing counts (#41)
+
 CHANGES IN VERSION 1.6.1
 -------------------------
     o Fixing quantile filtering defaults (#28)
