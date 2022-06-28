@@ -144,8 +144,8 @@ validateNonSplicedReadsSanity <- function(object){
            "spliceSiteID" %in% names(mcols(object, type="theta"))){
 
                 # check that every spliceSiteID matches either a start or end index
-                if(length(intersect(mcols(object, type="theta")$spliceSiteID,  unlist(mcols(object)[, c("startID", "endID")]))
-                      != nrow(nonSplicedReads(object)))){
+                if(length( intersect( mcols(object, type="theta")$spliceSiteID, unlist(mcols(object)[, c("startID", "endID")] ) ) )
+                      != nrow(nonSplicedReads(object))){
                 return("The nonSplicedReads do not have corresponding splitReads. This is probably the result of merging")
                 }
             }
