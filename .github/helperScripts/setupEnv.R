@@ -17,7 +17,7 @@ installIfReq <- function(p, Ncpus=NCPUS, ...){
 # install Bioconductor
 if(!requireNamespace("BiocManager", quietly=TRUE))
     install.packages("BiocManager", Ncpus=NCPUS)
-BiocManager::install("BiocVersion", version=BIOC_VERSION)
+BiocManager::install("BiocVersion", version=BIOC_VERSION,ask = FALSE)
 
 
 # install needed packages
@@ -34,8 +34,7 @@ if("windows" == .Platform$OS.type){
             type="both", version=BIOC_VERSION)
 }
 
-# install package with its dependencies with a timeout due to travis 50 min
-print_log("Update packages")
+print_log("Update Packages")
 BiocManager::install(ask=FALSE, Ncpus=NCPUS, version=BIOC_VERSION)
 
 print_log("Install dev package")
