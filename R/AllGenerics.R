@@ -702,6 +702,11 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff, zscoreCutoff,
     stopifnot(is(object, "FraserDataSet"))
     stopifnot(all(sampleIDs %in% samples(object)))
     
+    if("annotatedJunction" %in% colnames(mcols(object, type="j")) && 
+            !("annotatedJunction" %in% additionalColumns)){
+        additionalColumns <- c(additionalColumns, "annotatedJunction")
+    }
+
     resultsls <- bplapply(psiType, BPPARAM=BPPARAM, function(type){
         message(date(), ": Collecting results for: ", type)
         currentType(object) <- type

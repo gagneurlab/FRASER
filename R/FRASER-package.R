@@ -22,15 +22,16 @@
 #'
 ### GRange/Experiment/bamFile packages
 #' @importFrom BiocGenerics updateObject counts counts<- strand strand<- which
-#' @importFrom GenomicFeatures makeTxDbFromGFF intronsByTranscript genes
+#' @importFrom GenomicFeatures makeTxDbFromGFF intronsByTranscript genes exons
+#'          fiveUTRsByTranscript threeUTRsByTranscript
 #' @importFrom GenomicAlignments junctions readGAlignments summarizeJunctions
 #'          readGAlignmentPairs
 #' @importFrom SummarizedExperiment assay assay<- assays assays<- assayNames
 #'          colData colData<- rowData rowRanges rowRanges<- SummarizedExperiment
 #'          rbind Assays
 #' @importFrom GenomicRanges findOverlaps granges GRanges GRangesList
-#'          makeGRangesFromDataFrame invertStrand
-#' @importFrom IRanges subsetByOverlaps from to IRanges ranges
+#'          makeGRangesFromDataFrame invertStrand start end start<- end<-
+#' @importFrom IRanges subsetByOverlaps from to IRanges ranges nearest distance
 #' @importFrom Rsamtools ScanBamParam scanBamHeader bamMapqFilter
 #'          bamWhich bamWhich<- BamFile idxstatsBam
 #' @importFrom Rsubread featureCounts
@@ -40,7 +41,6 @@
 #'
 #' @importFrom biomaRt useEnsembl getBM
 #' @importFrom AnnotationDbi select
-#'
 #'
 ### Plotting
 #'
@@ -81,7 +81,7 @@
 ### To be added into the functions above
 #'
 #' @importFrom S4Vectors DataFrame metadata Rle SimpleList mcols mcols<-
-#'          start end metadata metadata<- subjectHits queryHits
+#'          start end metadata metadata<- subjectHits queryHits elementMetadata
 #' @importFrom grDevices colorRampPalette
 #' @importFrom GenomeInfoDb keepStandardChromosomes seqlevels<- seqlevels
 #'          seqlengths seqlengths<- seqlevelsStyle<- seqlevelsStyle seqnames 
@@ -129,5 +129,8 @@ globalVariables(c(".", "J", ".N", ".asDataFrame", "End", "first_feature",
         "padj", "passed", "pByFeature", "pointNr", "predPsi", "psi3", "psi5",
         "psiType", "psiValue", "seqlength", "seqlevel", "Step", "traceNr",
         "uniqueID", "V1", "value", "zscore", "maxDTheta", "genes_donor",
-        "genes_acceptor", "gene_pval", "gene_padj", "dt_idx"),
+        "genes_acceptor", "gene_pval", "gene_padj", "dt_idx", 
+        "blacklist", "spliceType", "causesFrameshift", "annotatedJunction", 
+        "distNearestGene", "UTR_overlap", "meanCount", "medianCount", 
+        "spliceType2"),
         package="FRASER")
