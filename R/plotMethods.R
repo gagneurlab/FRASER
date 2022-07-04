@@ -487,6 +487,7 @@ plotExpectedVsObservedPsi <- function(fds, type=c("psi5", "psi3", "theta", "jacc
         geom_point(alpha=ifelse(dt$aberrant, 1, 0.5),
                 color=c("gray70", "firebrick")[dt$aberrant + 1]) +
         geom_abline(intercept = 0, slope=1) +
+        xlim(c(0,1)) + ylim(c(0,1)) +
         theme_bw() +
         theme(legend.position="none") +
         xlab(xlab) +

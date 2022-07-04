@@ -406,7 +406,7 @@ pseudocount <- function(value=NULL){
     # set pseudo count if provided
     stopifnot(isScalarNumeric(value))
     stopifnot(value >= 0)
-    value <- as.integer(value)
+    # value <- as.integer(value)
     options('FRASER.pseudoCount'=value)
     devNULL <- .setPseudoCount(value)
     stopifnot(value == devNULL)
@@ -557,8 +557,9 @@ calcFraserWeights <- function(fds, psiType){
     n <- as.matrix(N(fds, psiType))
     mu <- t(predictMu(fds, psiType))
     rho <- rho(fds, psiType)
-    dataPsi <- plogis(t(
-            x(fds, type=psiType, all=TRUE, center=FALSE, noiseAlpha=NULL)))
+    # dataPsi <- plogis(t(
+    #         x(fds, type=psiType, all=TRUE, center=FALSE, noiseAlpha=NULL)))
+    dataPsi <- k / n
 
     # pearson residuals for BB
     # on counts of success k
@@ -567,12 +568,17 @@ calcFraserWeights <- function(fds, psiType){
     #       (1+((n+2*pseudocount())-1)*rho))
     # on probability of success mu
     r <- (dataPsi - mu) / sqrt(
-            mu * (1-mu) * (1+((n+2*pseudocount())-1)*rho) /
-            (n+2*pseudocount()))
+            # mu * (1-mu) * (1+((n+2*pseudocount())-1)*rho) /
+            # (n+2*pseudocount()))
+            mu * (1-mu) * (1+(n-1)*rho) / n
+        )
 
     # weights according to Huber function (as in edgeR)
     c <- 1.345; # constant, as suggested in edgeR paper
     w <- ifelse(abs(r) > c, c/abs(r) , 1)
+
+    # set weights to 0 if NA (i.e. N=0)
+    w[is.na(w)] <- 0
 
     return(w)
 }
