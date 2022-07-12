@@ -976,15 +976,10 @@ readJunctionMap <- function(junctionMap){
 #' @noRd
 extractSpliceSiteCoordinates <- function(junctions, fds){
     
-    if(strandSpecific(fds) >= 1L){
-        spliceSiteCoords <- unlist(GRangesList(
-            extractSpliceSiteCoordsPerStrand(junctions, "+"),
-            extractSpliceSiteCoordsPerStrand(junctions, "-")
-        ))
-    } else {
-        strand(junctions) <- "*"
-        spliceSiteCoords <- extractSpliceSiteCoordsPerStrand(junctions, "*")
-    }
+    spliceSiteCoords <- unlist(GRangesList(
+        lapply(unique(strand(junctions)), extractSpliceSiteCoordsPerStrand, 
+                junctions=junctions)
+    ))
     
     return(unique(sort(spliceSiteCoords)))
 }
@@ -1049,12 +1044,18 @@ annotateSpliceSite <- function(gr){
     dt <- GRanges2SAF(gr)
     
     # extract donor/acceptor annotation
-    startSideDT <- dt[,.(End=Start, type="start"),by="Chr,Start,Strand"]
-    endSideDT   <- dt[,.(Start=End, type="end"  ),by="Chr,End,Strand"]
+    startSiteDT <- dt[,.(End=Start, type="start"),by="Chr,Start,Strand"]
+    endSiteDT   <- dt[,.(Start=End, type="end"  ),by="Chr,End,Strand"]
+    startSiteDT[,Start:=Start-1]
+    endSiteDT[,End:=End+1]
     
     # annotate and enumerate donor/acceptor
-    annotadedDT <- rbind(startSideDT, endSideDT)
-    annotadedDT[,id:=seq_len(nrow(annotadedDT))]
+    annotatedDT <- rbind(startSiteDT, endSiteDT)
+    annotatedDT[,id:=.GRP, by="Chr,Start,End,Strand"]
+    
+    # set back start / end positions for merging with junction ranges
+    annotatedDT[type == "start", Start:=End]
+    annotatedDT[type == "end", End:=Start]
     
     # convert back to granges
     annogr <- makeGRangesFromDataFrame(annotadedDT, keep.extra.columns=TRUE)
