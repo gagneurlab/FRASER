@@ -82,6 +82,7 @@ Suggests:
     covr,
     TxDb.Hsapiens.UCSC.hg19.knownGene,
     org.Hs.eg.db,
+    SGSeq
 LinkingTo:
     Rcpp,
     RcppArmadillo

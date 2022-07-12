@@ -22,7 +22,8 @@
 #'
 ### GRange/Experiment/bamFile packages
 #' @importFrom BiocGenerics updateObject counts counts<- strand strand<- which
-#' @importFrom GenomicFeatures makeTxDbFromGFF intronsByTranscript genes
+#' @importFrom GenomicFeatures makeTxDbFromGFF intronsByTranscript genes 
+#'          seqlevels0
 #' @importFrom GenomicAlignments junctions readGAlignments summarizeJunctions
 #'          readGAlignmentPairs
 #' @importFrom SummarizedExperiment assay assay<- assays assays<- assayNames
@@ -30,7 +31,8 @@
 #'          rbind Assays
 #' @importFrom GenomicRanges findOverlaps granges GRanges GRangesList
 #'          makeGRangesFromDataFrame invertStrand
-#' @importFrom IRanges subsetByOverlaps from to IRanges ranges
+#' @importFrom IRanges subsetByOverlaps from to IRanges ranges %over% 
+#'          start<- end<-
 #' @importFrom Rsamtools ScanBamParam scanBamHeader bamMapqFilter
 #'          bamWhich bamWhich<- BamFile idxstatsBam
 #' @importFrom Rsubread featureCounts
@@ -74,7 +76,7 @@
 #' @importFrom R.utils renameFile withTimeout
 #' @importFrom tools file_path_as_absolute
 #' @importFrom methods as callNextMethod is new show slot slot<- validObject
-#' @importFrom utils capture.output packageVersion
+#' @importFrom utils capture.output packageVersion tail
 #'
 #'
 #'
@@ -128,5 +130,5 @@ globalVariables(c(".", "J", ".N", ".asDataFrame", "End", "first_feature",
         "model", "mu", "n", ",nsubset", "o3", "o5", "obsPsi", "os", "pa",
         "padj", "passed", "pByFeature", "pointNr", "predPsi", "psi3", "psi5",
         "psiType", "psiValue", "seqlength", "seqlevel", "Step", "traceNr",
-        "uniqueID", "V1", "value", "zscore", "maxDTheta"),
+        "uniqueID", "V1", "value", "zscore", "maxDTheta", "par"),
         package="FRASER")

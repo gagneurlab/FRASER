@@ -16,6 +16,8 @@
 \alias{plotEncDimSearch,FraserDataSet-method}
 \alias{plotFilterVariability}
 \alias{plotCountCorHeatmap,FraserDataSet-method}
+\alias{plotBamCoverage}
+\alias{plotBamCoverageFromResultTable}
 \title{Visualization functions for FRASER}
 \usage{
 \S4method{plotVolcano}{FraserDataSet}(
@@ -126,6 +128,43 @@ plotFilterVariability(
   plotCov = TRUE,
   ...
 )
+
+plotBamCoverage(
+  fds,
+  gr,
+  sampleID,
+  control_samples = sample(samples(fds[, which(samples(fds) != sampleID)]), min(3,
+    ncol(fds) - length(sampleID))),
+  txdb = NULL,
+  min_junction_count = 20,
+  highlight_range = NULL,
+  highlight_range_color = "firebrick",
+  color_annotated = "gray",
+  color_novel = "goldenrod3",
+  color_sample_interest = "firebrick",
+  color_control_samples = "dodgerblue4",
+  toscale = c("exon", "gene", "none"),
+  mar = c(2, 10, 0.1, 5),
+  curvature_splicegraph = 1,
+  curvature_coverage = 1,
+  cex = 1,
+  splicegraph_labels = c("genomic_range", "id", "name", "none"),
+  splicegraph_position = c("top", "bottom")
+)
+
+plotBamCoverageFromResultTable(
+  fds,
+  result,
+  show_full_gene = FALSE,
+  txdb = NULL,
+  orgDb = NULL,
+  res_gene_col = "hgncSymbol",
+  res_gene_type = "SYMBOL",
+  txdb_geneid_type = "ENTREZID",
+  left_extension = 1000,
+  right_extension = 1000,
+  ...
+)
 }
 \arguments{
 \item{object, fds}{An \code{\link{FraserDataSet}} object.}
@@ -228,6 +267,97 @@ annotation of the heatmap.}
 
 \item{plotMeanPsi, plotCov}{If \code{TRUE}, then the heatmap is annotated with
 the mean psi values or the junction coverage.}
+
+\item{control_samples}{The sampleIDs of the samples used as control in
+\code{plotBamCoverage}.}
+
+\item{txdb}{A TxDb object giving the gene/transcript annotation to use.}
+
+\item{min_junction_count}{The minimal junction count across samples required 
+for a junction to appear in the splicegraph and coverage tracks 
+of \code{plotBamCoverage}.}
+
+\item{highlight_range}{A \code{GenomicRanges} or \code{GenomicRangesList} 
+object of ranges to be highlighted in the splicegraph of 
+\code{plotBamCoverage}.}
+
+\item{highlight_range_color}{The color of highlighted ranges in 
+the splicegraph of \code{plotBamCoverage}.}
+
+\item{color_annotated}{The color for exons and junctions present in 
+the given annotation (in the splicegraph of 
+\code{plotBamCoverage}).}
+
+\item{color_novel}{The color for novel exons and junctions not present in 
+the given annotation (in the splicegraph of 
+\code{plotBamCoverage}).}
+
+\item{color_sample_interest}{The color in \code{plotBamCoverage} for the 
+sample of interest.}
+
+\item{color_control_samples}{The color in \code{plotBamCoverage} for the 
+samples used as controls.}
+
+\item{toscale}{In \code{plotBamCoverage}, indicates which part of the 
+plotted region should be drawn to scale. Possible values are 
+'exon' (exonic regions are drawn to scale), 
+'gene' (both exonic and intronic regions are drawn to scale) or 
+'none' (exonic and intronic regions have constant length) 
+(see SGSeq package).}
+
+\item{mar}{The margin of the plot area for \code{plotBamCoverage} 
+(b,l,t,r).}
+
+\item{curvature_splicegraph}{The curvature of the junction arcs in the 
+splicegraph in \code{plotBamCoverage}. Decrease this value 
+for flatter arcs and increase it for steeper arcs.}
+
+\item{curvature_coverage}{The curvature of the junction arcs in the 
+coverage tracks of \code{plotBamCoverage}. Decrease this 
+value for flatter arcs and increase it for steeper arcs.}
+
+\item{cex}{For controlling the size of text and numbers in 
+\code{plotBamCoverage}.}
+
+\item{splicegraph_labels}{Indicated the format of exon/splice junction 
+labels in the splicegraph of \code{plotBamCoverage}. 
+Possible values are 'genomic_range' (gives the start position 
+of the first exon and the end position of the last exon that 
+are shown),  'id' (format E1,... J1,...), 'name' (format 
+type:chromosome:start-end:strand for each feature), 
+'none' for no labels (see SGSeq package).}
+
+\item{splicegraph_position}{The position of the splicegraph relative to the 
+coverage tracks in \code{plotBamCoverage}. Possible values 
+are 'top' (default) and 'bottom'.}
+
+\item{show_full_gene}{Should the full genomic range of the gene be shown in 
+\code{plotBamCoverageFromResultTable} (default: FALSE)? 
+If FALSE, only a certain region (see parameters left_extension 
+and right_extension) around the outlier junction is shown.}
+
+\item{orgDb}{A OrgDb object giving the mapping of gene ids and symbols.}
+
+\item{res_gene_col}{The column name in the given results table that 
+contains the gene annotation.}
+
+\item{res_gene_type}{The type of gene annotation in \code{res_gene_col} 
+(e.g. SYMBOL or ENTREZID etc.). This information is needed for 
+mapping between the results table and the provided annotation 
+in the txdb object.}
+
+\item{txdb_geneid_type}{The type of gene_id present in \code{genes(txdb)} 
+(e.g. ENTREZID). This information is needed for 
+mapping between the results table and the provided annotation 
+in the txdb object.}
+
+\item{left_extension}{Indicating how far the plotted range around the outlier 
+junction should be extended to the left in 
+\code{plotBamCoverageFromResultTable}.}
+
+\item{right_extension}{Indicating how far the plotted range around the 
+outlier junction should be extended to the right in 
+\code{plotBamCoverageFromResultTable}.}
 }
 \value{
 If base R graphics are used nothing is returned else the plotly or
@@ -269,6 +399,8 @@ This is the list of all plotting function provided by FRASER:
   \item plotFilterExpression()
   \item plotFilterVariability()
   \item plotEncDimSearch()
+  \item plotBamCoverage()
+  \item plotBamCoverageFromResultTable()
 }
 
 For a detailed description of each plot function please see the details.
@@ -345,5 +477,28 @@ plotExpression(fds, result=res[1])
 plotQQ(fds, result=res[1])
 plotExpectedVsObservedPsi(fds, type="psi5", res=res[1])
 
+# plot splice graph and coverage from bam files in a given region
+fds <- createTestFraserSettings()
+gr <- GRanges(seqnames="chr19", 
+    IRanges(start=7587496, end=7598895), 
+    strand="+")
+plotBamCoverage(fds, gr=gr, sampleID="sample3", 
+    control_samples="sample2", min_junction_count=5,
+    curvature_splicegraph=1, curvature_coverage=1, 
+    mar=c(1, 7, 0.1, 3))
+
+# plot coverage from bam file for a row in the result table
+\donttest{    
+    fds <- createTestFraserDataSet()
+    require(TxDb.Hsapiens.UCSC.hg19.knownGene)
+    txdb <- TxDb.Hsapiens.UCSC.hg19.knownGene
+    require(org.Hs.eg.db)
+    orgDb <- org.Hs.eg.db
+    plotBamCoverageFromResultTable(fds, result=res[1,], show_full_gene=TRUE,
+        txdb=txdb, orgDb=orgDb, control_samples="sample3")
+    plotBamCoverageFromResultTable(fds, result=res[1,], show_full_gene=FALSE, 
+        control_samples="sample3", curvature_splicegraph=0.5, txdb=txdb,
+        curvature_coverage=0.5, right_extension=5000, left_extension=5000)
+}
 
 }
