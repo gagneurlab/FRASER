@@ -361,7 +361,7 @@ getNonSplitReadCountsForAllSamples <- function(fds, splitCountRanges,
             " splice junctions are found.")
     
     # extract donor and acceptor sites
-    spliceSiteCoords <- extractSpliceSiteCoordinates(splitCountRanges, fds)
+    spliceSiteCoords <- extractSpliceSiteCoordinates(splitCountRanges)
     message(date(), ": In total ", length(spliceSiteCoords),
             " splice sites (acceptor/donor) will be counted ...")
     
@@ -852,7 +852,7 @@ countNonSplicedReads <- function(sampleID, splitCountRanges, fds,
         }
         
         # extract donor and acceptor sites
-        spliceSiteCoords <- extractSpliceSiteCoordinates(splitCountRanges, fds)
+        spliceSiteCoords <- extractSpliceSiteCoordinates(splitCountRanges)
     }
     
     
@@ -974,7 +974,7 @@ readJunctionMap <- function(junctionMap){
 
 #' extracts the splice site coordinates from a junctions GRange object (
 #' @noRd
-extractSpliceSiteCoordinates <- function(junctions, fds){
+extractSpliceSiteCoordinates <- function(junctions){
     
     spliceSiteCoords <- unlist(GRangesList(
         lapply(unique(strand(junctions)), extractSpliceSiteCoordsPerStrand, 
@@ -1058,7 +1058,7 @@ annotateSpliceSite <- function(gr){
     annotatedDT[type == "end", End:=Start]
     
     # convert back to granges
-    annogr <- makeGRangesFromDataFrame(annotadedDT, keep.extra.columns=TRUE)
+    annogr <- makeGRangesFromDataFrame(annotatedDT, keep.extra.columns=TRUE)
     
     ids <- lapply(c("start", "end"), function(type){
         # reduce annogr to only the specific type to prevent overlap
