@@ -103,7 +103,7 @@ validateWorkingDir <- function(object) {
     }
     if(!dir.exists(object@workingDir)){
         message(date(), ": The given working directory '", object@workingDir,
-                "' does not exists. We will create it."
+                "' does not exist. We will create it."
         )
         dir.create(object@workingDir, recursive = TRUE)
     }

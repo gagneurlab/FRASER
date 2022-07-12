@@ -406,7 +406,7 @@ pseudocount <- function(value=NULL){
     # set pseudo count if provided
     stopifnot(isScalarNumeric(value))
     stopifnot(value >= 0)
-    # value <- as.integer(value)
+    value <- as.numeric(value)
     options('FRASER.pseudoCount'=value)
     devNULL <- .setPseudoCount(value)
     stopifnot(value == devNULL)

@@ -46,7 +46,7 @@
 plotExpression(
   fds,
   type = c("psi5", "psi3", "theta", "jaccard"),
-  site = NULL,
+  idx = NULL,
   result = NULL,
   colGroup = NULL,
   basePlot = TRUE,
@@ -158,13 +158,13 @@ otherwise in the details for each plot function}
 
 \item{BPPARAM}{BiocParallel parameter to use.}
 
+\item{idx}{A junction site ID or gene ID or one of both, which
+should be plotted. Can also be a vector. Integers are treated
+as indices.}
+
 \item{result}{The result table to be used by the method.}
 
 \item{colGroup}{Group of samples that should be colored.}
-
-\item{idx, site}{A junction site ID or gene ID or one of both, which
-should be plotted. Can also be a vector. Integers are treated
-as indices.}
 
 \item{global}{Flag to plot a global Q-Q plot, default FALSE}
 

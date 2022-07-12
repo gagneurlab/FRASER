@@ -614,9 +614,11 @@ mapSeqlevels <- function(fds, style="UCSC", ...){
 #' retrieve a single sample result object
 #' @noRd
 resultsSingleSample <- function(sampleID, gr, pvals, padjs, zscores, 
-                                psivals, rawCts, rawTotalCts, deltaPsiVals, 
-                                psiType, rowMeansK, rowMeansN, aberrant, 
-                                aggregate, rho, pvalsGene=NULL, padjsGene=NULL, 
+                                psivals, rawCts, rawTotalCts, rawNonsplitCts, 
+                                rawNsProportion, nsProportion_99quantile,
+                                deltaPsiVals, psiType, rowMeansK, rowMeansN, 
+                                aberrant, aggregate, rho, 
+                                pvalsGene=NULL, padjsGene=NULL, 
                                 aberrantGene, additionalColumns,
                                 geneColumn="hgnc_symbol"){
     mcols(gr)$idx <- seq_along(gr)
@@ -664,6 +666,21 @@ resultsSingleSample <- function(sampleID, gr, pvals, padjs, zscores,
     mcols(ans)$meanCounts      <- Rle(round(rowMeansK[goodCut], 2))
     mcols(ans)$meanTotalCounts <- Rle(round(rowMeansN[goodCut], 2))
     
+    if(psiType == "jaccard"){
+        mcols(ans)$nonsplitCounts <- 
+            Rle(round(rawNonsplitCts[goodCut, sampleID], 2))
+        mcols(ans)$nonsplitProportion <- 
+            Rle(round(rawNsProportion[goodCut, sampleID], 2))
+        mcols(ans)$nonsplitProportion_99quantile  <- 
+            Rle(round(nsProportion_99quantile[goodCut], 2))
+    }
+    
+    if(!is.null(additionalColumns)){
+        for(column in additionalColumns){
+            mcols(ans)[,column] <- Rle(mcols(gr[goodCut])[,column])
+        }
+    }
+    
     if(isTRUE(aggregate)){
         # report junction more than once if it is significant for several genes
         nrGenesPerJunction <- table(geneJunctions)
@@ -678,12 +695,6 @@ resultsSingleSample <- function(sampleID, gr, pvals, padjs, zscores,
         mcols(ans)$padjustGene <- 
             signif(padjsGene[mcols(ans)$hgncSymbol,sampleID], 5)
         mcols(ans)$hgncSymbol <- Rle(mcols(ans)$hgncSymbol)
-    }
-    
-    if(!is.null(additionalColumns)){
-        for(column in additionalColumns){
-            mcols(ans)[,column] <- Rle(mcols(gr[goodCut])[,column])
-        }
     }
     
     # remove helper column
@@ -772,12 +783,27 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff, zscoreCutoff,
                 colnames(deltaPsiVals) <- sc
             }
             
+            if(type == "jaccard"){
+                rawNonsplitCts  <- as.matrix(assay(tmp_x, "rawCountsJnonsplit"))
+                rawNsProportion <- rawNonsplitCts / rawTotalCts
+                nsProportion_99quantile <- 
+                    rowQuantiles(rawNsProportion, probs=0.99)
+            } else{
+                rawNonsplitCts  <- NULL
+                rawNsProportion <- NULL
+                nsProportion_99quantile <- NULL
+            }
+            
+            
             # create result table
             sampleRes <- lapply(sc,
                                 resultsSingleSample, gr=gr, pvals=pvals, 
                                 padjs=padjs, zscores=zscores, psiType=type, 
                                 psivals=psivals, deltaPsiVals=deltaPsiVals, 
                                 rawCts=rawCts, rawTotalCts=rawTotalCts, 
+                                rawNonsplitCts=rawNonsplitCts, 
+                                rawNsProportion=rawNsProportion,
+                                nsProportion_99quantile=nsProportion_99quantile,
                                 rowMeansK=rowMeansK, rowMeansN=rowMeansN, 
                                 aberrant=aberrant, aggregate=aggregate,
                                 rho=rho, geneColumn=geneColumn,

@@ -11,7 +11,7 @@
     "fullAE", "PCA-regression", "PCA-reg-full", "PCA-BB-Decoder-no-weights", "BB"),
   q,
   type = "psi3",
-  rhoRange = c(1e-08, 1 - 1e-08),
+  rhoRange = c(-30, 30),
   weighted = FALSE,
   noiseAlpha = 1,
   convergence = 1e-05,
