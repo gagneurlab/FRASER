@@ -95,9 +95,9 @@ aberrant splicing events based on the given cutoffs.
 # get data, fit and compute p-values and z-scores
 fds <- createTestFraserDataSet()
 
-# extract results: for this example dataset, z score cutoff of 2 is used to
+# extract results: for this example dataset, no cutoffs are used to
 # get at least one result and show the output
-res <- results(fds, padjCutoff=NA, zScoreCutoff=3, deltaPsiCutoff=0.05)
+res <- results(fds, padjCutoff=NA, zScoreCutoff=NA, deltaPsiCutoff=NA)
 res
 
 # aggregate the results by genes (gene symbols need to be annotated first 

@@ -59,6 +59,8 @@
 #' @param onlyExpressedIntrons Logical value indicating whether to show only 
 #'             introns that also pass the expression filter. Defaults to 
 #'             FALSE.
+#' @param gr A GRanges object indicating the genomic range that should be shown 
+#'             in \code{plotBamCoverage}.
 #' @param control_samples The sampleIDs of the samples used as control in  
 #'             \code{plotBamCoverage}.
 #' @param min_junction_count The minimal junction count across samples required 
@@ -254,17 +256,24 @@
 #'     mar=c(1, 7, 0.1, 3))
 #' 
 #' # plot coverage from bam file for a row in the result table
-#' \donttest{    
-#'     fds <- createTestFraserDataSet()
-#'     require(TxDb.Hsapiens.UCSC.hg19.knownGene)
-#'     txdb <- TxDb.Hsapiens.UCSC.hg19.knownGene
-#'     require(org.Hs.eg.db)
-#'     orgDb <- org.Hs.eg.db
-#'     plotBamCoverageFromResultTable(fds, result=res[1,], show_full_gene=TRUE,
-#'         txdb=txdb, orgDb=orgDb, control_samples="sample3")
-#'     plotBamCoverageFromResultTable(fds, result=res[1,], show_full_gene=FALSE, 
-#'         control_samples="sample3", curvature_splicegraph=0.5, txdb=txdb,
-#'         curvature_coverage=0.5, right_extension=5000, left_extension=5000)
+#' fds <- createTestFraserDataSet()
+#' require(TxDb.Hsapiens.UCSC.hg19.knownGene)
+#' txdb <- TxDb.Hsapiens.UCSC.hg19.knownGene
+#' require(org.Hs.eg.db)
+#' orgDb <- org.Hs.eg.db
+#'     
+#' res <- results(fds, padjCutoff=NA, deltaPsiCutoff=NA, zScoreCutoff=NA)
+#' res_dt <- as.data.table(res)
+#' res_dt <- res_dt[sampleID == "sample2",]
+#'     
+#' # plot full range of gene containing outlier junction
+#' plotBamCoverageFromResultTable(fds, result=res_dt[1,], show_full_gene=TRUE,
+#'     txdb=txdb, orgDb=orgDb, control_samples="sample3")
+#'     
+#' # plot only certain range around outlier junction
+#' plotBamCoverageFromResultTable(fds, result=res_dt[1,], show_full_gene=FALSE, 
+#'     control_samples="sample3", curvature_splicegraph=0.5, txdb=txdb,
+#'     curvature_coverage=0.5, right_extension=5000, left_extension=5000)
 #' }
 #' 
 NULL
@@ -1335,10 +1344,11 @@ plotBamCoverageFromResultTable <- function(fds, result, show_full_gene=FALSE,
             stop("Missing input: orgDb (for mapping of IDs to txdb)")
         }
         txdb_geneid <- select(orgDb, 
-                        keys=as.character(result[,res_gene_col, with=FALSE]), 
-                        columns=txdb_geneid_type, 
-                        keytype=res_gene_type)[1]
-        gr <- genes(txdb, filter=list("gene_id"=txdb_geneid))
+                    keys=as.character(result[,res_gene_col, with=FALSE]), 
+                    columns=txdb_geneid_type, 
+                    keytype=res_gene_type)[1,]
+        gr <- genes(txdb, 
+                    filter=list("gene_id"=txdb_geneid[,txdb_geneid_type]))
     } else{
         # or just showing a certain region around the outlier junction
         gr <- outlier_range
