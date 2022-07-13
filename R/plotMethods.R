@@ -246,34 +246,36 @@
 #' plotExpectedVsObservedPsi(fds, type="psi5", res=res[1])
 #' 
 #' # plot splice graph and coverage from bam files in a given region
-#' fds <- createTestFraserSettings()
-#' gr <- GRanges(seqnames="chr19", 
-#'     IRanges(start=7587496, end=7598895), 
-#'     strand="+")
-#' plotBamCoverage(fds, gr=gr, sampleID="sample3", 
-#'     control_samples="sample2", min_junction_count=5,
-#'     curvature_splicegraph=1, curvature_coverage=1, 
-#'     mar=c(1, 7, 0.1, 3))
+#' if(require(SGSeq)){
+#'     fds <- createTestFraserSettings()
+#'     gr <- GRanges(seqnames="chr19", 
+#'         IRanges(start=7587496, end=7598895), 
+#'         strand="+")
+#'     plotBamCoverage(fds, gr=gr, sampleID="sample3", 
+#'         control_samples="sample2", min_junction_count=5,
+#'         curvature_splicegraph=1, curvature_coverage=1, 
+#'         mar=c(1, 7, 0.1, 3))
 #' 
-#' # plot coverage from bam file for a row in the result table
-#' fds <- createTestFraserDataSet()
-#' require(TxDb.Hsapiens.UCSC.hg19.knownGene)
-#' txdb <- TxDb.Hsapiens.UCSC.hg19.knownGene
-#' require(org.Hs.eg.db)
-#' orgDb <- org.Hs.eg.db
+#'     # plot coverage from bam file for a row in the result table
+#'     fds <- createTestFraserDataSet()
+#'     require(TxDb.Hsapiens.UCSC.hg19.knownGene)
+#'     txdb <- TxDb.Hsapiens.UCSC.hg19.knownGene
+#'     require(org.Hs.eg.db)
+#'     orgDb <- org.Hs.eg.db
+#'  
+#'     res <- results(fds, padjCutoff=NA, deltaPsiCutoff=NA, zScoreCutoff=NA)
+#'     res_dt <- as.data.table(res)
+#'     res_dt <- res_dt[sampleID == "sample2",]
 #'     
-#' res <- results(fds, padjCutoff=NA, deltaPsiCutoff=NA, zScoreCutoff=NA)
-#' res_dt <- as.data.table(res)
-#' res_dt <- res_dt[sampleID == "sample2",]
+#'     # plot full range of gene containing outlier junction
+#'     plotBamCoverageFromResultTable(fds, result=res_dt[1,], show_full_gene=TRUE,
+#'         txdb=txdb, orgDb=orgDb, control_samples="sample3")
 #'     
-#' # plot full range of gene containing outlier junction
-#' plotBamCoverageFromResultTable(fds, result=res_dt[1,], show_full_gene=TRUE,
-#'     txdb=txdb, orgDb=orgDb, control_samples="sample3")
-#'     
-#' # plot only certain range around outlier junction
-#' plotBamCoverageFromResultTable(fds, result=res_dt[1,], show_full_gene=FALSE, 
-#'     control_samples="sample3", curvature_splicegraph=0.5, txdb=txdb,
-#'     curvature_coverage=0.5, right_extension=5000, left_extension=5000)
+#'     # plot only certain range around outlier junction
+#'     plotBamCoverageFromResultTable(fds, result=res_dt[1,], show_full_gene=FALSE, 
+#'         control_samples="sample3", curvature_splicegraph=0.5, txdb=txdb,
+#'         curvature_coverage=0.5, right_extension=5000, left_extension=5000)
+#' }
 #' 
 NULL
 
@@ -1217,7 +1219,7 @@ plotBamCoverage <- function(fds, gr, sampleID,
         strand(gr) <- rep(strand(gr[1,]), length(gr))
     }
     gr <- range(gr)
-    gr <- keepSeqlevels(gr, as.character(seqnames(gr)))
+    gr <- keepSeqlevels(gr, unique(as.character(seqnames(gr))))
     
     # convert highlight_range to GRangesList if not
     if(!is.null(highlight_range) && !is(highlight_range, "GRangesList")){
@@ -1232,7 +1234,7 @@ plotBamCoverage <- function(fds, gr, sampleID,
     # overlap detected junctions with annotation
     if(!is.null(txdb)){
         # subset to chr of interest
-        seqlevels(txdb) <- as.character(seqnames(gr))
+        seqlevels(txdb) <- unique(as.character(seqnames(gr)))
         
         # extract transcript features with SGSeq package
         txf <- SGSeq::convertToTxFeatures(txdb)
@@ -1383,7 +1385,9 @@ plotBamCoverageFromResultTable <- function(fds, result, show_full_gene=FALSE,
     }
     
     # if several genes overlap, only show those on same strand as outlier
-    gr <- gr[strand(gr) == strand(outlier_range),]
+    if(as.character(strand(outlier_range)) != "*"){
+        gr <- gr[strand(gr) == strand(outlier_range),]
+    }
     
     # create the coverage plot for the given outlier
     fds <- plotBamCoverage(fds, 
