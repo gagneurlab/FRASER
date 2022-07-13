@@ -1192,6 +1192,7 @@ plotBamCoverage <- function(fds, gr, sampleID,
         stop("Missing input gr (genomic range to plot).")
     } else{
         stopifnot(is(gr, "GenomicRanges"))
+        stopifnot(length(gr) > 0)
     }
     if(missing(sampleID)){
         stop("Missing input: sample_of_interest")
@@ -1207,12 +1208,25 @@ plotBamCoverage <- function(fds, gr, sampleID,
     fds <- si_out[[2]]
     
     # collapse input ranges if several 
-    gr <- range(gr)
-    gr <- keepSeqlevels(gr, as.character(seqnames(gr)))
-    if(all(strand(gr) == "*")){
-        # seems to throw an error with * strand so guessing + strand instead
-        strand(gr) <- "+"
+    if(any(strand(gr) == "*")){
+        # seems to throw an error with * strand so guessing strand instead
+        if(all(strand(gr) == "*")){
+            guessStrand <- "+"
+        } else{
+            guessStrand <- strand(gr[strand(gr) != "*"])[1]
+        }
+        strand(gr)[strand(gr) == "*"] <- guessStrand
+        warning("Input genomic ranges contained unstranded ranges.\n", 
+                "This function needs strand information, guessing strand to ", 
+                "be ", guessStrand, ".")
     }
+    if(!all(strand(gr) == strand(gr[1,]))){
+        warning("Input genomic ranges contained ranges on different strands,\n", 
+                "only showing coverage for the ", strand(gr[1,]), " strand.")
+        strand(gr) <- rep(strand(gr[1,]), length(gr))
+    }
+    gr <- range(gr)
+    gr <- keepSeqlevels(gr, unique(as.character(seqnames(gr))))
     
     # convert highlight_range to GRangesList if not
     if(!is.null(highlight_range) && !is(highlight_range, "GRangesList")){
@@ -1227,7 +1241,7 @@ plotBamCoverage <- function(fds, gr, sampleID,
     # overlap detected junctions with annotation
     if(!is.null(txdb)){
         # subset to chr of interest
-        seqlevels(txdb) <- as.character(seqnames(gr))
+        seqlevels(txdb) <- unique(as.character(seqnames(gr)))
         
         # extract transcript features with SGSeq package
         txf <- convertToTxFeatures(txdb)
@@ -1350,6 +1364,7 @@ plotBamCoverageFromResultTable <- function(fds, result, show_full_gene=FALSE,
             stop("Missing input: orgDb (for mapping of IDs to txdb)")
         }
         result_gene <- result[,get(res_gene_col)]
+        result_gene <- strsplit(result_gene, ";", fixed=TRUE)[[1]]
         if(is.data.table(orgDb)){
             tmp <- merge(x=as.data.table(genes(txdb))[,.(gene_id)], y=orgDb, 
                          by.y=txdb_geneid_type, by.x="gene_id", all.x=TRUE, 
@@ -1375,6 +1390,9 @@ plotBamCoverageFromResultTable <- function(fds, result, show_full_gene=FALSE,
         start(gr) <- start(gr) - left_extension
         end(gr) <- end(gr) + right_extension
     }
+    
+    # if several genes overlap, only show those on same strand as outlier
+    gr <- gr[strand(gr) == strand(outlier_range),]
     
     # create the coverage plot for the given outlier
     fds <- plotBamCoverage(fds, 
