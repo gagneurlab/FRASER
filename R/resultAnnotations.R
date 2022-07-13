@@ -337,12 +337,13 @@ addSpliceTypeLabels <- function(junctions_dt, fds, txdb){
     if(all(c("nonsplitProportion", "nonsplitProportion_99quantile") %in% 
             colnames(junctions_dt))){
         junctions_dt[spliceType == "annotatedIntron_reducedUsage" & 
-                         type == "jaccard" &
-                         nonsplitProportion >= nonsplitProportion_99quantile,
-                     spliceType := "intron_retention"]
+                    type == "jaccard" &
+                    nonsplitProportion >= nonsplitProportion_99quantile + 0.05 &
+                    nonsplitCounts >= 10,
+                spliceType := "(partial)intronRetention"]
         
         # TODO check frameshift for intron retention
-        junctions_dt[spliceType == "intron_retention", 
+        junctions_dt[spliceType == "(partial)intronRetention", 
                         causesFrameshift := "inconclusive"]
     }
     
