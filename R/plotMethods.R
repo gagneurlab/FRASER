@@ -1483,7 +1483,7 @@ getSGSeqSI <- function(fds, sample_ids){
         df <- data.frame(
             sample_name=samples(fds)[samples(fds) %in% sample_ids],
             file_bam=bamFile(fds)[samples(fds) %in% sample_ids])
-        si <- gSGSeq::getBamInfo(df, yieldSize=1e6)  
+        si <- SGSeq::getBamInfo(df, yieldSize=1e6)  
         si$lib_size <- 50e6 # dummy value to speed up this part
         metadata(fds)[["SGSeq_sampleinfo"]] <- si
         return(list(si, fds))
