@@ -159,7 +159,7 @@ plotBamCoverageFromResultTable(
   txdb = NULL,
   orgDb = NULL,
   res_gene_col = "hgncSymbol",
-  res_gene_type = "SYMBOL",
+  res_geneid_type = "SYMBOL",
   txdb_geneid_type = "ENTREZID",
   left_extension = 1000,
   right_extension = 1000,
@@ -344,10 +344,10 @@ and right_extension) around the outlier junction is shown.}
 \item{res_gene_col}{The column name in the given results table that 
 contains the gene annotation.}
 
-\item{res_gene_type}{The type of gene annotation in \code{res_gene_col} 
-(e.g. SYMBOL or ENTREZID etc.). This information is needed for 
-mapping between the results table and the provided annotation 
-in the txdb object.}
+\item{res_geneid_type}{The type of gene annotation in the results table in 
+\code{res_gene_col} (e.g. SYMBOL or ENTREZID etc.). This 
+information is needed for mapping between the results table and 
+the provided annotation in the txdb object.}
 
 \item{txdb_geneid_type}{The type of gene_id present in \code{genes(txdb)} 
 (e.g. ENTREZID). This information is needed for 
@@ -452,4 +452,62 @@ introns and for the filtered (i.e. non-variable) introns.
 It plots the encoding dimension against the achieved loss (area under the
 precision-recall curve). From this plot the optimum should be choosen for
 the \code{q} in fitting process.
+}
+\examples{
+# create full FRASER object 
+fds <- makeSimulatedFraserDataSet(m=40, j=200)
+fds <- calculatePSIValues(fds)
+fds <- filterExpressionAndVariability(fds, filter=FALSE)
+# this step should be done for all splicing metrics and more dimensions
+fds <- optimHyperParams(fds, "psi5", q_param=c(2,5,10,25))
+fds <- FRASER(fds)
+
+# QC plotting
+plotFilterExpression(fds)
+plotFilterVariability(fds)
+plotCountCorHeatmap(fds, "theta")
+plotCountCorHeatmap(fds, "theta", normalized=TRUE)
+plotEncDimSearch(fds, type="psi5")
+
+# extract results 
+plotAberrantPerSample(fds, aggregate=FALSE)
+plotVolcano(fds, "sample1", "psi5")
+
+# dive into gene/sample level results
+res <- results(fds)
+res
+plotExpression(fds, result=res[1])
+plotQQ(fds, result=res[1])
+plotExpectedVsObservedPsi(fds, type="psi5", res=res[1])
+
+# plot splice graph and coverage from bam files in a given region
+fds <- createTestFraserSettings()
+gr <- GRanges(seqnames="chr19", 
+    IRanges(start=7587496, end=7598895), 
+    strand="+")
+plotBamCoverage(fds, gr=gr, sampleID="sample3", 
+    control_samples="sample2", min_junction_count=5,
+    curvature_splicegraph=1, curvature_coverage=1, 
+    mar=c(1, 7, 0.1, 3))
+
+# plot coverage from bam file for a row in the result table
+fds <- createTestFraserDataSet()
+require(TxDb.Hsapiens.UCSC.hg19.knownGene)
+txdb <- TxDb.Hsapiens.UCSC.hg19.knownGene
+require(org.Hs.eg.db)
+orgDb <- org.Hs.eg.db
+    
+res <- results(fds, padjCutoff=NA, deltaPsiCutoff=NA, zScoreCutoff=NA)
+res_dt <- as.data.table(res)
+res_dt <- res_dt[sampleID == "sample2",]
+    
+# plot full range of gene containing outlier junction
+plotBamCoverageFromResultTable(fds, result=res_dt[1,], show_full_gene=TRUE,
+    txdb=txdb, orgDb=orgDb, control_samples="sample3")
+    
+# plot only certain range around outlier junction
+plotBamCoverageFromResultTable(fds, result=res_dt[1,], show_full_gene=FALSE, 
+    control_samples="sample3", curvature_splicegraph=0.5, txdb=txdb,
+    curvature_coverage=0.5, right_extension=5000, left_extension=5000)
+
 }

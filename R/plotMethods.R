@@ -80,10 +80,10 @@
 #'             \code{plotBamCoverageFromResultTable}.
 #' @param res_gene_col The column name in the given results table that 
 #'             contains the gene annotation.
-#' @param res_gene_type The type of gene annotation in \code{res_gene_col} 
-#'             (e.g. SYMBOL or ENTREZID etc.). This information is needed for 
-#'             mapping between the results table and the provided annotation 
-#'             in the txdb object. 
+#' @param res_geneid_type The type of gene annotation in the results table in 
+#'             \code{res_gene_col} (e.g. SYMBOL or ENTREZID etc.). This 
+#'             information is needed for mapping between the results table and 
+#'             the provided annotation in the txdb object. 
 #' @param txdb_geneid_type The type of gene_id present in \code{genes(txdb)} 
 #'             (e.g. ENTREZID). This information is needed for 
 #'             mapping between the results table and the provided annotation 
@@ -274,7 +274,6 @@
 #' plotBamCoverageFromResultTable(fds, result=res_dt[1,], show_full_gene=FALSE, 
 #'     control_samples="sample3", curvature_splicegraph=0.5, txdb=txdb,
 #'     curvature_coverage=0.5, right_extension=5000, left_extension=5000)
-#' }
 #' 
 NULL
 
@@ -1320,7 +1319,7 @@ plotBamCoverage <- function(fds, gr, sampleID,
 #' @export
 plotBamCoverageFromResultTable <- function(fds, result, show_full_gene=FALSE, 
                 txdb=NULL, orgDb=NULL, res_gene_col="hgncSymbol",
-                res_gene_type="SYMBOL", txdb_geneid_type="ENTREZID",
+                res_geneid_type="SYMBOL", txdb_geneid_type="ENTREZID",
                 left_extension=1000, right_extension=1000, ...){
     stopifnot(is(fds, "FraserDataSet"))
     
@@ -1343,12 +1342,26 @@ plotBamCoverageFromResultTable <- function(fds, result, show_full_gene=FALSE,
         if(missing(orgDb)){
             stop("Missing input: orgDb (for mapping of IDs to txdb)")
         }
-        txdb_geneid <- select(orgDb, 
-                    keys=as.character(result[,res_gene_col, with=FALSE]), 
-                    columns=txdb_geneid_type, 
-                    keytype=res_gene_type)[1,]
-        gr <- genes(txdb, 
-                    filter=list("gene_id"=txdb_geneid[,txdb_geneid_type]))
+        result_gene <- result[,get(res_gene_col)]
+        if(is.data.table(orgDb)){
+            tmp <- merge(x=as.data.table(genes(txdb))[,.(gene_id)], y=orgDb, 
+                         by.y=txdb_geneid_type, by.x="gene_id", all.x=TRUE, 
+                         sort=FALSE)[,.(gene_id, feature=get(res_geneid_type))]
+            setnames(tmp, "feature", res_geneid_type)
+            txdb_geneid <- tmp[get(res_geneid_type) %in% result_gene, gene_id]
+        } else {
+            tmp <- as.data.table(
+                select(orgDb, 
+                       keys=result_gene, 
+                       columns=txdb_geneid_type, 
+                       keytype=res_geneid_type)
+            )
+            txdb_geneid <- tmp[, get(txdb_geneid_type)]
+        }
+        gr <- genes(txdb, filter=list("gene_id"=txdb_geneid))
+        if(length(gr) == 0){
+            stop("Could not extract genomic coordinates for input gene.")
+        }
     } else{
         # or just showing a certain region around the outlier junction
         gr <- outlier_range
