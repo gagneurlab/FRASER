@@ -22,8 +22,7 @@ setClass("FraserDataSet",
         name            = "Data Analysis",
         bamParam        = ScanBamParam(mapqFilter=0),
         strandSpecific  = 0L,
-        workingDir      = getwd(),
-        # file.path(tempdir(), "FRASER"),
+        workingDir      = "FRASER_output",
         nonSplicedReads = SummarizedExperiment(rowRanges=GRanges())
     )
 )
@@ -95,22 +94,17 @@ validatePairedEnd <- function(object) {
 validateWorkingDir <- function(object) {
     if(!isScalarCharacter(object@workingDir)){
         return(paste("The path to the working directory needs",
-                "to be a set as a character."
-        ))
+                "to be a set as a character."))
     }
     if(object@workingDir == ""){
         return("The working directory can not be empty.")
     }
-    if(!dir.exists(object@workingDir)){
-        message(date(), ": The given working directory '", object@workingDir,
-                "' does not exist. We will create it."
-        )
-        dir.create(object@workingDir, recursive = TRUE)
-    }
-    if(file.access(object@workingDir, mode = 4) != 0){
-        return(paste("Make sure we can write to the given working directory '",
-                object@workingDir, "'."
-        ))
+    if(dir.exists(object@workingDir)){
+        if(file.access(object@workingDir, mode = 4) != 0){
+            return(paste(
+                    "Make sure we can write to the given working directory '",
+                    object@workingDir, "'."))
+        }
     }
     NULL
 }
@@ -120,7 +114,7 @@ validateNonSplicedReadsType <- function(object) {
         return("'nonSplicedReads' must be a RangedSummarizedExperiment object")
     }
     if(length(object) != 0 && dim(object@nonSplicedReads)[2] != dim(object)[2]){
-        return("The NSR dimensions are not correct. This is a internal error!")
+        return("The nonSplicedReads dimensions are not correct. This is a internal error!")
     }
     ans <- validObject(object@nonSplicedReads)
     if(!isScalarLogical(ans) || ans == FALSE){
@@ -140,6 +134,25 @@ validateAssays <- function(object){
     NULL
 }
 
+# for non-empty fds objects check if non-spliced reads are overlapping with at least 1 donor/acceptor site
+validateNonSplicedReadsSanity <- function(object){
+    # fds object must have samples and junctions
+    if(all(dim(object) > c(0,0))){
+
+        # fds object must be annotated with start/end/spliceSite indexes
+        if("startID" %in% names(mcols(object)) && "endID" %in% names(mcols(object)) &&
+           "spliceSiteID" %in% names(mcols(object, type="theta"))){
+
+                # check that every spliceSiteID matches either a start or end index
+                if(length( intersect( mcols(object, type="theta")$spliceSiteID, unlist(mcols(object)[, c("startID", "endID")] ) ) )
+                      != nrow(nonSplicedReads(object))){
+                return("The nonSplicedReads do not have corresponding splitReads. This is probably the result of merging")
+                }
+            }
+    }
+    NULL
+}
+
 
 ## general validate function
 validateFraserDataSet <- function(object) {
@@ -151,6 +164,7 @@ validateFraserDataSet <- function(object) {
         validateStrandSpecific(object),
         validateWorkingDir(object),
         validateNonSplicedReadsType(object),
+        validateNonSplicedReadsSanity(object),
         validateAssays(object)
     )
 }
@@ -318,8 +332,9 @@ FraserDataSet <- function(colData=NULL, junctions=NULL, spliceSites=NULL, ...) {
     }
     
     metadata(obj)[["version"]] <- packageVersion("FRASER")
+
     validObject(obj)
-    
+   
     return(obj)
 }
 

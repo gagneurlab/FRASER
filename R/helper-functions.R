@@ -550,6 +550,7 @@ getStrandString <- function(fds){
     return(strand)
 }
 
+
 #'
 #' Check if adjusted pvalues have been computed for a given set of filters.
 #' @noRd
@@ -660,4 +661,25 @@ limitGeneNamesList <- function(gene_names, maxLength=3){
                     collapse=";") 
         } ))
     return(gene_names)
+}
+
+checkForAndCreateDir <- function(object, dir){
+    verbose <- 0
+    if(is(object, "FraserDataSet")){
+        verbose <- verbose(object)
+        if(missing(dir)){
+            dir <- workingDir(object)
+        }
+    }
+    if(!dir.exists(dir)){
+        if(verbose > 1){
+            message(date(), ": The given working directory '", 
+                    dir, "' does not exists. We will create it.")
+        }
+        dir.create(dir, recursive=TRUE)
+    }
+    if(!dir.exists(dir)){
+        stop("Can not create workding directory: ", dir)
+    }
+    return(TRUE)
 }

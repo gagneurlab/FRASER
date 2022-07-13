@@ -1,5 +1,6 @@
-BTYPE <- ifelse(.Platform$OS.type == 'unix', "source", "both")
-NCPUS <- ifelse(.Platform$OS.type == 'unix', 6, 1)
+NCPUS <- 3
+Sys.setenv(MAKEFLAGS = "-j3")
+BIOC_VERSION <- Sys.getenv("BIOC_VERSION")
 START_TIME <- Sys.time()
 
 print_log <- function(...){
@@ -7,76 +8,37 @@ print_log <- function(...){
     message(paste0("\n", hash_line, "\n### ", date(), ": ", ..., "\n", hash_line, "\n"))
 }
 
-installIfReq <- function(p, type=BTYPE, Ncpus=NCPUS, ...){
-    for(j in p){
-        if(!requireNamespace(j, quietly=TRUE)){
-            print_log("Install ", j)
-            INSTALL(j, type=type, Ncpus=Ncpus, ...)
-        }
-    }
+installIfReq <- function(p, Ncpus=NCPUS, ...){
+    for(j in p)
+        if(!requireNamespace(j, quietly=TRUE))
+            BiocManager::install(j, Ncpus=Ncpus, ...)
 }
 
 # install Bioconductor
-if(!requireNamespace("BiocManager", quietly=TRUE)){
-    print_log("Install BiocManager")
+if(!requireNamespace("BiocManager", quietly=TRUE))
     install.packages("BiocManager", Ncpus=NCPUS)
-}
-INSTALL <- BiocManager::install
+BiocManager::install("BiocVersion", version=BIOC_VERSION,ask = FALSE)
 
-# since the current XML package is not compatible with 3.6 anymore
-if(!requireNamespace("XML", quietly=TRUE) & R.version[['major']] == "3"){
-    installIfReq(p="devtools", type=BTYPE, Ncpus=NCPUS)
-    devtools::install_version("XML", version="3.99-0.3")
+
+# install needed packages
+# add testthat to pre installation dependencies due to: https://github.com/r-lib/pkgload/issues/89
+for(p in c("getopt", "testthat", "devtools", "covr", "roxygen2", "BiocCheck",
+            "R.utils", "rtracklayer")){
+    installIfReq(p=p, Ncpus=NCPUS)
 }
 
 # because of https://github.com/r-windows/rtools-installer/issues/3
 if("windows" == .Platform$OS.type){
-    print_log("Install XML on windows ...")
-    BTYPE <- "win.binary"
-    installIfReq(p=c("XML", "xml2", "RSQLite", "progress", "tibble", "AnnotationDbi", "BiocCheck", "rtracklayer"))
-    
     print_log("Install source packages only for windows ...")
-    INSTALL(c("GenomeInfoDbData", "org.Hs.eg.db", "TxDb.Hsapiens.UCSC.hg19.knownGene"), type="both")
-} else {
-    BTYPE <- "source"
+    BiocManager::install(c("GenomeInfoDbData", "org.Hs.eg.db", "TxDb.Hsapiens.UCSC.hg19.knownGene"), 
+            type="both", version=BIOC_VERSION)
 }
 
-# install needed packages
-# add testthat to pre installation dependencies due to: https://github.com/r-lib/pkgload/issues/89
-for(p in c("getopt", "XML", "xml2", "testthat", "devtools", "covr",
-            "roxygen2", "BiocCheck", "R.utils", "GenomeInfoDbData",
-            "rtracklayer", "hms")){
-    installIfReq(p=p, type=BTYPE, Ncpus=NCPUS)
-}
+print_log("Update Packages")
+BiocManager::install(ask=FALSE, Ncpus=NCPUS, version=BIOC_VERSION)
 
-# install package with its dependencies with a timeout due to travis 50 min
-R.utils::withTimeout(timeout=2400, {
-    try({
-        print_log("Update packages")
-        BTYPE <- ifelse(.Platform$OS.type == 'unix', "source", "win.binary")
-        INSTALL(ask=FALSE, type=BTYPE, Ncpus=NCPUS)
- 
-        if(R.version[['major']] == "3"){
-            print_log("Install updated source package")
-            devtools::install_github("gagneurlab/OUTRIDER", dependencies=TRUE)
-        }
-        
-        print_log("Install dev package")
-        devtools::install(".", dependencies=TRUE, type=BTYPE)
-    })
-})
-
-# fix knitr for 3.6 for more details see BiocStyle issue 78
-# https://github.com/Bioconductor/BiocStyle/issues/78
-if(R.version[['major']] == "3"){
-    BiocManager::install(ask=FALSE, update=FALSE, c(
-            "Bioconductor/BiocFileCache", "grimbough/biomaRt", "yihui/knitr@v1.29"))
-} else {
-    inst_biomaRt_version <- as.character(utils::packageVersion("biomaRt"))
-    if(utils::compareVersion("2.46.2", inst_biomaRt_version) == 1){
-        BiocManager::install("grimbough/biomaRt", ref="3_12_testing")
-    }
-}
+print_log("Install dev package")
+devtools::install(".", dependencies=TRUE)
 
 # to get FRASER session info
 try({ library(FRASER) })

@@ -1,3 +1,18 @@
+CHANGES IN VERSION 1.8.1
+-------------------------
+    o Bugfix in merging splicing counts (#41)
+
+CHANGES IN VERSION 1.6.1
+-------------------------
+    o Fixing quantile filtering defaults (#28)
+        o Require min expression in 5% instead of 95% of the samples
+        o Require min expression on both sides of the junction
+    o Align FRASER package with DROP pipeline (#24)
+    o Move temp directory from tempdir() to working directory getwd() (#35)
+    o Improve visualizations and Improve documentation
+    o Improve internal object validation
+    o Minor bugfixes (eg. #37)
+
 CHANGES IN VERSION 1.2.1
     o Add merging of external counts
     o Add publication

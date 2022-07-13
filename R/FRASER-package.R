@@ -23,7 +23,7 @@
 ### GRange/Experiment/bamFile packages
 #' @importFrom BiocGenerics updateObject counts counts<- strand strand<- which
 #' @importFrom GenomicFeatures makeTxDbFromGFF intronsByTranscript genes exons
-#'          fiveUTRsByTranscript threeUTRsByTranscript
+#'          fiveUTRsByTranscript threeUTRsByTranscript seqlevels0
 #' @importFrom GenomicAlignments junctions readGAlignments summarizeJunctions
 #'          readGAlignmentPairs
 #' @importFrom SummarizedExperiment assay assay<- assays assays<- assayNames
@@ -32,6 +32,7 @@
 #' @importFrom GenomicRanges findOverlaps granges GRanges GRangesList
 #'          makeGRangesFromDataFrame invertStrand start end start<- end<-
 #' @importFrom IRanges subsetByOverlaps from to IRanges ranges nearest distance
+#'          %over%
 #' @importFrom Rsamtools ScanBamParam scanBamHeader bamMapqFilter
 #'          bamWhich bamWhich<- BamFile idxstatsBam
 #' @importFrom Rsubread featureCounts
@@ -74,7 +75,7 @@
 #' @importFrom R.utils renameFile withTimeout
 #' @importFrom tools file_path_as_absolute
 #' @importFrom methods as callNextMethod is new show slot slot<- validObject
-#' @importFrom utils capture.output packageVersion
+#' @importFrom utils capture.output packageVersion tail
 #'
 #'
 #'
@@ -114,7 +115,7 @@ globalVariables(c(".", "J", ".N", ".asDataFrame", "End", "first_feature",
         "FN", "HTML", "other_features", "Start", 
         "TP", "deltaPsi", "curgr", "gene", "lty", "hgnc_symbol", "id",
         "ldat", "mapped", "p.adj", "pval", "pValue", "sampleID", "sampleGroup", 
-        "chr", 
+        "chr", "isOptimalQ",
         "symbol", "type", "pseudocount", "known_intron", "known_start", 
         "known_end", "..columns2Write", "maxVal", "idxGroup", "idxInCount", 
         "idxInGroup", "lower", "nOk", "nPerGroup", "nsubset", "obs", "p", 
@@ -128,7 +129,7 @@ globalVariables(c(".", "J", ".N", ".asDataFrame", "End", "first_feature",
         "model", "mu", "n", ",nsubset", "o3", "o5", "obsPsi", "os", "pa",
         "padj", "passed", "pByFeature", "pointNr", "predPsi", "psi3", "psi5",
         "psiType", "psiValue", "seqlength", "seqlevel", "Step", "traceNr",
-        "uniqueID", "V1", "value", "zscore", "maxDTheta", "genes_donor",
+        "uniqueID", "V1", "value", "zscore", "maxDTheta", "par", "genes_donor",
         "genes_acceptor", "gene_pval", "gene_padj", "dt_idx", 
         "blacklist", "spliceType", "causesFrameshift", "annotatedJunction", 
         "distNearestGene", "UTR_overlap", "meanCount", "medianCount", 

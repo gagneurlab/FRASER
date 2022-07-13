@@ -318,9 +318,7 @@ getOtherCountsCacheFolder <- function(fds){
     # cache folder
     cachedir <- file.path(workingDir(fds), "cache", "otherCounts", 
                             nameNoSpace(name(fds)))
-    if(!dir.exists(cachedir)){
-        dir.create(cachedir, recursive=TRUE)
-    }
+    checkForAndCreateDir(NA, cachedir)
     
     # return it
     return(cachedir)

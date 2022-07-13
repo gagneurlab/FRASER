@@ -887,9 +887,9 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff, zscoreCutoff,
 #' # get data, fit and compute p-values and z-scores
 #' fds <- createTestFraserDataSet()
 #' 
-#' # extract results: for this example dataset, z score cutoff of 1 and delta 
-#' # psi cutoff of 0.2 is used to get at least one result and show the output
-#' res <- results(fds, padjCutoff=NA, zScoreCutoff=1, deltaPsiCutoff=0.2)
+#' # extract results: for this example dataset, no cutoffs are used to
+#' # get at least one result and show the output
+#' res <- results(fds, padjCutoff=NA, zScoreCutoff=NA, deltaPsiCutoff=NA)
 #' res
 #' 
 #' # aggregate the results by genes (gene symbols need to be annotated first 
@@ -1002,14 +1002,14 @@ aberrant.FRASER <- function(object, type=currentType(object),
     }
     if(!is.na(zScoreCutoff)){
         aberrantEvents <- aberrantEvents & 
-            as.matrix(abs(zscores) > zScoreCutoff)
+            as.matrix(abs(zscores) >= zScoreCutoff)
     }
     if(!is.na(deltaPsiCutoff)){
         aberrantEvents <- aberrantEvents & 
-            as.matrix(abs(dpsi) > deltaPsiCutoff)
+            as.matrix(abs(dpsi) >= deltaPsiCutoff)
     }
     if(!is.na(rhoCutoff)){
-        aberrantEvents <- aberrantEvents & as.matrix(rho < rhoCutoff)
+        aberrantEvents <- aberrantEvents & as.matrix(rho <= rhoCutoff)
     }
     aberrantEvents[is.na(aberrantEvents)] <- FALSE
         

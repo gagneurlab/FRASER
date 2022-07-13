@@ -140,7 +140,7 @@ saveFraserDataSet <- function(fds, dir=NULL, name=NULL, rewrite=FALSE) {
     stopifnot(isScalarCharacter(name))
     
     outDir <- file.path(dir, "savedObjects", nameNoSpace(name))
-    if(!dir.exists(outDir)) dir.create(outDir, recursive=TRUE)
+    checkForAndCreateDir(fds, outDir)
     
     # over each assay object
     name(fds) <- name
@@ -224,9 +224,8 @@ saveAsHDF5 <- function(fds, name, object=NULL, rewrite=FALSE){
 getFraserHDF5File <- function(fds, aname){
     dir <- workingDir(fds)
     outDir <- file.path(dir, "savedObjects", nameNoSpace(fds))
-    if(!dir.exists(outDir)) {
-        dir.create(outDir, recursive=TRUE)
-    }
+    checkForAndCreateDir(fds, outDir)
+    
     h5File <- file.path(file_path_as_absolute(outDir), paste0(aname, ".h5"))
     return(h5File)
 }

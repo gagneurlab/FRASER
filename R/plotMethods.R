@@ -15,6 +15,8 @@
 #'   \item plotFilterExpression()
 #'   \item plotFilterVariability()
 #'   \item plotEncDimSearch()
+#'   \item plotBamCoverage()
+#'   \item plotBamCoverageFromResultTable()
 #' }
 #'
 #' For a detailed description of each plot function please see the details.
@@ -52,11 +54,61 @@
 #'             sample-sample correlation heatmap or \code{"junctionSample"}
 #'             for a junction-sample correlation heatmap.
 #' @param onlyVariableIntrons Logical value indicating whether to show only 
-#'              introns that also pass the variability filter. Defaults to 
-#'              FALSE.
+#'             introns that also pass the variability filter. Defaults to 
+#'             FALSE.
 #' @param onlyExpressedIntrons Logical value indicating whether to show only 
-#'              introns that also pass the expression filter. Defaults to 
-#'              FALSE.
+#'             introns that also pass the expression filter. Defaults to 
+#'             FALSE.
+#' @param gr A GRanges object indicating the genomic range that should be shown 
+#'             in \code{plotBamCoverage}.
+#' @param control_samples The sampleIDs of the samples used as control in  
+#'             \code{plotBamCoverage}.
+#' @param min_junction_count The minimal junction count across samples required 
+#'             for a junction to appear in the splicegraph and coverage tracks 
+#'             of \code{plotBamCoverage}.
+#' @param txdb A TxDb object giving the gene/transcript annotation to use.
+#' @param orgDb A OrgDb object giving the mapping of gene ids and symbols.
+#' @param show_full_gene Should the full genomic range of the gene be shown in 
+#'             \code{plotBamCoverageFromResultTable} (default: FALSE)? 
+#'             If FALSE, only a certain region (see parameters left_extension 
+#'             and right_extension) around the outlier junction is shown. 
+#' @param left_extension Indicating how far the plotted range around the outlier 
+#'             junction should be extended to the left in 
+#'             \code{plotBamCoverageFromResultTable}.
+#' @param right_extension Indicating how far the plotted range around the 
+#'             outlier junction should be extended to the right in 
+#'             \code{plotBamCoverageFromResultTable}.
+#' @param res_gene_col The column name in the given results table that 
+#'             contains the gene annotation.
+#' @param res_gene_type The type of gene annotation in \code{res_gene_col} 
+#'             (e.g. SYMBOL or ENTREZID etc.). This information is needed for 
+#'             mapping between the results table and the provided annotation 
+#'             in the txdb object. 
+#' @param txdb_geneid_type The type of gene_id present in \code{genes(txdb)} 
+#'             (e.g. ENTREZID). This information is needed for 
+#'             mapping between the results table and the provided annotation 
+#'             in the txdb object. 
+#' @param highlight_range A \code{GenomicRanges} or \code{GenomicRangesList} 
+#'             object of ranges to be highlighted in the splicegraph of 
+#'             \code{plotBamCoverage}.
+#' @param highlight_range_color The color of highlighted ranges in 
+#'             the splicegraph of \code{plotBamCoverage}.
+#' @param toscale In \code{plotBamCoverage}, indicates which part of the 
+#'             plotted region should be drawn to scale. Possible values are 
+#'             'exon' (exonic regions are drawn to scale), 
+#'             'gene' (both exonic and intronic regions are drawn to scale) or 
+#'             'none' (exonic and intronic regions have constant length) 
+#'             (see SGSeq package).
+#' @param splicegraph_labels Indicated the format of exon/splice junction 
+#'             labels in the splicegraph of \code{plotBamCoverage}. 
+#'             Possible values are 'genomic_range' (gives the start position 
+#'             of the first exon and the end position of the last exon that 
+#'             are shown),  'id' (format E1,... J1,...), 'name' (format 
+#'             type:chromosome:start-end:strand for each feature), 
+#'             'none' for no labels (see SGSeq package).             
+#' @param splicegraph_position The position of the splicegraph relative to the 
+#'             coverage tracks in \code{plotBamCoverage}. Possible values 
+#'             are 'top' (default) and 'bottom'.
 #'              
 #### Graphical parameters
 #' @param main Title for the plot, if missing a default title will be used.
@@ -89,6 +141,26 @@
 #' @param bins Set the number of bins to be used in the histogram.
 #' @param legend.position Set legend position (x and y coordinate), defaults to
 #'             the top right corner.
+#' @param color_annotated The color for exons and junctions present in 
+#'             the given annotation (in the splicegraph of 
+#'             \code{plotBamCoverage}).
+#' @param color_novel The color for novel exons and junctions not present in 
+#'             the given annotation (in the splicegraph of 
+#'             \code{plotBamCoverage}).
+#' @param color_sample_interest The color in \code{plotBamCoverage} for the 
+#'             sample of interest.
+#' @param color_control_samples The color in \code{plotBamCoverage} for the 
+#'             samples used as controls.
+#' @param curvature_splicegraph The curvature of the junction arcs in the 
+#'             splicegraph in \code{plotBamCoverage}. Decrease this value 
+#'             for flatter arcs and increase it for steeper arcs.
+#' @param curvature_coverage The curvature of the junction arcs in the 
+#'             coverage tracks of \code{plotBamCoverage}. Decrease this 
+#'             value for flatter arcs and increase it for steeper arcs.
+#' @param mar The margin of the plot area for \code{plotBamCoverage} 
+#'             (b,l,t,r).
+#' @param cex For controlling the size of text and numbers in 
+#'             \code{plotBamCoverage}.
 #'
 #### Additional ... parameter
 #' @param ... Additional parameters passed to plot() or plot_ly() if not stated
@@ -173,7 +245,36 @@
 #' plotQQ(fds, result=res[1])
 #' plotExpectedVsObservedPsi(fds, type="psi5", res=res[1])
 #' 
-#'
+#' # plot splice graph and coverage from bam files in a given region
+#' fds <- createTestFraserSettings()
+#' gr <- GRanges(seqnames="chr19", 
+#'     IRanges(start=7587496, end=7598895), 
+#'     strand="+")
+#' plotBamCoverage(fds, gr=gr, sampleID="sample3", 
+#'     control_samples="sample2", min_junction_count=5,
+#'     curvature_splicegraph=1, curvature_coverage=1, 
+#'     mar=c(1, 7, 0.1, 3))
+#' 
+#' # plot coverage from bam file for a row in the result table
+#' fds <- createTestFraserDataSet()
+#' require(TxDb.Hsapiens.UCSC.hg19.knownGene)
+#' txdb <- TxDb.Hsapiens.UCSC.hg19.knownGene
+#' require(org.Hs.eg.db)
+#' orgDb <- org.Hs.eg.db
+#'     
+#' res <- results(fds, padjCutoff=NA, deltaPsiCutoff=NA, zScoreCutoff=NA)
+#' res_dt <- as.data.table(res)
+#' res_dt <- res_dt[sampleID == "sample2",]
+#'     
+#' # plot full range of gene containing outlier junction
+#' plotBamCoverageFromResultTable(fds, result=res_dt[1,], show_full_gene=TRUE,
+#'     txdb=txdb, orgDb=orgDb, control_samples="sample3")
+#'     
+#' # plot only certain range around outlier junction
+#' plotBamCoverageFromResultTable(fds, result=res_dt[1,], show_full_gene=FALSE, 
+#'     control_samples="sample3", curvature_splicegraph=0.5, txdb=txdb,
+#'     curvature_coverage=0.5, right_extension=5000, left_extension=5000)
+#' 
 NULL
 
 
@@ -213,8 +314,9 @@ plotVolcano.FRASER <- function(object, sampleID,
     }
     
     if(!is.na(padjCutoff)){
-        if(dt[padj < padjCutoff, .N] > 0){
-            padj_line <- min(dt[padj < padjCutoff, -log10(pval)])
+        if(dt[padj <= padjCutoff, .N] > 0){
+            padj_line <- min(dt[padj <= padjCutoff, -log10(pval)])
+            padj_line <- min(dt[padj <= padjCutoff, -log10(pval)])
         }
         if(!"padj_line" %in% ls() || padj_line > 10 || is.na(padj_line)){
             padj_line <- 6
@@ -611,7 +713,6 @@ plotQQ.FRASER <- function(object, type=NULL, idx=NULL, result=NULL,
                 "<br>SampleID: ", sampleID, "<br>K: ", k, "<br>N: ", n))) +
         geom_point() +
         theme_bw() +
-        theme(legend.position="none") +
         ggtitle(main) 
     
     if(isTRUE(basePlot)){
@@ -627,7 +728,8 @@ plotQQ.FRASER <- function(object, type=NULL, idx=NULL, result=NULL,
     # Set color scale for global/local
     if(isFALSE(global)){
         g <- g + scale_color_manual(values=c("black", "firebrick"),
-                name="Aberrant")
+                name="Aberrant") +
+            theme(legend.position="none")
     } else {
         g$mapping$colour <- quote(type)
         g <- g + scale_color_brewer(palette="Dark2", name="Splice metric",
@@ -713,16 +815,26 @@ plotEncDimSearch.FRASER <- function(object,
     }
     data[,noise:=as.factor(noise)]
     data[,nsubset:=as.factor(nsubset)]
+    
+    data[,isOptimalQ:= q == .SD[aroc == max(aroc), q], by="nsubset,noise"]
 
     if(plotType == "auc"){
         
         g1 <- ggplot(data, aes(q, aroc, col=nsubset, linetype=noise)) +
             geom_point() +
             geom_smooth(method="loess", formula=y~x) +
-            ggtitle("Q estimation") +
+            geom_vline(data=data[isOptimalQ == TRUE,], 
+                    mapping=aes(xintercept=q, col=nsubset, linetype=noise)) +
+            ggtitle(as.expression(bquote(bold(paste(
+                "Q estimation for ", .(ggplotLabelPsi(type)[[1]])))))) +
             xlab("Estimated q") +
             ylab("Area under the PR curve") +
             theme_bw(base_size=16)
+        
+        if(data[,uniqueN(nsubset)] == 1 & data[,uniqueN(noise)] == 1){
+            g1 <- g1 + theme(legend.position='none')
+        }
+        
         g1
     }
     else{
@@ -730,10 +842,18 @@ plotEncDimSearch.FRASER <- function(object,
         g2 <- ggplot(data, aes(q, eval, col=nsubset, linetype=noise)) +
             geom_point() +
             geom_smooth() +
-            ggtitle("Q estimation") +
+            geom_vline(data=data[isOptimalQ == TRUE,], 
+                    mapping=aes(xintercept=q, col=nsubset, linetype=noise)) +
+            ggtitle(as.expression(bquote(bold(paste(
+                "Q estimation for ", .(ggplotLabelPsi(type)[[1]])))))) +
             xlab("Estimated q") +
             ylab("Model loss") +
             theme_bw(base_size=16)
+        
+        if(data[,uniqueN(nsubset)] == 1 & data[,uniqueN(noise)] == 1){
+            g2 <- g2 + theme(legend.position='none')
+        }
+        
         g2
     }
 
@@ -1045,6 +1165,214 @@ setMethod("plotCountCorHeatmap", signature="FraserDataSet",
         plotCountCorHeatmap.FRASER)
 
 #'
+#' Plot coverage from bam files for given genomic range and sample ids
+#'
+#' @rdname plotFunctions
+#' @export
+plotBamCoverage <- function(fds, gr, sampleID,
+        control_samples=sample(
+            samples(fds[, which(samples(fds) != sampleID)]), 
+            min(3, ncol(fds)-length(sampleID))), 
+        txdb=NULL, min_junction_count=20, 
+        highlight_range=NULL, highlight_range_color="firebrick", 
+        color_annotated="gray", color_novel="goldenrod3", 
+        color_sample_interest="firebrick", color_control_samples="dodgerblue4",
+        toscale=c("exon", "gene", "none"), mar=c(2, 10, 0.1, 5),
+        curvature_splicegraph=1, curvature_coverage=1, cex=1,
+        splicegraph_labels=c("genomic_range", "id", "name", "none"),
+        splicegraph_position=c("top", "bottom")){
+    
+    require(SGSeq)
+    if(missing(fds)){
+        stop("Missing input: fds (FraserDataSet object)")
+    } else{
+        stopifnot(is(fds, "FraserDataSet"))
+    }
+    if(missing(gr)){
+        stop("Missing input gr (genomic range to plot).")
+    } else{
+        stopifnot(is(gr, "GenomicRanges"))
+    }
+    if(missing(sampleID)){
+        stop("Missing input: sample_of_interest")
+    }
+    toscale <- match.arg(toscale)
+    splicegraph_labels <- match.arg(splicegraph_labels)
+    splicegraph_position <- match.arg(splicegraph_position)
+    
+    # extract bam info for sample ids to plot
+    all_sids <- c(sampleID, control_samples)
+    si_out <- getSGSeqSI(fds, all_sids)
+    sgseq_si <- si_out[[1]]
+    fds <- si_out[[2]]
+    
+    # collapse input ranges if several 
+    gr <- range(gr)
+    gr <- keepSeqlevels(gr, as.character(seqnames(gr)))
+    if(all(strand(gr) == "*")){
+        # seems to throw an error with * strand so guessing + strand instead
+        strand(gr) <- "+"
+    }
+    
+    # convert highlight_range to GRangesList if not
+    if(!is.null(highlight_range) && !is(highlight_range, "GRangesList")){
+        stopifnot(is(highlight_range, "GRanges"))
+        highlight_range <- GRangesList(highlight_range)
+    }
+    
+    # extract splice graph
+    sgfc_pred <- analyzeFeatures(sgseq_si, which = gr, 
+                                min_junction_count=min_junction_count, psi=0)
+    
+    # overlap detected junctions with annotation
+    if(!is.null(txdb)){
+        # subset to chr of interest
+        seqlevels(txdb) <- as.character(seqnames(gr))
+        
+        # extract transcript features with SGSeq package
+        txf <- convertToTxFeatures(txdb)
+        txf <- txf[txf %over% gr]
+        
+        # restore seqlevels of txdb object
+        seqlevels(txdb) <- seqlevels0(txdb)
+        
+        # annotate splice junctions with annotation features
+        sgfc_pred <- SGSeq::annotate(sgfc_pred, txf)
+    } else{
+        # when no annotation is given, show everything in the same color
+        color_novel <- color_annotated
+    }
+    
+    # get genomic positions for first and last exon in given range
+    if(splicegraph_labels == "genomic_range"){
+        # tell plotSpliceGraph function to use custom labels
+        splicegraph_labels <- "label"
+        # create custom labels (only for first and last exon for readability)
+        mcols(sgfc_pred)$label <- ""
+        exons <- which(type(sgfc_pred) == "E" & rowRanges(sgfc_pred) %over% gr)
+        exons <- unique(c(exons[1], tail(exons, n=1)))
+        if(length(exons) == 1){
+            mcols(sgfc_pred)$label[exons] <- 
+                paste(seqnames(sgfc_pred), 
+                        paste(start(sgfc_pred), end(sgfc_pred), sep="-"),
+                        strand(sgfc_pred), sep=":")[exons]
+        }
+        if(length(exons) == 2){
+            mcols(sgfc_pred)$label[exons[1]] <- 
+                paste(seqnames(sgfc_pred), 
+                        start(sgfc_pred), 
+                        strand(sgfc_pred), sep=":")[exons[1]]
+            mcols(sgfc_pred)$label[exons[2]] <- 
+                paste(seqnames(sgfc_pred), 
+                        end(sgfc_pred), 
+                        strand(sgfc_pred), sep=":")[exons[2]]
+        }
+    }
+    
+    # plot splice graph and coverage of junctions from bam
+    nr_sa2p <- length(all_sids)
+    par(mfrow = c(nr_sa2p+1, 1), mar=mar, cex=cex) 
+    if(splicegraph_position == "top"){
+        plotSpliceGraph(rowRanges(sgfc_pred), 
+                which=gr, 
+                toscale=toscale, 
+                color=color_annotated,
+                color_novel=color_novel,
+                ypos=c(0.25, 0.1),
+                ranges=highlight_range,
+                ranges_color=highlight_range_color, 
+                ranges_ypos=c(0.01, 0.02),
+                curvature=curvature_splicegraph,
+                label=splicegraph_labels)
+    }
+    for (j in seq_along(sampleID)) {
+        plotCoverage(
+                sgfc_pred[, which(colnames(sgfc_pred) == sampleID[j])], 
+                which = gr,
+                toscale = toscale, 
+                label=sampleID[j],
+                color=color_sample_interest,
+                curvature=curvature_coverage)
+    }
+    for (j in seq_along(control_samples)) {
+        plotCoverage(
+                sgfc_pred[, which(colnames(sgfc_pred) == control_samples[j])],
+                which = gr,
+                toscale = toscale, 
+                label=control_samples[j],
+                color=color_control_samples,
+                curvature=curvature_coverage)
+    }
+    if(splicegraph_position == "bottom"){
+        plotSpliceGraph(rowRanges(sgfc_pred), 
+                which=gr, 
+                toscale=toscale, 
+                color_novel=color_novel,
+                ypos=c(0.25, 0.1),
+                ranges=highlight_range,
+                ranges_color=highlight_range_color, 
+                ranges_ypos=c(0.01, 0.02),
+                curvature=curvature_splicegraph,
+                label=splicegraph_labels)
+    }
+    
+    return(invisible(fds))
+}
+
+#'
+#' Plot coverage from bam files for given row of results table
+#'
+#' @rdname plotFunctions
+#' @export
+plotBamCoverageFromResultTable <- function(fds, result, show_full_gene=FALSE, 
+                txdb=NULL, orgDb=NULL, res_gene_col="hgncSymbol",
+                res_gene_type="SYMBOL", txdb_geneid_type="ENTREZID",
+                left_extension=1000, right_extension=1000, ...){
+    stopifnot(is(fds, "FraserDataSet"))
+    
+    if(is(result, "GenomicRanges")){
+        result <- as.data.table(result)
+    }
+    
+    stopifnot(is.data.table(result))
+    stopifnot(result[,.N] == 1)
+    
+    sid <- result[,sampleID]
+    jidx <- getIndexFromResultTable(fds, result)
+    outlier_range <- rowRanges(fds, type=result[,type])[jidx,]
+    
+    # showing either full range of the gene in which the outlier occured
+    if(show_full_gene == TRUE){
+        if(missing(txdb)){
+            stop("Missing input: txdb (for extracting gene range)")
+        }
+        if(missing(orgDb)){
+            stop("Missing input: orgDb (for mapping of IDs to txdb)")
+        }
+        txdb_geneid <- select(orgDb, 
+                    keys=as.character(result[,res_gene_col, with=FALSE]), 
+                    columns=txdb_geneid_type, 
+                    keytype=res_gene_type)[1,]
+        gr <- genes(txdb, 
+                    filter=list("gene_id"=txdb_geneid[,txdb_geneid_type]))
+    } else{
+        # or just showing a certain region around the outlier junction
+        gr <- outlier_range
+        start(gr) <- start(gr) - left_extension
+        end(gr) <- end(gr) + right_extension
+    }
+    
+    # create the coverage plot for the given outlier
+    fds <- plotBamCoverage(fds, 
+                            gr=gr, 
+                            sampleID=sid, 
+                            txdb=txdb,
+                            highlight_range=outlier_range, 
+                            ...)
+    return(invisible(fds))
+}
+
+#'
 #' helper function to get the annotation as data frame from the col data object
 #'
 #' @noRd
@@ -1100,5 +1428,44 @@ ggplotLabelPsi <- function(type, asCharacter=FALSE){
                     psi3 = "psi[3]",
                     theta = "theta"),
             FUN.VALUE=character(1))
+    }
+}
+
+#'
+#' Extract info from bam files needed for SGSeq functions to work
+#' 
+#' @noRd
+getSGSeqSI <- function(fds, sample_ids){
+    
+    require(SGSeq)
+    # check if bam info is already stored in fds for given samples
+    if("SGSeq_sampleinfo" %in% names(metadata(fds))){
+        si <- metadata(fds)[["SGSeq_sampleinfo"]]
+        si <- si[si$sample_name %in% sample_ids,]
+        if(nrow(si) != length(sample_ids)){
+            # add bam info for missing sample_ids
+            missing_ids <- sample_ids[!sample_ids %in% si$sample_name]
+            message("Extracting SGSeq sample info from BAM files for samples ",
+                    paste(missing_ids, collapse=", "), " ...")
+            df_missing <- data.frame(
+                sample_name=samples(fds)[samples(fds) %in% missing_ids],
+                file_bam=bamFile(fds)[samples(fds) %in% missing_ids])
+            si_new <- getBamInfo(df_missing, yieldSize=1e6)
+            si_new$lib_size <- 50e6 # dummy value to speed up this part
+            si <- rbind(si, si_new)
+            metadata(fds)[["SGSeq_sampleinfo"]] <- 
+                rbind(metadata(fds)[["SGSeq_sampleinfo"]], si_new)
+        }
+        return(list(si, fds))
+    } else{
+        message("Extracting SGSeq sample info from BAM files for samples ",
+                paste(sample_ids, collapse=", "), " ...")
+        df <- data.frame(
+            sample_name=samples(fds)[samples(fds) %in% sample_ids],
+            file_bam=bamFile(fds)[samples(fds) %in% sample_ids])
+        si <- getBamInfo(df, yieldSize=1e6)  
+        si$lib_size <- 50e6 # dummy value to speed up this part
+        metadata(fds)[["SGSeq_sampleinfo"]] <- si
+        return(list(si, fds))
     }
 }

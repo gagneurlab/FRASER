@@ -48,7 +48,7 @@ fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, minDeltaPsi=0.1,
     # initial loss
     lossList <- lossED(fds, lambda, byRows=TRUE)
     colnames(lossList) <- "init_pca"
-    print(paste0('Initial PCA loss: ', mean(lossList[,1])))
+    message('Initial PCA loss: ', mean(lossList[,1]))
 
     if(match.arg(latentSpace) == 'AE'){
 
