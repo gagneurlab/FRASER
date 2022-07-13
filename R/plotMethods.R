@@ -1182,7 +1182,6 @@ plotBamCoverage <- function(fds, gr, sampleID,
         splicegraph_labels=c("genomic_range", "id", "name", "none"),
         splicegraph_position=c("top", "bottom")){
     
-    require(SGSeq)
     if(missing(fds)){
         stop("Missing input: fds (FraserDataSet object)")
     } else{
@@ -1235,7 +1234,7 @@ plotBamCoverage <- function(fds, gr, sampleID,
     }
     
     # extract splice graph
-    sgfc_pred <- analyzeFeatures(sgseq_si, which = gr, 
+    sgfc_pred <- SGSeq::analyzeFeatures(sgseq_si, which = gr, 
                                 min_junction_count=min_junction_count, psi=0)
     
     # overlap detected junctions with annotation
@@ -1244,7 +1243,7 @@ plotBamCoverage <- function(fds, gr, sampleID,
         seqlevels(txdb) <- unique(as.character(seqnames(gr)))
         
         # extract transcript features with SGSeq package
-        txf <- convertToTxFeatures(txdb)
+        txf <- SGSeq::convertToTxFeatures(txdb)
         txf <- txf[txf %over% gr]
         
         # restore seqlevels of txdb object
@@ -1263,7 +1262,8 @@ plotBamCoverage <- function(fds, gr, sampleID,
         splicegraph_labels <- "label"
         # create custom labels (only for first and last exon for readability)
         mcols(sgfc_pred)$label <- ""
-        exons <- which(type(sgfc_pred) == "E" & rowRanges(sgfc_pred) %over% gr)
+        exons <- which(SGSeq::type(sgfc_pred) == "E" & 
+                        rowRanges(sgfc_pred) %over% gr)
         exons <- unique(c(exons[1], tail(exons, n=1)))
         if(length(exons) == 1){
             mcols(sgfc_pred)$label[exons] <- 
@@ -1287,7 +1287,7 @@ plotBamCoverage <- function(fds, gr, sampleID,
     nr_sa2p <- length(all_sids)
     par(mfrow = c(nr_sa2p+1, 1), mar=mar, cex=cex) 
     if(splicegraph_position == "top"){
-        plotSpliceGraph(rowRanges(sgfc_pred), 
+        SGSeq::plotSpliceGraph(rowRanges(sgfc_pred), 
                 which=gr, 
                 toscale=toscale, 
                 color=color_annotated,
@@ -1300,7 +1300,7 @@ plotBamCoverage <- function(fds, gr, sampleID,
                 label=splicegraph_labels)
     }
     for (j in seq_along(sampleID)) {
-        plotCoverage(
+        SGSeq::plotCoverage(
                 sgfc_pred[, which(colnames(sgfc_pred) == sampleID[j])], 
                 which = gr,
                 toscale = toscale, 
@@ -1309,7 +1309,7 @@ plotBamCoverage <- function(fds, gr, sampleID,
                 curvature=curvature_coverage)
     }
     for (j in seq_along(control_samples)) {
-        plotCoverage(
+        SGSeq::plotCoverage(
                 sgfc_pred[, which(colnames(sgfc_pred) == control_samples[j])],
                 which = gr,
                 toscale = toscale, 
@@ -1318,7 +1318,7 @@ plotBamCoverage <- function(fds, gr, sampleID,
                 curvature=curvature_coverage)
     }
     if(splicegraph_position == "bottom"){
-        plotSpliceGraph(rowRanges(sgfc_pred), 
+        SGSeq::plotSpliceGraph(rowRanges(sgfc_pred), 
                 which=gr, 
                 toscale=toscale, 
                 color_novel=color_novel,
@@ -1469,7 +1469,6 @@ ggplotLabelPsi <- function(type, asCharacter=FALSE){
 #' @noRd
 getSGSeqSI <- function(fds, sample_ids){
     
-    require(SGSeq)
     # check if bam info is already stored in fds for given samples
     if("SGSeq_sampleinfo" %in% names(metadata(fds))){
         si <- metadata(fds)[["SGSeq_sampleinfo"]]
@@ -1482,7 +1481,7 @@ getSGSeqSI <- function(fds, sample_ids){
             df_missing <- data.frame(
                 sample_name=samples(fds)[samples(fds) %in% missing_ids],
                 file_bam=bamFile(fds)[samples(fds) %in% missing_ids])
-            si_new <- getBamInfo(df_missing, yieldSize=1e6)
+            si_new <- SGSeq::getBamInfo(df_missing, yieldSize=1e6)
             si_new$lib_size <- 50e6 # dummy value to speed up this part
             si <- rbind(si, si_new)
             metadata(fds)[["SGSeq_sampleinfo"]] <- 
@@ -1495,7 +1494,7 @@ getSGSeqSI <- function(fds, sample_ids){
         df <- data.frame(
             sample_name=samples(fds)[samples(fds) %in% sample_ids],
             file_bam=bamFile(fds)[samples(fds) %in% sample_ids])
-        si <- getBamInfo(df, yieldSize=1e6)  
+        si <- SGSeq::getBamInfo(df, yieldSize=1e6)  
         si$lib_size <- 50e6 # dummy value to speed up this part
         metadata(fds)[["SGSeq_sampleinfo"]] <- si
         return(list(si, fds))
