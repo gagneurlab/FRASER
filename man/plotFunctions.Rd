@@ -159,7 +159,7 @@ plotBamCoverageFromResultTable(
   txdb = NULL,
   orgDb = NULL,
   res_gene_col = "hgncSymbol",
-  res_gene_type = "SYMBOL",
+  res_geneid_type = "SYMBOL",
   txdb_geneid_type = "ENTREZID",
   left_extension = 1000,
   right_extension = 1000,
@@ -344,10 +344,10 @@ and right_extension) around the outlier junction is shown.}
 \item{res_gene_col}{The column name in the given results table that 
 contains the gene annotation.}
 
-\item{res_gene_type}{The type of gene annotation in \code{res_gene_col} 
-(e.g. SYMBOL or ENTREZID etc.). This information is needed for 
-mapping between the results table and the provided annotation 
-in the txdb object.}
+\item{res_geneid_type}{The type of gene annotation in the results table in 
+\code{res_gene_col} (e.g. SYMBOL or ENTREZID etc.). This 
+information is needed for mapping between the results table and 
+the provided annotation in the txdb object.}
 
 \item{txdb_geneid_type}{The type of gene_id present in \code{genes(txdb)} 
 (e.g. ENTREZID). This information is needed for 
