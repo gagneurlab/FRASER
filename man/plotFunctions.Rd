@@ -509,7 +509,8 @@ if(require(SGSeq)){
     # plot only certain range around outlier junction
     plotBamCoverageFromResultTable(fds, result=res_dt[1,], show_full_gene=FALSE, 
         control_samples="sample3", curvature_splicegraph=0.5, txdb=txdb,
-        curvature_coverage=0.5, right_extension=5000, left_extension=5000)
+        curvature_coverage=0.5, right_extension=5000, left_extension=5000,
+        splicegraph_labels="id")
 }
 
 }
