@@ -51,7 +51,7 @@ test_that("test minAnchor", {
         "sample3", features, fds, minAnchor=25, recount=TRUE)) })
     
     expect_equivalent(c(7, 8, 0, 0, 7), ctnNS5[,1])
-    expect_equivalent(c(5, 8, 0, 0, 6), ctnNS25[,1])
+    expect_equivalent(c(5, 8, 0, 0, 7), ctnNS25[,1])
 })
 
 test_that("Test psi values", {
