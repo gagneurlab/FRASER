@@ -895,7 +895,8 @@ countNonSplicedReads <- function(sampleID, splitCountRanges, fds,
     
     # extract the counts with Rsubread
     tmp_ssc <- checkSeqLevelStyle(spliceSiteCoords, fds, sampleID, TRUE)
-    anno <- GRanges2SAF(tmp_ssc, minAnchor=minAnchor)
+    # use minAnchor+1 here to allow for small variants in the anchor region
+    anno <- GRanges2SAF(tmp_ssc, minAnchor=(minAnchor+1))
     rsubreadCounts <- featureCounts(files=bamFile, annot.ext=anno,
             minOverlap=minAnchor*2, 
             allowMultiOverlap=TRUE,
