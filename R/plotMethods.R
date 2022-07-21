@@ -1176,7 +1176,7 @@ plotBamCoverage <- function(fds, gr, sampleID,
         toscale=c("exon", "gene", "none"), mar=c(2, 10, 0.1, 5),
         curvature_splicegraph=1, curvature_coverage=1, cex=1,
         splicegraph_labels=c("genomic_range", "id", "name", "none"),
-        splicegraph_position=c("top", "bottom")){
+        splicegraph_position=c("top", "bottom"), ...){
     
     if(missing(fds)){
         stop("Missing input: fds (FraserDataSet object)")
@@ -1230,7 +1230,8 @@ plotBamCoverage <- function(fds, gr, sampleID,
     
     # extract splice graph
     sgfc_pred <- SGSeq::analyzeFeatures(sgseq_si, which = gr, 
-                                min_junction_count=min_junction_count, psi=0)
+                                min_junction_count=min_junction_count, psi=0, 
+                                ...)
     
     # overlap detected junctions with annotation
     if(!is.null(txdb)){
@@ -1386,7 +1387,8 @@ plotBamCoverageFromResultTable <- function(fds, result, show_full_gene=FALSE,
     }
     
     # if several genes overlap, only show those on same strand as outlier
-    if(as.character(strand(outlier_range)) != "*"){
+    if(as.character(strand(outlier_range)) != "*" & 
+        length(gr[strand(gr) == strand(outlier_range),]) > 0){
         gr <- gr[strand(gr) == strand(outlier_range),]
     }
     
