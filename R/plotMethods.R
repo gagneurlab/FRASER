@@ -971,8 +971,8 @@ plotFilterVariability <- function(fds, bins=200, legend.position=c(0.8, 0.8),
 
 
 plotCountCorHeatmap.FRASER <- function(object,
-                    type=c("psi5", "psi3", "theta"), logit=FALSE, topN=50000, 
-                    topJ=5000, minMedian=1, minCount=10, 
+                    type=c("psi5", "psi3", "theta", "jaccard"), logit=FALSE, 
+                    topN=50000, topJ=5000, minMedian=1, minCount=10, 
                     main=NULL, normalized=FALSE, show_rownames=FALSE,
                     show_colnames=FALSE, minDeltaPsi=0.1, annotation_col=NA,
                     annotation_row=NA, border_color=NA, nClust=5,

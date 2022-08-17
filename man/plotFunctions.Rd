@@ -107,7 +107,7 @@ plotFilterVariability(
 
 \S4method{plotCountCorHeatmap}{FraserDataSet}(
   object,
-  type = c("psi5", "psi3", "theta"),
+  type = c("psi5", "psi3", "theta", "jaccard"),
   logit = FALSE,
   topN = 50000,
   topJ = 5000,
@@ -149,7 +149,8 @@ plotBamCoverage(
   curvature_coverage = 1,
   cex = 1,
   splicegraph_labels = c("genomic_range", "id", "name", "none"),
-  splicegraph_position = c("top", "bottom")
+  splicegraph_position = c("top", "bottom"),
+  ...
 )
 
 plotBamCoverageFromResultTable(
