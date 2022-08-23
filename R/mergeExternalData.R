@@ -69,6 +69,7 @@ mergeExternalData <- function(fds, countFiles, sampleIDs, annotation=NULL){
     extCts <- lapply(reqNames, function(id){
         gr <- makeGRangesFromDataFrame(fread(countFiles[id]),
                 keep.extra.columns=TRUE)
+        seqlevelsStyle(gr) <- seqlevelsStyle(fds) #force fds style onto external counts
         if(any(!sampleIDs %in% colnames(mcols(gr)))){
             stop("Can not find provided sampleID in count data. Missing IDs: ",
                     paste(collapse=", ",
