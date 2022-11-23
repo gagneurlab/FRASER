@@ -17,6 +17,7 @@
 #'   \item plotEncDimSearch()
 #'   \item plotBamCoverage()
 #'   \item plotBamCoverageFromResultTable()
+#'   \item plotManhattan()
 #' }
 #'
 #' For a detailed description of each plot function please see the details.
@@ -209,6 +210,17 @@
 #' It plots the encoding dimension against the achieved loss (area under the
 #' precision-recall curve). From this plot the optimum should be choosen for
 #' the \code{q} in fitting process.
+#' 
+#' \code{plotManhattan}: A Manhattan plot showing the junction pvalues by 
+#' genomic position. Useful to identify if outliers cluster by genomic position.
+#' 
+#' \code{plotBamCoverage}: A sashimi plot showing the read coverage from 
+#' the underlying bam files for a given genomic range and sampleIDs. 
+#' 
+#' \code{plotBamCoverageFromResultTable}: A sashimi plot showing the read 
+#' coverage from the underlying bam files for a row in the results table. Can 
+#' either show the full range of the gene with the outlier junction or only a 
+#' certain region around the outlier. 
 #'
 #' @return If base R graphics are used nothing is returned else the plotly or
 #'             the gplot object is returned.
@@ -244,6 +256,9 @@
 #' plotExpression(fds, result=res[1])
 #' plotQQ(fds, result=res[1])
 #' plotExpectedVsObservedPsi(fds, type="psi5", res=res[1])
+#' 
+#' # create manhattan plot of pvalues by genomic position
+#' plotManhattan(fds, type="jaccard", sampleID="sample10")
 #' 
 #' # plot splice graph and coverage from bam files in a given region
 #' if(require(SGSeq)){
@@ -1411,6 +1426,69 @@ plotBamCoverageFromResultTable <- function(fds, result, show_full_gene=FALSE,
     return(invisible(fds))
 }
 
+plotManhattan.FRASER <- function(object, sampleID, 
+                                type=c("psi5", "psi3", "theta", "jaccard"), 
+                                main=paste0("sampleID = ", sampleID), 
+                                color=c("black", "darkgrey"),
+                                ...){
+    # check arguments
+    stopifnot(sampleID %in% samples(object))
+    type <- match.arg(type)
+    additional_args <- list(...)
+    padjCutoff <- 0.05
+    if("padjCutoff" %in% names(additional_args)){
+        padjCutoff <- additional_args$padjCutoff
+    }
+    deltaPsiCutoff <- 0.3
+    if("deltaPsiCutoff" %in% names(additional_args)){
+        deltaPsiCutoff <- additional_args$deltaPsiCutoff
+    }
+    
+    # extract neccessary informations
+    gr_sample <- rowRanges(object, type=type)
+    seqlevelsStyle(gr_sample) <- seqlevelsStyle(object)
+    mcols(gr_sample)[,"pvalue"] <- -log10(
+        pVals(object, type=type, level="junction")[,sampleID])
+    mcols(gr_sample)[,"padjust"] <- -log10(
+        padjVals(object, type=type, level="site")[,sampleID])
+    mcols(gr_sample)[,"delta"] <- deltaPsiValue(object, type=type)[,sampleID]
+    
+    # only one point per donor/acceptor site (relevant only for psi5 and psi3)
+    index <- FRASER:::getSiteIndex(object, type=type)
+    nonDup <- !duplicated(index)
+    gr_sample <- gr_sample[nonDup,]
+    
+    # Sort granges for plot
+    gr_sample <- sortSeqlevels(gr_sample)
+    gr_sample <- sort(gr_sample)
+    
+    # find outlier indices
+    if(!type %in% c("psi3", "psi5")){
+        outlier_idx <- which(gr_sample$padjust >= -log10(padjCutoff) &
+                                abs(gr_sample$delta) >= deltaPsiCutoff)
+    } else{
+        outlier_idx <- which(gr_sample$padjust >= -log10(padjCutoff))
+    }
+    message("highlighting ", length(gr_sample[outlier_idx,]), " outliers ...")
+    
+    # plot manhattan plot
+    plotGrandLinear.adapted(gr_sample, aes(y=pvalue), 
+                            color=color, 
+                            highlight.gr=gr_sample[outlier_idx,],
+                            highlight.overlap="equal") + 
+        labs(title=main)
+    
+}
+
+#'
+#' Plot manhattan plot of junction pvalues
+#'
+#' @rdname plotFunctions
+#' @export
+setMethod("plotManhattan", signature="FraserDataSet", 
+          plotManhattan.FRASER)
+
+
 #'
 #' helper function to get the annotation as data frame from the col data object
 #'
@@ -1506,4 +1584,133 @@ getSGSeqSI <- function(fds, sample_ids){
         metadata(fds)[["SGSeq_sampleinfo"]] <- si
         return(list(si, fds))
     }
+}
+
+#'
+#' Adapted function from ggbio package to create manhattan plot. 
+#' Adapted to allow highlighting only ranges that exactly match. Uses functions 
+#' from package biovizBase.
+#'
+#' @noRd
+plotGrandLinear.adapted <- function (obj, ..., facets, space.skip = 0.01, 
+        geom = NULL, cutoff = NULL, cutoff.color = "red", cutoff.size = 1, 
+        legend = FALSE, xlim, ylim, xlab, ylab, main, highlight.gr = NULL, 
+        highlight.name = NULL, highlight.col = "red", highlight.label = TRUE, 
+        highlight.label.size = 5, highlight.label.offset = 0.05, 
+        highlight.label.col = "black", 
+        highlight.overlap = c("any", "start", "end", "within", "equal"),
+        spaceline = FALSE){
+    if (is.null(geom)) 
+        geom <- "point"
+    args <- list(...)
+    args.aes <- parseArgsForAes(args)
+    args.non <- parseArgsForNonAes(args)
+    two.color <- c("#0080FF", "#4CC4FF")
+    .is.seq <- FALSE
+    if (!"colour" %in% names(args.aes)) {
+        if (!any(c("color", "colour") %in% names(args.non))) {
+            .color <- two.color
+            args.aes$color <- as.name("seqnames")
+            .is.seq <- TRUE
+        }
+        else {
+            if (length(args.non$color) > 1) {
+                .color <- args.non$color
+                args.aes$color <- as.name("seqnames")
+                .is.seq <- TRUE
+                args.non <- args.non[!names(args.non) %in% c("colour", 
+                                                             "color")]
+            }
+        }
+    }
+    else {
+        if (quo_name(args.aes$colour) == "seqnames") 
+            args.aes$colour <- as.name("seqnames")
+    }
+    if (!"y" %in% names(args.aes)) 
+        stop("need to provide y")
+    args.non$coord <- "genome"
+    args.non$space.skip <- space.skip
+    args.non$geom <- geom
+    args.non$object <- obj
+    aes.res <- do.call(aes, args.aes)
+    p <- do.call(autoplot, c(list(aes.res), args.non))
+    if (!legend) 
+        p <- p + theme(legend.position = "none")
+    if (!missing(ylab)) 
+        p <- p + ylab(ylab)
+    if (!is.null(cutoff)) 
+        p <- p + geom_hline(yintercept = cutoff, color = cutoff.color, 
+                            size = cutoff.size)
+    chrs <- names(seqlengths(obj))
+    if (.is.seq) {
+        N <- length(chrs)
+        cols <- rep(.color, round(N/length(.color)) + 1)[1:N]
+        names(cols) <- chrs
+        p <- p + scale_color_manual(values = cols)
+    }
+    if (!missing(facets)) {
+        args$facets <- facets
+        args.facets <- subsetArgsByFormals(args, facet_grid, 
+                                           facet_wrap)
+        facet <- .buildFacetsFromArgs(obj, args.facets)
+        p <- p + facet
+    }
+    p <- p + theme(panel.grid.minor = element_blank())
+    if (!is.null(highlight.gr)) {
+        highlight.overlap <- match.arg(highlight.overlap)
+        idx <- findOverlaps(obj, highlight.gr, type=highlight.overlap)
+        .h.pos <- lapply(split(queryHits(idx), subjectHits(idx)), 
+                         function(id) {
+                             gr <- GRanges(as.character(seqnames(p@data))[id][1], 
+                                           IRanges(start = min(start(p@data[id])), end = max(end(p@data[id]))))
+                             val <- max(as.numeric(values(p@data[id])[, quo_name(args.aes$y)]))
+                             val <- val * (1 + highlight.label.offset)
+                             values(gr)$val <- val
+                             gr
+                         })
+        .h.pos <- suppressWarnings(do.call("c", unname(.h.pos)))
+        if (length(.h.pos)) {
+            if (is.null(highlight.name)) {
+                highlight.name <- names(highlight.gr)
+            }
+            else {
+                highlight.name <- values(highlight.gr)[, highlight.name]
+            }
+            p <- p + geom_point(data = mold(p@data[queryHits(idx)]), 
+                                do.call(aes, list(x = substitute(midpoint), y = args.aes$y)), 
+                                color = highlight.col)
+            if (!is.null(highlight.name)) {
+                seqlevels(.h.pos, pruning.mode = "coarse") <- seqlevels(obj)
+                suppressWarnings(seqinfo(.h.pos) <- seqinfo(obj))
+                .trans <- transformToGenome(.h.pos, space.skip = space.skip)
+                values(.trans)$mean <- (start(.trans) + end(.trans))/2
+                values(.trans)$names <- highlight.name
+                p <- p + geom_text(data = mold(.trans), size = highlight.label.size, 
+                                   vjust = 0, color = highlight.label.col, do.call(aes, 
+                                                                                   list(x = substitute(mean), y = as.name("val"), 
+                                                                                        label = as.name("names"))))
+            }
+        }
+    }
+    if (spaceline) {
+        vline.df <- p@ggplot$data
+        vline.df <- do.call(rbind, by(vline.df, vline.df$seqnames, 
+                                      function(dd) {
+                                          data.frame(start = min(dd$start), end = max(dd$end))
+                                      }))
+        gap <- (vline.df$start[-1] + vline.df$end[-nrow(vline.df)])/2
+        p <- p + geom_vline(xintercept = gap, alpha = 0.5, color = "gray70") + 
+            theme(panel.grid = element_blank())
+    }
+    if (!missing(main)) 
+        p <- p + labs(title = main)
+    if (!missing(xlim)) 
+        p <- p + xlim(xlim)
+    if (!missing(ylim)) 
+        p <- p + ylim(ylim)
+    if (missing(xlab)) 
+        xlab <- ""
+    p <- p + ggplot2::xlab(xlab)
+    p
 }

@@ -84,7 +84,9 @@ Suggests:
     TxDb.Hsapiens.UCSC.hg19.knownGene,
     org.Hs.eg.db,
     rtracklayer,
-    SGSeq
+    SGSeq,
+    ggbio,
+    biovizBase
 LinkingTo:
     RcppArmadillo,
     Rcpp

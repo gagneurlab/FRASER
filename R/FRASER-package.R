@@ -50,6 +50,8 @@
 #' @importFrom RColorBrewer brewer.pal
 #' @importFrom cowplot theme_cowplot
 #' @importFrom ggrepel geom_text_repel
+#' @importFrom biovizBase parseArgsForAes parseArgsForNonAes 
+#' @importFrom ggbio autoplot
 #'
 #'
 ### Data handling
