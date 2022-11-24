@@ -11,9 +11,14 @@ K(fds, type = currentType(fds))
 
 N(fds, type = currentType(fds))
 
-\S4method{counts}{FraserDataSet}(object, type = NULL, side = c("ofInterest", "otherSide"))
+\S4method{counts}{FraserDataSet}(object, type = currentType(object), side = c("ofInterest", "otherSide"))
 
-\S4method{counts}{FraserDataSet,ANY}(object, type = NULL, side = c("ofInterest", "otherSide"), ...) <- value
+\S4method{counts}{FraserDataSet,ANY}(
+  object,
+  type = currentType(object),
+  side = c("ofInterest", "otherSide"),
+  ...
+) <- value
 }
 \arguments{
 \item{fds, object}{FraserDataSet}
@@ -39,8 +44,10 @@ setter for count data
 \examples{
  fds <- createTestFraserDataSet()
  
- counts(fds, type="psi5", side="ofInterest")
- counts(fds, type="psi5", side="other")
+ counts(fds, side="ofInterest")
+ counts(fds, type="jaccard", side="other")
+ head(K(fds))
+ head(K(fds, type="psi5"))
  head(K(fds, type="psi3"))
  head(N(fds, type="theta"))
  

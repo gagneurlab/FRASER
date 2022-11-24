@@ -21,14 +21,14 @@ test_that("Zscore calculation", {
     fds <- getFraser(clean = TRUE)
     
     # prepare zScore input for logit scale
-    psiVal <- (K(fds, "psi5") + pseudocount())/(N(fds, "psi5") + 2*pseudocount())
-    mu <- predictedMeans(fds, "psi5")
+    psiVal <- (K(fds, "jaccard") + pseudocount())/(N(fds, "jaccard") + 2*pseudocount())
+    mu <- predictedMeans(fds, "jaccard")
     residual <- qlogis(psiVal) - qlogis(mu)
     
     # compute zscore
     zscores <- (residual - rowMeans(residual)) / rowSds(residual)
     
-    expect_equal(zscores, zScores(fds, "psi5"))
+    expect_equal(zscores, zScores(fds, "jaccard"))
 })
 
 test_that("Gene p value calculation with NAs", {
@@ -39,44 +39,44 @@ test_that("Gene p value calculation with NAs", {
     mcols(fds, type="ss")$hgnc_symbol <- rep(c("geneA", "geneB", "geneC"), 
                                             times=c(4, 6, 4))
     
-    # simulate junction with bad rho fit
-    rho_5 <- rho(fds, type="psi5")
-    rho_5[c(1, 4:7)] <- 0.5
-    rho(fds, type="psi5") <- rho_5
-    
-    rho_3 <- rho(fds, type="psi3")
-    rho_3 <- rep(0.5, length(rho_3))
-    rho(fds, type="psi3") <- rho_3
+    # simulate junction with bad rho fit to create partly NAs
+    rho <- rho(fds, type="jaccard")
+    rho[c(1, 4:7)] <- 0.5
+    rho(fds, type="jaccard") <- rho
   
     # calc p values
-    fds <- calculatePadjValues(fds, type="psi5", rhoCutoff=0.1)
-    fds <- calculatePadjValues(fds, type="psi3", rhoCutoff=0.1)
+    fds <- calculatePadjValues(fds, type="jaccard", rhoCutoff=0.1)
     
     # check dimension of junction-, site- and gene-level pval matrices
-    expect_equal(nrow(pVals(fds, type="psi5", level="junction", 
+    expect_equal(nrow(pVals(fds, type="jaccard", level="junction")), nrow(fds))
+    expect_equal(nrow(pVals(fds, type="jaccard", level="site", 
                             filters=list(rho=0.1))), nrow(fds))
-    expect_equal(nrow(pVals(fds, type="psi5", level="site", 
-                            filters=list(rho=0.1))), nrow(fds))
-    expect_equal(nrow(pVals(fds, type="psi5", level="gene", 
+    expect_equal(nrow(pVals(fds, type="jaccard", level="gene", 
                             filters=list(rho=0.1))), 3)
     
-    # check psi5 pvals are partly NAs
-    expect_true(all(is.na(pVals(fds, type="psi5", level="site", 
-                                filters=list(rho=0.1))[4:7,])))
-    expect_true(all(is.na(pVals(fds, type="psi5", level="gene", 
-                                filters=list(rho=0.1))["geneB",])))
-    expect_true(all(is.na(padjVals(fds, type="psi5", level="site", 
-                                filters=list(rho=0.1))[4:7,])))
-    expect_true(all(is.na(padjVals(fds, type="psi5", level="gene", 
-                                filters=list(rho=0.1))["geneB",])))
+    # check jaccard pvals are partly NAs
+    expect_true(all(is.na(pVals(fds, type="jaccard", level="site", 
+                            filters=list(rho=0.1))[4:7,])))
+    expect_true(all(is.na(pVals(fds, type="jaccard", level="gene", 
+                            filters=list(rho=0.1))["geneB",])))
+    expect_true(all(is.na(padjVals(fds, type="jaccard", level="site", 
+                            filters=list(rho=0.1))[4:7,])))
+    expect_true(all(is.na(padjVals(fds, type="jaccard", level="gene", 
+                            filters=list(rho=0.1))["geneB",])))
     
-    # check psi3 pvals are all NAs
-    expect_true(all(is.na(pVals(fds, type="psi3", level="site", 
+    # simulate junction with bad rho fit to create partly NAs
+    rho <- rho(fds, type="jaccard")
+    rho <- rep(0.5, length(rho))
+    rho(fds, type="jaccard") <- rho
+    fds <- calculatePadjValues(fds, type="jaccard", rhoCutoff=0.1)
+    
+    # check jaccard pvals are all NAs
+    expect_true(all(is.na(pVals(fds, type="jaccard", level="site", 
                                 filters=list(rho=0.1)))))
-    expect_true(all(is.na(pVals(fds, type="psi3", level="gene", 
+    expect_true(all(is.na(pVals(fds, type="jaccard", level="gene", 
                                 filters=list(rho=0.1)))))
-    expect_true(all(is.na(padjVals(fds, type="psi3", level="site", 
+    expect_true(all(is.na(padjVals(fds, type="jaccard", level="site", 
                                 filters=list(rho=0.1)))))
-    expect_true(all(is.na(padjVals(fds, type="psi3", level="gene", 
+    expect_true(all(is.na(padjVals(fds, type="jaccard", level="gene", 
                                 filters=list(rho=0.1)))))
 })

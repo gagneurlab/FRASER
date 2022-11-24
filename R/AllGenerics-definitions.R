@@ -152,3 +152,8 @@ setGeneric("nonSplicedReads<-", signature = "object",
 setGeneric("plotManhattan", function(object, ...) 
     standardGeneric("plotManhattan"))
 
+#' @rdname filtering
+#' @export
+setGeneric("filterVariability", function(object, ...)
+    standardGeneric("filterVariability"))
+

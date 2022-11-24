@@ -10,12 +10,12 @@
   sampleIDs = samples(object),
   padjCutoff = 0.05,
   zScoreCutoff = NA,
-  deltaPsiCutoff = 0.3,
-  rhoCutoff = 0.1,
+  deltaPsiCutoff = 0.1,
+  rhoCutoff = 1,
   aggregate = FALSE,
   collapse = FALSE,
   minCount = 5,
-  psiType = c("psi3", "psi5", "theta", "jaccard"),
+  psiType = currentType(object),
   geneColumn = "hgnc_symbol",
   additionalColumns = NULL,
   BPPARAM = bpparam()
@@ -25,10 +25,10 @@
   object,
   type = currentType(object),
   padjCutoff = 0.05,
-  deltaPsiCutoff = 0.3,
+  deltaPsiCutoff = 0.1,
   zScoreCutoff = NA,
   minCount = 5,
-  rhoCutoff = 0.1,
+  rhoCutoff = 1,
   by = c("none", "sample", "feature"),
   aggregate = FALSE,
   geneColumn = "hgnc_symbol",
@@ -117,13 +117,13 @@ results(fds, padjCutoff=NA, zScoreCutoff=1, deltaPsiCutoff=0.1,
 
 # get aberrant events per sample: on the example data, nothing is aberrant
 # based on the adjusted p-value
-aberrant(fds, type="psi5", by="sample")
+aberrant(fds, type="jaccard", by="sample")
 
 # get aberrant events per gene (first annotate gene symbols)
 fds <- annotateRangesWithTxDb(fds)
-aberrant(fds, type="psi5", by="feature", zScoreCutoff=2, padjCutoff=NA,
+aberrant(fds, type="jaccard", by="feature", zScoreCutoff=2, padjCutoff=NA,
         aggregate=TRUE)
         
 # find aberrant junctions/splice sites
-aberrant(fds, type="psi5")
+aberrant(fds, type="jaccard")
 }

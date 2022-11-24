@@ -162,7 +162,7 @@ adjust_FWER_PValues_per_idx <- function(i, pvals, index, rho, rhoCutoff,
 }
 
 getFWERpvals_bySample <- function(pvals, index, rho, method="holm", 
-                                rhoCutoff=0.1, BPPARAM=bpparam()){
+                                rhoCutoff, BPPARAM=bpparam()){
     fwer_pval <- bplapply(seq_col(pvals), adjust_FWER_PValues,
                     pvals=pvals, index, BPPARAM=BPPARAM,
                     method=method, rho=rho, rhoCutoff=rhoCutoff)
@@ -171,7 +171,7 @@ getFWERpvals_bySample <- function(pvals, index, rho, method="holm",
 }
 
 getFWERpvals_byIdx <- function(pvals, index, rho, method="holm", 
-                                rhoCutoff=0.1, BPPARAM=bpparam()){
+                                rhoCutoff, BPPARAM=bpparam()){
     unique_idx <- unique(index)
     fwer_pval <- bplapply(unique_idx, adjust_FWER_PValues_per_idx,
                     pvals=pvals, index, BPPARAM=BPPARAM,
@@ -230,7 +230,7 @@ singlePvalueBinomial <- function(idx, k, n, mu){
 #' 
 #' @export
 calculatePadjValues <- function(fds, type=currentType(fds), method="BY",
-                                rhoCutoff=0.1, geneLevel=TRUE, 
+                                rhoCutoff=1, geneLevel=TRUE, 
                                 geneColumn="hgnc_symbol", BPPARAM=bpparam()){
     currentType(fds) <- type
     index <- getSiteIndex(fds, type=type)
@@ -263,8 +263,8 @@ calculatePadjValues <- function(fds, type=currentType(fds), method="BY",
                 withDimnames=FALSE) <- as.matrix(padjDT)
         
         # gene-level pval correction and FDR
-        if(geneColumn %in% colnames(mcols(fds, type=type)) && 
-                isTRUE(geneLevel)){
+        if(isTRUE(geneLevel) && 
+                geneColumn %in% colnames(mcols(fds, type=type))){
             message(date(), ":  calculating gene-level pvalues ...")
             gene_pvals <- getPvalsPerGene(fds=fds, type=type, pvals=fwer_pvals,
                                             method="holm", FDRmethod=method, 
@@ -274,7 +274,7 @@ calculatePadjValues <- function(fds, type=currentType(fds), method="BY",
                     withDimnames=FALSE) <- gene_pvals[["pvals"]]
             padjVals(fds, dist=i, level="gene", filters=list(rho=rhoCutoff),
                     withDimnames=FALSE) <- gene_pvals[["padj"]]
-        } else{
+        } else if(isTRUE(geneLevel)){
             warning("Gene-level pvalues could not be calculated as column ",
                     geneColumn, "\nwas not found for the given fds object. ", 
                     "Please annotate gene symbols \nfirst using the ", 
@@ -285,7 +285,7 @@ calculatePadjValues <- function(fds, type=currentType(fds), method="BY",
     return(fds)
 }
 
-getPvalsPerGene <- function(fds, type, 
+getPvalsPerGene <- function(fds, type=currentType(fds), 
                     pvals=pVals(fds, type=type, level="site"),
                     sampleID=NULL, method="holm", FDRmethod="BY", 
                     geneColumn="hgnc_symbol", BPPARAM=bpparam()){
@@ -331,7 +331,7 @@ getPvalsPerGene <- function(fds, type,
 
 }
 
-getSiteIndex <- function(fds, type){
+getSiteIndex <- function(fds, type=currentType(fds)){
     if(type == "theta"){
         return(mcols(fds, type=type)[['spliceSiteID']])
     }
@@ -354,7 +354,8 @@ getSiteIndex <- function(fds, type){
     ans[selectionMat]
 }
 
-getGeneIDs <- function(fds, type, unique=TRUE, geneColumn="hgnc_symbol"){
+getGeneIDs <- function(fds, type=currentType(fds), unique=TRUE, 
+                        geneColumn="hgnc_symbol"){
     geneIDs <- mcols(fds, type=type)[[geneColumn]]
     if(isTRUE(unique)){
         geneIDs <- unique(unlist(lapply(geneIDs, FUN=function(g){
@@ -378,5 +379,82 @@ genePvalsByGeneID <- function(dt, samples, geneIDs, method, BPPARAM){
     pvalsPerGene <- do.call(rbind, pvalsPerGene)
     rownames(pvalsPerGene) <- geneIDs
     return(pvalsPerGene)
+}
+
+#' @describeIn FRASER This function does FDR correction only for all junctions 
+#' in a certain subset of genes which can differ per sample. Requires gene 
+#' symbols to have been annotated to junctions. As with the full FDR 
+#' correction across all junctions, first the previously calculated 
+#' junction-level p values are adjusted with Holm's method per donor or 
+#' acceptor site, respectively. Then, gene-level p values are computed.
+#' 
+#' @param genesToTest A named list with the subset of genes to test per sample.
+#'     The names must correspond to the sampleIDs in the given fds object.
+#' @param subsetName The name under which the resulting FDR corrected pvalues 
+#'     will be stored in metadata(fds).
+#' 
+#' @export
+calculatePadjValuesOnSubset <- function(fds, genesToTest, type=currentType(fds), 
+                                subsetName="FDR_subset", method="BY", 
+                                geneColumn="hgnc_symbol", BPPARAM=bpparam()){
+    
+    # check input
+    currentType(fds) <- type
+    stopifnot(!is.null(genesToTest))
+    stopifnot(is.list(genesToTest))
+    stopifnot(!is.null(names(genesToTest)))
+    if(!all(names(genesToTest) %in% samples(fds))){
+        stop("names(genesToTest) need to be sampleIDs in the given fds object.")
+    }
+    if(!all(samples(fds) %in% names(genesToTest))){
+        stop("All sampleIDs of the given fds object need to be in ",
+            "names(geneToTest).")
+    }
+    
+    # check if genes have been annotated
+    if(!geneColumn %in% colnames(mcols(fds, type=type))){    
+        stop(paste0("'", geneColumn, "' is not found in mcols(fds). ", 
+            "Please annotate gene symbols \nfirst using the ", 
+            "annotateRanges or annotateRangesWithTxDb function."))
+    }
+    
+    # compute FDR on the given subsets of genes
+    message(date(), ": starting FDR calculation on subset of genes...")
+    FDR_subset <- rbindlist(bpmapply(names(genesToTest), genesToTest, 
+            FUN=function(sample_id, genes_to_test_sample){
+        
+        # message(date(), ": FDR subset calculation for sample = ", sample_id)
+        # get idx of junctions corresponding to genes with var
+        jidx <- unlist(lapply(genes_to_test_sample, function(gene){
+            idx <- which(grepl(gene, mcols(fds, type="j")[, geneColumn]))
+            names(idx) <- rep(gene, length(idx))
+            return(idx)
+        }))
+        jidx <- sort(jidx[!duplicated(jidx)])
+        
+        # retrieve pvalues of junctions to test
+        p <- pVals(fds, type=type, level="junction")[jidx, sample_id]
+        
+        # FDR correction
+        pa <- p.adjust(p, method=method)
+        
+        # gene level pvals
+        dt <- data.table(sampleID=sample_id, pval=p, FDR_subset=pa, 
+                        gene=names(jidx), jidx=jidx)
+        dt[, pval_gene:=min(p.adjust(pval, method="holm")), by="gene"]
+        
+        # gene level FDR
+        dt2 <- dt[, unique(pval_gene), by="gene"]
+        dt2[, FDR_subset_gene := p.adjust(V1, method=method)]
+        dt <- merge(dt, dt2[, .(gene, FDR_subset_gene)], by="gene", all.x=TRUE)
+        
+        # return new FDR
+        return(dt)
+    }, SIMPLIFY=FALSE, BPPARAM=BPPARAM))
+    message(date(), ": finished FDR calculation on subset of genes.")
+    
+    # add FDR subset info to fds object and return
+    metadata(fds)[[subsetName]] <- FDR_subset
+    return(fds)
 }
 

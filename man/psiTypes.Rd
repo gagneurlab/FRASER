@@ -3,18 +3,18 @@
 \docType{data}
 \name{psiTypes}
 \alias{psiTypes}
-\title{Available psi types}
+\title{Splice metrics that are run by default}
 \format{
-An object of class \code{character} of length 4.
+An object of class \code{character} of length 1.
 }
 \usage{
 psiTypes
 }
 \description{
-Available psi types
+Splice metrics that are run by default
 }
 \examples{
-  # to show available psi types:
+  # to show splice metrics selected to be fitted:
   psiTypes
 
 }

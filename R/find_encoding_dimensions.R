@@ -113,17 +113,18 @@ findEncodingDim <- function(i, fds, type, params, implementation,
 #' @examples
 #'   # generate data
 #'   fds <- makeSimulatedFraserDataSet(m=15, j=20)
+#'   fds <- calculatePSIValues(fds)
 #'   
 #'   # run hyperparameter optimization
-#'   fds <- optimHyperParams(fds, type="psi5", q_param=c(2, 5))
+#'   fds <- optimHyperParams(fds, type="jaccard", q_param=c(2, 5))
 #'   
 #'   # get estimated optimal dimension of the latent space
-#'   bestQ(fds, type="psi5")
-#'   hyperParams(fds, type="psi5")
+#'   bestQ(fds, type="jaccard")
+#'   hyperParams(fds, type="jaccard")
 #'   
 #' @export
-optimHyperParams <- function(fds, type, implementation="PCA",
-                    q_param=seq(2, min(40, ncol(fds)), by=3),
+optimHyperParams <- function(fds, type=currentType(fds), implementation="PCA",
+                    q_param=getEncDimRange(fds),
                     noise_param=0, minDeltaPsi=0.1,
                     iterations=5, setSubset=50000, injectFreq=1e-2,
                     BPPARAM=bpparam(), internalThreads=1, plot=TRUE, 
@@ -190,7 +191,7 @@ optimHyperParams <- function(fds, type, implementation="PCA",
 
         # remove unneeded blocks to save memory
         a2rm <- paste(sep="_", c("originalCounts", "originalOtherCounts"),
-                rep(psiTypes, 2))
+                rep(psiTypes_avail, 2))
         for(a in a2rm){
             assay(fds_copy, a) <- NULL
         }
@@ -229,3 +230,19 @@ optimHyperParams <- function(fds, type, implementation="PCA",
     return(fds)
 }
 
+#' Get default range of latent space dimensions to test during hyper param opt
+#' @noRd
+getEncDimRange <- function(fds, mp=3){
+    # Get range for latent space dimension
+    a <- 2 
+    b <- min(ncol(fds), nrow(fds)) / mp   # N/mp
+    
+    maxSteps <- 12
+    if(mp < 6){
+        maxSteps <- 15
+    }
+    
+    Nsteps <- min(maxSteps, b)
+    pars_q <- round(exp(seq(log(a),log(b),length.out = Nsteps))) %>% unique
+    return(pars_q)
+}

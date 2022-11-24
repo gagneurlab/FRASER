@@ -31,6 +31,7 @@
 #'          rbind Assays
 #' @importFrom GenomicRanges findOverlaps granges GRanges GRangesList
 #'          makeGRangesFromDataFrame invertStrand start end start<- end<-
+#'          seqinfo<-
 #' @importFrom IRanges subsetByOverlaps from to IRanges ranges nearest distance
 #'          %over%
 #' @importFrom Rsamtools ScanBamParam scanBamHeader bamMapqFilter
@@ -50,9 +51,6 @@
 #' @importFrom RColorBrewer brewer.pal
 #' @importFrom cowplot theme_cowplot
 #' @importFrom ggrepel geom_text_repel
-#' @importFrom biovizBase parseArgsForAes parseArgsForNonAes 
-#' @importFrom ggbio autoplot
-#'
 #'
 ### Data handling
 #'
@@ -85,10 +83,12 @@
 #'
 #' @importFrom S4Vectors DataFrame metadata Rle SimpleList mcols mcols<-
 #'          start end metadata metadata<- subjectHits queryHits elementMetadata
+#'          values values<-
 #' @importFrom grDevices colorRampPalette
 #' @importFrom GenomeInfoDb keepStandardChromosomes seqlevels<- seqlevels
 #'          seqlengths seqlengths<- seqlevelsStyle<- seqlevelsStyle seqnames 
-#'          seqinfo standardChromosomes dropSeqlevels keepSeqlevels
+#'          seqinfo standardChromosomes dropSeqlevels keepSeqlevels 
+#'          sortSeqlevels
 #' @importFrom DelayedArray rowMaxs rowMeans path<- cbind plogis qlogis 
 #'          DelayedArray
 #' @importFrom DelayedMatrixStats colSds rowMedians rowSds colMeans2 rowMeans2
@@ -103,9 +103,10 @@
 #'          scale_y_log10 scale_color_gradientn labs theme_bw theme
 #'          scale_color_brewer scale_color_discrete scale_linetype_manual 
 #'          annotate geom_histogram scale_fill_manual xlim scale_colour_manual
-#'          element_blank annotation_logticks ylim
+#'          element_blank annotation_logticks ylim quo_name facet_grid 
+#'          facet_wrap geom_text
 #'
-#' @importFrom tibble as_tibble
+#' @importFrom tibble as_tibble %>%
 #'
 #' @useDynLib FRASER
 #'
@@ -135,5 +136,8 @@ globalVariables(c(".", "J", ".N", ".asDataFrame", "End", "first_feature",
         "genes_acceptor", "gene_pval", "gene_padj", "dt_idx", 
         "blacklist", "spliceType", "causesFrameshift", "annotatedJunction", 
         "distNearestGene", "UTR_overlap", "meanCount", "medianCount", 
-        "spliceType2"),
+        "spliceType2", "nonsplitProportion", "nonsplitCounts", 
+        "nonsplitProportion_99quantile", "startID", "endID", "j_idx", 
+        "start_idx", "end_idx", "pval_gene", "FDR_subset_gene", "gene_id", 
+        "pvalue"),
         package="FRASER")

@@ -66,6 +66,9 @@ NULL
 #' @rdname fds-methods
 #' @export
 setMethod("samples", "FraserDataSet", function(object) {
+    if(!is.null(colnames(object))){
+        return(colnames(object))
+    }
     return(as.character(colData(object)[,"sampleID"]))
 })
 
@@ -74,6 +77,7 @@ setMethod("samples", "FraserDataSet", function(object) {
 setReplaceMethod("samples", "FraserDataSet", function(object, value) {
     colData(object)[,"sampleID"] <- as.character(value)
     rownames(colData(object)) <- colData(object)[,"sampleID"]
+    colnames(object) <- as.character(value)
     validObject(object)
     return(object)
 })
@@ -515,12 +519,14 @@ setReplaceMethod("rowRanges", "FraserDataSet", FRASER.rowRanges.replace)
 #' @examples 
 #'  fds <- createTestFraserDataSet()
 #'  
-#'  counts(fds, type="psi5", side="ofInterest")
-#'  counts(fds, type="psi5", side="other")
+#'  counts(fds, side="ofInterest")
+#'  counts(fds, type="jaccard", side="other")
+#'  head(K(fds))
+#'  head(K(fds, type="psi5"))
 #'  head(K(fds, type="psi3"))
 #'  head(N(fds, type="theta"))
 #'  
-setMethod("counts", "FraserDataSet", function(object, type=NULL,
+setMethod("counts", "FraserDataSet", function(object, type=currentType(object),
             side=c("ofInterest", "otherSide")){
     side <- match.arg(side)
     if(side=="ofInterest"){
@@ -552,7 +558,8 @@ setMethod("counts", "FraserDataSet", function(object, type=NULL,
 #' setter for count data
 #' 
 #' @rdname counts
-setReplaceMethod("counts", "FraserDataSet", function(object, type=NULL,
+setReplaceMethod("counts", "FraserDataSet", function(object, 
+                    type=currentType(object),
                     side=c("ofInterest", "otherSide"), ..., value){
     side <- match.arg(side)
 
@@ -904,22 +911,21 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff, zscoreCutoff,
 #'
 #' # get aberrant events per sample: on the example data, nothing is aberrant
 #' # based on the adjusted p-value
-#' aberrant(fds, type="psi5", by="sample")
+#' aberrant(fds, type="jaccard", by="sample")
 #' 
 #' # get aberrant events per gene (first annotate gene symbols)
 #' fds <- annotateRangesWithTxDb(fds)
-#' aberrant(fds, type="psi5", by="feature", zScoreCutoff=2, padjCutoff=NA,
+#' aberrant(fds, type="jaccard", by="feature", zScoreCutoff=2, padjCutoff=NA,
 #'         aggregate=TRUE)
 #'         
 #' # find aberrant junctions/splice sites
-#' aberrant(fds, type="psi5")
+#' aberrant(fds, type="jaccard")
 #' @export
 setMethod("results", "FraserDataSet", function(object, 
                     sampleIDs=samples(object), padjCutoff=0.05,
-                    zScoreCutoff=NA, deltaPsiCutoff=0.3,
-                    rhoCutoff=0.1, aggregate=FALSE, collapse=FALSE,
-                    minCount=5, psiType=c("psi3", "psi5", "theta", 
-                                            "jaccard"),
+                    zScoreCutoff=NA, deltaPsiCutoff=0.1,
+                    rhoCutoff=1, aggregate=FALSE, collapse=FALSE,
+                    minCount=5, psiType=currentType(object),
                     geneColumn="hgnc_symbol",
                     additionalColumns=NULL, BPPARAM=bpparam()){
     FRASER.results(object=object, sampleIDs=sampleIDs, fdrCutoff=padjCutoff,
@@ -931,8 +937,8 @@ setMethod("results", "FraserDataSet", function(object,
 })
 
 aberrant.FRASER <- function(object, type=currentType(object), 
-                                padjCutoff=0.05, deltaPsiCutoff=0.3, 
-                                zScoreCutoff=NA, minCount=5, rhoCutoff=0.1,
+                                padjCutoff=0.05, deltaPsiCutoff=0.1, 
+                                zScoreCutoff=NA, minCount=5, rhoCutoff=1,
                                 by=c("none", "sample", "feature"), 
                                 aggregate=FALSE, geneColumn="hgnc_symbol", ...){
     

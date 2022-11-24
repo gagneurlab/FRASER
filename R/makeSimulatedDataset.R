@@ -435,9 +435,10 @@ makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=1000, q=10,
 #' @examples 
 #' # A generic dataset
 #' fds <- makeSimulatedFraserDataSet()
+#' fds <- calculatePSIValues(fds)
 #' fds <- injectOutliers(fds, minDpsi=0.2, freq=1E-3)
 #' @export
-injectOutliers <- function(fds, type=c("psi5", "psi3", "theta", "jaccard"),
+injectOutliers <- function(fds, type=currentType(fds),
                     freq=1E-3, minDpsi=0.2, minCoverage=2,
                     deltaDistr="uniformDistr", verbose=FALSE,
                     method=c('samplePSI', 'meanPSI', 'simulatedPSI'),

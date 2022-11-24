@@ -67,13 +67,13 @@ fds <- createTestFraserDataSet()
 # either using biomart with GRCh38
 try({
   fds <- annotateRanges(fds, GRCh=38)
-  rowRanges(fds, type="psi5")[,c("hgnc_symbol")]
+  rowRanges(fds, type="j")[,c("hgnc_symbol")]
 })
 
 # either using biomart with GRCh37
 try({
   fds <- annotateRanges(fds, featureName="hgnc_symbol_37", GRCh=37)
-  rowRanges(fds, type="psi5")[,c("hgnc_symbol_37")]
+  rowRanges(fds, type="j")[,c("hgnc_symbol_37")]
 })
  
 # or with a provided TxDb object
@@ -82,6 +82,6 @@ txdb <- TxDb.Hsapiens.UCSC.hg19.knownGene
 require(org.Hs.eg.db)
 orgDb <- org.Hs.eg.db
 fds <- annotateRangesWithTxDb(fds, txdb=txdb, orgDb=orgDb)
-rowRanges(fds, type="psi5")[,"hgnc_symbol"]
+rowRanges(fds, type="j")[,"hgnc_symbol"]
 
 }

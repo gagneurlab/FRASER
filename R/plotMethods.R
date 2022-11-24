@@ -162,6 +162,7 @@
 #'             (b,l,t,r).
 #' @param cex For controlling the size of text and numbers in 
 #'             \code{plotBamCoverage}.
+#' @param color_chr Interchanging colors by chromosome for \code{plotManhattan}.
 #'
 #### Additional ... parameter
 #' @param ... Additional parameters passed to plot() or plot_ly() if not stated
@@ -229,33 +230,34 @@
 #' @rdname plotFunctions
 #' @aliases plotFunctions plotAberrantPerSample plotVolcano plotQQ 
 #'             plotExpression plotCountCorHeatmap plotFilterExpression 
-#'             plotExpectedVsObservedPsi plotEncDimSearch
+#'             plotExpectedVsObservedPsi plotEncDimSearch plotManhattan
+#'             plotBamCoverage plotBamCoverageFromResultTable
 #' @examples
 #' # create full FRASER object 
 #' fds <- makeSimulatedFraserDataSet(m=40, j=200)
 #' fds <- calculatePSIValues(fds)
 #' fds <- filterExpressionAndVariability(fds, filter=FALSE)
-#' # this step should be done for all splicing metrics and more dimensions
-#' fds <- optimHyperParams(fds, "psi5", q_param=c(2,5,10,25))
+#' # this step should be done for more dimensions in practice
+#' fds <- optimHyperParams(fds, "jaccard", q_param=c(2,5,10,25))
 #' fds <- FRASER(fds)
 #' 
 #' # QC plotting
 #' plotFilterExpression(fds)
 #' plotFilterVariability(fds)
-#' plotCountCorHeatmap(fds, "theta")
-#' plotCountCorHeatmap(fds, "theta", normalized=TRUE)
-#' plotEncDimSearch(fds, type="psi5")
+#' plotCountCorHeatmap(fds, "jaccard")
+#' plotCountCorHeatmap(fds, "jaccard", normalized=TRUE)
+#' plotEncDimSearch(fds, type="jaccard")
 #' 
 #' # extract results 
 #' plotAberrantPerSample(fds, aggregate=FALSE)
-#' plotVolcano(fds, "sample1", "psi5")
+#' plotVolcano(fds, "sample1", "jaccard")
 #' 
 #' # dive into gene/sample level results
 #' res <- results(fds)
 #' res
 #' plotExpression(fds, result=res[1])
 #' plotQQ(fds, result=res[1])
-#' plotExpectedVsObservedPsi(fds, type="psi5", res=res[1])
+#' plotExpectedVsObservedPsi(fds, res=res[1])
 #' 
 #' # create manhattan plot of pvalues by genomic position
 #' plotManhattan(fds, type="jaccard", sampleID="sample10")
@@ -297,9 +299,9 @@ NULL
 
 
 plotVolcano.FRASER <- function(object, sampleID, 
-                    type=c("psi3", "psi5", "theta", "jaccard"), basePlot=TRUE, 
+                    type=currentType(object), basePlot=TRUE, 
                     aggregate=FALSE, main=NULL, label=NULL,
-                    deltaPsiCutoff=0.3, padjCutoff=0.1, ...){
+                    deltaPsiCutoff=0.1, padjCutoff=0.1, ...){
     
     type <- match.arg(type)
 
@@ -398,8 +400,8 @@ setMethod("plotVolcano", signature="FraserDataSet", plotVolcano.FRASER)
 
 
 plotAberrantPerSample.FRASER <- function(object, main, 
-                    type=c("psi3", "psi5", "theta", "jaccard"),
-                    padjCutoff=0.1, zScoreCutoff=NA, deltaPsiCutoff=0.3,
+                    type=psiTypes,
+                    padjCutoff=0.1, zScoreCutoff=NA, deltaPsiCutoff=0.1,
                     aggregate=TRUE, BPPARAM=bpparam(), ...){
 
     type <- match.arg(type, several.ok=TRUE)
@@ -461,7 +463,7 @@ setMethod("plotAberrantPerSample", signature="FraserDataSet",
 #'
 #' @rdname plotFunctions
 #' @export
-plotExpression <- function(fds, type=c("psi5", "psi3", "theta", "jaccard"),
+plotExpression <- function(fds, type=currentType(fds),
                     idx=NULL, result=NULL, colGroup=NULL, 
                     basePlot=TRUE, main=NULL, label="aberrant", ...){
     if(!is.null(result)){
@@ -553,7 +555,7 @@ plotExpression <- function(fds, type=c("psi5", "psi3", "theta", "jaccard"),
 #'
 #' @rdname plotFunctions
 #' @export
-plotExpectedVsObservedPsi <- function(fds, type=c("psi5", "psi3", "theta", "jaccard"),
+plotExpectedVsObservedPsi <- function(fds, type=currentType(fds),
                     idx=NULL, result=NULL, colGroup=NULL, main=NULL,
                     basePlot=TRUE, label="aberrant", ...){
     type <- match.arg(type)
@@ -818,7 +820,7 @@ setMethod("plotQQ", signature="FraserDataSet", plotQQ.FRASER)
 
 
 plotEncDimSearch.FRASER <- function(object, 
-                    type=c("psi3", "psi5", "theta", "jaccard"), 
+                    type=currentType(object), 
                     plotType=c("auc", "loss")){
     type <- match.arg(type)
     plotType <- match.arg(plotType)
@@ -986,7 +988,7 @@ plotFilterVariability <- function(fds, bins=200, legend.position=c(0.8, 0.8),
 
 
 plotCountCorHeatmap.FRASER <- function(object,
-                    type=c("psi5", "psi3", "theta", "jaccard"), logit=FALSE, 
+                    type=currentType(object), logit=FALSE, 
                     topN=50000, topJ=5000, minMedian=1, minCount=10, 
                     main=NULL, normalized=FALSE, show_rownames=FALSE,
                     show_colnames=FALSE, minDeltaPsi=0.1, annotation_col=NA,
@@ -1427,11 +1429,12 @@ plotBamCoverageFromResultTable <- function(fds, result, show_full_gene=FALSE,
 }
 
 plotManhattan.FRASER <- function(object, sampleID, 
-                                type=c("psi5", "psi3", "theta", "jaccard"), 
+                                type=currentType(object), 
                                 main=paste0("sampleID = ", sampleID), 
-                                color=c("black", "darkgrey"),
+                                color_chr=c("black", "darkgrey"),
                                 ...){
     # check arguments
+    stopifnot(is(object, "FraserDataSet"))
     stopifnot(sampleID %in% samples(object))
     type <- match.arg(type)
     additional_args <- list(...)
@@ -1473,7 +1476,7 @@ plotManhattan.FRASER <- function(object, sampleID,
     
     # plot manhattan plot
     plotGrandLinear.adapted(gr_sample, aes(y=pvalue), 
-                            color=color, 
+                            color=color_chr, 
                             highlight.gr=gr_sample[outlier_idx,],
                             highlight.overlap="equal") + 
         labs(title=main)
@@ -1603,8 +1606,8 @@ plotGrandLinear.adapted <- function (obj, ..., facets, space.skip = 0.01,
     if (is.null(geom)) 
         geom <- "point"
     args <- list(...)
-    args.aes <- parseArgsForAes(args)
-    args.non <- parseArgsForNonAes(args)
+    args.aes <- biovizBase::parseArgsForAes(args)
+    args.non <- biovizBase::parseArgsForNonAes(args)
     two.color <- c("#0080FF", "#4CC4FF")
     .is.seq <- FALSE
     if (!"colour" %in% names(args.aes)) {
@@ -1634,7 +1637,7 @@ plotGrandLinear.adapted <- function (obj, ..., facets, space.skip = 0.01,
     args.non$geom <- geom
     args.non$object <- obj
     aes.res <- do.call(aes, args.aes)
-    p <- do.call(autoplot, c(list(aes.res), args.non))
+    p <- do.call(ggbio::autoplot, c(list(aes.res), args.non))
     if (!legend) 
         p <- p + theme(legend.position = "none")
     if (!missing(ylab)) 

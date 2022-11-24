@@ -11,14 +11,14 @@
 \alias{plotFilterExpression}
 \alias{plotExpectedVsObservedPsi}
 \alias{plotEncDimSearch}
+\alias{plotBamCoverage}
+\alias{plotBamCoverageFromResultTable}
 \alias{plotVolcano,FraserDataSet-method}
 \alias{plotAberrantPerSample,FraserDataSet-method}
 \alias{plotQQ,FraserDataSet-method}
 \alias{plotEncDimSearch,FraserDataSet-method}
 \alias{plotFilterVariability}
 \alias{plotCountCorHeatmap,FraserDataSet-method}
-\alias{plotBamCoverage}
-\alias{plotBamCoverageFromResultTable}
 \alias{plotManhattan,FraserDataSet-method}
 \title{Visualization functions for FRASER}
 \usage{
@@ -27,12 +27,12 @@ plotManhattan(object, ...)
 \S4method{plotVolcano}{FraserDataSet}(
   object,
   sampleID,
-  type = c("psi3", "psi5", "theta", "jaccard"),
+  type = currentType(object),
   basePlot = TRUE,
   aggregate = FALSE,
   main = NULL,
   label = NULL,
-  deltaPsiCutoff = 0.3,
+  deltaPsiCutoff = 0.1,
   padjCutoff = 0.1,
   ...
 )
@@ -40,10 +40,10 @@ plotManhattan(object, ...)
 \S4method{plotAberrantPerSample}{FraserDataSet}(
   object,
   main,
-  type = c("psi3", "psi5", "theta", "jaccard"),
+  type = psiTypes,
   padjCutoff = 0.1,
   zScoreCutoff = NA,
-  deltaPsiCutoff = 0.3,
+  deltaPsiCutoff = 0.1,
   aggregate = TRUE,
   BPPARAM = bpparam(),
   ...
@@ -51,7 +51,7 @@ plotManhattan(object, ...)
 
 plotExpression(
   fds,
-  type = c("psi5", "psi3", "theta", "jaccard"),
+  type = currentType(fds),
   idx = NULL,
   result = NULL,
   colGroup = NULL,
@@ -63,7 +63,7 @@ plotExpression(
 
 plotExpectedVsObservedPsi(
   fds,
-  type = c("psi5", "psi3", "theta", "jaccard"),
+  type = currentType(fds),
   idx = NULL,
   result = NULL,
   colGroup = NULL,
@@ -91,7 +91,7 @@ plotExpectedVsObservedPsi(
 
 \S4method{plotEncDimSearch}{FraserDataSet}(
   object,
-  type = c("psi3", "psi5", "theta", "jaccard"),
+  type = currentType(object),
   plotType = c("auc", "loss")
 )
 
@@ -111,7 +111,7 @@ plotFilterVariability(
 
 \S4method{plotCountCorHeatmap}{FraserDataSet}(
   object,
-  type = c("psi5", "psi3", "theta", "jaccard"),
+  type = currentType(object),
   logit = FALSE,
   topN = 50000,
   topJ = 5000,
@@ -174,9 +174,9 @@ plotBamCoverageFromResultTable(
 \S4method{plotManhattan}{FraserDataSet}(
   object,
   sampleID,
-  type = c("psi5", "psi3", "theta", "jaccard"),
+  type = currentType(object),
   main = paste0("sampleID = ", sampleID),
-  color = c("black", "darkgrey"),
+  color_chr = c("black", "darkgrey"),
   ...
 )
 }
@@ -375,6 +375,8 @@ junction should be extended to the left in
 \item{right_extension}{Indicating how far the plotted range around the 
 outlier junction should be extended to the right in 
 \code{plotBamCoverageFromResultTable}.}
+
+\item{color_chr}{Interchanging colors by chromosome for \code{plotManhattan}.}
 }
 \value{
 If base R graphics are used nothing is returned else the plotly or
@@ -484,27 +486,27 @@ certain region around the outlier.
 fds <- makeSimulatedFraserDataSet(m=40, j=200)
 fds <- calculatePSIValues(fds)
 fds <- filterExpressionAndVariability(fds, filter=FALSE)
-# this step should be done for all splicing metrics and more dimensions
-fds <- optimHyperParams(fds, "psi5", q_param=c(2,5,10,25))
+# this step should be done for more dimensions in practice
+fds <- optimHyperParams(fds, "jaccard", q_param=c(2,5,10,25))
 fds <- FRASER(fds)
 
 # QC plotting
 plotFilterExpression(fds)
 plotFilterVariability(fds)
-plotCountCorHeatmap(fds, "theta")
-plotCountCorHeatmap(fds, "theta", normalized=TRUE)
-plotEncDimSearch(fds, type="psi5")
+plotCountCorHeatmap(fds, "jaccard")
+plotCountCorHeatmap(fds, "jaccard", normalized=TRUE)
+plotEncDimSearch(fds, type="jaccard")
 
 # extract results 
 plotAberrantPerSample(fds, aggregate=FALSE)
-plotVolcano(fds, "sample1", "psi5")
+plotVolcano(fds, "sample1", "jaccard")
 
 # dive into gene/sample level results
 res <- results(fds)
 res
 plotExpression(fds, result=res[1])
 plotQQ(fds, result=res[1])
-plotExpectedVsObservedPsi(fds, type="psi5", res=res[1])
+plotExpectedVsObservedPsi(fds, res=res[1])
 
 # create manhattan plot of pvalues by genomic position
 plotManhattan(fds, type="jaccard", sampleID="sample10")

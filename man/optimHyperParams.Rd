@@ -6,9 +6,9 @@
 \usage{
 optimHyperParams(
   fds,
-  type,
+  type = currentType(fds),
   implementation = "PCA",
-  q_param = seq(2, min(40, ncol(fds)), by = 3),
+  q_param = getEncDimRange(fds),
   noise_param = 0,
   minDeltaPsi = 0.1,
   iterations = 5,
@@ -24,7 +24,7 @@ optimHyperParams(
 \arguments{
 \item{fds}{A \code{\link{FraserDataSet}} object}
 
-\item{type}{The type of PSI (psi5, psi3 or theta for theta/splicing 
+\item{type}{The type of PSI (jaccard, psi5, psi3 or theta for theta/splicing 
 efficiency)}
 
 \item{implementation}{The method that should be used to correct for 
@@ -71,13 +71,14 @@ ratios while maximizing the precision-recall curve.
 \examples{
   # generate data
   fds <- makeSimulatedFraserDataSet(m=15, j=20)
+  fds <- calculatePSIValues(fds)
   
   # run hyperparameter optimization
-  fds <- optimHyperParams(fds, type="psi5", q_param=c(2, 5))
+  fds <- optimHyperParams(fds, type="jaccard", q_param=c(2, 5))
   
   # get estimated optimal dimension of the latent space
-  bestQ(fds, type="psi5")
-  hyperParams(fds, type="psi5")
+  bestQ(fds, type="jaccard")
+  hyperParams(fds, type="jaccard")
   
 }
 \seealso{

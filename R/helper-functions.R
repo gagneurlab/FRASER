@@ -22,7 +22,7 @@ checkCountData <- function(fds, stop=TRUE){
         if(isFALSE(stop)) return(invisible(FALSE))
         stop("No counts detected! Please provide counts first.")
     }
-    if(!all(paste0("rawOtherCounts_", psiTypes) %in% assayNames(fds))){
+    if(!all(paste0("rawOtherCounts_", psiTypes_avail) %in% assayNames(fds))){
         if(isFALSE(stop)) return(invisible(FALSE))
         stop("Please compute first the total expression at each junction.")
     }
@@ -71,10 +71,10 @@ checkReadType <- function(fds, type){
 
     # check if type is null or missing
     if(missing(type) | is.null(type)){
-        if(verbose(fds) > 0){
-            warning("Read type was not specified!",
-                    "We will assume the default: 'j'")
-        }
+        # if(verbose(fds) > 0){
+        #     warning("Read type was not specified!",
+        #             "We will assume the default: 'j'")
+        # }
         return("j")
     }
     type <- unique(type)
@@ -356,18 +356,18 @@ assayExists <- function(fds, assayName){
     return(aexists)
 }
 
-getAssayAsVector <- function(fds, prefix, psiType, sampleID){
+getAssayAsVector <- function(fds, prefix, psiType=currentType(fds), sampleID){
     as.vector(assay(fds, paste0(prefix, psiType))[,sampleID])
 }
 
 
-variableJunctions <- function(fds, type, minDeltaPsi=0.1){
+variableJunctions <- function(fds, type=currentType(fds), minDeltaPsi=0.1){
     psi <- K(fds, type=type)/N(fds, type=type)
     j2keep <- rowMaxs(abs(psi - rowMeans(psi, na.rm=TRUE)), na.rm=TRUE)
     j2keep >= minDeltaPsi
 }
 
-subsetKMostVariableJunctions <- function(fds, type, n){
+subsetKMostVariableJunctions <- function(fds, type=currentType(fds), n){
     curX <- x(fds, type=type, all=TRUE, center=FALSE, noiseAlpha=NULL)
     xsd <- colSds(curX)
     nMostVarJuncs <- which(xsd >= sort(xsd, TRUE)[min(length(xsd), n*2)])
@@ -376,7 +376,8 @@ subsetKMostVariableJunctions <- function(fds, type, n){
     ans
 }
 
-getSubsetVector <- function(fds, type, minDeltaPsi=0.1, nSubset=15000){
+getSubsetVector <- function(fds, type=currentType(fds), minDeltaPsi=0.1, 
+                            nSubset=15000){
     # get any variable intron
     ans <- variableJunctions(fds, type, minDeltaPsi=minDeltaPsi)
 
@@ -554,14 +555,21 @@ getStrandString <- function(fds){
 #'
 #' Check if adjusted pvalues have been computed for a given set of filters.
 #' @noRd
-checkPadjAvailableForFilters <- function(fds, type, filters=list(),
-                                        dist="BetaBinomial", aggregate=FALSE){
+checkPadjAvailableForFilters <- function(fds, type=currentType(fds), 
+                    filters=list(), dist="BetaBinomial", aggregate=FALSE){
     dist <- match.arg(dist, choices=c("BetaBinomial", "Binomial", "Normal"))
     aname <- paste0("padj", dist)
     aname <- ifelse(isTRUE(aggregate), paste0(aname, "_gene"), aname)
     # add information on used filters
     for(n in sort(names(filters))){
-        aname <- paste0(aname, "_", n, filters[[n]])
+        aname_new <- paste0(aname, "_", n, filters[[n]])
+        if(n == "rho" && filters[[n]] == 1){
+            if(any(grepl(aname_new, assayNames(fds)))){
+                aname <- aname_new
+            }
+        }else{
+            aname <- aname_new
+        }
     }
     aname <- paste(aname, type, sep="_")
     if(isTRUE(aggregate)){

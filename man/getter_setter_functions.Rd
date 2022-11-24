@@ -39,7 +39,7 @@ pVals(
   fds,
   type = currentType(fds),
   level = "site",
-  filters = list(rho = 0.1),
+  filters = list(rho = 1),
   dist = "BetaBinomial",
   ...
 )
@@ -49,7 +49,7 @@ padjVals(
   type = currentType(fds),
   dist = c("BetaBinomial"),
   level = "site",
-  filters = list(rho = 0.1),
+  filters = list(rho = 1),
   ...
 )
 
@@ -135,7 +135,7 @@ values.
 observed and the fitted psi values.
 
 \item \code{currentType}: Returns the psi type that is used 
-within several methods in the FRASER package.
+within several methods in the FRASER package (defaults to jaccard).
 
 \item \code{currentType<-}: Sets the psi type that is to be used 
 within several methods in the FRASER package.
@@ -174,7 +174,7 @@ dontWriteHDF5(fds)
 dontWriteHDF5 <- TRUE
 
 # get/set the splice metric for which results should be retrieved 
-currentType(fds) <- "psi5"
+currentType(fds) <- "jaccard"
 currentType(fds)
 
 # get fitted parameters
@@ -192,9 +192,9 @@ pseudocount(4L)
 pseudocount()
 
 # retrieve or set a mask to exclude certain junctions in the fitting step
-featureExclusionMask(fds, type="theta") <- sample(
-        c(FALSE, TRUE), nrow(mcols(fds, type="theta")), replace=TRUE)
-featureExclusionMask(fds, type="theta")
+featureExclusionMask(fds, type="jaccard") <- sample(
+        c(FALSE, TRUE), nrow(mcols(fds, type="jaccard")), replace=TRUE)
+featureExclusionMask(fds, type="jaccard")
 
 # controlling the verbosity level of the output of some algorithms
 verbose(fds) <- 2

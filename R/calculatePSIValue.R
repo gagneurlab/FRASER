@@ -14,18 +14,18 @@
 #'
 #' @inheritParams countRNA
 #' @param types A vector with the psi types which should be calculated. Default 
-#' is all of psi5, psi3 and theta.
+#' is all of jaccard, psi5, psi3 and theta.
 #' @param overwriteCts FALSE or TRUE (the default) the total counts (aka N) will
 #'              be recalculated based on the existing junction counts (aka K)
 #' @return FraserDataSet
 #' @export
 #' @examples
 #'   fds <- createTestFraserDataSet()
-#'   fds <- calculatePSIValues(fds, types="psi5")
+#'   fds <- calculatePSIValues(fds, types="jaccard")
 #'   
 #'   ### usually one would run this function for all psi types by using:
 #'   # fds <- calculatePSIValues(fds)
-calculatePSIValues <- function(fds, types=psiTypes, overwriteCts=FALSE, 
+calculatePSIValues <- function(fds, types=psiTypes_avail, overwriteCts=FALSE, 
                                 BPPARAM=bpparam()){
     # check input
     stopifnot(is(fds, "FraserDataSet"))
@@ -187,7 +187,7 @@ calculateSitePSIValue <- function(fds, overwriteCts, BPPARAM){
     # check input
     stopifnot(is(fds, "FraserDataSet"))
     
-    message(date(), ": Calculate the PSI site values ...")
+    message(date(), ": Calculate the theta values ...")
     
     psiName <- "theta"
     psiROCName <- "rawOtherCounts_theta"
@@ -346,8 +346,6 @@ calculateJaccardIntronIndex <- function(fds, overwriteCts){
     jaccardValues <- K(fds, type="j") / jaccard_denom 
     otherCounts_jaccard <- jaccard_denom - K(fds, type="j")
     
-    # TODO also calculate it with nonsplit counts in the nominator 
-    
     # assign it to our object
     assay(fds, type="j", "jaccard", withDimnames=FALSE) <- jaccardValues
     
@@ -360,15 +358,15 @@ calculateJaccardIntronIndex <- function(fds, overwriteCts){
     return(fds)
 }
 
-#' Calculates the sum of nonsplit reads overlapping either the donor or acceptor 
-#' splice site and stores it as a new assay (one value for each junction and 
-#' sample).
+#' Calculates the sum of nonsplit reads overlapping either the donor or 
+#' acceptor splice site and stores it as a new assay (one value for each 
+#' junction and sample).
 #' 
 #' @noRd
 calculateIntronNonsplitSum <- function(fds, overwriteCts){
     stopifnot(is(fds, "FraserDataSet"))
     
-    message(date(), ": Calculate the total nonsplict counts for each intron ", 
+    message(date(), ": Calculate the total nonsplit counts for each intron ", 
                 "...")
     
     

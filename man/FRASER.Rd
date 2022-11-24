@@ -5,6 +5,7 @@
 \alias{calculateZscore}
 \alias{calculatePvalues}
 \alias{calculatePadjValues}
+\alias{calculatePadjValuesOnSubset}
 \title{FRASER: Find RAre Splicing Events in RNA-seq data}
 \usage{
 FRASER(
@@ -32,8 +33,18 @@ calculatePadjValues(
   fds,
   type = currentType(fds),
   method = "BY",
-  rhoCutoff = 0.1,
+  rhoCutoff = 1,
   geneLevel = TRUE,
+  geneColumn = "hgnc_symbol",
+  BPPARAM = bpparam()
+)
+
+calculatePadjValuesOnSubset(
+  fds,
+  genesToTest,
+  type = currentType(fds),
+  subsetName = "FDR_subset",
+  method = "BY",
   geneColumn = "hgnc_symbol",
   BPPARAM = bpparam()
 )
@@ -58,7 +69,7 @@ not yet converged after these number of iterations, the fit stops anyway.}
 
 \item{...}{Additional parameters passed on to the internal fit function}
 
-\item{type}{The type of PSI (psi5, psi3 or theta for theta/splicing 
+\item{type}{The type of PSI (jaccard, psi5, psi3 or theta for theta/splicing 
 efficiency)}
 
 \item{logit}{Indicates if z scores are computed on the logit scale (default) 
@@ -82,6 +93,12 @@ should be calculated. Defaults to TRUE.}
 
 \item{geneColumn}{The column name of the column that has the gene annotation 
 that will be used for gene-level pvalue computation.}
+
+\item{genesToTest}{A named list with the subset of genes to test per sample.
+The names must correspond to the sampleIDs in the given fds object.}
+
+\item{subsetName}{The name under which the resulting FDR corrected pvalues 
+will be stored in metadata(fds).}
 }
 \value{
 FraserDataSet
@@ -131,6 +148,13 @@ p-values per sample for multiple testing. First, the previoulsy calculated
 junction-level p values are adjusted with Holm's method per donor or 
 acceptor site, respectively. Then, if gene symbols have been annotated to 
 junctions (and not otherwise requested), gene-level p values are computed.
+
+\item \code{calculatePadjValuesOnSubset}: This function does FDR correction only for all junctions 
+in a certain subset of genes which can differ per sample. Requires gene 
+symbols to have been annotated to junctions. As with the full FDR 
+correction across all junctions, first the previously calculated 
+junction-level p values are adjusted with Holm's method per donor or 
+acceptor site, respectively. Then, gene-level p values are computed.
 }}
 
 \examples{
@@ -154,16 +178,16 @@ fds <- FRASER(fds, q=2, implementation="PCA")
 # The functions run inside the FRASER function can also be directly 
 # run themselves. 
 # To directly run the fit function:
-fds <- fit(fds, implementation="PCA", q=2, type="psi5")
+fds <- fit(fds, implementation="PCA", q=2, type="jaccard")
 
 # To directly run the nomial and adjusted p value and z score 
 # calculation, the following functions can be used:
-fds <- calculatePvalues(fds, type="psi5")
-head(pVals(fds, type="psi5"))
-fds <- calculatePadjValues(fds, type="psi5", method="BY")
-head(padjVals(fds, type="psi5"))
-fds <- calculateZscore(fds, type="psi5")
-head(zScores(fds, type="psi5")) 
+fds <- calculatePvalues(fds, type="jaccard")
+head(pVals(fds, type="jaccard"))
+fds <- calculatePadjValues(fds, type="jaccard", method="BY")
+head(padjVals(fds, type="jaccard"))
+fds <- calculateZscore(fds, type="jaccard")
+head(zScores(fds, type="jaccard")) 
 
 }
 \seealso{

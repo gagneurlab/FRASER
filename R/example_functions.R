@@ -84,7 +84,7 @@ createTestFraserDataSet <- function(workingDir="FRASER_output", rerun=FALSE){
     suppressMessages({ fds <- annotateRangesWithTxDb(fds) })
     
     # run FRASER pipeline
-    fds <- FRASER(fds, q=c(psi5=2, psi3=2, theta=2), iterations=2)
+    fds <- FRASER(fds, q=c(jaccard=2, psi5=2, psi3=2, theta=2), iterations=2)
     
     # save data for later 
     fds <- saveFraserDataSet(fds)
