@@ -26,7 +26,7 @@ BiocManager::install("BiocVersion", version=BIOC_VERSION,ask = FALSE)
 #            "R.utils", "rtracklayer")){
 #    installIfReq(p=p, Ncpus=NCPUS, update=TRUE)
 # }
-BiocManager::install(c("getopt", "testthat", "devtools", "covr", "roxygen2", "BiocCheck", "R.utils", "rtracklayer"), Ncpus=NCPUS)
+BiocManager::install(c("getopt", "testthat", "devtools", "covr", "roxygen2", "BiocCheck", "R.utils", "rtracklayer"), Ncpus=NCPUS, update=FALSE)
 
 # because of https://github.com/r-windows/rtools-installer/issues/3
 if("windows" == .Platform$OS.type){
