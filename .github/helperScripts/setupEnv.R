@@ -24,7 +24,7 @@ BiocManager::install("BiocVersion", version=BIOC_VERSION,ask = FALSE)
 # add testthat to pre installation dependencies due to: https://github.com/r-lib/pkgload/issues/89
 for(p in c("getopt", "testthat", "devtools", "covr", "roxygen2", "BiocCheck",
             "R.utils", "rtracklayer")){
-    installIfReq(p=p, Ncpus=NCPUS)
+    installIfReq(p=p, Ncpus=NCPUS, update=TRUE)
 }
 
 # because of https://github.com/r-windows/rtools-installer/issues/3
@@ -35,10 +35,10 @@ if("windows" == .Platform$OS.type){
 }
 
 print_log("Update Packages")
-BiocManager::install(ask=FALSE, Ncpus=NCPUS, version=BIOC_VERSION)
+BiocManager::install(ask=FALSE, Ncpus=NCPUS, version=BIOC_VERSION, update=TRUE)
 
 print_log("Install dev package")
-devtools::install(".", dependencies=TRUE)
+devtools::install(".", dependencies=TRUE, update=TRUE)
 
 # to get FRASER session info
 try({ library(FRASER) })
