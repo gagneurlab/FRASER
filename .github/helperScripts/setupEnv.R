@@ -22,10 +22,11 @@ BiocManager::install("BiocVersion", version=BIOC_VERSION,ask = FALSE)
 
 # install needed packages
 # add testthat to pre installation dependencies due to: https://github.com/r-lib/pkgload/issues/89
-for(p in c("getopt", "testthat", "devtools", "covr", "roxygen2", "BiocCheck",
-            "R.utils", "rtracklayer")){
-    installIfReq(p=p, Ncpus=NCPUS, update=TRUE)
-}
+# for(p in c("getopt", "testthat", "devtools", "covr", "roxygen2", "BiocCheck",
+#            "R.utils", "rtracklayer")){
+#    installIfReq(p=p, Ncpus=NCPUS, update=TRUE)
+# }
+BiocManager::install(c("getopt", "testthat", "devtools", "covr", "roxygen2", "BiocCheck", "R.utils", "rtracklayer"), Ncpus=NCPUS)
 
 # because of https://github.com/r-windows/rtools-installer/issues/3
 if("windows" == .Platform$OS.type){
