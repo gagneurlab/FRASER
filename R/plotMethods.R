@@ -299,7 +299,7 @@ NULL
 
 
 plotVolcano.FRASER <- function(object, sampleID, 
-                    type=currentType(object), basePlot=TRUE, 
+                    type=psiTypes_avail, basePlot=TRUE, 
                     aggregate=FALSE, main=NULL, label=NULL,
                     deltaPsiCutoff=0.1, padjCutoff=0.1, ...){
     
@@ -400,7 +400,7 @@ setMethod("plotVolcano", signature="FraserDataSet", plotVolcano.FRASER)
 
 
 plotAberrantPerSample.FRASER <- function(object, main, 
-                    type=psiTypes,
+                    type=psiTypes_avail,
                     padjCutoff=0.1, zScoreCutoff=NA, deltaPsiCutoff=0.1,
                     aggregate=TRUE, BPPARAM=bpparam(), ...){
 
@@ -463,7 +463,7 @@ setMethod("plotAberrantPerSample", signature="FraserDataSet",
 #'
 #' @rdname plotFunctions
 #' @export
-plotExpression <- function(fds, type=currentType(fds),
+plotExpression <- function(fds, type=psiTypes_avail,
                     idx=NULL, result=NULL, colGroup=NULL, 
                     basePlot=TRUE, main=NULL, label="aberrant", ...){
     if(!is.null(result)){
@@ -555,7 +555,7 @@ plotExpression <- function(fds, type=currentType(fds),
 #'
 #' @rdname plotFunctions
 #' @export
-plotExpectedVsObservedPsi <- function(fds, type=currentType(fds),
+plotExpectedVsObservedPsi <- function(fds, type=psiTypes_avail,
                     idx=NULL, result=NULL, colGroup=NULL, main=NULL,
                     basePlot=TRUE, label="aberrant", ...){
     type <- match.arg(type)
@@ -819,8 +819,7 @@ plotQQ.FRASER <- function(object, type=NULL, idx=NULL, result=NULL,
 setMethod("plotQQ", signature="FraserDataSet", plotQQ.FRASER)
 
 
-plotEncDimSearch.FRASER <- function(object, 
-                    type=currentType(object), 
+plotEncDimSearch.FRASER <- function(object, type=psiTypes_avail, 
                     plotType=c("auc", "loss")){
     type <- match.arg(type)
     plotType <- match.arg(plotType)
@@ -988,7 +987,7 @@ plotFilterVariability <- function(fds, bins=200, legend.position=c(0.8, 0.8),
 
 
 plotCountCorHeatmap.FRASER <- function(object,
-                    type=currentType(object), logit=FALSE, 
+                    type=psiTypes_avail, logit=FALSE, 
                     topN=50000, topJ=5000, minMedian=1, minCount=10, 
                     main=NULL, normalized=FALSE, show_rownames=FALSE,
                     show_colnames=FALSE, minDeltaPsi=0.1, annotation_col=NA,
@@ -1429,7 +1428,7 @@ plotBamCoverageFromResultTable <- function(fds, result, show_full_gene=FALSE,
 }
 
 plotManhattan.FRASER <- function(object, sampleID, 
-                                type=currentType(object), 
+                                type=psiTypes_avail, 
                                 main=paste0("sampleID = ", sampleID), 
                                 color_chr=c("black", "darkgrey"),
                                 ...){
@@ -1543,7 +1542,7 @@ ggplotLabelPsi <- function(type, asCharacter=FALSE){
     } else{
         vapply(type, FUN=function(x)
             switch (x,
-                    jaccard = "jaccard-intron-index",
+                    jaccard = "Intron-Jaccard-Index",
                     psi5 = "psi[5]",
                     psi3 = "psi[3]",
                     theta = "theta"),

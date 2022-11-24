@@ -46,6 +46,7 @@ opts_chunk$set(
 
 
 \begin{document}
+\SweaveOpts{concordance=TRUE}
 
 <<include=FALSE>>=
 opts_chunk$set(concordance=TRUE)
@@ -175,6 +176,32 @@ intron-exon boundary of acceptor A. While we calculate $\theta$ for the 5' and
 between $\theta_5$ and $\theta_3$ and hence call it jointly $\theta$ in the 
 following.
 
+From \fraser{}2 on, only one metric - the Intron Jaccard Index (Figure 
+\ref{IntronJaccardIndex_sketch}.) - is used by default. The Intron Jaccard 
+Index is more robust and allows to focus more on functionally relevant 
+aberrant splicing events. It allows to detect all types of aberrant splicing 
+previously detected using the three metrics ($\psi_5$, $\psi_3$, $\theta$)
+within a single metric.
+
+\incfig{IntronJaccardIndex_sketch}{1\textwidth}{Overview over the Intron 
+Jaccard Index, the splice metric used in \fraser{}2.}{
+The Intron Jaccard Index considers both split and nonsplit reads and is 
+defined as the jaccard index of the set of donor reads (reads sharing a donor 
+site with the intron of interest and nonsplit reads at that donor site) and 
+acceptor reads (reads sharing an acceptor site with the intron of interest and
+nonsplit reads at that acceptor site). }
+
+The Intron Jaccard Index considers both split and nonsplit reads and is 
+defined as the jaccard index of the set of donor reads (reads sharing a donor 
+site with the intron of interest and nonsplit reads at that donor site) and 
+acceptor reads (reads sharing an acceptor site with the intron of interest and
+nonsplit reads at that acceptor site): 
+
+\begin{equation}
+    J(D,A) = \frac{n(D,A)}{\sum_{A'} n(D,A') + \sum_{D'} n(D',A) + n(D) + n(A) - n(D,A)}\label{eq:jaccard}
+\end{equation}
+
+
 \section{Quick guide to \fraser{}}
 
 Here we quickly show how to do an analysis with \fraser{}, starting from a
@@ -204,10 +231,6 @@ fds <- calculatePSIValues(fds)
 fds <- filterExpressionAndVariability(fds, minExpressionInOneSample=20,
        minDeltaPsi=0.0, filter=TRUE)
 
-# fit the splicing model for each metric 
-# with a specific latentsapce dimension
-fds <- FRASER(fds, q=c(psi5=2, psi3=3, theta=3))
-
 # we provide two ways to anntoate introns with the corresponding gene symbols:
 # the first way uses TxDb-objects provided by the user as shown here
 library(TxDb.Hsapiens.UCSC.hg19.knownGene)
@@ -215,6 +238,10 @@ library(org.Hs.eg.db)
 txdb <- TxDb.Hsapiens.UCSC.hg19.knownGene
 orgDb <- org.Hs.eg.db
 fds <- annotateRangesWithTxDb(fds, txdb=txdb, orgDb=orgDb)
+
+# fit the splicing model for each metric 
+# with a specific latentsapce dimension
+fds <- FRASER(fds, q=c(psi5=2, psi3=3, theta=3))
 
 # alternatively, we also provide a way to use biomart for the annotation:
 # fds <- annotateRanges(fds)
@@ -226,7 +253,7 @@ res <- results(fds, zScoreCutoff=NA, padjCutoff=NA, deltaPsiCutoff=NA)
 res
 
 # result visualization
-plotVolcano(fds, sampleID="sample1", type="psi5", aggregate=TRUE)
+plotVolcano(fds, sampleID="sample1", type="jaccard", aggregate=TRUE)
 
 @
 
@@ -439,7 +466,7 @@ transformed $\psi$ values to compute the correlation.
 
 <<sample_covariation, echo=TRUE>>=
 # Heatmap of the sample correlation
-plotCountCorHeatmap(fds, type="psi5", logit=TRUE, normalized=FALSE)
+plotCountCorHeatmap(fds, type="jaccard", logit=TRUE, normalized=FALSE)
 @
 
 It is also possible to visualize the correlation structure of the logit
@@ -447,7 +474,7 @@ transformed $\psi$ values of the $topJ$ most variable introns for all samples:
 
 <<intron_sample_correlation, echo=TRUE, eval=FALSE>>=
 # Heatmap of the intron/sample expression
-plotCountCorHeatmap(fds, type="psi5", logit=TRUE, normalized=FALSE,
+plotCountCorHeatmap(fds, type="jaccard", logit=TRUE, normalized=FALSE,
     plotType="junctionSample", topJ=100, minDeltaPsi = 0.01)
 @
 
@@ -470,14 +497,14 @@ p-values and z-scores for all $\psi$ types. For more details see section
 
 <<model fitting, echo=TRUE>>=
 # This is computational heavy on real size datasets and can take awhile
-fds <- FRASER(fds, q=c(psi5=3, psi3=5, theta=2))
+fds <- FRASER(fds, q=c(jaccard=3))
 @
 
 To check whether the correction worked, we can have a look at the correlation
 heatmap using the normalized $\psi$ values from the fit.
 
 <<covariation_after_fitting, echo=TRUE>>=
-plotCountCorHeatmap(fds, type="psi5", normalized=TRUE, logit=TRUE)
+plotCountCorHeatmap(fds, type="jaccard", normalized=TRUE, logit=TRUE)
 @
 
 \subsubsection{Calling splicing outliers}
@@ -495,6 +522,10 @@ $\psi$ values or both.
 
 <<result table, echo=TRUE>>=
 # annotate introns with the HGNC symbols of the corresponding gene
+if (!require("TxDb.Hsapiens.UCSC.hg19.knownGene", quietly = TRUE))
+    BiocManager::install("TxDb.Hsapiens.UCSC.hg19.knownGene")
+if (!require("org.Hs.eg.db", quietly = TRUE))
+    BiocManager::install("org.Hs.eg.db")
 library(TxDb.Hsapiens.UCSC.hg19.knownGene)
 library(org.Hs.eg.db)
 
@@ -519,9 +550,12 @@ the following additional information:
     \item hgncSymbol: the gene symbol of the gene that contains the splice
     junction or site if available
     \item type: the metric for which the aberrant event was detected (either
-    psi5 for $\psi_5$, psi3 for $\psi_3$ or theta for $\theta$)
+    jaccard for Intron Jaccard Index or psi5 for $\psi_5$, psi3 for $\psi_3$ or 
+    theta for $\theta$)
     \item pValue, padjust, zScore: the p-value, adjusted p-value and z-score of
-    this event
+    this event (at intron or splice site level depending on metric)
+    \item pValueGene, padjustGene: only present in the gene-level results table,
+    gives the p-value and FDR adjusted p-value at gene-level
     \item psiValue: the value of $\psi_5$, $\psi_3$ or $\theta$ metric
     (depending on the type column) of this junction or splice site for the
     sample in which it is detected as aberrant
@@ -533,20 +567,39 @@ the following additional information:
     same donor or acceptor site as this junction or site over all samples
     \item counts, totalCounts: the count (k) and total count (n) of the splice
     junction or site for the sample where it is detected as aberrant
+    \item nonsplitCounts, nonsplitProportion: only present for the Intron 
+    Jaccard Index. States the sum of nonsplit counts overlapping either the 
+    donor or acceptor site of the outlier intron for the sample where it is 
+    detected as aberrant; and their proportion out of the total counts (N). 
+    A high nonsplitProportion indicates possible (partial) intron retention.
 \end{itemize}
 Please refer to section \ref{sec:Introduction} for more information about the
-metrics $\psi_5$, $\psi_3$ and $\theta$ and their definition. In general, an
+Intron Jaccard Index metric (or the previous metrics $\psi_5$, $\psi_3$ and 
+$\theta$) and their definition. In general, an
 aberrant $\psi_5$ value might indicate aberrant acceptor site usage of the 
 junction where the event is detected; an aberrant $\psi_3$ value might indicate 
 aberrant donor site usage of the junction where the event is detected; and an 
 aberrant $\theta$ value might indicate partial or full intron retention, or 
-exon truncation or elongation. We recommend using a genome browser to 
-investigate interesting detected events in more detail.
+exon truncation or elongation. As the Intron Jaccard Index combines the 
+previously described metrics, an aberrant Intron Jaccard value can indicate any
+of the above described cases. We recommend using a genome browser to 
+investigate interesting detected events in more detail. \fraser{}2 also 
+provides the function \Rfunction{plotBamCoverageFromResultTable} to create a 
+sashimi plot for an outlier in the results table directly in R (if paths to 
+bam files are available in the \fds{} object).
 
 <<result_table, echo=TRUE>>=
 # to show result visualization functions for this tuturial, zScore cutoff used
 res <- results(fds, zScoreCutoff=2, padjCutoff=NA, deltaPsiCutoff=0.1)
 res
+
+# for the gene level pvalues, gene symbols need to be annotated the fds object
+# before calling the calculatePadjValues function (part of FRASER() function)
+# as we previously called FRASER() before annotating genes, we run it again here
+fds <- calculatePadjValues(fds, type="jaccard", geneLevel=TRUE)
+# generate gene-level results table (if gene symbols have been annotated)
+res_gene <- results(fds, aggregate=TRUE, padjCutoff=NA, deltaPsiCutoff=0.1)
+res_gene
 @
 
 \subsection{Finding splicing candidates in patients}
@@ -555,7 +608,7 @@ Let's hava a look at sample 10 and check if we got some splicing
 candidates for this sample.
 
 <<finding_candidates, echo=TRUE>>=
-plotVolcano(fds, type="psi5", "sample10")
+plotVolcano(fds, type="jaccard", "sample10")
 @
 
 Which are the splicing events in detail?
@@ -568,7 +621,7 @@ sampleRes
 To have a closer look at the junction level, use the following functions:
 
 <<plot_expression, echo=TRUE, eval=FALSE>>=
-plotExpression(fds, type="psi5", result=sampleRes[1])
+plotExpression(fds, type="jaccard", result=sampleRes[1])
 plotExpectedVsObservedPsi(fds, result=sampleRes[1])
 @
 
@@ -619,7 +672,7 @@ confounders in the data. Currently the following methods are implemented:
 # Using an alternative way to correct splicing ratios
 # here: only 2 iteration to speed the calculation up
 # for the vignette, the default is 15 iterations
-fds <- fit(fds, q=3, type="psi5", implementation="PCA-BB-Decoder", 
+fds <- fit(fds, q=3, type="jaccard", implementation="PCA-BB-Decoder", 
             iterations=2)
 @
 
@@ -638,17 +691,17 @@ for a subset of the dataset:
 <<findBestQ, echo=TRUE>>=
 set.seed(42)
 # hyperparameter opimization
-fds <- optimHyperParams(fds, type="psi5", plot=FALSE)
+fds <- optimHyperParams(fds, type="jaccard", plot=FALSE)
 
 # retrieve the estimated optimal dimension of the latent space
-bestQ(fds, type="psi5")
+bestQ(fds, type="jaccard")
 @
 
 The results from this hyper parameter optimization can be visualized with the
 function \Rfunction{plotEncDimSearch}.
 
 <<figure_findBestQ, echo=TRUE>>=
-plotEncDimSearch(fds, type="psi5")
+plotEncDimSearch(fds, type="jaccard")
 @
 
 \subsection{P-value calculation}
@@ -669,8 +722,8 @@ computed as the product of the fitted correction values from the autoencoder and
 the fitted mean adjustements.
 
 <<p-value calculation, echo=TRUE>>=
-fds <- calculatePvalues(fds, type="psi5")
-head(pVals(fds, type="psi5"))
+fds <- calculatePvalues(fds, type="jaccard")
+head(pVals(fds, type="jaccard"))
 @
 
 Afterwards, adjusted p-values can be calculated. Multiple testing correction is
@@ -680,8 +733,8 @@ methods supported by \Rfunction{p.adjust} can be used via the \Robject{method}
 argument.
 
 <<p-adj calculation, echo=TRUE>>=
-fds <- calculatePadjValues(fds, type="psi5", method="BY")
-head(padjVals(fds,type="psi5"))
+fds <- calculatePadjValues(fds, type="jaccard", method="BY")
+head(padjVals(fds,type="jaccard"))
 @
 
 \subsection{Z-score calculation}
@@ -704,8 +757,8 @@ counts and the counts after correction for confounders and $\bar{\delta_j}$ is
 the mean of intron $j$.
 
 <<z-score calculation, echo=TRUE>>=
-fds <- calculateZscore(fds, type="psi5")
-head(zScores(fds, type="psi5"))
+fds <- calculateZscore(fds, type="jaccard")
+head(zScores(fds, type="jaccard"))
 @
 
 \subsection{Result visualization}

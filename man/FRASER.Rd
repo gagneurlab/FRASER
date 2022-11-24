@@ -11,6 +11,7 @@
 FRASER(
   fds,
   q,
+  types = psiTypes,
   implementation = c("PCA", "PCA-BB-Decoder", "AE-weighted", "AE", "BB"),
   iterations = 15,
   BPPARAM = bpparam(),
