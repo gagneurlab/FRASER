@@ -925,7 +925,7 @@ setMethod("results", "FraserDataSet", function(object,
                     sampleIDs=samples(object), padjCutoff=0.05,
                     zScoreCutoff=NA, deltaPsiCutoff=0.1,
                     rhoCutoff=1, aggregate=FALSE, collapse=FALSE,
-                    minCount=5, psiType=currentType(object),
+                    minCount=5, psiType=psiTypes_avail,
                     geneColumn="hgnc_symbol",
                     additionalColumns=NULL, BPPARAM=bpparam()){
     FRASER.results(object=object, sampleIDs=sampleIDs, fdrCutoff=padjCutoff,
@@ -936,7 +936,7 @@ setMethod("results", "FraserDataSet", function(object,
             additionalColumns=additionalColumns, BPPARAM=BPPARAM)
 })
 
-aberrant.FRASER <- function(object, type=currentType(object), 
+aberrant.FRASER <- function(object, type=psiTypes_avail, 
                                 padjCutoff=0.05, deltaPsiCutoff=0.1, 
                                 zScoreCutoff=NA, minCount=5, rhoCutoff=1,
                                 by=c("none", "sample", "feature"), 
