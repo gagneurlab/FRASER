@@ -150,7 +150,7 @@ jobs:
         shell: Rscript {0}
         
       - name: Init tinytex
-        uses: r-lib/actions/setup-tinytex@v1
+        uses: r-lib/actions/setup-tinytex@v2
         
       - name: Install tinytex packages
         run: |
