@@ -18,6 +18,7 @@ filterExpressionAndVariability(
   minDeltaPsi = 0,
   filter = TRUE,
   delayed = ifelse(ncol(object) <= 300, FALSE, TRUE),
+  filterOnJaccard = TRUE,
   BPPARAM = bpparam()
 )
 
@@ -28,6 +29,7 @@ filterExpressionAndVariability(
   quantileMinExpression = 10,
   filter = TRUE,
   delayed = ifelse(ncol(object) <= 300, FALSE, TRUE),
+  filterOnJaccard = TRUE,
   BPPARAM = bpparam()
 )
 
@@ -36,6 +38,7 @@ filterExpressionAndVariability(
   minDeltaPsi = 0,
   filter = TRUE,
   delayed = ifelse(ncol(object) <= 300, FALSE, TRUE),
+  filterOnJaccard = TRUE,
   BPPARAM = bpparam()
 )
 }

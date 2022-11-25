@@ -19,6 +19,8 @@
 \alias{deltaPsiValue}
 \alias{currentType}
 \alias{currentType<-}
+\alias{fitMetrics}
+\alias{fitMetrics<-}
 \alias{pseudocount}
 \alias{hyperParams}
 \alias{dontWriteHDF5}
@@ -60,6 +62,10 @@ deltaPsiValue(fds, type = currentType(fds))
 currentType(fds)
 
 currentType(fds) <- value
+
+fitMetrics(fds)
+
+fitMetrics(fds) <- value
 
 pseudocount(value = NULL)
 
@@ -139,6 +145,13 @@ within several methods in the FRASER package (defaults to jaccard).
 
 \item \code{currentType<-}: Sets the psi type that is to be used 
 within several methods in the FRASER package.
+
+\item \code{fitMetrics}: Returns the splice metrics that will be
+fitted (defaults to jaccard, used within several methods in the 
+FRASER package).
+
+\item \code{fitMetrics<-}: Sets the splice metrics that will be 
+fitted (used within several methods in the FRASER package).
 
 \item \code{pseudocount}: Sets and returns the pseudo count used 
 within the FRASER fitting procedure.

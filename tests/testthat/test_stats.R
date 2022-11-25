@@ -80,3 +80,27 @@ test_that("Gene p value calculation with NAs", {
     expect_true(all(is.na(padjVals(fds, type="jaccard", level="gene", 
                                 filters=list(rho=0.1)))))
 })
+
+test_that("FDR on subset of genes", {
+    fds <- getFraser()
+    mcols(fds, type="j")$hgnc_symbol <- 
+        rep(c("geneA", "geneB", "geneC", "geneD", "geneE"), 
+            times=c(3, 7, 5, 4, 8))
+    
+    # define gene subset per sample
+    genes_per_sample <- list(
+        "sample1" = c("geneE", "geneC", "geneA"),
+        "sample2" = c("geneB"),
+        "sample3" = c("geneA", "geneB", "geneC", "geneD")
+    )
+    expected_output_nrows <- (8 + 5 + 3) + (7) + (3+7+5+4)
+    
+    subsetName <- "FDR_subset_test"
+    fds <- calculatePadjValuesOnSubset(fds, genesToTest=genes_per_sample, 
+                                       subsetName=subsetName, type="jaccard")
+    subset_dt <- metadata(fds)[[subsetName]]
+    expect_true(is(subset_dt, "data.table"))
+    expect_true(all(c("FDR_subset", "FDR_subset_gene") %in% colnames(subset_dt)))
+    expect_equal(subset_dt[, .N], expected_output_nrows)
+      
+})

@@ -22,7 +22,7 @@ checkCountData <- function(fds, stop=TRUE){
         if(isFALSE(stop)) return(invisible(FALSE))
         stop("No counts detected! Please provide counts first.")
     }
-    if(!all(paste0("rawOtherCounts_", psiTypes_avail) %in% assayNames(fds))){
+    if(!all(paste0("rawOtherCounts_", psiTypes) %in% assayNames(fds))){
         if(isFALSE(stop)) return(invisible(FALSE))
         stop("Please compute first the total expression at each junction.")
     }
@@ -71,10 +71,10 @@ checkReadType <- function(fds, type){
 
     # check if type is null or missing
     if(missing(type) | is.null(type)){
-        # if(verbose(fds) > 0){
-        #     warning("Read type was not specified!",
-        #             "We will assume the default: 'j'")
-        # }
+        if(verbose(fds) > 3){
+            warning("Read type was not specified!",
+                    "We will assume the default: 'j'")
+        }
         return("j")
     }
     type <- unique(type)

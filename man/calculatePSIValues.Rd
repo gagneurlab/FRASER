@@ -6,7 +6,7 @@
 \usage{
 calculatePSIValues(
   fds,
-  types = psiTypes_avail,
+  types = psiTypes,
   overwriteCts = FALSE,
   BPPARAM = bpparam()
 )

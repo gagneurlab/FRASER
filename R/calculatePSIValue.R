@@ -25,7 +25,7 @@
 #'   
 #'   ### usually one would run this function for all psi types by using:
 #'   # fds <- calculatePSIValues(fds)
-calculatePSIValues <- function(fds, types=psiTypes_avail, overwriteCts=FALSE, 
+calculatePSIValues <- function(fds, types=psiTypes, overwriteCts=FALSE, 
                                 BPPARAM=bpparam()){
     # check input
     stopifnot(is(fds, "FraserDataSet"))

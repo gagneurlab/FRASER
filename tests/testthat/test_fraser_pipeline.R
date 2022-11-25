@@ -6,7 +6,7 @@ test_that("FRASER function", {
     anames <- c(psiTypes, paste0(c("delta", "predictedMeans", 
             "pvaluesBetaBinomial", "padjBetaBinomial", 
             "zScores"), "_", 
-            rep(psiTypes, 5)))
+            rep(fitMetrics(fds), 5)))
     expect_equal(anames %in% assayNames(fds), !logical(length(anames)))
 })
 

@@ -85,7 +85,7 @@ NULL
 #' the beta-binomial fit, the computation of Z scores and p values as well as 
 #' the computation of delta-PSI values.
 #' @export
-FRASER <- function(fds, q, types=psiTypes, 
+FRASER <- function(fds, q, types=fitMetrics(fds), 
                    implementation=c("PCA", "PCA-BB-Decoder", "AE-weighted", 
                                     "AE", "BB"), 
                     iterations=15, BPPARAM=bpparam(), correction, ...){

@@ -10,7 +10,7 @@
   implementation = c("PCA", "PCA-BB-Decoder", "AE", "AE-weighted", "PCA-BB-full",
     "fullAE", "PCA-regression", "PCA-reg-full", "PCA-BB-Decoder-no-weights", "BB"),
   q,
-  type = currentType(object),
+  type = psiTypes,
   rhoRange = c(-30, 30),
   weighted = FALSE,
   noiseAlpha = 1,

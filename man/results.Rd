@@ -15,7 +15,7 @@
   aggregate = FALSE,
   collapse = FALSE,
   minCount = 5,
-  psiType = psiTypes_avail,
+  psiType = psiTypes,
   geneColumn = "hgnc_symbol",
   additionalColumns = NULL,
   BPPARAM = bpparam()
@@ -23,7 +23,7 @@
 
 \S4method{aberrant}{FraserDataSet}(
   object,
-  type = psiTypes_avail,
+  type = fitMetrics(object),
   padjCutoff = 0.05,
   deltaPsiCutoff = 0.1,
   zScoreCutoff = NA,

@@ -411,6 +411,27 @@ currentType <- function(fds){
     return(fds)
 }
 
+#' @describeIn getter_setter_functions Returns the splice metrics that will be
+#' fitted (defaults to jaccard, used within several methods in the 
+#' FRASER package).
+#' @export
+fitMetrics <- function(fds){
+    metrics <- metadata(fds)[['fit_metrics']]
+    if(is.null(metrics)){
+        metrics <- "jaccard"
+    }
+    return(metrics)
+}
+
+#' @describeIn getter_setter_functions Sets the splice metrics that will be 
+#' fitted (used within several methods in the FRASER package).
+#' @export 
+`fitMetrics<-` <- function(fds, value){
+    stopifnot(is.character(whichPSIType(value)))
+    metadata(fds)[['fit_metrics']] <- whichPSIType(value)
+    return(fds)
+}
+
 #' @describeIn getter_setter_functions Sets and returns the pseudo count used 
 #' within the FRASER fitting procedure.
 #' @export

@@ -40,7 +40,7 @@ fit.FraserDataSet <- function(object, implementation=c("PCA", "PCA-BB-Decoder",
                             "AE", "AE-weighted", "PCA-BB-full", "fullAE", 
                             "PCA-regression", "PCA-reg-full", 
                             "PCA-BB-Decoder-no-weights", "BB"),
-                    q, type=currentType(object), rhoRange=c(-30, 30), 
+                    q, type=psiTypes, rhoRange=c(-30, 30), 
                     weighted=FALSE, noiseAlpha=1, convergence=1e-5, 
                     iterations=15, initialize=TRUE, control=list(), 
                     BPPARAM=bpparam(), nSubset=15000, 
@@ -51,6 +51,7 @@ fit.FraserDataSet <- function(object, implementation=c("PCA", "PCA-BB-Decoder",
                 paste(names(list(...)), collapse=", "))
     }
     method <- match.arg(implementation)
+    type <- match.arg(type)
     
     verbose <- verbose(object) > 0
     

@@ -724,7 +724,19 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff, zscoreCutoff,
             !("annotatedJunction" %in% additionalColumns)){
         additionalColumns <- c(additionalColumns, "annotatedJunction")
     }
-
+    
+    # only extract results for requested psiTypes if pvals exist for them
+    stopifnot(all(psiType %in% psiTypes))
+    pvalsAvailable <- checkPadjAvailableForFilters(object, type=psiType,
+                                                   filters=list(rho=rhoCutoff), 
+                                                   aggregate=aggregate)
+    psiType <- psiType[pvalsAvailable]
+    if(all(isFALSE(pvalsAvailable))){
+        stop("For the splice metric(s), pvalues are not yet computed. \n", 
+             "Please compute them first by running the ",
+             "calculatePadjValues function.")
+    }
+    
     resultsls <- bplapply(psiType, BPPARAM=BPPARAM, function(type){
         message(date(), ": Collecting results for: ", type)
         currentType(object) <- type
@@ -925,7 +937,7 @@ setMethod("results", "FraserDataSet", function(object,
                     sampleIDs=samples(object), padjCutoff=0.05,
                     zScoreCutoff=NA, deltaPsiCutoff=0.1,
                     rhoCutoff=1, aggregate=FALSE, collapse=FALSE,
-                    minCount=5, psiType=psiTypes_avail,
+                    minCount=5, psiType=psiTypes,
                     geneColumn="hgnc_symbol",
                     additionalColumns=NULL, BPPARAM=bpparam()){
     FRASER.results(object=object, sampleIDs=sampleIDs, fdrCutoff=padjCutoff,
@@ -936,7 +948,7 @@ setMethod("results", "FraserDataSet", function(object,
             additionalColumns=additionalColumns, BPPARAM=BPPARAM)
 })
 
-aberrant.FRASER <- function(object, type=psiTypes_avail, 
+aberrant.FRASER <- function(object, type=fitMetrics(object), 
                                 padjCutoff=0.05, deltaPsiCutoff=0.1, 
                                 zScoreCutoff=NA, minCount=5, rhoCutoff=1,
                                 by=c("none", "sample", "feature"), 
@@ -948,6 +960,7 @@ aberrant.FRASER <- function(object, type=psiTypes_avail,
     checkNaAndRange(rhoCutoff,      min=0, max=1,   scalar=TRUE,   na.ok=TRUE)
     checkNaAndRange(minCount,       min=0, max=Inf, scalar=TRUE,   na.ok=TRUE)
     by <- match.arg(by)
+    type <- match.arg(type)
     
     dots <- list(...)
     if("n" %in% names(dots)){

@@ -123,7 +123,7 @@ findEncodingDim <- function(i, fds, type, params, implementation,
 #'   hyperParams(fds, type="jaccard")
 #'   
 #' @export
-optimHyperParams <- function(fds, type=currentType(fds), implementation="PCA",
+optimHyperParams <- function(fds, type=psiTypes, implementation="PCA",
                     q_param=getEncDimRange(fds),
                     noise_param=0, minDeltaPsi=0.1,
                     iterations=5, setSubset=50000, injectFreq=1e-2,
@@ -191,7 +191,7 @@ optimHyperParams <- function(fds, type=currentType(fds), implementation="PCA",
 
         # remove unneeded blocks to save memory
         a2rm <- paste(sep="_", c("originalCounts", "originalOtherCounts"),
-                rep(psiTypes_avail, 2))
+                rep(psiTypes, 2))
         for(a in a2rm){
             assay(fds_copy, a) <- NULL
         }

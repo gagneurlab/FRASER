@@ -45,24 +45,56 @@ filterExpressionAndVariability <- function(object, minExpressionInOneSample=20,
                     quantile=0.75, quantileMinExpression=10, minDeltaPsi=0.0,
                     filter=TRUE, 
                     delayed=ifelse(ncol(object) <= 300, FALSE, TRUE),
+                    filterOnJaccard=TRUE,
                     BPPARAM=bpparam()){
+    
     # filter introns with low read support and corresponding splice sites
     object <- filterExpression(object, 
                     minExpressionInOneSample=minExpressionInOneSample, 
                     quantile=quantile, 
                     quantileMinExpression=quantileMinExpression, 
                     filter=filter, delayed=delayed,
+                    filterOnJaccard=filterOnJaccard,
                     BPPARAM=BPPARAM)
     
     # filter introns that are not variable across samples
     object <- filterVariability(object, minDeltaPsi=minDeltaPsi, filter=filter, 
-                    delayed=delayed, BPPARAM=BPPARAM)
+                    delayed=delayed, filterOnJaccard=filterOnJaccard,
+                    BPPARAM=BPPARAM)
     
     # return fds
     message(date(), ": Filtering done!")
     return(object)
     
 }
+
+#' @noRd
+filterExpression.FRASER2 <- function(object, minExpressionInOneSample=20,
+                    quantile=0.75, quantileMinExpression=10, filter=TRUE, 
+                    delayed=ifelse(ncol(object) <= 300, FALSE, TRUE),
+                    filterOnJaccard=TRUE, BPPARAM=bpparam()){
+    if(isTRUE(filterOnJaccard)){
+        return(filterExpression_jaccard(object, 
+                         minExpressionInOneSample=minExpressionInOneSample, 
+                         quantile=quantile, 
+                         quantileMinExpression=quantileMinExpression, 
+                         filter=filter, delayed=delayed,
+                         BPPARAM=BPPARAM))
+    } else{
+        return(filterExpression.FRASER(object, 
+                         minExpressionInOneSample=minExpressionInOneSample, 
+                         quantile=quantile, 
+                         quantileMinExpression=quantileMinExpression, 
+                         filter=filter, delayed=delayed,
+                         BPPARAM=BPPARAM))
+    }
+}
+
+#' @describeIn filtering This function filters out introns and corresponding 
+#' splice sites that have low read support in all samples.
+#' @export
+setMethod("filterExpression", signature="FraserDataSet",
+          filterExpression.FRASER2)
 
 #' This function filters out introns and corresponding 
 #' splice sites which are expressed at very low levels across samples.
@@ -125,11 +157,24 @@ filterExpression_jaccard <- function(object, minExpressionInOneSample=20,
     return(object)
 }
 
+#' @noRd
+filterVariability.FRASER2 <- function(object, minDeltaPsi=0, filter=TRUE, 
+                        delayed=ifelse(ncol(object) <= 300, FALSE, TRUE), 
+                        filterOnJaccard=TRUE, BPPARAM=bpparam()){
+    if(isTRUE(filterOnJaccard)){
+        object <- filterVariability_jaccard(object, minDeltaPsi=minDeltaPsi, 
+                            filter=filter, delayed=delayed, BPPARAM=BPPARAM)
+    } else{
+        object <- filterVariability.FRASER(object, minDeltaPsi=minDeltaPsi, 
+                            filter=filter, delayed=delayed, BPPARAM=BPPARAM)
+    }
+}
+
 #' @describeIn filtering This function filters out introns and corresponding 
 #' splice sites that have low read support in all samples.
 #' @export
-setMethod("filterExpression", signature="FraserDataSet",
-        filterExpression_jaccard)
+setMethod("filterVariability", signature="FraserDataSet",
+          filterVariability.FRASER2)
 
 
 #' This function filters out introns and corresponding 
@@ -191,12 +236,6 @@ filterVariability_jaccard <- function(object, minDeltaPsi=0, filter=TRUE,
     validObject(object)
     return(object)
 }
-
-#' @describeIn filtering This function filters out introns and corresponding 
-#' splice sites that have low read support in all samples.
-#' @export
-setMethod("filterVariability", signature="FraserDataSet",
-            filterVariability_jaccard)
 
 #' Applies previously calculated filters for expression filters
 #' @noRd

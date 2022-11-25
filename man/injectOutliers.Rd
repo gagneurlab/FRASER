@@ -6,7 +6,7 @@
 \usage{
 injectOutliers(
   fds,
-  type = currentType(fds),
+  type = psiTypes,
   freq = 0.001,
   minDpsi = 0.2,
   minCoverage = 2,

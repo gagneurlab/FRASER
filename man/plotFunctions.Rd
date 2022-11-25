@@ -27,7 +27,7 @@ plotManhattan(object, ...)
 \S4method{plotVolcano}{FraserDataSet}(
   object,
   sampleID,
-  type = psiTypes_avail,
+  type = fitMetrics(object),
   basePlot = TRUE,
   aggregate = FALSE,
   main = NULL,
@@ -40,7 +40,7 @@ plotManhattan(object, ...)
 \S4method{plotAberrantPerSample}{FraserDataSet}(
   object,
   main,
-  type = psiTypes_avail,
+  type = fitMetrics(object),
   padjCutoff = 0.1,
   zScoreCutoff = NA,
   deltaPsiCutoff = 0.1,
@@ -51,7 +51,7 @@ plotManhattan(object, ...)
 
 plotExpression(
   fds,
-  type = psiTypes_avail,
+  type = fitMetrics(fds),
   idx = NULL,
   result = NULL,
   colGroup = NULL,
@@ -63,7 +63,7 @@ plotExpression(
 
 plotExpectedVsObservedPsi(
   fds,
-  type = psiTypes_avail,
+  type = fitMetrics(fds),
   idx = NULL,
   result = NULL,
   colGroup = NULL,
@@ -89,7 +89,7 @@ plotExpectedVsObservedPsi(
   ...
 )
 
-\S4method{plotEncDimSearch}{FraserDataSet}(object, type = psiTypes_avail, plotType = c("auc", "loss"))
+\S4method{plotEncDimSearch}{FraserDataSet}(object, type = psiTypes, plotType = c("auc", "loss"))
 
 plotFilterExpression(
   fds,
@@ -107,7 +107,7 @@ plotFilterVariability(
 
 \S4method{plotCountCorHeatmap}{FraserDataSet}(
   object,
-  type = psiTypes_avail,
+  type = psiTypes,
   logit = FALSE,
   topN = 50000,
   topJ = 5000,
@@ -170,7 +170,7 @@ plotBamCoverageFromResultTable(
 \S4method{plotManhattan}{FraserDataSet}(
   object,
   sampleID,
-  type = psiTypes_avail,
+  type = fitMetrics(object),
   main = paste0("sampleID = ", sampleID),
   color_chr = c("black", "darkgrey"),
   ...

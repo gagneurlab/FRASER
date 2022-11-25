@@ -6,7 +6,7 @@
 \usage{
 optimHyperParams(
   fds,
-  type = currentType(fds),
+  type = psiTypes,
   implementation = "PCA",
   q_param = getEncDimRange(fds),
   noise_param = 0,
