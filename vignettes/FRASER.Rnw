@@ -1,4 +1,4 @@
-%\VignetteIndexEntry{FRASER: Find RAre Splicing Evens in RNA-seq Data}
+%\VignetteIndexEntry{FRASER: Find RAre Splicing Events in RNA-seq Data}
 %\VignettePackage{FRASER}
 %\VignetteEngine{knitr::knitr}
 %\VignetteEncoding{UTF-8}
@@ -36,7 +36,7 @@ opts_chunk$set(
 \newcommand{\fraser}{\Biocpkg{FRASER}}
 \newcommand{\fds}{\Rclass{FraserDataSet}}
 
-\title{FRASER: Find RAre Splicing Events in RNA-seq}
+\title{FRASER: Find RAre Splicing Events in RNA-seq Data}
 
 \author{
     Christian Mertes$^{1}$, Ines Scheller$^{1}$, Julien Gagneur$^{1}$ \\
@@ -176,8 +176,8 @@ intron-exon boundary of acceptor A. While we calculate $\theta$ for the 5' and
 between $\theta_5$ and $\theta_3$ and hence call it jointly $\theta$ in the 
 following.
 
-From \fraser{}2 on, only one metric - the Intron Jaccard Index (Figure 
-\ref{IntronJaccardIndex_sketch}.) - is used by default. The Intron Jaccard 
+From \fraser{}2 on, only a single metric - the Intron Jaccard Index (Figure 
+\ref{IntronJaccardIndex_sketch}) - is used by default. The Intron Jaccard 
 Index is more robust and allows to focus more on functionally relevant 
 aberrant splicing events. It allows to detect all types of aberrant splicing 
 previously detected using the three metrics ($\psi_5$, $\psi_3$, $\theta$)
@@ -185,11 +185,10 @@ within a single metric.
 
 \incfig{IntronJaccardIndex_sketch}{1\textwidth}{Overview over the Intron 
 Jaccard Index, the splice metric used in \fraser{}2.}{
-The Intron Jaccard Index considers both split and nonsplit reads and is 
-defined as the jaccard index of the set of donor reads (reads sharing a donor 
-site with the intron of interest and nonsplit reads at that donor site) and 
-acceptor reads (reads sharing an acceptor site with the intron of interest and
-nonsplit reads at that acceptor site). }
+The Intron Jaccard Index considers both split and nonsplit reads within a 
+single metric and allows to detect all different types of aberrant splicing 
+previously captured with either of the metrics $\psi_5$, $\psi_3$, $\theta$. 
+}
 
 The Intron Jaccard Index considers both split and nonsplit reads and is 
 defined as the jaccard index of the set of donor reads (reads sharing a donor 
@@ -198,7 +197,8 @@ acceptor reads (reads sharing an acceptor site with the intron of interest and
 nonsplit reads at that acceptor site): 
 
 \begin{equation}
-    J(D,A) = \frac{n(D,A)}{\sum_{A'} n(D,A') + \sum_{D'} n(D',A) + n(D) + n(A) - n(D,A)}\label{eq:jaccard}
+    J(D,A) = \frac{n(D,A)}{\sum_{A'} n(D,A') + \sum_{D'} n(D',A) + n(D) + n(A) - n(D,A)}
+    \label{eq:jaccard}
 \end{equation}
 
 
@@ -590,7 +590,7 @@ bam files are available in the \fds{} object).
 
 <<result_table, echo=TRUE>>=
 # to show result visualization functions for this tuturial, zScore cutoff used
-res <- results(fds, zScoreCutoff=2, padjCutoff=NA, deltaPsiCutoff=0.1)
+res <- results(fds, zScoreCutoff=2, padjCutoff=NA, deltaPsiCutoff=NA)
 res
 
 # for the gene level pvalues, gene symbols need to be annotated the fds object
@@ -598,7 +598,8 @@ res
 # as we previously called FRASER() before annotating genes, we run it again here
 fds <- calculatePadjValues(fds, type="jaccard", geneLevel=TRUE)
 # generate gene-level results table (if gene symbols have been annotated)
-res_gene <- results(fds, aggregate=TRUE, padjCutoff=NA, deltaPsiCutoff=0.1)
+res_gene <- results(fds, aggregate=TRUE, padjCutoff=NA, deltaPsiCutoff=NA, 
+                    zScoreCutoff=2)
 res_gene
 @
 
@@ -614,7 +615,7 @@ plotVolcano(fds, type="jaccard", "sample10")
 Which are the splicing events in detail?
 
 <<sample result, echo=TRUE>>=
-sampleRes <- res[res$sampleID == "sample10"]
+sampleRes <- res[res$sampleID == "sample8"]
 sampleRes
 @
 

@@ -663,7 +663,7 @@ plotQQ.FRASER <- function(object, type=NULL, idx=NULL, result=NULL,
 
     if(isTRUE(global)){
         if(is.null(type)){
-            type <- psiTypes
+            type <- fitMetrics(object)
         }
         dt <- rbindlist(bplapply(type, getPlottingDT, fds=object, axis="col",
                 idx=TRUE, aggregate=aggregate, Ncpus=Ncpus, ...))
