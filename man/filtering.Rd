@@ -68,6 +68,10 @@ mcols.}
 otherwise the function works on the delayedMatrix representations. The 
 default value depends on the number of samples in the fds-object.}
 
+\item{filterOnJaccard}{If TRUE, the Intron Jaccard Metric is used to define 
+express introns during fitlering. Otherwise, the psi5, psi3 and theta 
+metrics are used (default: TRUE).}
+
 \item{BPPARAM}{the BiocParallel parameters for the parallelization}
 }
 \value{

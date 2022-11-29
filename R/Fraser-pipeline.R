@@ -85,7 +85,7 @@ NULL
 #' the beta-binomial fit, the computation of Z scores and p values as well as 
 #' the computation of delta-PSI values.
 #' @export
-FRASER <- function(fds, q, types=fitMetrics(fds), 
+FRASER <- function(fds, q, type=fitMetrics(fds), 
                    implementation=c("PCA", "PCA-BB-Decoder", "AE-weighted", 
                                     "AE", "BB"), 
                     iterations=15, BPPARAM=bpparam(), correction, ...){
@@ -104,7 +104,7 @@ FRASER <- function(fds, q, types=fitMetrics(fds),
     }
 
     # fit each splicing type separately
-    for(i in types){
+    for(i in type){
 
         # get type specific q
         if(missing(q)){

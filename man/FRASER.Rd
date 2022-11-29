@@ -11,7 +11,7 @@
 FRASER(
   fds,
   q,
-  types = fitMetrics(fds),
+  type = fitMetrics(fds),
   implementation = c("PCA", "PCA-BB-Decoder", "AE-weighted", "AE", "BB"),
   iterations = 15,
   BPPARAM = bpparam(),
@@ -58,6 +58,9 @@ Should be fitted using \code{\link{optimHyperParams}} if unknown.
 If a named vector is provided it is used for the different
 splicing types.}
 
+\item{type}{The type of PSI (jaccard, psi5, psi3 or theta for theta/splicing 
+efficiency)}
+
 \item{implementation}{The method that should be used to correct for 
 confounders.}
 
@@ -69,9 +72,6 @@ not yet converged after these number of iterations, the fit stops anyway.}
 \item{correction}{Deprecated. The name changed to implementation.}
 
 \item{...}{Additional parameters passed on to the internal fit function}
-
-\item{type}{The type of PSI (jaccard, psi5, psi3 or theta for theta/splicing 
-efficiency)}
 
 \item{logit}{Indicates if z scores are computed on the logit scale (default) 
 or in the natural (psi) scale.}

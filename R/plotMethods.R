@@ -1432,9 +1432,13 @@ plotManhattan.FRASER <- function(object, sampleID,
                                 main=paste0("sampleID = ", sampleID), 
                                 color_chr=c("black", "darkgrey"),
                                 ...){
-    # load necessary packages
-    require(ggbio)
-    require(biovizBase)
+    # check necessary packages
+    if (!requireNamespace('ggbio')){
+        stop("For this function, the ggbio package is required.")
+    }
+    if (!requireNamespace('biovizBase')){
+        stop("For this function, the biovizBase package is required.")
+    }
     
     # check arguments
     stopifnot(is(object, "FraserDataSet"))
@@ -1460,7 +1464,7 @@ plotManhattan.FRASER <- function(object, sampleID,
     mcols(gr_sample)[,"delta"] <- deltaPsiValue(object, type=type)[,sampleID]
     
     # only one point per donor/acceptor site (relevant only for psi5 and psi3)
-    index <- FRASER:::getSiteIndex(object, type=type)
+    index <- getSiteIndex(object, type=type)
     nonDup <- !duplicated(index)
     gr_sample <- gr_sample[nonDup,]
     
@@ -1657,9 +1661,9 @@ plotGrandLinear.adapted <- function (obj, ..., facets, space.skip = 0.01,
     }
     if (!missing(facets)) {
         args$facets <- facets
-        args.facets <- subsetArgsByFormals(args, facet_grid, 
+        args.facets <- biovizBase::subsetArgsByFormals(args, facet_grid, 
                                            facet_wrap)
-        facet <- .buildFacetsFromArgs(obj, args.facets)
+        facet <- ggbio:::.buildFacetsFromArgs(obj, args.facets)
         p <- p + facet
     }
     p <- p + theme(panel.grid.minor = element_blank())
@@ -1689,13 +1693,14 @@ plotGrandLinear.adapted <- function (obj, ..., facets, space.skip = 0.01,
             if (!is.null(highlight.name)) {
                 seqlevels(.h.pos, pruning.mode = "coarse") <- seqlevels(obj)
                 suppressWarnings(seqinfo(.h.pos) <- seqinfo(obj))
-                .trans <- transformToGenome(.h.pos, space.skip = space.skip)
+                .trans <- biovizBase::transformToGenome(.h.pos, space.skip = space.skip)
                 values(.trans)$mean <- (start(.trans) + end(.trans))/2
                 values(.trans)$names <- highlight.name
-                p <- p + geom_text(data = mold(.trans), size = highlight.label.size, 
-                                   vjust = 0, color = highlight.label.col, do.call(aes, 
-                                                                                   list(x = substitute(mean), y = as.name("val"), 
-                                                                                        label = as.name("names"))))
+                p <- p + geom_text(data = biovizBase::mold(.trans), 
+                        size = highlight.label.size, 
+                        vjust = 0, color = highlight.label.col, do.call(aes, 
+                                list(x = substitute(mean), y = as.name("val"), 
+                                label = as.name("names"))))
             }
         }
     }

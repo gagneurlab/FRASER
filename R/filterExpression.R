@@ -17,6 +17,9 @@
 #' passed all filters is returned. If FALSE, no subsetting is done and the 
 #' information of whether an intron passed the filters is only stored in the 
 #' mcols.
+#' @param filterOnJaccard If TRUE, the Intron Jaccard Metric is used to define 
+#' express introns during fitlering. Otherwise, the psi5, psi3 and theta 
+#' metrics are used (default: TRUE).
 #' @param delayed If FALSE, count matrices will be loaded into memory, 
 #' otherwise the function works on the delayedMatrix representations. The 
 #' default value depends on the number of samples in the fds-object. 
