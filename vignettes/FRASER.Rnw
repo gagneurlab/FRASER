@@ -240,8 +240,8 @@ orgDb <- org.Hs.eg.db
 fds <- annotateRangesWithTxDb(fds, txdb=txdb, orgDb=orgDb)
 
 # fit the splicing model for each metric 
-# with a specific latentsapce dimension
-fds <- FRASER(fds, q=c(psi5=2, psi3=3, theta=3))
+# with a specific latentspace dimension
+fds <- FRASER(fds, q=c(jaccard=2))
 
 # alternatively, we also provide a way to use biomart for the annotation:
 # fds <- annotateRanges(fds)

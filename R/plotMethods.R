@@ -1432,6 +1432,10 @@ plotManhattan.FRASER <- function(object, sampleID,
                                 main=paste0("sampleID = ", sampleID), 
                                 color_chr=c("black", "darkgrey"),
                                 ...){
+    # load necessary packages
+    require(ggbio)
+    require(biovizBase)
+    
     # check arguments
     stopifnot(is(object, "FraserDataSet"))
     stopifnot(sampleID %in% samples(object))
@@ -1679,7 +1683,7 @@ plotGrandLinear.adapted <- function (obj, ..., facets, space.skip = 0.01,
             else {
                 highlight.name <- values(highlight.gr)[, highlight.name]
             }
-            p <- p + geom_point(data = mold(p@data[queryHits(idx)]), 
+            p <- p + geom_point(data = biovizBase::mold(p@data[queryHits(idx)]), 
                                 do.call(aes, list(x = substitute(midpoint), y = args.aes$y)), 
                                 color = highlight.col)
             if (!is.null(highlight.name)) {
