@@ -505,7 +505,9 @@ plotQQ(fds, result=res[1])
 plotExpectedVsObservedPsi(fds, res=res[1])
 
 # create manhattan plot of pvalues by genomic position
-plotManhattan(fds, type="jaccard", sampleID="sample10")
+if(require(ggbio)){
+    plotManhattan(fds, type="jaccard", sampleID="sample10")
+}
 
 # plot splice graph and coverage from bam files in a given region
 if(require(SGSeq)){
