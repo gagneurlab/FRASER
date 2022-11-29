@@ -46,7 +46,6 @@ opts_chunk$set(
 
 
 \begin{document}
-\SweaveOpts{concordance=TRUE}
 
 <<include=FALSE>>=
 opts_chunk$set(concordance=TRUE)
