@@ -521,10 +521,6 @@ $\psi$ values or both.
 
 <<result table, echo=TRUE>>=
 # annotate introns with the HGNC symbols of the corresponding gene
-if (!require("TxDb.Hsapiens.UCSC.hg19.knownGene", quietly = TRUE))
-    BiocManager::install("TxDb.Hsapiens.UCSC.hg19.knownGene")
-if (!require("org.Hs.eg.db", quietly = TRUE))
-    BiocManager::install("org.Hs.eg.db")
 library(TxDb.Hsapiens.UCSC.hg19.knownGene)
 library(org.Hs.eg.db)
 
