@@ -43,6 +43,9 @@
 #' # get statistics
 #' pVals(fds)
 #' padjVals(fds)
+#' 
+#' # zscore not calculated by default
+#' fds <- calculateZscore(fds, type="jaccard")
 #' zScores(fds)
 #' 
 #' # set and get pseudocount
@@ -701,7 +704,6 @@ getPlottingDT <- function(fds, axis=c("row", "col"), type=currentType(fds),
             pval      = c(pVals(fds, type=type, 
                                 level=pvalLevel)[idxrow, idxcol]),
             padj      = c(padjVals(fds, type=type)[idxrow, idxcol]),
-            zscore    = c(zScores(fds, type=type)[idxrow, idxcol]),
             obsPsi    = c(k/n),
             predPsi   = c(predictedMeans(fds, type)[idxrow, idxcol]),
             rho       = rep(rho(fds, type=type)[idxrow], 
@@ -711,7 +713,7 @@ getPlottingDT <- function(fds, axis=c("row", "col"), type=currentType(fds),
 
     # add aberrant information to it
     aberrantVec <- aberrant(fds, ..., padjVals=dt[,.(padj)],
-        dPsi=dt[,.(deltaPsi)], zscores=dt[,.(zscore)], n=dt[,.(n)], 
+        dPsi=dt[,.(deltaPsi)], n=dt[,.(n)], 
         rhoVals=dt[,.(rho)], aggregate=FALSE)
     dt[,aberrant:=aberrantVec]
 

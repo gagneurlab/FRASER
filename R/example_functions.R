@@ -61,7 +61,7 @@ createTestFraserDataSet <- function(workingDir="FRASER_output", rerun=FALSE){
     if(all(file.exists(hdf5Files))){
         if(isFALSE(rerun)){
             fds <- loadFraserDataSet(workingDir, name="Data_Analysis")
-            if(all(paste0(c("zScores", "padjBetaBinomial", "predictedMeans"),
+            if(all(paste0(c("padjBetaBinomial", "predictedMeans"),
                         "_", rep(psiTypes, 3)) %in% assayNames(fds))){
                 message(date(), ": Use existing cache data.")
                 return(fds)

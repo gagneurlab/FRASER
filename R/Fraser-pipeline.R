@@ -129,8 +129,8 @@ FRASER <- function(fds, q, type=fitMetrics(fds),
         message(date(), ": Adjust p values for: '", i, "'.")
         fds <- calculatePadjValues(fds, type=i)
 
-        message(date(), ": Compute Z scores for: '", i, "'.")
-        fds <- calculateZscore(fds, type=i)
+        # message(date(), ": Compute Z scores for: '", i, "'.")
+        # fds <- calculateZscore(fds, type=i)
     }
 
     # return final analysis

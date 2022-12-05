@@ -620,7 +620,7 @@ mapSeqlevels <- function(fds, style="UCSC", ...){
 #'
 #' retrieve a single sample result object
 #' @noRd
-resultsSingleSample <- function(sampleID, gr, pvals, padjs, zscores, 
+resultsSingleSample <- function(sampleID, gr, pvals, padjs, 
                                 psivals, rawCts, rawTotalCts, rawNonsplitCts, 
                                 rawNsProportion, nsProportion_99quantile,
                                 deltaPsiVals, psiType, rowMeansK, rowMeansN, 
@@ -665,7 +665,6 @@ resultsSingleSample <- function(sampleID, gr, pvals, padjs, zscores,
     mcols(ans)$type            <- Rle(psiType)
     mcols(ans)$pValue          <- signif(pvals[goodCut,sampleID], 5)
     mcols(ans)$padjust         <- signif(padjs[goodCut,sampleID], 5)
-    mcols(ans)$zScore          <- Rle(round(zscores[goodCut,sampleID], 2))
     mcols(ans)$psiValue        <- Rle(round(psivals[goodCut,sampleID], 2))
     mcols(ans)$deltaPsi        <- round(deltaPsiVals[goodCut,sampleID], 2)
     mcols(ans)$counts          <- Rle(rawCts[goodCut, sampleID])
@@ -711,7 +710,7 @@ resultsSingleSample <- function(sampleID, gr, pvals, padjs, zscores,
     return(ans[order(mcols(ans)$pValue, -abs(mcols(ans)$deltaPsi))])
 }
 
-FRASER.results <- function(object, sampleIDs, fdrCutoff, zscoreCutoff, 
+FRASER.results <- function(object, sampleIDs, fdrCutoff, 
                             dPsiCutoff, minCount, rhoCutoff, psiType, 
                             maxCols=20, aggregate=FALSE, collapse=FALSE,
                             geneColumn="hgnc_symbol", BPPARAM=bpparam(), 
@@ -763,7 +762,6 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff, zscoreCutoff,
                                             filters=list(rho=rhoCutoff)))
             padjs        <- as.matrix(padjVals(tmp_x, 
                                             filters=list(rho=rhoCutoff)))
-            zscores      <- as.matrix(zScores(tmp_x))
             psivals      <- as.matrix(assay(tmp_x, type))
             muPsi        <- as.matrix(predictedMeans(tmp_x))
             psivals_pc   <- (rawCts + pseudocount()) /
@@ -772,7 +770,6 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff, zscoreCutoff,
             rho          <- rho(tmp_x, type)
             aberrant     <- aberrant.FRASER(tmp_x, type=type, 
                                                 padjCutoff=fdrCutoff, 
-                                                zScoreCutoff=zscoreCutoff, 
                                                 deltaPsiCutoff=dPsiCutoff, 
                                                 minCount=minCount, 
                                                 rhoCutoff=rhoCutoff,
@@ -783,7 +780,6 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff, zscoreCutoff,
                 padjsGene    <- as.matrix(padjVals(tmp_x, level="gene"))
                 aberrantGene <- aberrant.FRASER(tmp_x, type=type, 
                                                 padjCutoff=fdrCutoff, 
-                                                zScoreCutoff=zscoreCutoff, 
                                                 deltaPsiCutoff=dPsiCutoff, 
                                                 minCount=minCount, 
                                                 rhoCutoff=rhoCutoff,
@@ -798,7 +794,6 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff, zscoreCutoff,
             if(length(sc) == 1){
                 colnames(pvals) <- sc
                 colnames(padjs) <- sc
-                colnames(zscores) <- sc
                 colnames(deltaPsiVals) <- sc
             }
             
@@ -817,7 +812,7 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff, zscoreCutoff,
             # create result table
             sampleRes <- lapply(sc,
                                 resultsSingleSample, gr=gr, pvals=pvals, 
-                                padjs=padjs, zscores=zscores, psiType=type, 
+                                padjs=padjs, psiType=type, 
                                 psivals=psivals, deltaPsiVals=deltaPsiVals, 
                                 rawCts=rawCts, rawTotalCts=rawTotalCts, 
                                 rawNonsplitCts=rawNonsplitCts, 
@@ -866,7 +861,6 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff, zscoreCutoff,
 #' @param sampleIDs A vector of sample IDs for which results should be 
 #' retrieved
 #' @param padjCutoff The FDR cutoff to be applied or NA if not requested.
-#' @param zScoreCutoff The z-score cutoff to be applied or NA if not requested.
 #' @param deltaPsiCutoff The cutoff on delta psi or NA if not requested.
 #' @param minCount The minimum count value of the total coverage of an intron 
 #' to be considered as significant.
@@ -891,7 +885,7 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff, zscoreCutoff,
 #'              types to return only one row per feature (gene) and sample.
 #' @param geneColumn The column name of the column that has the gene annotation 
 #'              that will be used for gene-level pvalue computation.
-#' @param ... Further arguments can be passed to the method. If "n", "zscores", 
+#' @param ... Further arguments can be passed to the method. If "n",  
 #'              "padjVals", "dPsi" or "rhoVals" are given, the values of those 
 #'              arguments are used to define the aberrant events.
 #'
@@ -908,18 +902,17 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff, zscoreCutoff,
 #' 
 #' # extract results: for this example dataset, no cutoffs are used to
 #' # get at least one result and show the output
-#' res <- results(fds, padjCutoff=NA, zScoreCutoff=NA, deltaPsiCutoff=NA)
+#' res <- results(fds, padjCutoff=NA, deltaPsiCutoff=NA)
 #' res
 #' 
 #' # aggregate the results by genes (gene symbols need to be annotated first 
 #' # using annotateRanges() function)
-#' results(fds, padjCutoff=NA, zScoreCutoff=1, deltaPsiCutoff=0.1, 
-#'         aggregate=TRUE)
+#' results(fds, padjCutoff=NA, deltaPsiCutoff=0.1, aggregate=TRUE)
 #'
 #' # aggregate the results by genes and collapse over all psi types to obtain 
 #' # only one row per gene in the results table 
-#' results(fds, padjCutoff=NA, zScoreCutoff=1, deltaPsiCutoff=0.1, 
-#'         aggregate=TRUE, collapse=TRUE)
+#' results(fds, padjCutoff=NA, deltaPsiCutoff=0.1, aggregate=TRUE, 
+#'         collapse=TRUE)
 #'
 #' # get aberrant events per sample: on the example data, nothing is aberrant
 #' # based on the adjusted p-value
@@ -927,21 +920,20 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff, zscoreCutoff,
 #' 
 #' # get aberrant events per gene (first annotate gene symbols)
 #' fds <- annotateRangesWithTxDb(fds)
-#' aberrant(fds, type="jaccard", by="feature", zScoreCutoff=2, padjCutoff=NA,
-#'         aggregate=TRUE)
+#' aberrant(fds, type="jaccard", by="feature", padjCutoff=NA, aggregate=TRUE)
 #'         
 #' # find aberrant junctions/splice sites
 #' aberrant(fds, type="jaccard")
 #' @export
 setMethod("results", "FraserDataSet", function(object, 
                     sampleIDs=samples(object), padjCutoff=0.05,
-                    zScoreCutoff=NA, deltaPsiCutoff=0.1,
+                    deltaPsiCutoff=0.1,
                     rhoCutoff=1, aggregate=FALSE, collapse=FALSE,
                     minCount=5, psiType=psiTypes,
                     geneColumn="hgnc_symbol",
                     additionalColumns=NULL, BPPARAM=bpparam()){
     FRASER.results(object=object, sampleIDs=sampleIDs, fdrCutoff=padjCutoff,
-            zscoreCutoff=zScoreCutoff, dPsiCutoff=deltaPsiCutoff, 
+            dPsiCutoff=deltaPsiCutoff, 
             rhoCutoff=rhoCutoff, minCount=minCount, 
             psiType=match.arg(psiType, several.ok=TRUE),
             aggregate=aggregate, collapse=collapse, geneColumn=geneColumn,
@@ -950,12 +942,11 @@ setMethod("results", "FraserDataSet", function(object,
 
 aberrant.FRASER <- function(object, type=fitMetrics(object), 
                                 padjCutoff=0.05, deltaPsiCutoff=0.1, 
-                                zScoreCutoff=NA, minCount=5, rhoCutoff=1,
+                                minCount=5, rhoCutoff=1,
                                 by=c("none", "sample", "feature"), 
                                 aggregate=FALSE, geneColumn="hgnc_symbol", ...){
     
     checkNaAndRange(padjCutoff,     min=0, max=1,   scalar=TRUE,   na.ok=TRUE)
-    checkNaAndRange(zScoreCutoff,   min=0, max=Inf, scalar=TRUE,   na.ok=TRUE)
     checkNaAndRange(deltaPsiCutoff, min=0, max=1,   scalar=TRUE,   na.ok=TRUE)
     checkNaAndRange(rhoCutoff,      min=0, max=1,   scalar=TRUE,   na.ok=TRUE)
     checkNaAndRange(minCount,       min=0, max=Inf, scalar=TRUE,   na.ok=TRUE)
@@ -967,11 +958,6 @@ aberrant.FRASER <- function(object, type=fitMetrics(object),
         n <- dots[['n']]
     } else {
         n <- N(object, type=type)
-    }
-    if("zscores" %in% names(dots)){
-        zscores <- dots[['zscores']]
-    } else {
-        zscores <- zScores(object, type=type)
     }
     if("padjVals" %in% names(dots)){
         padj <- dots[['padjVals']]
@@ -1018,10 +1004,6 @@ aberrant.FRASER <- function(object, type=fitMetrics(object),
     # check each cutoff if in use (not NA)
     if(!is.na(minCount)){
         aberrantEvents <- aberrantEvents & as.matrix(n >= minCount)
-    }
-    if(!is.na(zScoreCutoff)){
-        aberrantEvents <- aberrantEvents & 
-            as.matrix(abs(zscores) >= zScoreCutoff)
     }
     if(!is.na(deltaPsiCutoff)){
         aberrantEvents <- aberrantEvents & 

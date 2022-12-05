@@ -31,7 +31,7 @@
 #' @param idx A junction site ID or gene ID or one of both, which
 #'             should be plotted. Can also be a vector. Integers are treated
 #'             as indices.
-#' @param padjCutoff,zScoreCutoff,deltaPsiCutoff Significance, Z-score or delta
+#' @param padjCutoff,deltaPsiCutoff Significance or delta
 #'             psi cutoff to mark outliers
 #' @param global Flag to plot a global Q-Q plot, default FALSE
 #' @param normalized If TRUE, the normalized psi values are used, the default,
@@ -282,7 +282,7 @@
 #'     require(org.Hs.eg.db)
 #'     orgDb <- org.Hs.eg.db
 #'  
-#'     res <- results(fds, padjCutoff=NA, deltaPsiCutoff=NA, zScoreCutoff=NA)
+#'     res <- results(fds, padjCutoff=NA, deltaPsiCutoff=NA)
 #'     res_dt <- as.data.table(res)
 #'     res_dt <- res_dt[sampleID == "sample2",]
 #'     
@@ -403,7 +403,7 @@ setMethod("plotVolcano", signature="FraserDataSet", plotVolcano.FRASER)
 
 plotAberrantPerSample.FRASER <- function(object, main, 
                     type=fitMetrics(object),
-                    padjCutoff=0.1, zScoreCutoff=NA, deltaPsiCutoff=0.1,
+                    padjCutoff=0.1, deltaPsiCutoff=0.1,
                     aggregate=TRUE, BPPARAM=bpparam(), ...){
 
     type <- match.arg(type, several.ok=TRUE)
@@ -417,7 +417,7 @@ plotAberrantPerSample.FRASER <- function(object, main,
 
     # extract outliers
     outliers <- bplapply(type, aberrant, object=object, by="sample",
-            padjCutoff=padjCutoff, zScoreCutoff=zScoreCutoff,
+            padjCutoff=padjCutoff, 
             deltaPsiCutoff=deltaPsiCutoff, aggregate=aggregate, ..., 
             BPPARAM=BPPARAM)
     dt2p <- rbindlist(lapply(seq_along(outliers), function(idx){

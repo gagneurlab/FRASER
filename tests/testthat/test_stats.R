@@ -17,19 +17,19 @@ test_that("PSI value calculation", {
     expect_true(all(N(fds, "psi5")[ is.na(psiVal)] == 0))
 })
 
-test_that("Zscore calculation", {
-    fds <- getFraser(clean = TRUE)
-    
-    # prepare zScore input for logit scale
-    psiVal <- (K(fds, "jaccard") + pseudocount())/(N(fds, "jaccard") + 2*pseudocount())
-    mu <- predictedMeans(fds, "jaccard")
-    residual <- qlogis(psiVal) - qlogis(mu)
-    
-    # compute zscore
-    zscores <- (residual - rowMeans(residual)) / rowSds(residual)
-    
-    expect_equal(zscores, zScores(fds, "jaccard"))
-})
+# test_that("Zscore calculation", {
+#     fds <- getFraser(clean = TRUE)
+#     
+#     # prepare zScore input for logit scale
+#     psiVal <- (K(fds, "jaccard") + pseudocount())/(N(fds, "jaccard") + 2*pseudocount())
+#     mu <- predictedMeans(fds, "jaccard")
+#     residual <- qlogis(psiVal) - qlogis(mu)
+#     
+#     # compute zscore
+#     zscores <- (residual - rowMeans(residual)) / rowSds(residual)
+#     
+#     expect_equal(zscores, zScores(fds, "jaccard"))
+# })
 
 test_that("Gene p value calculation with NAs", {
     fds <- getFraser()

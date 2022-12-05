@@ -42,7 +42,6 @@ plotManhattan(object, ...)
   main,
   type = fitMetrics(object),
   padjCutoff = 0.1,
-  zScoreCutoff = NA,
   deltaPsiCutoff = 0.1,
   aggregate = TRUE,
   BPPARAM = bpparam(),
@@ -202,7 +201,7 @@ samples. Labelling can be turned off by setting
 \code{label=NULL}. The user can also provide a custom 
 list of gene symbols or sampleIDs.}
 
-\item{padjCutoff, zScoreCutoff, deltaPsiCutoff}{Significance, Z-score or delta
+\item{padjCutoff, deltaPsiCutoff}{Significance or delta
 psi cutoff to mark outliers}
 
 \item{BPPARAM}{BiocParallel parameter to use.}
@@ -527,7 +526,7 @@ if(require(SGSeq)){
     require(org.Hs.eg.db)
     orgDb <- org.Hs.eg.db
  
-    res <- results(fds, padjCutoff=NA, deltaPsiCutoff=NA, zScoreCutoff=NA)
+    res <- results(fds, padjCutoff=NA, deltaPsiCutoff=NA)
     res_dt <- as.data.table(res)
     res_dt <- res_dt[sampleID == "sample2",]
     

@@ -198,6 +198,9 @@ rho(fds)
 # get statistics
 pVals(fds)
 padjVals(fds)
+
+# zscore not calculated by default
+fds <- calculateZscore(fds, type="jaccard")
 zScores(fds)
 
 # set and get pseudocount

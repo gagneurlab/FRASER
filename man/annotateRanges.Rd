@@ -20,7 +20,8 @@ annotateRangesWithTxDb(
   featureName = "hgnc_symbol",
   keytype = "ENTREZID",
   txdb = NULL,
-  orgDb = NULL
+  orgDb = NULL,
+  filter = list()
 )
 }
 \arguments{
@@ -52,6 +53,11 @@ one is used, currently this is
 
 \item{orgDb}{An \code{orgDb} object or a data table to map the feature names.
 If this is NULL, then \code{org.Hs.eg.db} is used as the default.}
+
+\item{filter}{A named list specifying the filters which should be applied to 
+subset to e.g. only protein-coding genes for annotation. 
+\code{names(filter)} needs to be column names in the given 
+orgDb object (default: no filtering).}
 }
 \value{
 FraserDataSet

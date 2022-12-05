@@ -69,9 +69,9 @@
 #'   # run this function before creating the results table
 #'   fds <- annotateIntronReferenceOverlap(fds, txdb) 
 #' 
-#'   # extract results: for this small example dataset, only a z score cutoff 
-#'   # of 1 is used to get at least one result. 
-#'   res <- results(fds, padjCutoff=NA, zScoreCutoff=1, deltaPsiCutoff=NA)
+#'   # extract results: for this small example dataset, no cutoffs used 
+#'   # to get some results 
+#'   res <- results(fds, padjCutoff=NA, deltaPsiCutoff=NA)
 #'   
 #'   # annotate the type of splice event and UTR overlap
 #'   res <- annotateSpliceEventType(result=res, txdb=txdb, fds=fds)

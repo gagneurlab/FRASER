@@ -17,6 +17,10 @@
 #'             \code{TxDb.Hsapiens.UCSC.hg19.knownGene}.
 #' @param orgDb An \code{orgDb} object or a data table to map the feature names.
 #'             If this is NULL, then \code{org.Hs.eg.db} is used as the default.
+#' @param filter A named list specifying the filters which should be applied to 
+#'             subset to e.g. only protein-coding genes for annotation. 
+#'             \code{names(filter)} needs to be column names in the given 
+#'             orgDb object (default: no filtering).
 #' @param keytype The keytype or column name of gene IDs in the \code{TxDb}
 #'             object (see 
 #'             \code{\link[AnnotationDbi:AnnotationDb-class]{keytypes}}
@@ -104,7 +108,7 @@ annotateRanges <- function(fds, feature="hgnc_symbol", featureName=feature,
 #' @export
 annotateRangesWithTxDb <- function(fds, feature="SYMBOL", 
                     featureName="hgnc_symbol", keytype="ENTREZID",
-                    txdb=NULL, orgDb=NULL){
+                    txdb=NULL, orgDb=NULL, filter=list()){
     gene_id <- NULL
     
     # check input
@@ -136,15 +140,24 @@ annotateRangesWithTxDb <- function(fds, feature="SYMBOL",
     if(is.data.table(orgDb)){
         tmp <- merge(x=as.data.table(anno)[,.(gene_id)], y=orgDb, 
                 by.y=keytype, by.x="gene_id", all.x=TRUE, sort=FALSE)[,
-                        .(gene_id, feature=get(feature))]
-        setnames(tmp, "feature", feature)
+                            c("gene_id", feature, names(filter)), with=FALSE]
     } else {
         tmp  <- as.data.table(select(orgDb, keys=mcols(anno)[,"gene_id"], 
-                columns=feature, keytype=keytype))
+                columns=c(feature, names(filter)), keytype=keytype))
     }
         
+    # filter genes as specified by user (e.g. only protein_coding)
+    tmp[, include:=TRUE]
+    if(!is.null(filter) & length(filter) > 0 & !is.null(names(filter))){
+        for(n in names(filter)){
+            stopifnot(n %in% colnames(tmp))
+            tmp[!(get(n) %in% filter[[n]]), include:=FALSE]
+        }
+    }
+    
     # add the new feature to the annotation
     tmp[, uniqueID := .GRP, by=keytype]
+    tmp <- tmp[include == TRUE,]
     anno <- anno[tmp[,uniqueID]]
     mcols(anno)[[featureName]] <- tmp[,get(feature)]
         

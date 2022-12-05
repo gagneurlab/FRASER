@@ -247,8 +247,8 @@ fds <- FRASER(fds, q=c(jaccard=2))
 
 # get results: we recommend to use an FDR cutoff 0.05, but due to the small
 # dataset size we extract all events and their associated values
-# eg: res <- results(fds, zScoreCutoff=NA, padjCutoff=0.05, deltaPsiCutoff=0.3)
-res <- results(fds, zScoreCutoff=NA, padjCutoff=NA, deltaPsiCutoff=NA)
+# eg: res <- results(fds, padjCutoff=0.05, deltaPsiCutoff=0.1)
+res <- results(fds, padjCutoff=NA, deltaPsiCutoff=NA)
 res
 
 # result visualization
@@ -412,9 +412,9 @@ be processed with the same protocol and origin from the same tissue.
 \label{sec:filtering}
 
 Before we can filter the data, we have to compute the main splicing metric:
-the $\psi$-value (Percent Spliced In).
+the $\psi$-value (Percent Spliced In) and the Intron Jaccard Index.
 
-<<calculate psi/zscore values, echo=TRUE>>=
+<<calculate psi/jaccard values, echo=TRUE>>=
 fds <- calculatePSIValues(fds)
 fds
 @
@@ -547,7 +547,7 @@ the following additional information:
     \item type: the metric for which the aberrant event was detected (either
     jaccard for Intron Jaccard Index or psi5 for $\psi_5$, psi3 for $\psi_3$ or 
     theta for $\theta$)
-    \item pValue, padjust, zScore: the p-value, adjusted p-value and z-score of
+    \item pValue, padjust: the p-value and adjusted p-value (FDR) of
     this event (at intron or splice site level depending on metric)
     \item pValueGene, padjustGene: only present in the gene-level results table,
     gives the p-value and FDR adjusted p-value at gene-level
@@ -584,8 +584,8 @@ sashimi plot for an outlier in the results table directly in R (if paths to
 bam files are available in the \fds{} object).
 
 <<result_table, echo=TRUE>>=
-# to show result visualization functions for this tuturial, zScore cutoff used
-res <- results(fds, zScoreCutoff=2, padjCutoff=NA, deltaPsiCutoff=NA)
+# to show result visualization functions for this tuturial, no cutoff used
+res <- results(fds, padjCutoff=NA, deltaPsiCutoff=NA)
 res
 
 # for the gene level pvalues, gene symbols need to be annotated the fds object
@@ -593,8 +593,7 @@ res
 # as we previously called FRASER() before annotating genes, we run it again here
 fds <- calculatePadjValues(fds, type="jaccard", geneLevel=TRUE)
 # generate gene-level results table (if gene symbols have been annotated)
-res_gene <- results(fds, aggregate=TRUE, padjCutoff=NA, deltaPsiCutoff=NA, 
-                    zScoreCutoff=2)
+res_gene <- results(fds, aggregate=TRUE, padjCutoff=NA, deltaPsiCutoff=NA)
 res_gene
 @
 
@@ -731,30 +730,6 @@ argument.
 <<p-adj calculation, echo=TRUE>>=
 fds <- calculatePadjValues(fds, type="jaccard", method="BY")
 head(padjVals(fds,type="jaccard"))
-@
-
-\subsection{Z-score calculation}
-\label{sec:Z-score-calculation}
-
-To calculate z-scores on the logit transformed $\Delta\psi$ values and to store
-them in the \fds{} object, the function \Rfunction{calculateZScores} can be
-called. The Z-scores can be used for visualization, filtering, and ranking of
-samples. The Z-scores are calculated as follows:
-
-\begin{equation}
-    z_{ij} = \frac{\delta_{ij} - \bar{\delta_j}}{sd(\delta_j)}
-\end{equation}
-\begin{equation*}
-    \delta_{ij} = logit{(\frac{k_{ij} + 1}{n_{ij} + 2})} - logit{(\mu_{ij})},
-\end{equation*}
-
-where $\delta_{ij}$ is the difference on the logit scale between the measured
-counts and the counts after correction for confounders and $\bar{\delta_j}$ is
-the mean of intron $j$.
-
-<<z-score calculation, echo=TRUE>>=
-fds <- calculateZscore(fds, type="jaccard")
-head(zScores(fds, type="jaccard"))
 @
 
 \subsection{Result visualization}

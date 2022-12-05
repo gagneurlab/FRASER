@@ -9,7 +9,6 @@
   object,
   sampleIDs = samples(object),
   padjCutoff = 0.05,
-  zScoreCutoff = NA,
   deltaPsiCutoff = 0.1,
   rhoCutoff = 1,
   aggregate = FALSE,
@@ -26,7 +25,6 @@
   type = fitMetrics(object),
   padjCutoff = 0.05,
   deltaPsiCutoff = 0.1,
-  zScoreCutoff = NA,
   minCount = 5,
   rhoCutoff = 1,
   by = c("none", "sample", "feature"),
@@ -42,8 +40,6 @@
 retrieved}
 
 \item{padjCutoff}{The FDR cutoff to be applied or NA if not requested.}
-
-\item{zScoreCutoff}{The z-score cutoff to be applied or NA if not requested.}
 
 \item{deltaPsiCutoff}{The cutoff on delta psi or NA if not requested.}
 
@@ -80,7 +76,7 @@ are included.}
 \code{sample} or \code{feature} is specified the sum by 
 sample or feature is returned}
 
-\item{...}{Further arguments can be passed to the method. If "n", "zscores", 
+\item{...}{Further arguments can be passed to the method. If "n",
 "padjVals", "dPsi" or "rhoVals" are given, the values of those 
 arguments are used to define the aberrant events.}
 }
@@ -102,18 +98,17 @@ fds <- createTestFraserDataSet()
 
 # extract results: for this example dataset, no cutoffs are used to
 # get at least one result and show the output
-res <- results(fds, padjCutoff=NA, zScoreCutoff=NA, deltaPsiCutoff=NA)
+res <- results(fds, padjCutoff=NA, deltaPsiCutoff=NA)
 res
 
 # aggregate the results by genes (gene symbols need to be annotated first 
 # using annotateRanges() function)
-results(fds, padjCutoff=NA, zScoreCutoff=1, deltaPsiCutoff=0.1, 
-        aggregate=TRUE)
+results(fds, padjCutoff=NA, deltaPsiCutoff=0.1, aggregate=TRUE)
 
 # aggregate the results by genes and collapse over all psi types to obtain 
 # only one row per gene in the results table 
-results(fds, padjCutoff=NA, zScoreCutoff=1, deltaPsiCutoff=0.1, 
-        aggregate=TRUE, collapse=TRUE)
+results(fds, padjCutoff=NA, deltaPsiCutoff=0.1, aggregate=TRUE, 
+        collapse=TRUE)
 
 # get aberrant events per sample: on the example data, nothing is aberrant
 # based on the adjusted p-value
@@ -121,8 +116,7 @@ aberrant(fds, type="jaccard", by="sample")
 
 # get aberrant events per gene (first annotate gene symbols)
 fds <- annotateRangesWithTxDb(fds)
-aberrant(fds, type="jaccard", by="feature", zScoreCutoff=2, padjCutoff=NA,
-        aggregate=TRUE)
+aberrant(fds, type="jaccard", by="feature", padjCutoff=NA, aggregate=TRUE)
         
 # find aberrant junctions/splice sites
 aberrant(fds, type="jaccard")
