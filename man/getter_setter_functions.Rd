@@ -41,7 +41,7 @@ pVals(
   fds,
   type = currentType(fds),
   level = "site",
-  filters = list(rho = 1),
+  filters = list(),
   dist = "BetaBinomial",
   ...
 )
@@ -51,7 +51,7 @@ padjVals(
   type = currentType(fds),
   dist = c("BetaBinomial"),
   level = "site",
-  filters = list(rho = 1),
+  filters = list(),
   ...
 )
 

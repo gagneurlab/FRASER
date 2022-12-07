@@ -726,6 +726,9 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff,
     
     # only extract results for requested psiTypes if pvals exist for them
     stopifnot(all(psiType %in% psiTypes))
+    if(is.na(rhoCutoff)){
+        rhoCutoff <- 1
+    }
     pvalsAvailable <- checkPadjAvailableForFilters(object, type=psiType,
                                                    filters=list(rho=rhoCutoff), 
                                                    aggregate=aggregate)
@@ -928,7 +931,7 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff,
 setMethod("results", "FraserDataSet", function(object, 
                     sampleIDs=samples(object), padjCutoff=0.05,
                     deltaPsiCutoff=0.1,
-                    rhoCutoff=1, aggregate=FALSE, collapse=FALSE,
+                    rhoCutoff=NA, aggregate=FALSE, collapse=FALSE,
                     minCount=5, psiType=psiTypes,
                     geneColumn="hgnc_symbol",
                     additionalColumns=NULL, BPPARAM=bpparam()){
@@ -942,7 +945,7 @@ setMethod("results", "FraserDataSet", function(object,
 
 aberrant.FRASER <- function(object, type=fitMetrics(object), 
                                 padjCutoff=0.05, deltaPsiCutoff=0.1, 
-                                minCount=5, rhoCutoff=1,
+                                minCount=5, rhoCutoff=NA,
                                 by=c("none", "sample", "feature"), 
                                 aggregate=FALSE, geneColumn="hgnc_symbol", ...){
     
@@ -952,6 +955,10 @@ aberrant.FRASER <- function(object, type=fitMetrics(object),
     checkNaAndRange(minCount,       min=0, max=Inf, scalar=TRUE,   na.ok=TRUE)
     by <- match.arg(by)
     type <- match.arg(type)
+    
+    if(is.na(rhoCutoff)){
+        rhoCutoff <- 1
+    }
     
     dots <- list(...)
     if("n" %in% names(dots)){

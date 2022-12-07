@@ -222,7 +222,7 @@ singlePvalueBinomial <- function(idx, k, n, mu){
 #' multiple testing correction.
 #' @param rhoCutoff The cutoff value on the fitted rho value 
 #'     (overdispersion parameter of the betabinomial) above which junctions are 
-#'     masked with NA during p value adjustment. 
+#'     masked with NA during p value adjustment (default: NA, no masking). 
 #' @param geneLevel Logical value indiciating whether gene-level p values 
 #'     should be calculated. Defaults to TRUE.
 #' @param geneColumn The column name of the column that has the gene annotation 
@@ -230,7 +230,7 @@ singlePvalueBinomial <- function(idx, k, n, mu){
 #' 
 #' @export
 calculatePadjValues <- function(fds, type=currentType(fds), method="BY",
-                                rhoCutoff=1, geneLevel=TRUE, 
+                                rhoCutoff=NA, geneLevel=TRUE, 
                                 geneColumn="hgnc_symbol", BPPARAM=bpparam()){
     currentType(fds) <- type
     index <- getSiteIndex(fds, type=type)
@@ -247,11 +247,15 @@ calculatePadjValues <- function(fds, type=currentType(fds), method="BY",
         
         # splice site-level pval correction
         message(date(), ":  adjusting junction-level pvalues ...")
-        # fwer_pvals <- getFWERpvals_byIdx(pvals, index, rho, method="holm", 
-        #                                 rhoCutoff=rhoCutoff, BPPARAM=BPPARAM)
         fwer_pvals <- getFWERpvals_bySample(pvals, index, rho, method="holm", 
-                                        rhoCutoff=rhoCutoff, BPPARAM=BPPARAM)
-        pVals(fds, dist=i, level="site", filters=list(rho=rhoCutoff),
+                            rhoCutoff=ifelse(is.na(rhoCutoff), 1, rhoCutoff), 
+                            BPPARAM=BPPARAM)
+        if(!is.na(rhoCutoff)){
+            filters <- list(rho=rhoCutoff)
+        } else{
+            filters <- list()
+        }
+        pVals(fds, dist=i, level="site", filters=filters,
                 withDimnames=FALSE) <- fwer_pvals
         
         # junction-level FDR correction
@@ -259,7 +263,7 @@ calculatePadjValues <- function(fds, type=currentType(fds), method="BY",
         padj <- apply(fwer_pvals[idx,], 2, p.adjust, method=method)
         padjDT <- data.table(cbind(i=unique(index), padj), key="i")[J(index)]
         padjDT[,i:=NULL]
-        padjVals(fds, dist=i, level="site", filters=list(rho=rhoCutoff),
+        padjVals(fds, dist=i, level="site", filters=filters,
                 withDimnames=FALSE) <- as.matrix(padjDT)
         
         # gene-level pval correction and FDR
@@ -270,9 +274,9 @@ calculatePadjValues <- function(fds, type=currentType(fds), method="BY",
                                             method="holm", FDRmethod=method, 
                                             geneColumn=geneColumn,
                                             BPPARAM=BPPARAM)
-            pVals(fds, dist=i, level="gene", filters=list(rho=rhoCutoff),
+            pVals(fds, dist=i, level="gene", filters=filters,
                     withDimnames=FALSE) <- gene_pvals[["pvals"]]
-            padjVals(fds, dist=i, level="gene", filters=list(rho=rhoCutoff),
+            padjVals(fds, dist=i, level="gene", filters=filters,
                     withDimnames=FALSE) <- gene_pvals[["padj"]]
         } else if(isTRUE(geneLevel)){
             warning("Gene-level pvalues could not be calculated as column ",

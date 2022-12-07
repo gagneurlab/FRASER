@@ -254,7 +254,7 @@ zScores <- function(fds, type=currentType(fds), byGroup=FALSE, ...){
 #' @describeIn getter_setter_functions This returns the calculated p-values.
 #' @export
 pVals <- function(fds, type=currentType(fds), level="site", 
-                    filters=list(rho=1), dist="BetaBinomial", ...){
+                    filters=list(), dist="BetaBinomial", ...){
     level <- match.arg(level, choices=c("site", "junction", "gene"))
     dist <- match.arg(dist, choices=c("BetaBinomial", "Binomial", "Normal"))
     aname <- paste0("pvalues", dist)
@@ -269,10 +269,14 @@ pVals <- function(fds, type=currentType(fds), level="site",
     } else{ 
         aname <- ifelse(level == "gene", paste0(aname, "_gene"), aname)
         # add information on used filters
+        if(is.null(names(filters))){
+            filters <- list(rho=1)
+        }
         for(n in sort(names(filters))){
             aname_new <- paste0(aname, "_", n, filters[[n]])
             if(n == "rho" && filters[[n]] == 1){
-                if(any(grepl(aname_new, assayNames(fds)))){
+                if(any(grepl(aname_new, assayNames(fds))) ||
+                        any(grepl(aname_new, names(metadata(fds))))){
                     aname <- aname_new
                 }
             }else{
@@ -292,7 +296,7 @@ pVals <- function(fds, type=currentType(fds), level="site",
 }
 
 `pVals<-` <- function(fds, type=currentType(fds), level="site",
-                    filters=list(rho=1),
+                    filters=list(),
                     dist="BetaBinomial", ..., value){
     level <- match.arg(level, choices=c("site", "junction", "gene"))
     dist <- match.arg(dist, choices=c("BetaBinomial", "Binomial", "Normal"))
@@ -306,9 +310,7 @@ pVals <- function(fds, type=currentType(fds), level="site",
     }
     # add information on used filters
     for(n in sort(names(filters))){
-        if(!(n == "rho" && filters[[n]] == 1)){
-            aname <- paste0(aname, "_", n, filters[[n]])
-        }
+        aname <- paste0(aname, "_", n, filters[[n]])
     }
     
     if(level == "gene"){
@@ -325,7 +327,7 @@ pVals <- function(fds, type=currentType(fds), level="site",
 #' @describeIn getter_setter_functions This returns the adjusted p-values.
 #' @export
 padjVals <- function(fds, type=currentType(fds), dist=c("BetaBinomial"), 
-                    level="site", filters=list(rho=1), ...){
+                    level="site", filters=list(), ...){
     level <- match.arg(level, choices=c("site", "gene"))
     dist <- match.arg(dist, choices=c("BetaBinomial", "Binomial", "Normal"))
     aname <- paste0("padj", dist)
@@ -333,8 +335,12 @@ padjVals <- function(fds, type=currentType(fds), dist=c("BetaBinomial"),
     # add information on used filters
     for(n in sort(names(filters))){
         aname_new <- paste0(aname, "_", n, filters[[n]])
+        if(is.null(names(filters))){
+            filters <- list(rho=1)
+        }
         if(n == "rho" && filters[[n]] == 1){
-            if(any(grepl(aname_new, assayNames(fds)))){
+            if(any(grepl(aname_new, assayNames(fds))) ||
+                    any(grepl(aname_new, names(metadata(fds))))){
                 aname <- aname_new
             }
         }else{
@@ -352,16 +358,14 @@ padjVals <- function(fds, type=currentType(fds), dist=c("BetaBinomial"),
 }
 
 `padjVals<-` <- function(fds, type=currentType(fds), level="site",
-                    dist="BetaBinomial", filters=list(rho=1), ..., value){
+                    dist="BetaBinomial", filters=list(), ..., value){
     level <- match.arg(level, choices=c("site", "gene"))
     dist <- match.arg(dist, choices=c("BetaBinomial", "Binomial", "Normal"))
     aname <- paste0("padj", dist)
     aname <- ifelse(level == "gene", paste0(aname, "_gene"), aname)
     # add information on used filters
     for(n in sort(names(filters))){
-        if(!(n == "rho" && filters[[n]] == 1)){
-            aname <- paste0(aname, "_", n, filters[[n]])
-        }
+        aname <- paste0(aname, "_", n, filters[[n]])
     }
     if(level == "gene"){
         if(is.null(rownames(value))){

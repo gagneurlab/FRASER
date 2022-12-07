@@ -34,7 +34,7 @@ calculatePadjValues(
   fds,
   type = currentType(fds),
   method = "BY",
-  rhoCutoff = 1,
+  rhoCutoff = NA,
   geneLevel = TRUE,
   geneColumn = "hgnc_symbol",
   BPPARAM = bpparam()
@@ -87,7 +87,7 @@ multiple testing correction.}
 
 \item{rhoCutoff}{The cutoff value on the fitted rho value 
 (overdispersion parameter of the betabinomial) above which junctions are 
-masked with NA during p value adjustment.}
+masked with NA during p value adjustment (default: NA, no masking).}
 
 \item{geneLevel}{Logical value indiciating whether gene-level p values 
 should be calculated. Defaults to TRUE.}
