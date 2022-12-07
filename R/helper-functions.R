@@ -564,7 +564,8 @@ checkPadjAvailableForFilters <- function(fds, type=currentType(fds),
     for(n in sort(names(filters))){
         aname_new <- paste0(aname, "_", n, filters[[n]])
         if(n == "rho" && filters[[n]] == 1){
-            if(any(grepl(aname_new, assayNames(fds)))){
+            if(any(grepl(aname_new, assayNames(fds))) ||
+                    any(grepl(aname_new, names(metadata(fds))))){
                 aname <- aname_new
             }
         }else{

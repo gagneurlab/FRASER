@@ -779,8 +779,10 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff,
                                                 aggregate=FALSE,
                                                 geneColumn=geneColumn)
             if(isTRUE(aggregate)){
-                pvalsGene    <- as.matrix(pVals(tmp_x, level="gene"))
-                padjsGene    <- as.matrix(padjVals(tmp_x, level="gene"))
+                pvalsGene    <- as.matrix(pVals(tmp_x, level="gene", 
+                                                filters=list(rho=rhoCutoff)))
+                padjsGene    <- as.matrix(padjVals(tmp_x, level="gene", 
+                                                filters=list(rho=rhoCutoff)))
                 aberrantGene <- aberrant.FRASER(tmp_x, type=type, 
                                                 padjCutoff=fdrCutoff, 
                                                 deltaPsiCutoff=dPsiCutoff, 
