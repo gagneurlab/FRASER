@@ -431,7 +431,7 @@ plotAberrantPerSample.FRASER <- function(object, main,
         geom_line() +
         geom_hline(aes(yintercept=median, color=type, lty="Median")) +
         theme_bw() +
-        theme_cowplot() +
+        theme_cowplot() + background_grid(major="xy", minor="xy") +
         ggtitle(main) +
         xlab("Sample rank") +
         ylab("Number of outliers") +
@@ -440,7 +440,7 @@ plotAberrantPerSample.FRASER <- function(object, main,
         scale_linetype_manual(name="", values=2, labels="Median")
 
     if(!all(dt2p[,value] == 0)){
-        g <- g + scale_y_log10()
+        g <- g + scale_y_log10() + annotation_logticks(sides="l")
     }
     
     g
@@ -846,6 +846,8 @@ plotEncDimSearch.FRASER <- function(object, type=psiTypes,
             geom_smooth(method="loess", formula=y~x) +
             geom_vline(data=data[isOptimalQ == TRUE,], 
                     mapping=aes(xintercept=q, col=nsubset, linetype=noise)) +
+            geom_text(data=data[isOptimalQ == TRUE,], 
+                        aes(y=0.0, q+1, label=q)) +
             ggtitle(as.expression(bquote(bold(paste(
                 "Q estimation for ", .(ggplotLabelPsi(type)[[1]])))))) +
             xlab("Estimated q") +
