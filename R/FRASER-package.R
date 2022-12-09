@@ -49,7 +49,7 @@
 #' @importFrom plotly plot_ly subplot layout add_trace ggplotly
 #' @importFrom pheatmap pheatmap
 #' @importFrom RColorBrewer brewer.pal
-#' @importFrom cowplot theme_cowplot
+#' @importFrom cowplot theme_cowplot background_grid
 #' @importFrom ggrepel geom_text_repel
 #'
 ### Data handling

@@ -399,7 +399,7 @@ genePvalsByGeneID <- function(dt, samples, geneIDs, method, BPPARAM){
 #' 
 #' @export
 calculatePadjValuesOnSubset <- function(fds, genesToTest, type=currentType(fds), 
-                                subsetName="FDR_subset", method="BY", 
+                                subsetName="subset", method="BY", 
                                 geneColumn="hgnc_symbol", BPPARAM=bpparam()){
     
     # check input
@@ -409,10 +409,6 @@ calculatePadjValuesOnSubset <- function(fds, genesToTest, type=currentType(fds),
     stopifnot(!is.null(names(genesToTest)))
     if(!all(names(genesToTest) %in% samples(fds))){
         stop("names(genesToTest) need to be sampleIDs in the given fds object.")
-    }
-    if(!all(samples(fds) %in% names(genesToTest))){
-        stop("All sampleIDs of the given fds object need to be in ",
-            "names(geneToTest).")
     }
     
     # check if genes have been annotated
@@ -430,11 +426,28 @@ calculatePadjValuesOnSubset <- function(fds, genesToTest, type=currentType(fds),
         # message(date(), ": FDR subset calculation for sample = ", sample_id)
         # get idx of junctions corresponding to genes with var
         jidx <- unlist(lapply(genes_to_test_sample, function(gene){
-            idx <- which(grepl(gene, mcols(fds, type="j")[, geneColumn]))
+            idx <- which(grepl(gene, mcols(fds, type=type)[, geneColumn]))
             names(idx) <- rep(gene, length(idx))
+            if(length(idx) == 0 && verbose(fds) > 0){
+                warning("No introns found in fds object for gene: ", gene, 
+                        " and sample: ", sample_id, ". Skipping this gene.")
+            }
             return(idx)
         }))
         jidx <- sort(jidx[!duplicated(jidx)])
+        
+        # check that jidx is not empty vector
+        if(length(jidx) == 0){
+            warning("No introns found in the fds object for the given gene ", 
+                    "subset for sample: ", sample_id)
+            return(data.table(gene=character(0), 
+                              sampleID=character(0), 
+                              pval=numeric(0),
+                              FDR_subset=numeric(0), 
+                              jidx=integer(0),
+                              pval_gene=numeric(0),
+                              FDR_subset_gene=numeric(0)))
+        }
         
         # retrieve pvalues of junctions to test
         p <- pVals(fds, type=type, level="junction")[jidx, sample_id]
@@ -458,7 +471,7 @@ calculatePadjValuesOnSubset <- function(fds, genesToTest, type=currentType(fds),
     message(date(), ": finished FDR calculation on subset of genes.")
     
     # add FDR subset info to fds object and return
-    metadata(fds)[[subsetName]] <- FDR_subset
+    metadata(fds)[[paste("FDR", subsetName, sep="_")]] <- FDR_subset
     return(fds)
 }
 

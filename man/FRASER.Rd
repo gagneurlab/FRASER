@@ -44,7 +44,7 @@ calculatePadjValuesOnSubset(
   fds,
   genesToTest,
   type = currentType(fds),
-  subsetName = "FDR_subset",
+  subsetName = "subset",
   method = "BY",
   geneColumn = "hgnc_symbol",
   BPPARAM = bpparam()
@@ -189,6 +189,12 @@ fds <- calculatePadjValues(fds, type="jaccard", method="BY")
 head(padjVals(fds, type="jaccard"))
 fds <- calculateZscore(fds, type="jaccard")
 head(zScores(fds, type="jaccard")) 
+
+# To calculate the FDR only on a subset of genes of interest (per sample):
+geneList <- list("sample1"=c("TIMMDC1"), "sample2"=c("MCOLN1"))
+fds <- calculatePadjValuesOnSubset(fds, genesToTest=geneList, 
+         subsetName="setOfInterest", type="jaccard")
+metadata(fds)[["FDR_setOfInterest"]]
 
 }
 \seealso{

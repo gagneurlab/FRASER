@@ -16,6 +16,9 @@
   minCount = 5,
   psiType = psiTypes,
   geneColumn = "hgnc_symbol",
+  subsets = NULL,
+  fullSubset = FALSE,
+  returnTranscriptomewideResults = TRUE,
   additionalColumns = NULL,
   BPPARAM = bpparam()
 )
@@ -30,6 +33,9 @@
   by = c("none", "sample", "feature"),
   aggregate = FALSE,
   geneColumn = "hgnc_symbol",
+  geneSubset = NULL,
+  subsetName = NULL,
+  fullSubset = FALSE,
   ...
 )
 }
@@ -63,6 +69,18 @@ result}
 \item{geneColumn}{The column name of the column that has the gene annotation 
 that will be used for gene-level pvalue computation.}
 
+\item{subsets}{A named list of named lists specifying any number of gene 
+subsets (can differ per sample). For each subset, FDR correction
+will be limited to introns in genes in the subset, and aberrant 
+events passing the FDR cutoff will be reported for each subset 
+separately. See the examples for how to use this argument.}
+
+\item{fullSubset}{Only applies when \code{geneSubset} is not NULL. Specifies 
+whether all introns in given subset of genes should be 
+considered as aberrant, or only those passing the given cutoffs. 
+Defaults to FALSE (introns have to pass the cutoffs in addtion 
+to being in the gene subset to be considered aberrant).}
+
 \item{additionalColumns}{Character vector containing the names of additional 
 columns from mcols(fds) that should appear in the result table 
 (e.g. ensembl_gene_id). Default is \code{NULL}, so no additional columns 
@@ -75,6 +93,13 @@ are included.}
 \item{by}{By default \code{none} which means no grouping. But if 
 \code{sample} or \code{feature} is specified the sum by 
 sample or feature is returned}
+
+\item{geneSubset}{A named list giving a subset of genes per sample to which
+FDR correction should be restricted. The names of the list must 
+correspond to the sampleIDs in the fds object.}
+
+\item{subsetName}{The name under which the resulting FDR corrected pvalues 
+on the subset only will be displayed in the result table.}
 
 \item{...}{Further arguments can be passed to the method. If "n",
 "padjVals", "dPsi" or "rhoVals" are given, the values of those 
@@ -120,4 +145,15 @@ aberrant(fds, type="jaccard", by="feature", padjCutoff=NA, aggregate=TRUE)
         
 # find aberrant junctions/splice sites
 aberrant(fds, type="jaccard")
+
+# retrieve results limiting FDR correction to only a subset of genes
+# first, we need to create a list of genes per sample that will be tested
+geneList <- list('sample1'=c("TIMMDC1"), 'sample2'=c("MCOLN1"))
+results(fds, subsets=list('random_subset'=geneList), fullSubset=TRUE)
+
+# results for several subsets can be retrieved at the same time:
+geneList2 <- list('sample1'=c("MCOLN1", "TIMMDC1"), 'sample2'=c("MCOLN1"))
+results(fds, 
+        subsets=list('random_subset'=geneList, 'another_subset'=geneList2), 
+        fullSubset=TRUE)
 }
