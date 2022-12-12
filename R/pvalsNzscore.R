@@ -442,6 +442,7 @@ calculatePadjValuesOnSubset <- function(fds, genesToTest, type=currentType(fds),
                     "subset for sample: ", sample_id)
             return(data.table(gene=character(0), 
                               sampleID=character(0), 
+                              type=character(0),
                               pval=numeric(0),
                               FDR_subset=numeric(0), 
                               jidx=integer(0),
@@ -456,7 +457,7 @@ calculatePadjValuesOnSubset <- function(fds, genesToTest, type=currentType(fds),
         pa <- p.adjust(p, method=method)
         
         # gene level pvals
-        dt <- data.table(sampleID=sample_id, pval=p, FDR_subset=pa, 
+        dt <- data.table(sampleID=sample_id, type=type, pval=p, FDR_subset=pa, 
                         gene=names(jidx), jidx=jidx)
         dt[, pval_gene:=min(p.adjust(pval, method="holm")), by="gene"]
         
@@ -471,7 +472,7 @@ calculatePadjValuesOnSubset <- function(fds, genesToTest, type=currentType(fds),
     message(date(), ": finished FDR calculation on subset of genes.")
     
     # add FDR subset info to fds object and return
-    metadata(fds)[[paste("FDR", subsetName, sep="_")]] <- FDR_subset
+    metadata(fds)[[paste("FDR", subsetName, type, sep="_")]] <- FDR_subset
     return(fds)
 }
 

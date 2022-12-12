@@ -751,7 +751,8 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff,
                                                   genesToTest=geneSubset, 
                                                   subsetName=subsetName, 
                                                   geneColumn=geneColumn)
-            fdr_subset <- metadata(object)[[paste0("FDR_", subsetName)]]
+            fdr_subset <- metadata(object)[[paste("FDR", subsetName, type, 
+                                                    sep="_")]]
             object <- object[, fdr_subset[, unique(sampleID)]]
         } 
         
@@ -870,7 +871,7 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff,
                                 FDR_subset)]
                 )
                 # replace padj values with values on subset
-                padj <- matrix(NA, nrow=nrow(tmp_x), ncol=ncol(tmp_x))
+                padj <- matrix(NA, nrow=nrow(pvals), ncol=ncol(pvals))
                 if(nrow(subset_padj) > 0){
                     padj[subset_padj[,1:2]] <- subset_padj[,3]
                 }
@@ -1179,7 +1180,8 @@ aberrant.FRASER <- function(object, type=fitMetrics(object),
                                                   genesToTest=geneSubset, 
                                                   subsetName=subsetName, 
                                                   geneColumn=geneColumn)
-            fdr_subset <- metadata(object)[[paste0("FDR_", subsetName)]]
+            fdr_subset <- metadata(object)[[paste("FDR", subsetName, type, 
+                                                    sep="_")]]
         }
         
         
