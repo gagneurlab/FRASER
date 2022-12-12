@@ -745,6 +745,10 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff,
         currentType(object) <- type
         gr <- rowRanges(object, type=type)
         
+        # first get row means
+        rowMeansK <- rowMeans(K(object, type=type))
+        rowMeansN <- rowMeans(N(object, type=type))
+        
         # calculate FDR on subset first if requested
         if(!is.null(geneSubset)){
             object <- calculatePadjValuesOnSubset(fds=object, type=type, 
@@ -755,10 +759,6 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff,
                                                     sep="_")]]
             object <- object[, fdr_subset[, unique(sampleID)]]
         } 
-        
-        # first get row means
-        rowMeansK <- rowMeans(K(object, type=type))
-        rowMeansN <- rowMeans(N(object, type=type))
         
         # then iterate by chunk
         chunkCols <- getMaxChunks2Read(fds=object, assayName=type, max=maxCols)
