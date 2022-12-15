@@ -329,23 +329,23 @@ addPotentialImpactLabels <- function(junctions_dt, fds, txdb){
     
     # prepare the results column
     junctions_dt[, potentialImpact := "complex"]
-    junctions_dt[, potentialFrameshift := "inconclusive"]
+    junctions_dt[, causesFrameshift := "inconclusive"]
     junctions_dt[annotatedJunction == "both" & deltaPsi >= 0, 
                     potentialImpact := "annotatedIntron_increasedUsage"]
     junctions_dt[annotatedJunction == "both" & deltaPsi < 0, 
                     potentialImpact := "annotatedIntron_reducedUsage"]
-    junctions_dt[annotatedJunction == "both", potentialFrameshift := "unlikely"]
+    junctions_dt[annotatedJunction == "both", causesFrameshift := "unlikely"]
     
     if(all(c("nonsplitProportion", "nonsplitProportion_99quantile") %in% 
             colnames(junctions_dt))){
-        junctions_dt[spliceType == "annotatedIntron_reducedUsage" & 
+        junctions_dt[potentialImpact == "annotatedIntron_reducedUsage" & 
                     type == "jaccard" &
                     nonsplitProportion >= nonsplitProportion_99quantile + 0.05 &
                     nonsplitCounts >= 10,
-                spliceType := "(partial)intronRetention"]
+                potentialImpact := "(partial)intronRetention"]
         
         # TODO check frameshift for intron retention
-        junctions_dt[spliceType == "(partial)intronRetention", 
+        junctions_dt[potentialImpact == "(partial)intronRetention", 
                         causesFrameshift := "inconclusive"]
     }
     
@@ -367,7 +367,7 @@ addPotentialImpactLabels <- function(junctions_dt, fds, txdb){
                             intron_ranges, exons))
     })
     junctions_dt[psi_positions[starts], 
-                    potentialFrameshift:=start_results[2,]]
+                    causesFrameshift:=start_results[2,]]
     junctions_dt[psi_positions[starts], 
                     potentialImpact := start_results[1,]]
     
@@ -384,7 +384,7 @@ addPotentialImpactLabels <- function(junctions_dt, fds, txdb){
                                 intron_ranges, exons))
         
     })
-    junctions_dt[psi_positions[ends], potentialFrameshift:=end_results[2,]]
+    junctions_dt[psi_positions[ends], causesFrameshift:=end_results[2,]]
     junctions_dt[psi_positions[ends], potentialImpact := end_results[1,]]
     
     # none junctions pt1
@@ -436,7 +436,7 @@ addPotentialImpactLabels <- function(junctions_dt, fds, txdb){
         return(c(combined,frs))
         
     })
-    junctions_dt[psi_positions[nones], potentialFrameshift:=none_results[2,]]
+    junctions_dt[psi_positions[nones], causesFrameshift:=none_results[2,]]
     junctions_dt[psi_positions[nones], potentialImpact := none_results[1,]]
     
     noLaps <-which(junctions_dt[psi_positions]$potentialImpact=="noOverlap")
@@ -467,7 +467,7 @@ addPotentialImpactLabels <- function(junctions_dt, fds, txdb){
         return(c("complex","inconclusive"))
     })
     junctions_dt[psi_positions[noLaps], 
-                    potentialFrameshift:=noLaps_results[2,]]
+                    causesFrameshift:=noLaps_results[2,]]
     junctions_dt[psi_positions[noLaps], 
                     potentialImpact := noLaps_results[1,]]
     
@@ -478,7 +478,7 @@ addPotentialImpactLabels <- function(junctions_dt, fds, txdb){
     
     # specify default type for theta results as NA
     junctions_dt[thetas, potentialImpact := NA]
-    junctions_dt[thetas, potentialFrameshift := NA]
+    junctions_dt[thetas, causesFrameshift := NA]
     
     # label all as intronic first if they have any intron overlap
     intronic <- unique(from(findOverlaps(junctions_gr, introns_tmp)))
@@ -895,11 +895,11 @@ checkExonSkipping <- function(junctions_dt, txdb){
         junctions_dt[potentialImpact2 == "splicingBeyondGene", 
                         potentialImpact := "splicingBeyondGene"]
         junctions_dt[potentialImpact2 == "splicingBeyondGene", 
-                        potentialFrameshift := "inconclusive"]
+                        causesFrameshift := "inconclusive"]
         junctions_dt[potentialImpact2 == "multigenicSplicing", 
                         potentialImpact := "multigenicSplicing"]
         junctions_dt[potentialImpact2 == "multigenicSplicing", 
-                        potentialFrameshift := "inconclusive"]
+                        causesFrameshift := "inconclusive"]
         junctions_dt[, potentialImpact2 := NULL]
     }
     
