@@ -5,23 +5,23 @@
 \alias{createTestFraserDataSet}
 \title{Create a test dataset}
 \usage{
-createTestFraserSettings(workingDir = tempdir())
+createTestFraserSettings(workingDir = "FRASER_output")
 
-createTestFraserDataSet(workingDir = tempdir(), rerun = FALSE)
+createTestFraserDataSet(workingDir = "FRASER_output", rerun = FALSE)
 }
 \arguments{
-\item{workingDir}{directory where to store HDF5 and RDS files. Defaults to
-the current tempory R session folder.}
+\item{workingDir}{Directory where to store HDF5 and RDS files. Defaults to
+\code{FRASER_output} in the current working directory.}
 
 \item{rerun}{Defaults to \code{FALSE}. If set to \code{TRUE} it reruns the
 full fit of the model.}
 }
 \value{
-a FraserDataSet object which contains a test case
+A FraserDataSet object that contains a test case
 }
 \description{
 Create a test case dataset based on the test sample annotation to be 
-used in the vignette and to explore the functionallity of the 
+used in the vignette and to explore the functionality of the 
 FRASER package. Dependent on the request only the sample annotation 
 or a full fitted model is returned.
 }

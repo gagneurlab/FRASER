@@ -10,9 +10,9 @@
 filterExpressionAndVariability(
   object,
   minExpressionInOneSample = 20,
-  quantile = 0.05,
-  quantileMinExpression = 1,
-  minDeltaPsi = 0,
+  quantile = 0.95,
+  quantileMinExpression = 10,
+  minDeltaPsi = 0.05,
   filter = TRUE,
   delayed = ifelse(ncol(object) <= 300, FALSE, TRUE),
   BPPARAM = bpparam()
@@ -21,8 +21,8 @@ filterExpressionAndVariability(
 \S4method{filterExpression}{FraserDataSet}(
   object,
   minExpressionInOneSample = 20,
-  quantile = 0.05,
-  quantileMinExpression = 1,
+  quantile = 0.95,
+  quantileMinExpression = 10,
   filter = TRUE,
   delayed = ifelse(ncol(object) <= 300, FALSE, TRUE),
   BPPARAM = bpparam()
@@ -30,7 +30,7 @@ filterExpressionAndVariability(
 
 filterVariability(
   object,
-  minDeltaPsi = 0,
+  minDeltaPsi = 0.05,
   filter = TRUE,
   delayed = ifelse(ncol(object) <= 300, FALSE, TRUE),
   BPPARAM = bpparam()

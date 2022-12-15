@@ -36,3 +36,4 @@ kremer_ae_*
 # ignore compiled objects
 \.o
 \.so
+^\.github$

@@ -213,8 +213,8 @@ plotVolcano.FRASER <- function(object, sampleID,
     }
     
     if(!is.na(padjCutoff)){
-        if(dt[,any(padj < padjCutoff)]){
-            padj_line <- min(dt[padj < padjCutoff, -log10(pval)])
+        if(dt[,any(padj <= padjCutoff)]){
+            padj_line <- min(dt[padj <= padjCutoff, -log10(pval)])
         }
         if(!"padj_line" %in% ls() || padj_line > 10 || is.na(padj_line)){
             padj_line <- 6
@@ -606,7 +606,6 @@ plotQQ.FRASER <- function(object, type=NULL, idx=NULL, result=NULL,
                 "<br>SampleID: ", sampleID, "<br>K: ", k, "<br>N: ", n))) +
         geom_point() +
         theme_bw() +
-        theme(legend.position="none") +
         ggtitle(main) 
     
     if(isTRUE(basePlot)){
@@ -622,7 +621,8 @@ plotQQ.FRASER <- function(object, type=NULL, idx=NULL, result=NULL,
     # Set color scale for global/local
     if(isFALSE(global)){
         g <- g + scale_color_manual(values=c("black", "firebrick"),
-                name="Aberrant")
+                name="Aberrant") +
+            theme(legend.position="none")
     } else {
         g$mapping$colour <- quote(type)
         g <- g + scale_color_brewer(palette="Dark2", name="Splice metric",
@@ -707,16 +707,26 @@ plotEncDimSearch.FRASER <- function(object, type=c("psi3", "psi5", "theta"),
     }
     data[,noise:=as.factor(noise)]
     data[,nsubset:=as.factor(nsubset)]
+    
+    data[,isOptimalQ:= q == .SD[aroc == max(aroc), q], by="nsubset,noise"]
 
     if(plotType == "auc"){
         
         g1 <- ggplot(data, aes(q, aroc, col=nsubset, linetype=noise)) +
             geom_point() +
             geom_smooth(method="loess", formula=y~x) +
-            ggtitle("Q estimation") +
+            geom_vline(data=data[isOptimalQ == TRUE,], 
+                    mapping=aes(xintercept=q, col=nsubset, linetype=noise)) +
+            ggtitle(as.expression(bquote(bold(paste(
+                "Q estimation for ", .(ggplotLabelPsi(type)[[1]])))))) +
             xlab("Estimated q") +
             ylab("Area under the PR curve") +
             theme_bw(base_size=16)
+        
+        if(data[,uniqueN(nsubset)] == 1 & data[,uniqueN(noise)] == 1){
+            g1 <- g1 + theme(legend.position='none')
+        }
+        
         g1
     }
     else{
@@ -724,10 +734,18 @@ plotEncDimSearch.FRASER <- function(object, type=c("psi3", "psi5", "theta"),
         g2 <- ggplot(data, aes(q, eval, col=nsubset, linetype=noise)) +
             geom_point() +
             geom_smooth() +
-            ggtitle("Q estimation") +
+            geom_vline(data=data[isOptimalQ == TRUE,], 
+                    mapping=aes(xintercept=q, col=nsubset, linetype=noise)) +
+            ggtitle(as.expression(bquote(bold(paste(
+                "Q estimation for ", .(ggplotLabelPsi(type)[[1]])))))) +
             xlab("Estimated q") +
             ylab("Model loss") +
             theme_bw(base_size=16)
+        
+        if(data[,uniqueN(nsubset)] == 1 & data[,uniqueN(noise)] == 1){
+            g2 <- g2 + theme(legend.position='none')
+        }
+        
         g2
     }
 

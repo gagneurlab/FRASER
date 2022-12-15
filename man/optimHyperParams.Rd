@@ -12,7 +12,7 @@ optimHyperParams(
   noise_param = 0,
   minDeltaPsi = 0.1,
   iterations = 5,
-  setSubset = 15000,
+  setSubset = 50000,
   injectFreq = 0.01,
   BPPARAM = bpparam(),
   internalThreads = 1,
