@@ -569,6 +569,10 @@ countSplitReadsPerChromosome <- function(chromosome, bamFile,
                 bamFile, param=param, strandMode=strandMode)
     }
     
+    # remove read pairs with NA seqnames 
+    # (occurs if reads of a pair align to different chromosomes)
+    galignment <- galignment[!is.na(seqnames(galignment))]
+    
     # remove the strand information if unstranded data
     if(isFALSE(as.logical(strandMode))){
         strand(galignment) <- "*"
