@@ -1034,7 +1034,7 @@ plotCountCorHeatmap.FRASER <- function(object,
         object <- object[,ids2plot]
     }
 
-    xmat <- (skmat + 1)/(snmat + 2)
+    xmat <- (skmat + 1*pseudocount())/(snmat + 2*pseudocount())
     if(isTRUE(logit)){
         xmat <- qlogisWithCap(xmat)
     }
