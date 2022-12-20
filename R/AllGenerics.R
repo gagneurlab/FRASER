@@ -870,10 +870,10 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff,
                                     function(s) which(colnames(tmp_x) ==s)),
                                 FDR_subset)]
                 )
-                # replace padj values with values on subset
-                padj <- matrix(NA, nrow=nrow(pvals), ncol=ncol(pvals))
+                # replace padjs values with values on subset
+                padjs <- matrix(NA, nrow=nrow(pvals), ncol=ncol(pvals))
                 if(nrow(subset_padj) > 0){
-                    padj[subset_padj[,1:2]] <- subset_padj[,3]
+                    padjs[subset_padj[,1:2]] <- subset_padj[,3]
                 }
             }
             
