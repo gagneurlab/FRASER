@@ -875,6 +875,7 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff,
                 if(nrow(subset_padj) > 0){
                     padjs[subset_padj[,1:2]] <- subset_padj[,3]
                 }
+                colnames(padjs) <- colnames(pvals)
             }
             
             if(length(sc) == 1){
