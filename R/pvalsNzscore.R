@@ -426,7 +426,8 @@ calculatePadjValuesOnSubset <- function(fds, genesToTest, type=currentType(fds),
         # message(date(), ": FDR subset calculation for sample = ", sample_id)
         # get idx of junctions corresponding to genes with var
         jidx <- unlist(lapply(genes_to_test_sample, function(gene){
-            idx <- which(grepl(gene, mcols(fds, type=type)[, geneColumn]))
+            idx <- which(grepl(paste0("(^|;)", gene, "(;|$)"), 
+                                mcols(fds, type=type)[, geneColumn]))
             names(idx) <- rep(gene, length(idx))
             if(length(idx) == 0 && verbose(fds) > 0){
                 warning("No introns found in fds object for gene: ", gene, 
