@@ -831,10 +831,10 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff,
                     # get row,col idx of genes/samples in subset
                     subset_gene_padj <- as.matrix(
                         fdr_subset[sampleID %in% samples(tmp_x), 
-                            .(sapply(gene, 
-                                function(g) which(rownames(pvalsGene) == g)),
-                            sapply(sampleID, 
-                                function(s) which(colnames(tmp_x) ==s)),
+                            .(as.numeric(sapply(gene, 
+                                function(g) which(rownames(pvalsGene) == g)) ),
+                            as.numeric(sapply(sampleID, 
+                                function(s) which(colnames(tmp_x) ==s)) ),
                             pval_gene,
                             FDR_subset_gene)]
                     )
@@ -850,9 +850,9 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff,
                     colnames(padjsGene) <- colnames(tmp_x)
                     if(nrow(subset_gene_padj) > 0){
                         pvalsGene[subset_gene_padj[,1:2]] <- 
-                            subset_gene_padj[,3]
+                            unlist(subset_gene_padj[,3])
                         padjsGene[subset_gene_padj[,1:2]] <- 
-                            subset_gene_padj[,4]
+                            unlist(subset_gene_padj[,4])
                     }
                 }
                 
@@ -1188,7 +1188,12 @@ aberrant.FRASER <- function(object, type=fitMetrics(object),
         
         # define aberrant status based on whether intron/sample tuples are 
         # part of the given subset
-        aberrantEvents <- matrix(FALSE, nrow=nrow(padj), ncol=ncol(padj))
+        if(is.null(dim(padj))){
+            # only one sample in fds present -> no dimensions set
+            aberrantEvents <- matrix(FALSE, nrow=length(padj), ncol=1)
+        } else{
+            aberrantEvents <- matrix(FALSE, nrow=nrow(padj), ncol=ncol(padj))
+        }
         colnames(aberrantEvents) <- colnames(padj)
         FDR_col <- ifelse(isTRUE(aggregate), "FDR_subset_gene", "FDR_subset")
         subset_idx <- lapply(fdr_subset[, unique(sampleID)], function(sid){

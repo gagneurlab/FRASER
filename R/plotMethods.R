@@ -440,7 +440,8 @@ plotAberrantPerSample.FRASER <- function(object, main,
         scale_linetype_manual(name="", values=2, labels="Median")
 
     if(!all(dt2p[,value] == 0)){
-        g <- g + scale_y_log10() + annotation_logticks(sides="l")
+        g <- g + scale_y_log10(limits=c(1, max(unlist(outliers)))) + 
+            annotation_logticks(sides="l")
     }
     
     g
