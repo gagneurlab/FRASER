@@ -749,6 +749,18 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff,
         rowMeansK <- rowMeans(K(object, type=type))
         rowMeansN <- rowMeans(N(object, type=type))
         
+        # get proportion of nonsplitCounts among all counts (N) for each intron
+        if(type == "jaccard"){
+            rawNonsplitCts  <- as.matrix(assay(object, "rawCountsJnonsplit"))
+            rawNsProportion <- rawNonsplitCts / as.matrix(N(object))
+            nsProportion_99quantile <- 
+                rowQuantiles(rawNsProportion, probs=0.99)
+        } else{
+            rawNonsplitCts  <- NULL
+            rawNsProportion <- NULL
+            nsProportion_99quantile <- NULL
+        }
+        
         # calculate FDR on subset first if requested
         if(!is.null(geneSubset)){
             object <- calculatePadjValuesOnSubset(fds=object, type=type, 
@@ -884,33 +896,21 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff,
                 colnames(deltaPsiVals) <- sc
             }
             
-            if(type == "jaccard"){
-                rawNonsplitCts  <- as.matrix(assay(tmp_x, "rawCountsJnonsplit"))
-                rawNsProportion <- rawNonsplitCts / rawTotalCts
-                nsProportion_99quantile <- 
-                    rowQuantiles(rawNsProportion, probs=0.99)
-            } else{
-                rawNonsplitCts  <- NULL
-                rawNsProportion <- NULL
-                nsProportion_99quantile <- NULL
-            }
-            
-            
             # create result table
             sampleRes <- lapply(sc,
-                                resultsSingleSample, gr=gr, pvals=pvals, 
-                                padjs=padjs, psiType=type, 
-                                psivals=psivals, deltaPsiVals=deltaPsiVals, 
-                                rawCts=rawCts, rawTotalCts=rawTotalCts, 
-                                rawNonsplitCts=rawNonsplitCts, 
-                                rawNsProportion=rawNsProportion,
-                                nsProportion_99quantile=nsProportion_99quantile,
-                                rowMeansK=rowMeansK, rowMeansN=rowMeansN, 
-                                aberrant=aberrant, aggregate=aggregate,
-                                rho=rho, geneColumn=geneColumn,
-                                pvalsGene=pvalsGene, padjsGene=padjsGene,
-                                aberrantGene=aberrantGene, 
-                                additionalColumns=additionalColumns)
+                        resultsSingleSample, gr=gr, pvals=pvals, 
+                        padjs=padjs, psiType=type, 
+                        psivals=psivals, deltaPsiVals=deltaPsiVals, 
+                        rawCts=rawCts, rawTotalCts=rawTotalCts, 
+                        rawNonsplitCts=rawNonsplitCts[,sc], 
+                        rawNsProportion=rawNsProportion[,sc],
+                        nsProportion_99quantile=nsProportion_99quantile,
+                        rowMeansK=rowMeansK, rowMeansN=rowMeansN, 
+                        aberrant=aberrant, aggregate=aggregate,
+                        rho=rho, geneColumn=geneColumn,
+                        pvalsGene=pvalsGene, padjsGene=padjsGene,
+                        aberrantGene=aberrantGene, 
+                        additionalColumns=additionalColumns)
             
             # return combined result
             return(unlist(GRangesList(sampleRes)))
