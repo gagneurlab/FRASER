@@ -418,6 +418,9 @@ calculatePadjValuesOnSubset <- function(fds, genesToTest, type=currentType(fds),
             "annotateRanges or annotateRangesWithTxDb function."))
     }
     
+    # site index (for psi3/5)
+    site_idx <- getSiteIndex(fds, type=type)
+        
     # compute FDR on the given subsets of genes
     message(date(), ": starting FDR calculation on subset of genes...")
     FDR_subset <- rbindlist(bpmapply(names(genesToTest), genesToTest, 
@@ -451,20 +454,22 @@ calculatePadjValuesOnSubset <- function(fds, genesToTest, type=currentType(fds),
                               FDR_subset_gene=numeric(0)))
         }
         
-        # retrieve pvalues of junctions to test
-        p <- as.matrix(pVals(fds, type=type, level="junction"))
+        # retrieve pvalues of junctions
+        p <- as.matrix(pVals(fds, type=type))
         if(ncol(p) == 1){
             colnames(p) <- colnames(fds)    
         }
         p <- p[jidx, sample_id]
         
         # FDR correction
-        pa <- p.adjust(p, method=method)
+        pa <- p.adjust(p[!duplicated(site_idx[jidx])], method=method)
         
         # gene level pvals
-        dt <- data.table(sampleID=sample_id, type=type, pval=p, FDR_subset=pa, 
-                        gene=names(jidx), jidx=jidx)
-        dt[, pval_gene:=min(p.adjust(pval, method="holm")), by="gene"]
+        dt <- data.table(sampleID=sample_id, type=type, pval=p, 
+                         gene=names(jidx), jidx=jidx, site_idx=site_idx[jidx])
+        dt <- merge(dt, data.table(site_idx=site_idx[jidx][!duplicated(site_idx[jidx])], FDR_subset=pa), by="site_idx")
+        dt[!duplicated(dt$site_idx), pval_gene:=min(p.adjust(pval, method="holm")), by="gene"]
+        dt[, pval_gene := .SD[!is.na(pval_gene), unique(pval_gene)], by="gene"]
         
         # gene level FDR
         dt2 <- dt[, unique(pval_gene), by="gene"]
