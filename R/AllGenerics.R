@@ -1194,7 +1194,7 @@ aberrant.FRASER <- function(object, type=fitMetrics(object),
         } else{
             aberrantEvents <- matrix(FALSE, nrow=nrow(padj), ncol=ncol(padj))
         }
-        colnames(aberrantEvents) <- colnames(padj)
+        colnames(aberrantEvents) <- colnames(object)
         FDR_col <- ifelse(isTRUE(aggregate), "FDR_subset_gene", "FDR_subset")
         subset_idx <- lapply(fdr_subset[, unique(sampleID)], function(sid){
             col <- which(colnames(object) == sid)

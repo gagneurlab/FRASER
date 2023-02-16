@@ -452,7 +452,11 @@ calculatePadjValuesOnSubset <- function(fds, genesToTest, type=currentType(fds),
         }
         
         # retrieve pvalues of junctions to test
-        p <- pVals(fds, type=type, level="junction")[jidx, sample_id]
+        p <- as.matrix(pVals(fds, type=type, level="junction"))
+        if(ncol(p) == 1){
+            colnames(p) <- colnames(fds)    
+        }
+        p <- p[jidx, sample_id]
         
         # FDR correction
         pa <- p.adjust(p, method=method)
