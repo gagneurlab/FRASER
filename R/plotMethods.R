@@ -18,6 +18,7 @@
 #'   \item plotBamCoverage()
 #'   \item plotBamCoverageFromResultTable()
 #'   \item plotManhattan()
+#'   \item plotSpliceMetricRank()
 #' }
 #'
 #' For a detailed description of each plot function please see the details.
@@ -162,7 +163,11 @@
 #'             (b,l,t,r).
 #' @param cex For controlling the size of text and numbers in 
 #'             \code{plotBamCoverage}.
-#' @param color_chr Interchanging colors by chromosome for \code{plotManhattan}.
+#' @param chr Vector of chromosome names to show in \code{plotManhattan}. The 
+#'             default is to show all chromosomes.
+#' @param value Indicates which assay is shown in the manhattan plot. Defaults 
+#'             to 'pvalue'. Other options are 'deltaPsi' and 'zScore'.
+#' @param chrColor Interchanging colors by chromosome for \code{plotManhattan}.
 #'
 #### Additional ... parameter
 #' @param ... Additional parameters passed to plot() or plot_ly() if not stated
@@ -190,6 +195,9 @@
 #'
 #' \code{plotExpectedVsObservedPsi}: A scatter plot of the observed psi
 #' against the predicted psi for a given site.
+#' 
+#' \code{plotSpliceMetricRank}: This function plots for a given intron the
+#' observed values of the selected splice metrix against the sample rank.
 #'
 #' \code{plotCountCorHeatmap}: The correlation heatmap of the count data either
 #' of the full data set (i.e. sample-sample correlations) or of the top x most
@@ -546,6 +554,116 @@ plotExpression <- function(fds, type=fitMetrics(fds),
                 values=c("FALSE"="gray70", "TRUE"="firebrick"))
     }
 
+    plotBasePlot(g, basePlot)
+}
+
+#'
+#' Junction splice metric plot
+#'
+#' Plots the observed values of the splice metric across samples for a 
+#' junction of interest.
+#'
+#' @rdname plotFunctions
+#' @export
+plotSpliceMetricRank <- function(fds, type=fitMetrics(fds),
+                           idx=NULL, result=NULL, colGroup=NULL, 
+                           basePlot=TRUE, main=NULL, label="aberrant", ...){
+    if(!is.null(result)){
+        type <- as.character(result$type)
+        idx <- getIndexFromResultTable(fds, result)
+    } else {
+        type <- match.arg(type)
+    }
+    
+    dt <- getPlottingDT(fds, axis="row", type=type, idx=idx, ...)
+    dt[,featureID:=limitGeneNamesList(featureID, maxLength=3)]
+    
+    # rank on observed value of splice metric of interest
+    dt[, rank := rank(obsPsi, ties.method="random", na.last=FALSE)]
+    
+    if(!is.null(colGroup)){
+        if(all(colGroup %in% samples(fds))){
+            colGroup <- samples(fds) %in% colGroup
+        }
+        dt[colGroup,aberrant:=TRUE]
+    }
+    dt[,aberrant:=factor(aberrant, levels=c("TRUE", "FALSE"))]
+    
+    gr <- granges(rowRanges(fds,type=type)[idx,])
+    genomic_pos_label <- paste0(seqnames(gr), ":", start(gr), "-", end(gr), 
+                                ":", strand(gr))
+    
+    if(is.null(main)){
+        if(isTRUE(basePlot)){
+            # main <- as.expression(bquote(bold(paste(
+            #     .(ggplotLabelPsi(type)[[1]]), " rank plot: ",
+            #     .(genomic_pos_label),
+            #     " (", bolditalic(.(as.character(dt[,unique(featureID)]))), 
+            #     ")"))))
+            main <- as.expression(bquote(bold(paste(
+                    .(genomic_pos_label),
+                    " (", bolditalic(.(as.character(dt[,unique(featureID)]))), 
+                    ")"))))
+        } else{
+            # main <- paste0(ggplotLabelPsi(type, asCharacter=TRUE)[[1]], 
+            #                " rank plot: ", dt[,unique(featureID)], 
+            #                " (site ", dt[,unique(idx)], ")")
+            main <- paste0(genomic_pos_label,
+                " (", dt[,unique(featureID)], ")")
+        }
+    }
+    
+    if(isTRUE(basePlot)){
+        ylab <- bquote("Observed " ~ .(ggplotLabelPsi(type)[[1]]))
+    } else{
+        ylab <- paste("Observed", ggplotLabelPsi(type, asCharacter=TRUE)[[1]])
+    }
+    
+    g <- ggplot(dt, aes(x=rank, y=obsPsi, color=aberrant, label=sampleID, 
+                        text=paste0(
+                            "Sample: ", sampleID, "<br>",
+                            "Counts (K): ", k, "<br>",
+                            "Total counts (N): ", n, "<br>",
+                            "p value: ", signif(pval, 5), "<br>",
+                            "padjust: ", signif(padj, 5), "<br>",
+                            "Observed Psi: ", round(obsPsi, 2), "<br>",
+                            "Predicted mu: ", round(predPsi, 2), "<br>"))) +
+        geom_point(alpha=ifelse(as.character(dt$aberrant) == "TRUE", 1, 0.7)) +
+        theme_bw() +
+        theme(legend.position="none", title=) +
+        xlab("Sample rank") +
+        ylab(ylab) +
+        ggtitle(main, subtitle=paste0("fds row index: ", dt[,unique(idx)])) +
+        ylim(0,1)
+    
+    
+    if(isTRUE(basePlot) && !is.null(label)){
+        if(isScalarCharacter(label) && label == "aberrant"){
+            if(nrow(dt[aberrant == TRUE,]) > 0){
+                g <- g + geom_text_repel(data=dt[aberrant == TRUE,], 
+                                         aes(col=aberrant),
+                                         fontface='bold', hjust=-.2, vjust=-.2)
+            }
+        }
+        else{
+            if(nrow(dt[sampleID %in% label]) > 0){
+                g <- g + geom_text_repel(data=subset(dt, sampleID %in% label), 
+                                         aes(col=aberrant),
+                                         fontface='bold', hjust=-.2, vjust=-.2)
+            }
+            if(any(!(label %in% dt[,sampleID]))){
+                warning("Did not find sample(s) ", 
+                        paste(label[!(label %in% dt[,sampleID])], 
+                              collapse=", "), " to label.")
+            }
+        }
+    }
+    
+    if(is.null(colGroup)){
+        g <- g + scale_colour_manual(
+            values=c("FALSE"="gray70", "TRUE"="firebrick"))
+    }
+    
     plotBasePlot(g, basePlot)
 }
 
@@ -1432,10 +1550,10 @@ plotBamCoverageFromResultTable <- function(fds, result, show_full_gene=FALSE,
     return(invisible(fds))
 }
 
-plotManhattan.FRASER <- function(object, sampleID, 
-                                type=fitMetrics(object), 
-                                main=paste0("sampleID = ", sampleID), 
-                                color_chr=c("black", "darkgrey"),
+plotManhattan.FRASER <- function(object, sampleID, value="pvalue", 
+                                type=fitMetrics(object), chr=NULL, 
+                                main=paste0("sample: ", sampleID), 
+                                chrColor=c("black", "darkgrey"),
                                 ...){
     # check necessary packages
     if (!requireNamespace('ggbio')){
@@ -1454,7 +1572,7 @@ plotManhattan.FRASER <- function(object, sampleID,
     if("padjCutoff" %in% names(additional_args)){
         padjCutoff <- additional_args$padjCutoff
     }
-    deltaPsiCutoff <- 0.3
+    deltaPsiCutoff <- ifelse(type == "jaccard", 0.1, 0.3)
     if("deltaPsiCutoff" %in% names(additional_args)){
         deltaPsiCutoff <- additional_args$deltaPsiCutoff
     }
@@ -1468,6 +1586,20 @@ plotManhattan.FRASER <- function(object, sampleID,
         padjVals(object, type=type, level="site")[,sampleID])
     mcols(gr_sample)[,"delta"] <- deltaPsiValue(object, type=type)[,sampleID]
     
+    # Add values to granges
+    if(value %in% c('pvalue', 'pValue', 'pv')){
+        gr_sample$value <- mcols(gr_sample)[, "pvalue"]
+        ylabel <- expression(paste(-log[10], "(P-value)"))
+    }
+    if(value %in% c('zscore', 'zScore')){
+        gr_sample$value <- zScores(object, type=type)[, sampleID]
+        ylabel <- value
+    }
+    if(value %in% c('delta', 'deltaPsi', 'deltaJaccard')){
+        gr_sample$value <- mcols(gr_sample)[, "delta"]
+        ylabel <- bquote(Delta ~ .(ggplotLabelPsi(type)[[1]]))
+    }
+    
     # only one point per donor/acceptor site (relevant only for psi5 and psi3)
     index <- getSiteIndex(object, type=type)
     nonDup <- !duplicated(index)
@@ -1476,6 +1608,24 @@ plotManhattan.FRASER <- function(object, sampleID,
     # Sort granges for plot
     gr_sample <- sortSeqlevels(gr_sample)
     gr_sample <- sort(gr_sample)
+    
+    # subset to chromosomes in chrSubset if requested
+    if(!is.null(chr)){
+        # check input
+        if(!all(chr %in% unique(seqnames(gr_sample)))){
+            stop("Not all chromosomes selected for subsetting are present ",
+                 "in the GRanges object.")
+        }
+        
+        # subset
+        gr_sample <- gr_sample[as.character(seqnames(gr_sample)) %in% chr]
+        
+        # add chr to plot title if only one chr given
+        if(length(chr) == 1){
+            main <- paste0(main, "; ", 
+                           paste(chr, collapse=", ", sep=""))
+        }
+    }
     
     # find outlier indices
     if(!type %in% c("psi3", "psi5")){
@@ -1487,11 +1637,12 @@ plotManhattan.FRASER <- function(object, sampleID,
     message("highlighting ", length(gr_sample[outlier_idx,]), " outliers ...")
     
     # plot manhattan plot
-    plotGrandLinear.adapted(gr_sample, aes(y=pvalue), 
-                            color=color_chr, 
+    plotGrandLinear.adapted(gr_sample, aes(y=value), 
+                            color=chrColor, 
                             highlight.gr=gr_sample[outlier_idx,],
-                            highlight.overlap="equal") + 
-        labs(title=main)
+                            highlight.overlap="equal",
+                            use.genome.coords=is.null(chr)) + 
+        labs(title=main, x="", y=ylabel)
     
 }
 
@@ -1614,7 +1765,7 @@ plotGrandLinear.adapted <- function (obj, ..., facets, space.skip = 0.01,
         highlight.label.size = 5, highlight.label.offset = 0.05, 
         highlight.label.col = "black", 
         highlight.overlap = c("any", "start", "end", "within", "equal"),
-        spaceline = FALSE){
+        spaceline = FALSE, use.genome.coords=TRUE){
     if (is.null(geom)) 
         geom <- "point"
     args <- list(...)
@@ -1644,7 +1795,9 @@ plotGrandLinear.adapted <- function (obj, ..., facets, space.skip = 0.01,
     }
     if (!"y" %in% names(args.aes)) 
         stop("need to provide y")
-    args.non$coord <- "genome"
+    if(isTRUE(use.genome.coords)){
+        args.non$coord <- "genome"
+    }
     args.non$space.skip <- space.skip
     args.non$geom <- geom
     args.non$object <- obj

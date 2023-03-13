@@ -15,6 +15,7 @@
 \alias{plotBamCoverageFromResultTable}
 \alias{plotVolcano,FraserDataSet-method}
 \alias{plotAberrantPerSample,FraserDataSet-method}
+\alias{plotSpliceMetricRank}
 \alias{plotQQ,FraserDataSet-method}
 \alias{plotEncDimSearch,FraserDataSet-method}
 \alias{plotFilterVariability}
@@ -49,6 +50,18 @@ plotManhattan(object, ...)
 )
 
 plotExpression(
+  fds,
+  type = fitMetrics(fds),
+  idx = NULL,
+  result = NULL,
+  colGroup = NULL,
+  basePlot = TRUE,
+  main = NULL,
+  label = "aberrant",
+  ...
+)
+
+plotSpliceMetricRank(
   fds,
   type = fitMetrics(fds),
   idx = NULL,
@@ -169,9 +182,11 @@ plotBamCoverageFromResultTable(
 \S4method{plotManhattan}{FraserDataSet}(
   object,
   sampleID,
+  value = "pvalue",
   type = fitMetrics(object),
-  main = paste0("sampleID = ", sampleID),
-  color_chr = c("black", "darkgrey"),
+  chr = NULL,
+  main = paste0("sample: ", sampleID),
+  chrColor = c("black", "darkgrey"),
   ...
 )
 }
@@ -371,7 +386,13 @@ junction should be extended to the left in
 outlier junction should be extended to the right in 
 \code{plotBamCoverageFromResultTable}.}
 
-\item{color_chr}{Interchanging colors by chromosome for \code{plotManhattan}.}
+\item{value}{Indicates which assay is shown in the manhattan plot. Defaults 
+to 'pvalue'. Other options are 'deltaPsi' and 'zScore'.}
+
+\item{chr}{Vector of chromosome names to show in \code{plotManhattan}. The 
+default is to show all chromosomes.}
+
+\item{chrColor}{Interchanging colors by chromosome for \code{plotManhattan}.}
 }
 \value{
 If base R graphics are used nothing is returned else the plotly or
@@ -389,6 +410,9 @@ Plot the number of aberrant events per samples
 
 Plots the observed split reads of the junction of interest over all reads
 coming from the given donor/acceptor.
+
+Plots the observed values of the splice metric across samples for a 
+junction of interest.
 
 Plots the expected psi value over the observed psi value of the given
 junction.
@@ -416,6 +440,7 @@ This is the list of all plotting function provided by FRASER:
   \item plotBamCoverage()
   \item plotBamCoverageFromResultTable()
   \item plotManhattan()
+  \item plotSpliceMetricRank()
 }
 
 For a detailed description of each plot function please see the details.
@@ -443,6 +468,9 @@ log10 space.
 
 \code{plotExpectedVsObservedPsi}: A scatter plot of the observed psi
 against the predicted psi for a given site.
+
+\code{plotSpliceMetricRank}: This function plots for a given intron the
+observed values of the selected splice metrix against the sample rank.
 
 \code{plotCountCorHeatmap}: The correlation heatmap of the count data either
 of the full data set (i.e. sample-sample correlations) or of the top x most
