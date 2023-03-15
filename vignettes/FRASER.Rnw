@@ -567,7 +567,7 @@ the following additional information:
     donor or acceptor site of the outlier intron for the sample where it is 
     detected as aberrant; and their proportion out of the total counts (N). 
     A high nonsplitProportion indicates possible (partial) intron retention.
-    \item FDR_set The set of genes on which FDR correction is applied. If not 
+    \item FDR\_set The set of genes on which FDR correction is applied. If not 
     otherwise specified, FDR correction is transcriptome-wide.
 \end{itemize}
 Please refer to section \ref{sec:Introduction} for more information about the
