@@ -544,8 +544,10 @@ calculatePadjValuesOnSubset <- function(fds, genesToTest, subsetName,
     colnames(padjSub_gene) <- colnames(fds)
     
     # add FDR subset info to ods object and return
-    padjVals(fds, type=type, level="site", subsetName=subsetName) <- padjSub
-    padjVals(fds, type=type, level="gene", subsetName=subsetName) <- padjSub_gene
+    padjVals(fds, type=type, level="site", subsetName=subsetName,
+             withDimnames=FALSE) <- padjSub
+    padjVals(fds, type=type, level="gene", subsetName=subsetName,
+             withDimnames=FALSE) <- padjSub_gene
     addToAvailableFDRsubsets(fds) <- subsetName
     
     message(date(), ": finished FDR calculation on subset of genes.")
