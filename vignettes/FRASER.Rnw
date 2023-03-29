@@ -740,7 +740,7 @@ genes based on prior knowledge, e.g. genes that contain a rare variant per
 sample. To use this option, provide a list of genes per sample during FDR 
 computation:
 
-<<p-adj calculation, echo=TRUE>>=
+<<p-adj calculation on subset, echo=TRUE>>=
 genesOfInterest <- list("sample1"=c("XAB2", "PNPLA6", "STXBP2", "ARHGEF18"), 
                         "sample2"=c("ARHGEF18", "TRAPPC5"))
 fds <- calculatePadjValues(fds, type="jaccard", 
