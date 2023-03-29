@@ -93,20 +93,20 @@ These functions work on the result table and add additional
 }
 \section{Functions}{
 \itemize{
-\item \code{annotateIntronReferenceOverlap()}: This method calculates basic annotations 
+\item \code{annotateIntronReferenceOverlap}: This method calculates basic annotations 
 based on overlap with the reference annotation (start, end, none, both) 
 for the full fds. The overlap type is added as a new column 
 \code{annotatedJunction} in \code{mcols(fds)}.
 
-\item \code{annotatePotentialImpact()}: This method annotates the splice event 
+\item \code{annotatePotentialImpact}: This method annotates the splice event 
 type to junctions in the given results table.
 
-\item \code{flagBlacklistRegions()}: This method flags all introns and 
+\item \code{flagBlacklistRegions}: This method flags all introns and 
 splice sites in the given results table for which at least one splice 
 site (donor or acceptor) is located in a blacklist region. Blacklist 
 regions of the genome are determined from the provided BED file.
-
 }}
+
 \examples{
   # get data, fit and compute p-values and z-scores
   fds <- createTestFraserDataSet()

@@ -175,7 +175,7 @@ intron-exon boundary of acceptor A. While we calculate $\theta$ for the 5' and
 between $\theta_5$ and $\theta_3$ and hence call it jointly $\theta$ in the 
 following.
 
-From \fraser{}2 on, only a single metric - the Intron Jaccard Index (Figure 
+From \fraser{} 2.0 on, only a single metric - the Intron Jaccard Index (Figure 
 \ref{IntronJaccardIndex_sketch}) - is used by default. The Intron Jaccard 
 Index is more robust and allows to focus more on functionally relevant 
 aberrant splicing events. It allows to detect all types of aberrant splicing 
@@ -248,7 +248,7 @@ fds <- FRASER(fds, q=c(jaccard=2))
 # get results: we recommend to use an FDR cutoff 0.05, but due to the small
 # dataset size we extract all events and their associated values
 # eg: res <- results(fds, padjCutoff=0.05, deltaPsiCutoff=0.1)
-res <- results(fds, padjCutoff=NA, deltaPsiCutoff=NA)
+res <- results(fds, all=TRUE)
 res
 
 # result visualization
@@ -586,8 +586,8 @@ sashimi plot for an outlier in the results table directly in R (if paths to
 bam files are available in the \fds{} object).
 
 <<result_table, echo=TRUE>>=
-# to show result visualization functions for this tuturial, no cutoff used
-res <- results(fds, padjCutoff=NA, deltaPsiCutoff=NA)
+# to show result visualization functions for this tutorial, no cutoff used
+res <- results(fds, all=TRUE)
 res
 
 # for the gene level pvalues, gene symbols need to be annotated the fds object
@@ -595,7 +595,7 @@ res
 # as we previously called FRASER() before annotating genes, we run it again here
 fds <- calculatePadjValues(fds, type="jaccard", geneLevel=TRUE)
 # generate gene-level results table (if gene symbols have been annotated)
-res_gene <- results(fds, aggregate=TRUE, padjCutoff=NA, deltaPsiCutoff=NA)
+res_gene <- results(fds, aggregate=TRUE, all=TRUE)
 res_gene
 @
 
@@ -733,6 +733,19 @@ argument.
 <<p-adj calculation, echo=TRUE>>=
 fds <- calculatePadjValues(fds, type="jaccard", method="BY")
 head(padjVals(fds,type="jaccard"))
+@
+
+With FRASER 2.0 we introduce the option to limit FDR correction to a subset of 
+genes based on prior knowledge, e.g. genes that contain a rare variant per 
+sample. To use this option, provide a list of genes per sample during FDR 
+computation:
+
+<<p-adj calculation, echo=TRUE>>=
+genesOfInterest <- list("sample1"=c("XAB2", "PNPLA6", "STXBP2", "ARHGEF18"), 
+                        "sample2"=c("ARHGEF18", "TRAPPC5"))
+fds <- calculatePadjValues(fds, type="jaccard", 
+              subsets=list("exampleSubset"=genesOfInterest))
+head(padjVals(fds, type="jaccard", subsetName="exampleSubset"))
 @
 
 \subsection{Result visualization}

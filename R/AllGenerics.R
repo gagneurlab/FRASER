@@ -714,8 +714,7 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff,
                             dPsiCutoff, minCount, rhoCutoff, psiType, 
                             maxCols=20, aggregate=FALSE, collapse=FALSE,
                             geneColumn="hgnc_symbol", BPPARAM=bpparam(), 
-                            geneSubset=NULL, subsetName, fullSubset=FALSE, 
-                            additionalColumns=NULL){
+                            subsetName=NULL, all=all, additionalColumns=NULL){
     
     stopifnot(is(object, "FraserDataSet"))
     stopifnot(all(sampleIDs %in% samples(object)))
@@ -732,7 +731,8 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff,
     }
     pvalsAvailable <- checkPadjAvailableForFilters(object, type=psiType,
                                                    filters=list(rho=rhoCutoff), 
-                                                   aggregate=aggregate)
+                                                   aggregate=aggregate,
+                                                   subsetName=subsetName)
     psiType <- psiType[pvalsAvailable]
     if(all(isFALSE(pvalsAvailable))){
         stop("For the splice metric(s), pvalues are not yet computed. \n", 
@@ -741,7 +741,9 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff,
     }
     
     resultsls <- bplapply(psiType, BPPARAM=BPPARAM, function(type){
-        message(date(), ": Collecting results for: ", type)
+        message(date(), ": Collecting results for: ", type,
+                ifelse(is.null(subsetName), " (transcriptome-wide)",
+                       paste0(" (", subsetName, ")")))
         currentType(object) <- type
         gr <- rowRanges(object, type=type)
         
@@ -761,17 +763,6 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff,
             nsProportion_99quantile <- NULL
         }
         
-        # calculate FDR on subset first if requested
-        if(!is.null(geneSubset)){
-            object <- calculatePadjValuesOnSubset(fds=object, type=type, 
-                                                  genesToTest=geneSubset, 
-                                                  subsetName=subsetName, 
-                                                  geneColumn=geneColumn)
-            fdr_subset <- metadata(object)[[paste("FDR", subsetName, type, 
-                                                    sep="_")]]
-            object <- object[, fdr_subset[, unique(sampleID)]]
-        } 
-        
         # then iterate by chunk
         chunkCols <- getMaxChunks2Read(fds=object, assayName=type, max=maxCols)
         sampleChunks <- getSamplesByChunk(fds=object, sampleIDs=sampleIDs,
@@ -788,6 +779,7 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff,
             pvals        <- as.matrix(pVals(tmp_x, 
                                             filters=list(rho=rhoCutoff)))
             padjs        <- as.matrix(padjVals(tmp_x, 
+                                            subsetName=subsetName,
                                             filters=list(rho=rhoCutoff)))
             psivals      <- as.matrix(assay(tmp_x, type))
             muPsi        <- as.matrix(predictedMeans(tmp_x))
@@ -795,99 +787,34 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff,
                 (rawTotalCts + 2*pseudocount())
             deltaPsiVals <- deltaPsiValue(tmp_x, type)
             rho          <- rho(tmp_x, type)
-            if(is.null(geneSubset)){
-                aberrant     <- aberrant.FRASER(tmp_x, type=type, 
-                                                padjCutoff=fdrCutoff, 
-                                                deltaPsiCutoff=dPsiCutoff, 
-                                                minCount=minCount, 
-                                                rhoCutoff=rhoCutoff,
-                                                aggregate=FALSE,
-                                                geneColumn=geneColumn)
-            } else{
-                aberrant     <- aberrant.FRASER(tmp_x, type=type, 
-                                                padjCutoff=fdrCutoff, 
-                                                deltaPsiCutoff=dPsiCutoff, 
-                                                minCount=minCount, 
-                                                rhoCutoff=rhoCutoff,
-                                                aggregate=FALSE,
-                                                geneColumn=geneColumn,
-                                                FDR_subset=fdr_subset[sampleID 
-                                                        %in% samples(tmp_x)],
-                                                fullSubset=fullSubset)
-            }
+            aberrant     <- aberrant.FRASER(tmp_x, type=type, 
+                                            padjCutoff=fdrCutoff, 
+                                            deltaPsiCutoff=dPsiCutoff, 
+                                            minCount=minCount, 
+                                            rhoCutoff=rhoCutoff,
+                                            aggregate=FALSE,
+                                            all=all,
+                                            geneColumn=geneColumn,
+                                            subsetName=subsetName)
             if(isTRUE(aggregate)){
                 pvalsGene    <- as.matrix(pVals(tmp_x, level="gene", 
                                                 filters=list(rho=rhoCutoff)))
-                padjsGene    <- as.matrix(padjVals(tmp_x, level="gene", 
+                padjsGene    <- as.matrix(padjVals(tmp_x, level="gene",
+                                                   subsetName=subsetName, 
                                                 filters=list(rho=rhoCutoff)))
-                if(is.null(geneSubset)){
-                    aberrantGene <- aberrant.FRASER(tmp_x, type=type, 
-                                                    padjCutoff=fdrCutoff, 
-                                                    deltaPsiCutoff=dPsiCutoff, 
-                                                    minCount=minCount, 
-                                                    rhoCutoff=rhoCutoff,
-                                                    aggregate=TRUE,
-                                                    geneColumn=geneColumn)
-                } else{
-                    aberrantGene <- aberrant.FRASER(tmp_x, type=type, 
-                                                    padjCutoff=fdrCutoff, 
-                                                    deltaPsiCutoff=dPsiCutoff, 
-                                                    minCount=minCount, 
-                                                    rhoCutoff=rhoCutoff,
-                                                    aggregate=TRUE,
-                                                    geneColumn=geneColumn,
-                                                    FDR_subset=fdr_subset[sampleID 
-                                                            %in% samples(tmp_x)],
-                                                    fullSubset=fullSubset)
-                
-                    # get row,col idx of genes/samples in subset
-                    subset_gene_padj <- as.matrix(
-                        fdr_subset[sampleID %in% samples(tmp_x), 
-                            .(as.numeric(sapply(gene, 
-                                function(g) which(rownames(pvalsGene) == g)) ),
-                            as.numeric(sapply(sampleID, 
-                                function(s) which(colnames(tmp_x) ==s)) ),
-                            pval_gene,
-                            FDR_subset_gene)]
-                    )
-                    # replace pvalsGene and padjsGene with values on subset
-                    geneNames <- rownames(pvalsGene)
-                    pvalsGene <- matrix(NA, 
-                                        nrow=nrow(pvalsGene), ncol=ncol(tmp_x))
-                    rownames(pvalsGene) <- geneNames 
-                    colnames(pvalsGene) <- colnames(tmp_x)
-                    padjsGene <- matrix(NA, 
-                                        nrow=nrow(padjsGene), ncol=ncol(tmp_x))
-                    rownames(padjsGene) <- geneNames
-                    colnames(padjsGene) <- colnames(tmp_x)
-                    if(nrow(subset_gene_padj) > 0){
-                        pvalsGene[subset_gene_padj[,1:2]] <- 
-                            unlist(subset_gene_padj[,3])
-                        padjsGene[subset_gene_padj[,1:2]] <- 
-                            unlist(subset_gene_padj[,4])
-                    }
-                }
-                
+                aberrantGene <- aberrant.FRASER(tmp_x, type=type, 
+                                                padjCutoff=fdrCutoff, 
+                                                deltaPsiCutoff=dPsiCutoff, 
+                                                minCount=minCount, 
+                                                rhoCutoff=rhoCutoff,
+                                                aggregate=TRUE,
+                                                all=all,
+                                                geneColumn=geneColumn,
+                                                subsetName=subsetName)
             } else{
                 pvalsGene    <- NULL
                 padjsGene    <- NULL
                 aberrantGene <- NULL
-            }
-            
-            if(!is.null(geneSubset)){
-                # get row,col idx of introns/samples in subset
-                subset_padj <- as.matrix(
-                    fdr_subset[sampleID %in% samples(tmp_x), .(jidx, 
-                                sapply(sampleID, 
-                                    function(s) which(colnames(tmp_x) ==s)),
-                                FDR_subset)]
-                )
-                # replace padjs values with values on subset
-                padjs <- matrix(NA, nrow=nrow(pvals), ncol=ncol(pvals))
-                if(nrow(subset_padj) > 0){
-                    padjs[subset_padj[,1:2]] <- subset_padj[,3]
-                }
-                colnames(padjs) <- colnames(pvals)
             }
             
             if(length(sc) == 1){
@@ -925,14 +852,10 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff,
     # sort it if existing
     if(length(ans) > 0){
         ans <- ans[order(ans$pValue)]
-        if(is.null(geneSubset)){
+        if(is.null(subsetName)){
             mcols(ans)[["FDR_set"]] <- "transcriptome-wide"
         } else{
-            if(is.null(subsetName)){
-                mcols(ans)[["FDR_set"]] <- "subset"
-            } else{
-                mcols(ans)[["FDR_set"]] <- subsetName
-            }
+            mcols(ans)[["FDR_set"]] <- subsetName
         }
     }
     
@@ -981,21 +904,14 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff,
 #'              types to return only one row per feature (gene) and sample.
 #' @param geneColumn The column name of the column that has the gene annotation 
 #'              that will be used for gene-level pvalue computation.
-#' @param subsets A named list of named lists specifying any number of gene 
-#'              subsets (can differ per sample). For each subset, FDR correction
-#'              will be limited to introns in genes in the subset, and aberrant 
-#'              events passing the FDR cutoff will be reported for each subset 
-#'              separately. See the examples for how to use this argument. 
-#' @param fullSubset Only applies when \code{geneSubset} is not NULL. Specifies 
-#'              whether all introns in given subset of genes should be 
-#'              considered as aberrant, or only those passing the given cutoffs. 
-#'              Defaults to FALSE (introns have to pass the cutoffs in addtion 
-#'              to being in the gene subset to be considered aberrant). 
-#' @param geneSubset A named list giving a subset of genes per sample to which  
-#'              FDR correction should be restricted. The names of the list must 
-#'              correspond to the sampleIDs in the fds object.
-#' @param subsetName The name under which the resulting FDR corrected pvalues 
-#'              on the subset only will be displayed in the result table.
+#' @param all By default FALSE, only significant introns (or genes) are listed 
+#'             in the results. If TRUE, results are assembled for all 
+#'             samples and introns/genes regardless of significance. 
+#' @param returnTranscriptomewideResults If FDR corrected pvalues for subsets 
+#'              of genes of interest have been calculated, this parameter 
+#'              indicates whether additionally the transcriptome-wide results 
+#'              should be returned as well (default), or whether only results 
+#'              for those subsets should be retrieved.
 #' @param ... Further arguments can be passed to the method. If "n",  
 #'              "padjVals", "dPsi" or "rhoVals" are given, the values of those 
 #'              arguments are used to define the aberrant events.
@@ -1012,8 +928,8 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff,
 #' fds <- createTestFraserDataSet()
 #' 
 #' # extract results: for this example dataset, no cutoffs are used to
-#' # get at least one result and show the output
-#' res <- results(fds, padjCutoff=NA, deltaPsiCutoff=NA)
+#' # show the output of the results function
+#' res <- results(fds, all=TRUE)
 #' res
 #' 
 #' # aggregate the results by genes (gene symbols need to be annotated first 
@@ -1039,52 +955,49 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff,
 #' # retrieve results limiting FDR correction to only a subset of genes
 #' # first, we need to create a list of genes per sample that will be tested
 #' geneList <- list('sample1'=c("TIMMDC1"), 'sample2'=c("MCOLN1"))
-#' results(fds, subsets=list('random_subset'=geneList), fullSubset=TRUE)
+#' fds <- calculatePadjValues(fds, type="jaccard", 
+#'                  subsets=list("exampleSubset"=geneList))
+#' results(fds, all=TRUE, returnTranscriptomewideResults=FALSE)
 #' 
-#' # results for several subsets can be retrieved at the same time:
-#' geneList2 <- list('sample1'=c("MCOLN1", "TIMMDC1"), 'sample2'=c("MCOLN1"))
-#' results(fds, 
-#'         subsets=list('random_subset'=geneList, 'another_subset'=geneList2), 
-#'         fullSubset=TRUE)
 #' @export
 setMethod("results", "FraserDataSet", function(object, 
                     sampleIDs=samples(object), padjCutoff=0.05,
                     deltaPsiCutoff=0.1,
                     rhoCutoff=NA, aggregate=FALSE, collapse=FALSE,
                     minCount=5, psiType=psiTypes,
-                    geneColumn="hgnc_symbol",
-                    subsets=NULL, fullSubset=FALSE, 
+                    geneColumn="hgnc_symbol", all=FALSE,
                     returnTranscriptomewideResults=TRUE,
                     additionalColumns=NULL, BPPARAM=bpparam()){
     psiType <- match.arg(psiType, several.ok=TRUE)
-    if(is.null(subsets)){
+    FDRsets <- availableFDRsubsets(object)
+    
+    if(isFALSE(returnTranscriptomewideResults) && is.null(FDRsets)){
+        warning("Retrieving transcriptome-wide results as no other ",
+                "FDR subsets are available in the fds object.")
         returnTranscriptomewideResults <- TRUE
-    }
+    } 
     if(isTRUE(returnTranscriptomewideResults)){
         res <- FRASER.results(object=object, sampleIDs=sampleIDs, 
                 fdrCutoff=padjCutoff, dPsiCutoff=deltaPsiCutoff, 
                 rhoCutoff=rhoCutoff, minCount=minCount, 
-                psiType=psiType,
+                psiType=psiType, all=all,
                 aggregate=aggregate, collapse=collapse, geneColumn=geneColumn,
-                geneSubset=NULL, subsetName=NULL, fullSubset=FALSE,
-                additionalColumns=additionalColumns, BPPARAM=BPPARAM)
+                subsetName=NULL, additionalColumns=additionalColumns, 
+                BPPARAM=BPPARAM)
     }
     
     # add results for FDR_subsets if requested
-    if(!is.null(subsets)){
-        stopifnot(is.list(subsets))
-        stopifnot(!is.null(names(subsets)))
-        resls_subsets <- lapply(names(subsets), function(setName){
-            geneList_sub <- subsets[[setName]]
+    if(!is.null(FDRsets)){
+        resls_subsets <- lapply(FDRsets, function(setName){
             res_sub <- FRASER.results(object=object, sampleIDs=sampleIDs, 
                 fdrCutoff=padjCutoff, dPsiCutoff=deltaPsiCutoff, 
                 rhoCutoff=rhoCutoff, minCount=minCount, 
-                psiType=psiType,
+                psiType=psiType, all=all,
                 aggregate=aggregate, collapse=collapse, geneColumn=geneColumn,
-                geneSubset=geneList_sub, subsetName=setName, 
-                fullSubset=fullSubset, 
-                additionalColumns=additionalColumns, BPPARAM=BPPARAM)
+                subsetName=setName, additionalColumns=additionalColumns, 
+                BPPARAM=BPPARAM)
         })
+        
         if(isTRUE(returnTranscriptomewideResults)){
             res <- unlist(GRangesList(unlist(list(res, resls_subsets))))
         } else{
@@ -1107,8 +1020,7 @@ aberrant.FRASER <- function(object, type=fitMetrics(object),
                                 minCount=5, rhoCutoff=NA,
                                 by=c("none", "sample", "feature"), 
                                 aggregate=FALSE, geneColumn="hgnc_symbol", 
-                                geneSubset=NULL, subsetName=NULL, 
-                                fullSubset=FALSE, ...){
+                                subsetName=NULL, all=FALSE, ...){
     
     checkNaAndRange(padjCutoff,     min=0, max=1,   scalar=TRUE,   na.ok=TRUE)
     checkNaAndRange(deltaPsiCutoff, min=0, max=1,   scalar=TRUE,   na.ok=TRUE)
@@ -1133,13 +1045,14 @@ aberrant.FRASER <- function(object, type=fitMetrics(object),
         # check if padj values are available for the given filters
         pvalsAvailable <- checkPadjAvailableForFilters(object, type=type,
                                                 filters=list(rho=rhoCutoff), 
-                                                aggregate=aggregate)
+                                                aggregate=aggregate,
+                                                subsetName=subsetName)
         if(isFALSE(pvalsAvailable)){
             stop("For the given filters, pvalues are not yet computed. \n", 
                     "Please compute them first by running the ",
                     "calculatePadjValues function with the requested filters.")
         }
-        padj <- padjVals(object, type=type, level="site", 
+        padj <- padjVals(object, type=type, level="site", subsetName=subsetName,
                         filters=list(rho=rhoCutoff))
     }
     if("dPsi" %in% names(dots)){
@@ -1158,60 +1071,23 @@ aberrant.FRASER <- function(object, type=fitMetrics(object),
             padj_gene <- dots[['padjGeneVals']]
         } else{
             padj_gene <- padjVals(object, type=type, level="gene", 
+                                subsetName=subsetName,
                                 filters=list(rho=rhoCutoff))    
         }
         
     }
     
-    if(is.na(padjCutoff) || (isTRUE(fullSubset) && 
-            (!is.null(geneSubset) || ("FDR_subset" %in% names(dots))))){
+    if(is.na(padjCutoff)){
         padjCutoff <- 1
     }
     
-    if(is.null(geneSubset) && !("FDR_subset" %in% names(dots))){
-        aberrantEvents <- as.matrix(padj) <= padjCutoff
+    if(isTRUE(all)){
+        aberrantEvents <- matrix(TRUE, nrow=nrow(object), ncol=ncol(object))
+        colnames(aberrantEvents) <- colnames(fds)
     } else{
-        if("FDR_subset" %in% names(dots)){
-            fdr_subset <- dots[["FDR_subset"]]
-        } else{
-            if(is.null(subsetName)){
-                subsetName <- "subset"
-            }
-            object <- calculatePadjValuesOnSubset(fds=object, type=type, 
-                                                  genesToTest=geneSubset, 
-                                                  subsetName=subsetName, 
-                                                  geneColumn=geneColumn)
-            fdr_subset <- metadata(object)[[paste("FDR", subsetName, type, 
-                                                    sep="_")]]
-        }
+        aberrantEvents <- as.matrix(padj) <= padjCutoff
         
-        
-        # define aberrant status based on whether intron/sample tuples are 
-        # part of the given subset
-        if(is.null(dim(padj))){
-            # only one sample in fds present -> no dimensions set
-            aberrantEvents <- matrix(FALSE, nrow=length(padj), ncol=1)
-        } else{
-            aberrantEvents <- matrix(FALSE, nrow=nrow(padj), ncol=ncol(padj))
-        }
-        colnames(aberrantEvents) <- colnames(object)
-        FDR_col <- ifelse(isTRUE(aggregate), "FDR_subset_gene", "FDR_subset")
-        subset_idx <- lapply(fdr_subset[, unique(sampleID)], function(sid){
-            col <- which(colnames(object) == sid)
-            rows <- fdr_subset[sampleID == sid & get(FDR_col) <= padjCutoff, 
-                               sort(unique(jidx))]
-            sub_idx <- matrix(c(rows, rep(col, length(rows))), 
-                              nrow=length(rows))
-            return(sub_idx)
-        })
-        subset_idx <- do.call(rbind, 
-                            subset_idx[which(sapply(subset_idx, nrow) > 0)])
-        aberrantEvents[subset_idx] <- TRUE
-    }
-    
-    # check each cutoff if in use (not NA)
-    if((is.null(geneSubset) && !("FDR_subset" %in% names(dots))) || 
-            isFALSE(fullSubset)){
+        # check each cutoff if in use (not NA)
         if(!is.na(minCount)){
             aberrantEvents <- aberrantEvents & as.matrix(n >= minCount)
         }
@@ -1242,7 +1118,7 @@ aberrant.FRASER <- function(object, type=fitMetrics(object),
         aberrantEvents <- as.matrix(ab_dt[,-1])
         rownames(aberrantEvents) <- ab_dt[,geneID]
         
-        if(is.null(geneSubset) && !("FDR_subset" %in% names(dots))){
+        if(isFALSE(all)){
             aberrantEvents <- aberrantEvents & as.matrix(
                     padj_gene[rownames(aberrantEvents),colnames(aberrantEvents)]
                 ) <= padjCutoff

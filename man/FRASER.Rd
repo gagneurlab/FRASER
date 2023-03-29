@@ -37,14 +37,15 @@ calculatePadjValues(
   rhoCutoff = NA,
   geneLevel = TRUE,
   geneColumn = "hgnc_symbol",
+  subsets = NULL,
   BPPARAM = bpparam()
 )
 
 calculatePadjValuesOnSubset(
   fds,
   genesToTest,
+  subsetName,
   type = currentType(fds),
-  subsetName = "subset",
   method = "BY",
   geneColumn = "hgnc_symbol",
   BPPARAM = bpparam()
@@ -95,6 +96,13 @@ should be calculated. Defaults to TRUE.}
 \item{geneColumn}{The column name of the column that has the gene annotation 
 that will be used for gene-level pvalue computation.}
 
+\item{subsets}{A named list of named lists specifying any number of gene 
+subsets (can differ per sample). For each subset, FDR correction
+will be limited to genes in the subset, and the FDR corrected 
+pvalues stored as an assay in the fds object in addition to the 
+transcriptome-wide FDR corrected pvalues. See the examples for 
+how to use this argument.}
+
 \item{genesToTest}{A named list with the subset of genes to test per sample.
 The names must correspond to the sampleIDs in the given fds object.}
 
@@ -131,33 +139,33 @@ raw counts ("BB").
 }
 \section{Functions}{
 \itemize{
-\item \code{FRASER()}: This function runs the default FRASER pipeline combining 
+\item \code{FRASER}: This function runs the default FRASER pipeline combining 
 the beta-binomial fit, the computation of Z scores and p values as well as 
 the computation of delta-PSI values.
 
-\item \code{calculateZscore()}: This function calculates z-scores based on the 
+\item \code{calculateZscore}: This function calculates z-scores based on the 
 observed and expected logit 
 psi.
 
-\item \code{calculatePvalues()}: This function calculates two-sided p-values based on 
+\item \code{calculatePvalues}: This function calculates two-sided p-values based on 
 the beta-binomial distribution (or binomial or normal if desired). The 
 returned p values are not yet adjusted with Holm's method per donor or 
 acceptor site, respectively.
 
-\item \code{calculatePadjValues()}: This function adjusts the previously calculated 
+\item \code{calculatePadjValues}: This function adjusts the previously calculated 
 p-values per sample for multiple testing. First, the previoulsy calculated 
 junction-level p values are adjusted with Holm's method per donor or 
 acceptor site, respectively. Then, if gene symbols have been annotated to 
 junctions (and not otherwise requested), gene-level p values are computed.
 
-\item \code{calculatePadjValuesOnSubset()}: This function does FDR correction only for all junctions 
+\item \code{calculatePadjValuesOnSubset}: This function does FDR correction only for all junctions 
 in a certain subset of genes which can differ per sample. Requires gene 
 symbols to have been annotated to junctions. As with the full FDR 
 correction across all junctions, first the previously calculated 
 junction-level p values are adjusted with Holm's method per donor or 
 acceptor site, respectively. Then, gene-level p values are computed.
-
 }}
+
 \examples{
 # set default parallel backend
 register(SerialParam())
@@ -190,11 +198,21 @@ head(padjVals(fds, type="jaccard"))
 fds <- calculateZscore(fds, type="jaccard")
 head(zScores(fds, type="jaccard")) 
 
-# To calculate the FDR only on a subset of genes of interest (per sample):
-geneList <- list("sample1"=c("TIMMDC1"), "sample2"=c("MCOLN1"))
-fds <- calculatePadjValuesOnSubset(fds, genesToTest=geneList, 
+# example of restricting FDR correction to subsets of genes of interest
+genesOfInterest <- list("sample1"=c("TIMMDC1"), "sample2"=c("MCOLN1"))
+fds <- calculatePadjValues(fds, type="jaccard", 
+                 subsets=list("exampleSubset"=genesOfInterest))
+padjVals(fds, type="jaccard", subsetName="exampleSubset")
+padjVals(fds, type="jaccard", level="gene", subsetName="exampleSubset")
+fds <- calculatePadjValues(fds, type="jaccard", 
+                 subsets=list("anotherExampleSubset"=c("TIMMDC1")))
+padjVals(fds, type="jaccard", subsetName="anotherExampleSubset")
+
+# only adding FDR corrected pvalues on a subset without calculating 
+# transcriptome-wide FDR again:
+fds <- calculatePadjValuesOnSubset(fds, genesToTest=genesOfInterest, 
          subsetName="setOfInterest", type="jaccard")
-metadata(fds)[["FDR_setOfInterest"]]
+padjVals(fds, type="jaccard", subsetName="setOfInterest")
 
 }
 \seealso{

@@ -556,10 +556,13 @@ getStrandString <- function(fds){
 #' Check if adjusted pvalues have been computed for a given set of filters.
 #' @noRd
 checkPadjAvailableForFilters <- function(fds, type=currentType(fds), 
-                    filters=list(), dist="BetaBinomial", aggregate=FALSE){
+                    filters=list(), dist="BetaBinomial", aggregate=FALSE,
+                    subsetName=NULL){
     dist <- match.arg(dist, choices=c("BetaBinomial", "Binomial", "Normal"))
     aname <- paste0("padj", dist)
     aname <- ifelse(isTRUE(aggregate), paste0(aname, "_gene"), aname)
+    aname <- ifelse(!is.null(subsetName), paste0(aname, "_", subsetName), aname)
+
     # add information on used filters
     for(n in sort(names(filters))){
         aname_new <- paste0(aname, "_", n, filters[[n]])

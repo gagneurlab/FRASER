@@ -227,11 +227,18 @@ singlePvalueBinomial <- function(idx, k, n, mu){
 #'     should be calculated. Defaults to TRUE.
 #' @param geneColumn The column name of the column that has the gene annotation 
 #'              that will be used for gene-level pvalue computation.
+#' @param subsets A named list of named lists specifying any number of gene 
+#'             subsets (can differ per sample). For each subset, FDR correction
+#'             will be limited to genes in the subset, and the FDR corrected 
+#'             pvalues stored as an assay in the fds object in addition to the 
+#'             transcriptome-wide FDR corrected pvalues. See the examples for 
+#'             how to use this argument.
 #' 
 #' @export
 calculatePadjValues <- function(fds, type=currentType(fds), method="BY",
                                 rhoCutoff=NA, geneLevel=TRUE, 
-                                geneColumn="hgnc_symbol", BPPARAM=bpparam()){
+                                geneColumn="hgnc_symbol", subsets=NULL, 
+                                BPPARAM=bpparam()){
     currentType(fds) <- type
     index <- getSiteIndex(fds, type=type)
     idx   <- !duplicated(index)
@@ -283,6 +290,21 @@ calculatePadjValues <- function(fds, type=currentType(fds), method="BY",
                     geneColumn, "\nwas not found for the given fds object. ", 
                     "Please annotate gene symbols \nfirst using the ", 
                     "annotateRanges function.")
+        }
+        
+        # calculate FDR for each provided subset and assign to fds
+        if(!is.null(subsets)){
+            stopifnot(is.list(subsets))
+            stopifnot(!is.null(names(subsets)))
+            for(setName in names(subsets)){
+                geneListSubset <- subsets[[setName]]
+                fds <- calculatePadjValuesOnSubset(fds=fds, 
+                                                   genesToTest=geneListSubset,
+                                                   subsetName=setName,
+                                                   type=type, method=method, 
+                                                   geneColumn=geneColumn, 
+                                                   BPPARAM=BPPARAM)
+            }
         }
     }
     
@@ -360,6 +382,13 @@ getSiteIndex <- function(fds, type=currentType(fds)){
 
 getGeneIDs <- function(fds, type=currentType(fds), unique=TRUE, 
                         geneColumn="hgnc_symbol"){
+    if(!geneColumn %in% colnames(mcols(fds, type=type))){
+        stop("Did not find column '", geneColumn, "' in mcols(fds, type='", 
+             type, "'). Please assign introns\nto genes first using the ",
+             "annotateRanges(fds, ...) or annotateRangesWithTxDb(fds, ...) ",
+             "function.")
+    }
+    
     geneIDs <- mcols(fds, type=type)[[geneColumn]]
     if(isTRUE(unique)){
         geneIDs <- unique(unlist(lapply(geneIDs, FUN=function(g){
@@ -398,91 +427,129 @@ genePvalsByGeneID <- function(dt, samples, geneIDs, method, BPPARAM){
 #'     will be stored in metadata(fds).
 #' 
 #' @export
-calculatePadjValuesOnSubset <- function(fds, genesToTest, type=currentType(fds), 
-                                subsetName="subset", method="BY", 
+calculatePadjValuesOnSubset <- function(fds, genesToTest, subsetName, 
+                                type=currentType(fds), method='BY', 
                                 geneColumn="hgnc_symbol", BPPARAM=bpparam()){
     
     # check input
-    currentType(fds) <- type
     stopifnot(!is.null(genesToTest))
-    stopifnot(is.list(genesToTest))
+    stopifnot(is.list(genesToTest) || is.vector(genesToTest))
+    
+    # replicate subset genes for each sample if given as vector
+    if(!is.list(genesToTest)){
+        genesToTest <- rep(list(genesToTest), ncol(fds))
+        names(genesToTest) <- colnames(fds)
+    }
+    
+    # check that names are present and correspond to samples in ods
     stopifnot(!is.null(names(genesToTest)))
-    if(!all(names(genesToTest) %in% samples(fds))){
+    if(!all(names(genesToTest) %in% colnames(fds))){
         stop("names(genesToTest) need to be sampleIDs in the given fds object.")
     }
     
-    # check if genes have been annotated
-    if(!geneColumn %in% colnames(mcols(fds, type=type))){    
-        stop(paste0("'", geneColumn, "' is not found in mcols(fds). ", 
-            "Please annotate gene symbols \nfirst using the ", 
-            "annotateRanges or annotateRangesWithTxDb function."))
-    }
+    # get genes from fds object
+    fds_genes <- getGeneIDs(fds, unique=TRUE, type=type, geneColumn=geneColumn)
+    ngenes <- length(fds_genes)
     
     # site index (for psi3/5)
     site_idx <- getSiteIndex(fds, type=type)
-        
+    
     # compute FDR on the given subsets of genes
     message(date(), ": starting FDR calculation on subset of genes...")
-    FDR_subset <- rbindlist(bpmapply(names(genesToTest), genesToTest, 
-            FUN=function(sample_id, genes_to_test_sample){
+    
+    # compute FDR on the given subsets of genes
+    fdrSubset <- bplapply(colnames(fds), FUN=function(sampleId){
         
-        # message(date(), ": FDR subset calculation for sample = ", sample_id)
-        # get idx of junctions corresponding to genes with var
-        jidx <- unlist(lapply(genes_to_test_sample, function(gene){
-            idx <- which(grepl(paste0("(^|;)", gene, "(;|$)"), 
-                                mcols(fds, type=type)[, geneColumn]))
-            names(idx) <- rep(gene, length(idx))
-            if(length(idx) == 0 && verbose(fds) > 0){
-                warning("No introns found in fds object for gene: ", gene, 
-                        " and sample: ", sample_id, ". Skipping this gene.")
-            }
-            return(idx)
-        }))
-        jidx <- sort(jidx[!duplicated(jidx)])
+        # get genes to test for this sample
+        genesToTestSample <- genesToTest[[sampleId]]
+        padj <- rep(NA, nrow(fds))
+        padj_gene <- rep(NA, ngenes)
         
-        # check that jidx is not empty vector
-        if(length(jidx) == 0){
-            warning("No introns found in the fds object for the given gene ", 
-                    "subset for sample: ", sample_id)
-            return(data.table(gene=character(0), 
-                              sampleID=character(0), 
-                              type=character(0),
-                              pval=numeric(0),
-                              FDR_subset=numeric(0), 
-                              jidx=integer(0),
-                              pval_gene=numeric(0),
-                              FDR_subset_gene=numeric(0)))
+        # if no genes present in the subset for this sample, return NAs
+        if(is.null(genesToTestSample)){
+            return(list(padj=padj, padj_gene=padj_gene))
         }
         
-        # retrieve pvalues of junctions
+        # get idx of junctions corresponding to genes to test
+        if(is.character(genesToTestSample)){
+            rowIdx <- sort(which(fds_genes %in% genesToTestSample))
+            rowIdx <- unlist(lapply(genesToTestSample, function(gene){
+                idx <- which(grepl(paste0("(^|;)", gene, "(;|$)"), 
+                                   mcols(fds, type=type)[, geneColumn]))
+                names(idx) <- rep(gene, length(idx))
+                if(length(idx) == 0 && verbose(fds) > 0){
+                    warning("No introns found in fds object for gene: ", gene, 
+                        " and sample: ", sampleId, ". Skipping this gene.")
+                }
+                return(idx)
+            }))
+            rowIdx <- sort(rowIdx[!duplicated(rowIdx)])
+        } else{
+            stop("Genes in the list to test must be a character vector ",
+                 "of geneIDs.")
+        }
+        
+        # check that rowIdx is not empty vector
+        if(length(rowIdx) == 0){
+            warning("No genes from the given subset found in the fds ",
+                    "object for sample: ", sampleId)
+            return(list(padj=padj, padj_gene=padj_gene))
+        }
+        
+       
+        
+        # retrieve pvalues of introns to test
         p <- as.matrix(pVals(fds, type=type))
         if(ncol(p) == 1){
             colnames(p) <- colnames(fds)    
         }
-        p <- p[jidx, sample_id]
+        p <- p[rowIdx, sampleId]
         
-        # FDR correction
-        pa <- p.adjust(p[!duplicated(site_idx[jidx])], method=method)
+        # FDR correction on subset
+        non_dup_site_idx <- !duplicated(site_idx[rowIdx])
+        padjSub <- p.adjust(p[non_dup_site_idx], method=method)
+        
+        # set intron FDR on subset (filled with NA for all other genes)
+        padj[rowIdx] <- padjSub
         
         # gene level pvals
-        dt <- data.table(sampleID=sample_id, type=type, pval=p, 
-                         gene=names(jidx), jidx=jidx, site_idx=site_idx[jidx])
-        dt <- merge(dt, data.table(site_idx=site_idx[jidx][!duplicated(site_idx[jidx])], FDR_subset=pa), by="site_idx")
-        dt[!duplicated(dt$site_idx), pval_gene:=min(p.adjust(pval, method="holm")), by="gene"]
+        dt <- data.table(sampleID=sampleId, type=type, pval=p, 
+                    gene=names(rowIdx), jidx=rowIdx, site_idx=site_idx[rowIdx])
+        dt <- merge(dt, 
+                    data.table(site_idx=site_idx[rowIdx][non_dup_site_idx], 
+                                FDR_subset=padjSub), 
+                    by="site_idx")
+        dt[!duplicated(dt$site_idx), 
+            pval_gene:=min(p.adjust(pval, method="holm")), by="gene"]
         dt[, pval_gene := .SD[!is.na(pval_gene), unique(pval_gene)], by="gene"]
         
         # gene level FDR
         dt2 <- dt[, unique(pval_gene), by="gene"]
         dt2[, FDR_subset_gene := p.adjust(V1, method=method)]
-        dt <- merge(dt, dt2[, .(gene, FDR_subset_gene)], by="gene", all.x=TRUE)
+        dt2[, gene_rowIdx := sapply(gene, function(g) which(fds_genes == g))]
+        
+        # set intron FDR on subset (filled with NA for all other genes)
+        padj_gene[dt2[,gene_rowIdx]] <- dt2[, FDR_subset_gene]
         
         # return new FDR
-        return(dt)
-    }, SIMPLIFY=FALSE, BPPARAM=BPPARAM))
-    message(date(), ": finished FDR calculation on subset of genes.")
+        return(list(padj=padj, padj_gene=padj_gene))
+        
+    }, BPPARAM=BPPARAM)
+    padjSub <- vapply(fdrSubset, '[[', double(nrow(fds)), 'padj')
+    padjSub_gene <- vapply(fdrSubset, '[[', double(ngenes), 'padj_gene')
     
-    # add FDR subset info to fds object and return
-    metadata(fds)[[paste("FDR", subsetName, type, sep="_")]] <- FDR_subset
+    rownames(padjSub) <- rownames(fds)
+    colnames(padjSub) <- colnames(fds)
+    rownames(padjSub_gene) <- fds_genes
+    colnames(padjSub_gene) <- colnames(fds)
+    
+    # add FDR subset info to ods object and return
+    padjVals(fds, type=type, level="site", subsetName=subsetName) <- padjSub
+    padjVals(fds, type=type, level="gene", subsetName=subsetName) <- padjSub_gene
+    addToAvailableFDRsubsets(fds) <- subsetName
+    
+    message(date(), ": finished FDR calculation on subset of genes.")
+    validObject(fds)
     return(fds)
 }
 

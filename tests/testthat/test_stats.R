@@ -93,14 +93,18 @@ test_that("FDR on subset of genes", {
         "sample2" = c("geneB"),
         "sample3" = c("geneA", "geneB", "geneC", "geneD")
     )
-    expected_output_nrows <- (8 + 5 + 3) + (7) + (3+7+5+4)
     
     subsetName <- "subset_test"
     fds <- calculatePadjValuesOnSubset(fds, genesToTest=genes_per_sample, 
                                        subsetName=subsetName, type="jaccard")
-    subset_dt <- metadata(fds)[[paste("FDR", subsetName, "jaccard", sep="_")]]
-    expect_true(is(subset_dt, "data.table"))
-    expect_true(all(c("FDR_subset", "FDR_subset_gene") %in% colnames(subset_dt)))
-    expect_equal(subset_dt[, .N], expected_output_nrows)
+    subset_padj <- padjVals(fds, type="jaccard", subsetName=subsetName)
+    expect_true(is(subset_padj, "matrix"))
+    expect_true(nrow(subset_padj) == 27)
+    expect_true(ncol(subset_padj) == 3)
+    subset_padj_gene <- padjVals(fds, type="jaccard", level="gene", 
+                                    subsetName=subsetName)
+    expect_true(is(subset_padj_gene, "matrix"))
+    expect_true(nrow(subset_padj_gene) == 5)
+    expect_true(ncol(subset_padj_gene) == 3)
       
 })

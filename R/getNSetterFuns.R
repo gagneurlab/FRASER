@@ -327,11 +327,14 @@ pVals <- function(fds, type=currentType(fds), level="site",
 #' @describeIn getter_setter_functions This returns the adjusted p-values.
 #' @export
 padjVals <- function(fds, type=currentType(fds), dist=c("BetaBinomial"), 
-                    level="site", filters=list(), ...){
+                    level="site", subsetName=NULL, filters=list(), ...){
     level <- match.arg(level, choices=c("site", "gene"))
     dist <- match.arg(dist, choices=c("BetaBinomial", "Binomial", "Normal"))
     aname <- paste0("padj", dist)
     aname <- ifelse(level == "gene", paste0(aname, "_gene"), aname)
+    if(!is.null(subsetName)){
+        aname <- paste0(aname, "_", subsetName)
+    }
     # add information on used filters
     if(is.null(names(filters))){
         filters <- list(rho=1)
@@ -358,11 +361,15 @@ padjVals <- function(fds, type=currentType(fds), dist=c("BetaBinomial"),
 }
 
 `padjVals<-` <- function(fds, type=currentType(fds), level="site",
-                    dist="BetaBinomial", filters=list(), ..., value){
+                    dist="BetaBinomial", subsetName=NULL, filters=list(), ..., 
+                    value){
     level <- match.arg(level, choices=c("site", "gene"))
     dist <- match.arg(dist, choices=c("BetaBinomial", "Binomial", "Normal"))
     aname <- paste0("padj", dist)
     aname <- ifelse(level == "gene", paste0(aname, "_gene"), aname)
+    if(!is.null(subsetName)){
+        aname <- paste0(aname, "_", subsetName)
+    }
     # add information on used filters
     for(n in sort(names(filters))){
         aname <- paste0(aname, "_", n, filters[[n]])
@@ -374,6 +381,32 @@ padjVals <- function(fds, type=currentType(fds), dist=c("BetaBinomial"),
         metadata(fds)[[paste(aname, type, sep="_")]] <- value
     } else{
         setAssayMatrix(fds, name=aname, type=type, ...) <- value
+    }
+    return(fds)
+}
+
+#' @describeIn getter_setter_functions This returns the names of FDR subsets 
+#'     for which adjusted p values have been calculated.
+#' @export
+availableFDRsubsets <- function(fds){
+    ans <- metadata(fds)[["FDRsubsets"]]
+    return(ans)
+}
+
+`availableFDRsubsets<-` <- function(fds, value){
+    metadata(fds)[["FDRsubsets"]] <- value
+    return(fds)
+}
+
+`addToAvailableFDRsubsets<-` <- function(fds, value){
+    if(!isScalarCharacter(value)){
+        stop("The assigned value needs to be a scalar character.")
+    }
+    ans <- metadata(fds)[["FDRsubsets"]]
+    if(is.null(ans)){
+        metadata(fds)[["FDRsubsets"]] <- value
+    } else{
+        metadata(fds)[["FDRsubsets"]] <- unique(c(ans, value))
     }
     return(fds)
 }

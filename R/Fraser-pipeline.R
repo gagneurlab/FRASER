@@ -72,11 +72,21 @@
 #' fds <- calculateZscore(fds, type="jaccard")
 #' head(zScores(fds, type="jaccard")) 
 #' 
-#' # To calculate the FDR only on a subset of genes of interest (per sample):
-#' geneList <- list("sample1"=c("TIMMDC1"), "sample2"=c("MCOLN1"))
-#' fds <- calculatePadjValuesOnSubset(fds, genesToTest=geneList, 
+#' # example of restricting FDR correction to subsets of genes of interest
+#' genesOfInterest <- list("sample1"=c("TIMMDC1"), "sample2"=c("MCOLN1"))
+#' fds <- calculatePadjValues(fds, type="jaccard", 
+#'                  subsets=list("exampleSubset"=genesOfInterest))
+#' padjVals(fds, type="jaccard", subsetName="exampleSubset")
+#' padjVals(fds, type="jaccard", level="gene", subsetName="exampleSubset")
+#' fds <- calculatePadjValues(fds, type="jaccard", 
+#'                  subsets=list("anotherExampleSubset"=c("TIMMDC1")))
+#' padjVals(fds, type="jaccard", subsetName="anotherExampleSubset")
+#' 
+#' # only adding FDR corrected pvalues on a subset without calculating 
+#' # transcriptome-wide FDR again:
+#' fds <- calculatePadjValuesOnSubset(fds, genesToTest=genesOfInterest, 
 #'          subsetName="setOfInterest", type="jaccard")
-#' metadata(fds)[["FDR_setOfInterest"]]
+#' padjVals(fds, type="jaccard", subsetName="setOfInterest")
 #' 
 #' @seealso \code{\link[FRASER]{fit}}
 #' 
