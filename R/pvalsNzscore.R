@@ -462,7 +462,7 @@ calculatePadjValuesOnSubset <- function(fds, genesToTest, subsetName,
         
         # get genes to test for this sample
         genesToTestSample <- genesToTest[[sampleId]]
-        padj <- rep(NA, nrow(fds))
+        padj <- rep(NA, nrow(mcols(fds, type=type)))
         padj_gene <- rep(NA, ngenes)
         
         # if no genes present in the subset for this sample, return NAs
@@ -535,10 +535,10 @@ calculatePadjValuesOnSubset <- function(fds, genesToTest, subsetName,
         return(list(padj=padj, padj_gene=padj_gene))
         
     }, BPPARAM=BPPARAM)
-    padjSub <- vapply(fdrSubset, '[[', double(nrow(fds)), 'padj')
+    padjSub <- vapply(fdrSubset, '[[', 
+                        double(nrow(mcols(fds, type=type))), 'padj')
     padjSub_gene <- vapply(fdrSubset, '[[', double(ngenes), 'padj_gene')
     
-    rownames(padjSub) <- rownames(fds)
     colnames(padjSub) <- colnames(fds)
     rownames(padjSub_gene) <- fds_genes
     colnames(padjSub_gene) <- colnames(fds)
