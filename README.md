@@ -13,6 +13,13 @@ Please cite our method paper if you use it in a publication:
 
 > Mertes, C., Scheller, I.F., Yépez, V.A. *et al.* Detection of aberrant splicing events in RNA-seq data using FRASER. *Nat Commun* **12**, 529 (2021). https://doi.org/10.1038/s41467-020-20573-7
 
+## What's new
+
+FRASER 2.0, an improved version of FRASER that uses the Intron Jaccard Index as 
+its splice metric instead of FRASER's previous three metrics, is now available 
+and used by default (version 1.99.0 and above). The manuscript describing these 
+changes in more detail will be available soon. 
+
 ## Installation
 
 `FRASER` is an R/Bioconductor software package requiring a running 
