@@ -22,15 +22,18 @@
 #'
 ### GRange/Experiment/bamFile packages
 #' @importFrom BiocGenerics updateObject counts counts<- strand strand<- which
-#' @importFrom GenomicFeatures makeTxDbFromGFF intronsByTranscript genes
+#' @importFrom GenomicFeatures makeTxDbFromGFF intronsByTranscript genes exons
+#'          fiveUTRsByTranscript threeUTRsByTranscript seqlevels0
 #' @importFrom GenomicAlignments junctions readGAlignments summarizeJunctions
 #'          readGAlignmentPairs
 #' @importFrom SummarizedExperiment assay assay<- assays assays<- assayNames
 #'          colData colData<- rowData rowRanges rowRanges<- SummarizedExperiment
 #'          rbind Assays
 #' @importFrom GenomicRanges findOverlaps granges GRanges GRangesList
-#'          makeGRangesFromDataFrame invertStrand
-#' @importFrom IRanges subsetByOverlaps from to IRanges ranges
+#'          makeGRangesFromDataFrame invertStrand start end start<- end<-
+#'          seqinfo<-
+#' @importFrom IRanges subsetByOverlaps from to IRanges ranges nearest distance
+#'          %over%
 #' @importFrom Rsamtools ScanBamParam scanBamHeader bamMapqFilter
 #'          bamWhich bamWhich<- BamFile idxstatsBam
 #' @importFrom Rsubread featureCounts
@@ -41,15 +44,13 @@
 #' @importFrom biomaRt useEnsembl getBM
 #' @importFrom AnnotationDbi select
 #'
-#'
 ### Plotting
 #'
 #' @importFrom plotly plot_ly subplot layout add_trace ggplotly
 #' @importFrom pheatmap pheatmap
 #' @importFrom RColorBrewer brewer.pal
-#' @importFrom cowplot theme_cowplot
+#' @importFrom cowplot theme_cowplot background_grid
 #' @importFrom ggrepel geom_text_repel
-#'
 #'
 ### Data handling
 #'
@@ -74,18 +75,20 @@
 #' @importFrom R.utils renameFile withTimeout
 #' @importFrom tools file_path_as_absolute
 #' @importFrom methods as callNextMethod is new show slot slot<- validObject
-#' @importFrom utils capture.output packageVersion
+#' @importFrom utils capture.output packageVersion tail
 #'
 #'
 #'
 ### To be added into the functions above
 #'
 #' @importFrom S4Vectors DataFrame metadata Rle SimpleList mcols mcols<-
-#'          start end metadata metadata<- subjectHits queryHits
+#'          start end metadata metadata<- subjectHits queryHits elementMetadata
+#'          values values<-
 #' @importFrom grDevices colorRampPalette
 #' @importFrom GenomeInfoDb keepStandardChromosomes seqlevels<- seqlevels
 #'          seqlengths seqlengths<- seqlevelsStyle<- seqlevelsStyle seqnames 
-#'          seqinfo standardChromosomes dropSeqlevels keepSeqlevels
+#'          seqinfo standardChromosomes dropSeqlevels keepSeqlevels 
+#'          sortSeqlevels
 #' @importFrom DelayedArray rowMaxs rowMeans path<- cbind plogis qlogis 
 #'          DelayedArray
 #' @importFrom DelayedMatrixStats colSds rowMedians rowSds colMeans2 rowMeans2
@@ -100,9 +103,10 @@
 #'          scale_y_log10 scale_color_gradientn labs theme_bw theme
 #'          scale_color_brewer scale_color_discrete scale_linetype_manual 
 #'          annotate geom_histogram scale_fill_manual xlim scale_colour_manual
-#'          element_blank annotation_logticks
+#'          element_blank annotation_logticks ylim quo_name facet_grid 
+#'          facet_wrap geom_text
 #'
-#' @importFrom tibble as_tibble
+#' @importFrom tibble as_tibble %>%
 #'
 #' @useDynLib FRASER
 #'
@@ -128,5 +132,12 @@ globalVariables(c(".", "J", ".N", ".asDataFrame", "End", "first_feature",
         "model", "mu", "n", ",nsubset", "o3", "o5", "obsPsi", "os", "pa",
         "padj", "passed", "pByFeature", "pointNr", "predPsi", "psi3", "psi5",
         "psiType", "psiValue", "seqlength", "seqlevel", "Step", "traceNr",
-        "uniqueID", "V1", "value", "zscore", "maxDTheta"),
+        "uniqueID", "V1", "value", "zscore", "maxDTheta", "par", "genes_donor",
+        "genes_acceptor", "gene_pval", "gene_padj", "dt_idx", 
+        "blacklist", "potentialImpact", "causesFrameshift", "annotatedJunction", 
+        "distNearestGene", "UTR_overlap", "meanCount", "medianCount", 
+        "potentialImpact2", "nonsplitProportion", "nonsplitCounts", 
+        "nonsplitProportion_99quantile", "startID", "endID", "j_idx", "jidx", 
+        "start_idx", "end_idx", "pval_gene", "FDR_subset_gene", "gene_id", 
+        "pvalue"),
         package="FRASER")

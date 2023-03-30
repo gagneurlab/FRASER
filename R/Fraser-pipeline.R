@@ -31,7 +31,7 @@
 #'         splicing types.
 #' @param implementation The method that should be used to correct for 
 #' confounders. 
-#' @param type The type of PSI (psi5, psi3 or theta for theta/splicing 
+#' @param type The type of PSI (jaccard, psi5, psi3 or theta for theta/splicing 
 #' efficiency)
 #' @param iterations The maximal number of iterations. When the autoencoder has 
 #' not yet converged after these number of iterations, the fit stops anyway.
@@ -61,16 +61,32 @@
 #' # The functions run inside the FRASER function can also be directly 
 #' # run themselves. 
 #' # To directly run the fit function:
-#' fds <- fit(fds, implementation="PCA", q=2, type="psi5")
+#' fds <- fit(fds, implementation="PCA", q=2, type="jaccard")
 #' 
 #' # To directly run the nomial and adjusted p value and z score 
 #' # calculation, the following functions can be used:
-#' fds <- calculatePvalues(fds, type="psi5")
-#' head(pVals(fds, type="psi5"))
-#' fds <- calculatePadjValues(fds, type="psi5", method="BY")
-#' head(padjVals(fds, type="psi5"))
-#' fds <- calculateZscore(fds, type="psi5")
-#' head(zScores(fds, type="psi5")) 
+#' fds <- calculatePvalues(fds, type="jaccard")
+#' head(pVals(fds, type="jaccard"))
+#' fds <- calculatePadjValues(fds, type="jaccard", method="BY")
+#' head(padjVals(fds, type="jaccard"))
+#' fds <- calculateZscore(fds, type="jaccard")
+#' head(zScores(fds, type="jaccard")) 
+#' 
+#' # example of restricting FDR correction to subsets of genes of interest
+#' genesOfInterest <- list("sample1"=c("TIMMDC1"), "sample2"=c("MCOLN1"))
+#' fds <- calculatePadjValues(fds, type="jaccard", 
+#'                  subsets=list("exampleSubset"=genesOfInterest))
+#' padjVals(fds, type="jaccard", subsetName="exampleSubset")
+#' padjVals(fds, type="jaccard", level="gene", subsetName="exampleSubset")
+#' fds <- calculatePadjValues(fds, type="jaccard", 
+#'                  subsets=list("anotherExampleSubset"=c("TIMMDC1")))
+#' padjVals(fds, type="jaccard", subsetName="anotherExampleSubset")
+#' 
+#' # only adding FDR corrected pvalues on a subset without calculating 
+#' # transcriptome-wide FDR again:
+#' fds <- calculatePadjValuesOnSubset(fds, genesToTest=genesOfInterest, 
+#'          subsetName="setOfInterest", type="jaccard")
+#' padjVals(fds, type="jaccard", subsetName="setOfInterest")
 #' 
 #' @seealso \code{\link[FRASER]{fit}}
 #' 
@@ -85,8 +101,9 @@ NULL
 #' the beta-binomial fit, the computation of Z scores and p values as well as 
 #' the computation of delta-PSI values.
 #' @export
-FRASER <- function(fds, q, implementation=c("PCA", "PCA-BB-Decoder", 
-                                        "AE-weighted", "AE", "BB"), 
+FRASER <- function(fds, q, type=fitMetrics(fds), 
+                   implementation=c("PCA", "PCA-BB-Decoder", "AE-weighted", 
+                                    "AE", "BB"), 
                     iterations=15, BPPARAM=bpparam(), correction, ...){
     # Check input
     implementation <- match.arg(implementation)
@@ -103,7 +120,7 @@ FRASER <- function(fds, q, implementation=c("PCA", "PCA-BB-Decoder",
     }
 
     # fit each splicing type separately
-    for(i in psiTypes){
+    for(i in type){
 
         # get type specific q
         if(missing(q)){
@@ -128,8 +145,8 @@ FRASER <- function(fds, q, implementation=c("PCA", "PCA-BB-Decoder",
         message(date(), ": Adjust p values for: '", i, "'.")
         fds <- calculatePadjValues(fds, type=i)
 
-        message(date(), ": Compute Z scores for: '", i, "'.")
-        fds <- calculateZscore(fds, type=i)
+        # message(date(), ": Compute Z scores for: '", i, "'.")
+        # fds <- calculateZscore(fds, type=i)
     }
 
     # return final analysis

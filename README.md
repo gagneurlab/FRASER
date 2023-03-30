@@ -13,6 +13,21 @@ Please cite our method paper if you use it in a publication:
 
 > Mertes, C., Scheller, I.F., Yépez, V.A. *et al.* Detection of aberrant splicing events in RNA-seq data using FRASER. *Nat Commun* **12**, 529 (2021). https://doi.org/10.1038/s41467-020-20573-7
 
+## What's new
+
+FRASER 2.0, an improved version of FRASER, is now available and used by default (version 1.99.0 and above).
+FRASER 2.0 uses the Intron Jaccard Index as its splice metric instead of FRASER's 
+previous three metrics along with some other parameter optimizations of pseudocount, 
+filtering settings and default delta cutoff. 
+ 
+To change the splice metric, set `fitMetrics(fds)` to one or more of the metrics 
+specified in `FRASER::psiTypes`. For FRASER 2.0 and the Intron Jaccard Index, the 
+new default delta cutoff is 0.1 instead of the previous value of 0.3. When using 
+the 3 previous metrics, the delta cutoff should be set manually to 0.3 
+during results extraction, e.g. `results(fds, deltaPsiCutoff=0.3,...)`.
+
+The manuscript describing these changes in more detail will be available soon. 
+
 ## Installation
 
 `FRASER` is an R/Bioconductor software package requiring a running 

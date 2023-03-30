@@ -8,7 +8,7 @@
     op.fraser <- list(
         `FRASER-hdf5-chunk-nrow` = 30000,
         `FRASER-hdf5-chunk-ncol` = 20,
-        `FRASER.pseudoCount` = 1,
+        `FRASER.pseudoCount` = 0.1,
         `FRASER.minSamplesForDelayed` = 1000,
         `FRASER.maxSamplesNoHDF5` = 20,
         `FRASER.maxJunctionsNoHDF5` = 1000)

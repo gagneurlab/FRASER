@@ -152,6 +152,21 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// truncNLL_rho_penalized
+double truncNLL_rho_penalized(double logit_rho, arma::vec yi, arma::vec ki, arma::vec ni, double lambda);
+RcppExport SEXP _FRASER_truncNLL_rho_penalized(SEXP logit_rhoSEXP, SEXP yiSEXP, SEXP kiSEXP, SEXP niSEXP, SEXP lambdaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type logit_rho(logit_rhoSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type yi(yiSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type ki(kiSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type ni(niSEXP);
+    Rcpp::traits::input_parameter< double >::type lambda(lambdaSEXP);
+    rcpp_result_gen = Rcpp::wrap(truncNLL_rho_penalized(logit_rho, yi, ki, ni, lambda));
+    return rcpp_result_gen;
+END_RCPP
+}
 // fullNLL
 arma::vec fullNLL(arma::mat y, arma::mat rho, arma::mat k, arma::mat n, arma::mat D, double lambda, bool byRows);
 RcppExport SEXP _FRASER_fullNLL(SEXP ySEXP, SEXP rhoSEXP, SEXP kSEXP, SEXP nSEXP, SEXP DSEXP, SEXP lambdaSEXP, SEXP byRowsSEXP) {
@@ -215,6 +230,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_FRASER_truncNLL_e", (DL_FUNC) &_FRASER_truncNLL_e, 7},
     {"_FRASER_truncGrad_e", (DL_FUNC) &_FRASER_truncGrad_e, 7},
     {"_FRASER_truncNLL_rho", (DL_FUNC) &_FRASER_truncNLL_rho, 4},
+    {"_FRASER_truncNLL_rho_penalized", (DL_FUNC) &_FRASER_truncNLL_rho_penalized, 5},
     {"_FRASER_fullNLL", (DL_FUNC) &_FRASER_fullNLL, 7},
     {"_FRASER_truncWeightedNLL_db", (DL_FUNC) &_FRASER_truncWeightedNLL_db, 7},
     {"_FRASER_truncWeightedGrad_db", (DL_FUNC) &_FRASER_truncWeightedGrad_db, 7},

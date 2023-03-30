@@ -10,11 +10,14 @@
 #' @param level Indicates if the retrieved p values should be adjusted on the 
 #'          donor/acceptor site-level (default) or if unadjusted junction-level 
 #'          p values should be returned.
+#' @param filters A named list giving the filters that were applied for masking 
+#'          during p value correction. Used for storing and retrieving the 
+#'          correct set of requested p values.
 #' @param value The new value to be assigned.
 #' @param all Logical value indicating whether \code{hyperParams(fds)} should 
 #'          return the results of all evaluated parameter combinations or only 
 #'          for the optimal parameter combination.
-#' @param ... Internally used parameteres. 
+#' @param ... Internally used parameters. 
 #' @return A (delayed) matrix or vector dependent on the type of data retrieved.
 #' 
 #' @name getter_setter_functions
@@ -29,7 +32,7 @@
 #' dontWriteHDF5 <- TRUE
 #' 
 #' # get/set the splice metric for which results should be retrieved 
-#' currentType(fds) <- "psi5"
+#' currentType(fds) <- "jaccard"
 #' currentType(fds)
 #' 
 #' # get fitted parameters
@@ -40,6 +43,9 @@
 #' # get statistics
 #' pVals(fds)
 #' padjVals(fds)
+#' 
+#' # zscore not calculated by default
+#' fds <- calculateZscore(fds, type="jaccard")
 #' zScores(fds)
 #' 
 #' # set and get pseudocount
@@ -47,9 +53,9 @@
 #' pseudocount()
 #' 
 #' # retrieve or set a mask to exclude certain junctions in the fitting step
-#' featureExclusionMask(fds, type="theta") <- sample(
-#'         c(FALSE, TRUE), nrow(mcols(fds, type="theta")), replace=TRUE)
-#' featureExclusionMask(fds, type="theta")
+#' featureExclusionMask(fds, type="jaccard") <- sample(
+#'         c(FALSE, TRUE), nrow(mcols(fds, type="jaccard")), replace=TRUE)
+#' featureExclusionMask(fds, type="jaccard")
 #' 
 #' # controlling the verbosity level of the output of some algorithms
 #' verbose(fds) <- 2
@@ -198,7 +204,7 @@ predictY <- function(fds, type=currentType(fds), noiseAlpha=NULL){
 }
 
 
-`setAssayMatrix<-` <- function(fds, name, type, ..., value){
+`setAssayMatrix<-` <- function(fds, name, type=currentType(fds), ..., value){
     if(!is.matrix(value)){
         value <- matrix(value, ncol=ncol(fds), nrow=nrow(mcols(fds, type=type)))
     }
@@ -217,7 +223,7 @@ predictY <- function(fds, type=currentType(fds), noiseAlpha=NULL){
     fds
 }
 
-getAssayMatrix <- function(fds, name, type, byGroup=FALSE){
+getAssayMatrix <- function(fds, name, type=currentType(fds), byGroup=FALSE){
     if(missing(name)){
         name <- type
     } else {
@@ -248,8 +254,8 @@ zScores <- function(fds, type=currentType(fds), byGroup=FALSE, ...){
 #' @describeIn getter_setter_functions This returns the calculated p-values.
 #' @export
 pVals <- function(fds, type=currentType(fds), level="site", 
-                    dist="BetaBinomial", ...){
-    level <- match.arg(level, choices=c("site", "junction"))
+                    filters=list(), dist="BetaBinomial", ...){
+    level <- match.arg(level, choices=c("site", "junction", "gene"))
     dist <- match.arg(dist, choices=c("BetaBinomial", "Binomial", "Normal"))
     aname <- paste0("pvalues", dist)
     if(level == "junction"){
@@ -260,33 +266,148 @@ pVals <- function(fds, type=currentType(fds), level="site",
             warning("Did not find junction-level p values. ",
                     "Using site-level p values instead.")
         }
+    } else{ 
+        aname <- ifelse(level == "gene", paste0(aname, "_gene"), aname)
+        # add information on used filters
+        if(is.null(names(filters))){
+            filters <- list(rho=1)
+        }
+        for(n in sort(names(filters))){
+            aname_new <- paste0(aname, "_", n, filters[[n]])
+            if(n == "rho" && filters[[n]] == 1){
+                if(any(grepl(aname_new, assayNames(fds))) ||
+                        any(grepl(aname_new, names(metadata(fds))))){
+                    aname <- aname_new
+                }
+            }else{
+                aname <- aname_new
+            }
+        }
+        if(level == "gene"){
+            if(!paste(aname, type, sep="_") %in% names(metadata(fds))){
+                stop("Did not find gene-level p values. ",
+                        "Please compute them first.")
+            }
+            return(metadata(fds)[[paste(aname, type, sep="_")]])
+        }
     }
+    
     getAssayMatrix(fds, aname, type=type, ...)
 }
 
 `pVals<-` <- function(fds, type=currentType(fds), level="site",
+                    filters=list(),
                     dist="BetaBinomial", ..., value){
-    level <- match.arg(level, choices=c("site", "junction"))
+    level <- match.arg(level, choices=c("site", "junction", "gene"))
     dist <- match.arg(dist, choices=c("BetaBinomial", "Binomial", "Normal"))
     aname <- paste0("pvalues", dist)
     if(level == "junction"){
         aname <- paste0(aname, "_junction")
+        setAssayMatrix(fds, name=aname, type=type, ...) <- value
+        return(fds)
+    } else if(level == "gene"){
+        aname <- paste0(aname, "_gene")
     }
-    setAssayMatrix(fds, name=aname, type=type, ...) <- value
+    # add information on used filters
+    for(n in sort(names(filters))){
+        aname <- paste0(aname, "_", n, filters[[n]])
+    }
+    
+    if(level == "gene"){
+        if(is.null(rownames(value))){
+            stop("Missing rownames when storing gene-level pvalues.")
+        }
+        metadata(fds)[[paste(aname, type, sep="_")]] <- value    
+    } else{
+        setAssayMatrix(fds, name=aname, type=type, ...) <- value
+    }
     return(fds)
 }
 
 #' @describeIn getter_setter_functions This returns the adjusted p-values.
 #' @export
-padjVals <- function(fds, type=currentType(fds), dist=c("BetaBinomial"), ...){
+padjVals <- function(fds, type=currentType(fds), dist=c("BetaBinomial"), 
+                    level="site", subsetName=NULL, filters=list(), ...){
+    level <- match.arg(level, choices=c("site", "gene"))
     dist <- match.arg(dist, choices=c("BetaBinomial", "Binomial", "Normal"))
-    return(getAssayMatrix(fds, paste0("padj", dist), type=type, ...))
+    aname <- paste0("padj", dist)
+    aname <- ifelse(level == "gene", paste0(aname, "_gene"), aname)
+    if(!is.null(subsetName)){
+        aname <- paste0(aname, "_", subsetName)
+    }
+    # add information on used filters
+    if(is.null(names(filters))){
+        filters <- list(rho=1)
+    }
+    for(n in sort(names(filters))){
+        aname_new <- paste0(aname, "_", n, filters[[n]])
+        if(n == "rho" && filters[[n]] == 1){
+            if(any(grepl(aname_new, assayNames(fds))) ||
+                    any(grepl(aname_new, names(metadata(fds))))){
+                aname <- aname_new
+            }
+        }else{
+            aname <- aname_new
+        }
+    }
+    if(level == "gene"){
+        if(!paste(aname, type, sep="_") %in% names(metadata(fds))){
+            stop("Did not find gene-level padj values. ",
+                "Please compute them first.")
+        }
+        return(metadata(fds)[[paste(aname, type, sep="_")]])
+    }
+    return(getAssayMatrix(fds, aname, type=type, ...))
 }
 
-`padjVals<-` <- function(fds, type=currentType(fds),
-                    dist="BetaBinomial", ..., value){
+`padjVals<-` <- function(fds, type=currentType(fds), level="site",
+                    dist="BetaBinomial", subsetName=NULL, filters=list(), ..., 
+                    value){
+    level <- match.arg(level, choices=c("site", "gene"))
     dist <- match.arg(dist, choices=c("BetaBinomial", "Binomial", "Normal"))
-    setAssayMatrix(fds, name=paste0("padj", dist), type=type, ...) <- value
+    aname <- paste0("padj", dist)
+    aname <- ifelse(level == "gene", paste0(aname, "_gene"), aname)
+    if(!is.null(subsetName)){
+        aname <- paste0(aname, "_", subsetName)
+    }
+    # add information on used filters
+    for(n in sort(names(filters))){
+        aname <- paste0(aname, "_", n, filters[[n]])
+    }
+    if(level == "gene"){
+        if(is.null(rownames(value))){
+            stop("Missing rownames when storing gene-level pvalues.")
+        }
+        metadata(fds)[[paste(aname, type, sep="_")]] <- value
+    } else{
+        setAssayMatrix(fds, name=aname, type=type, ...) <- value
+    }
+    return(fds)
+}
+
+#' @describeIn getter_setter_functions This returns the names of FDR subsets 
+#'     for which adjusted p values have been calculated.
+#' @export
+availableFDRsubsets <- function(fds){
+    ans <- metadata(fds)[["FDRsubsets"]]
+    return(ans)
+}
+
+`availableFDRsubsets<-` <- function(fds, value){
+    metadata(fds)[["FDRsubsets"]] <- value
+    return(fds)
+}
+
+`addToAvailableFDRsubsets<-` <- function(fds, value){
+    if(!isScalarCharacter(value)){
+        stop("The assigned value needs to be a scalar character.")
+    }
+    ans <- metadata(fds)[["FDRsubsets"]]
+    if(is.null(ans)){
+        metadata(fds)[["FDRsubsets"]] <- value
+    } else{
+        metadata(fds)[["FDRsubsets"]] <- unique(c(ans, value))
+    }
     return(fds)
 }
 
@@ -311,10 +432,14 @@ deltaPsiValue <- function(fds, type=currentType(fds)){
 
 
 #' @describeIn getter_setter_functions Returns the psi type that is used 
-#' within several methods in the FRASER package.
+#' within several methods in the FRASER package (defaults to jaccard).
 #' @export
 currentType <- function(fds){
-    return(metadata(fds)[['currentType']])
+    curType <- metadata(fds)[['currentType']]
+    if(is.null(curType)){
+        curType <- "jaccard"
+    }
+    return(curType)
 }
 
 #' @describeIn getter_setter_functions Sets the psi type that is to be used 
@@ -323,6 +448,27 @@ currentType <- function(fds){
 `currentType<-` <- function(fds, value){
     stopifnot(isScalarCharacter(whichPSIType(value)))
     metadata(fds)[['currentType']] <- whichPSIType(value)
+    return(fds)
+}
+
+#' @describeIn getter_setter_functions Returns the splice metrics that will be
+#' fitted (defaults to jaccard, used within several methods in the 
+#' FRASER package).
+#' @export
+fitMetrics <- function(fds){
+    metrics <- metadata(fds)[['fit_metrics']]
+    if(is.null(metrics)){
+        metrics <- "jaccard"
+    }
+    return(metrics)
+}
+
+#' @describeIn getter_setter_functions Sets the splice metrics that will be 
+#' fitted (used within several methods in the FRASER package).
+#' @export 
+`fitMetrics<-` <- function(fds, value){
+    stopifnot(is.character(whichPSIType(value)))
+    metadata(fds)[['fit_metrics']] <- whichPSIType(value)
     return(fds)
 }
 
@@ -342,7 +488,7 @@ pseudocount <- function(value=NULL){
     # set pseudo count if provided
     stopifnot(isScalarNumeric(value))
     stopifnot(value >= 0)
-    value <- as.integer(value)
+    value <- as.numeric(value)
     options('FRASER.pseudoCount'=value)
     devNULL <- .setPseudoCount(value)
     stopifnot(value == devNULL)
@@ -433,7 +579,7 @@ dontWriteHDF5 <- function(fds){
     return(fds)
 }
 
-getTrueOutliers <- function(fds, type, byGroup=FALSE, ...){
+getTrueOutliers <- function(fds, type=currentType(fds), byGroup=FALSE, ...){
     ans <- getAssayMatrix(fds, "trueOutliers", type)
     if(isTRUE(byGroup)){
         ans <- getAbsMaxByGroup(fds, type, ans, ...)
@@ -443,7 +589,7 @@ getTrueOutliers <- function(fds, type, byGroup=FALSE, ...){
     pmin(pmax(ans, -1), 1)
 }
 
-getTrueDeltaPsi <- function(fds, type, byGroup=FALSE, ...){
+getTrueDeltaPsi <- function(fds, type=currentType(fds), byGroup=FALSE, ...){
     ans <- getAssayMatrix(fds, "trueDeltaPSI", type)
     if(isTRUE(byGroup)){
         ans <- getAbsMaxByGroup(fds, type, ans, ...)
@@ -451,7 +597,8 @@ getTrueDeltaPsi <- function(fds, type, byGroup=FALSE, ...){
     ans
 }
 
-getAbsMaxByGroup <- function(fds, type, mat, index=NULL, BPPARAM=bpparam()){
+getAbsMaxByGroup <- function(fds, type=currentType(fds), mat, index=NULL, 
+                                BPPARAM=bpparam()){
     if(is.null(index)){
         index <- getSiteIndex(fds, type)
     }
@@ -470,13 +617,13 @@ getAbsMaxByGroup <- function(fds, type, mat, index=NULL, BPPARAM=bpparam()){
     return(values)
 }
 
-getByGroup <- function(fds, type, value){
+getByGroup <- function(fds, type=currentType(fds), value){
     index <- getSiteIndex(fds, type)
     idx   <- !duplicated(index)
     return(value[idx,])
 }
 
-getDeltaPsi <- function(fds, type, byGroup=FALSE, ...){
+getDeltaPsi <- function(fds, type=currentType(fds), byGroup=FALSE, ...){
     mu <- predictedMeans(fds, type)
     dataPsi <- (K(fds, type) + pseudocount())/(N(fds, type) + 2*pseudocount())
     deltaPSI <- dataPsi - mu
@@ -488,13 +635,14 @@ getDeltaPsi <- function(fds, type, byGroup=FALSE, ...){
 
 
 # calculate FRASER weights
-calcFraserWeights <- function(fds, psiType){
+calcFraserWeights <- function(fds, psiType=currentType(fds)){
     k <- as.matrix(K(fds, psiType))
     n <- as.matrix(N(fds, psiType))
     mu <- t(predictMu(fds, psiType))
     rho <- rho(fds, psiType)
-    dataPsi <- plogis(t(
-            x(fds, type=psiType, all=TRUE, center=FALSE, noiseAlpha=NULL)))
+    # dataPsi <- plogis(t(
+    #         x(fds, type=psiType, all=TRUE, center=FALSE, noiseAlpha=NULL)))
+    dataPsi <- k / n
 
     # pearson residuals for BB
     # on counts of success k
@@ -503,18 +651,23 @@ calcFraserWeights <- function(fds, psiType){
     #       (1+((n+2*pseudocount())-1)*rho))
     # on probability of success mu
     r <- (dataPsi - mu) / sqrt(
-            mu * (1-mu) * (1+((n+2*pseudocount())-1)*rho) /
-            (n+2*pseudocount()))
+            # mu * (1-mu) * (1+((n+2*pseudocount())-1)*rho) /
+            # (n+2*pseudocount()))
+            mu * (1-mu) * (1+(n-1)*rho) / n
+        )
 
     # weights according to Huber function (as in edgeR)
     c <- 1.345; # constant, as suggested in edgeR paper
     w <- ifelse(abs(r) > c, c/abs(r) , 1)
 
+    # set weights to 0 if NA (i.e. N=0)
+    w[is.na(w)] <- 0
+
     return(w)
 }
 
 # get FRASER weights
-weights <- function(fds, type){
+weights <- function(fds, type=currentType(fds)){
     return(getAssayMatrix(fds, "weights", type))
 }
 
@@ -524,7 +677,7 @@ weights <- function(fds, type){
     return(fds)
 }
 
-getIndexFromResultTable <- function(fds, resultTable, padj.method="holm"){
+getIndexFromResultTable <- function(fds, resultTable){
     type <- as.character(resultTable$type)
     target <- makeGRangesFromDataFrame(resultTable)
     if(type == "theta"){
@@ -541,8 +694,9 @@ getIndexFromResultTable <- function(fds, resultTable, padj.method="holm"){
     ov
 }
 
-getPlottingDT <- function(fds, axis=c("row", "col"), type=NULL, result=NULL,
-                    idx=NULL, aggregate=FALSE, pvalLevel="site", Ncpus=3, ...){
+getPlottingDT <- function(fds, axis=c("row", "col"), type=currentType(fds), 
+                    result=NULL, idx=NULL, aggregate=FALSE, pvalLevel="site", 
+                    Ncpus=3, geneColumn="hgnc_symbol", ...){
     if(!is.null(result)){
         type <- as.character(result$type)
         idx  <- getIndexFromResultTable(fds, result)
@@ -564,8 +718,8 @@ getPlottingDT <- function(fds, axis=c("row", "col"), type=NULL, result=NULL,
     
     spliceID <- getSiteIndex(fds, type=type)[idxrow]
     feature_names <- rownames(mcols(fds, type=type))[idxrow]
-    if("hgnc_symbol" %in% colnames(mcols(fds, type=type))){
-        feature_names <- mcols(fds, type=type)[idxrow,"hgnc_symbol"]
+    if(geneColumn %in% colnames(mcols(fds, type=type))){
+        feature_names <- mcols(fds, type=type)[idxrow, geneColumn]
     }
     if(is.null(feature_names)){
         feature_names <- as.character(seq_row(mcols(fds, type=type)))[idxrow]
@@ -587,42 +741,62 @@ getPlottingDT <- function(fds, axis=c("row", "col"), type=NULL, result=NULL,
             pval      = c(pVals(fds, type=type, 
                                 level=pvalLevel)[idxrow, idxcol]),
             padj      = c(padjVals(fds, type=type)[idxrow, idxcol]),
-            zscore    = c(zScores(fds, type=type)[idxrow, idxcol]),
-            obsPsi    = c((k + pseudocount())/(n + 2*pseudocount())),
-            predPsi   = c(predictedMeans(fds, type)[idxrow, idxcol]))
+            obsPsi    = c(k/n),
+            predPsi   = c(predictedMeans(fds, type)[idxrow, idxcol]),
+            rho       = rep(rho(fds, type=type)[idxrow], 
+                            ifelse(isTRUE(idxcol), ncol(fds), sum(idxcol))) 
+    )
     dt[, deltaPsi:=obsPsi - predPsi]
 
     # add aberrant information to it
     aberrantVec <- aberrant(fds, ..., padjVals=dt[,.(padj)],
-        dPsi=dt[,.(deltaPsi)], zscores=dt[,.(zscore)], n=dt[,.(n)])
+        dPsi=dt[,.(deltaPsi)], n=dt[,.(n)], 
+        rhoVals=dt[,.(rho)], aggregate=FALSE)
     dt[,aberrant:=aberrantVec]
 
-    # if requested return gene p values (correct for multiple testing again)
+    # if requested return gene p values
     if(isTRUE(aggregate)){
         dt <- dt[!is.na(featureID)]
-
-        # correct by gene and take the smallest p value
-        dt <- rbindlist(bplapply(unique(dt[,sampleID]), 
-            BPPARAM=getBPParam(Ncpus, length(unique(dt[,sampleID]))),
-            FUN=function(x){
-                    dttmp <- dt[sampleID == x]
-                    dttmp[, pval:=p.adjust(pval, method="holm"),
-                            by="sampleID,featureID,type"]
-                    dttmp <- dttmp[order(sampleID, featureID, type, -aberrant,
-                                            pval, -abs(deltaPsi))][
-                            !duplicated(data.table(sampleID, featureID, type))]
-                    dttmp <- dttmp[, padj:=p.adjust(pval, method="BY"),
-                            by="sampleID,type"]
-                    dttmp
-            }))
+        # split featureID into several rows if more than one
+        dt[, dt_idx:=seq_len(.N)]
+        dt_tmp <- dt[, splitGenes(featureID), by="dt_idx"]
+        dt <- dt[dt_tmp$dt_idx,]
+        dt[,`:=`(featureID=dt_tmp$V1, dt_idx=NULL)]
+        
+        # get gene-level pvalue matrices
+        pvalsGene <- lapply(c("pval", "padj"), function(x){
+            if(x == "pval"){
+                pvalsGene <- pVals(fds, type=type, 
+                                    level="gene")[,idxcol,drop=FALSE]
+            } else {
+                pvalsGene <- padjVals(fds, type=type, 
+                                    level="gene")[,idxcol,drop=FALSE]
+            }
+            pvalsGene <- data.table(featureID=rownames(pvalsGene), pvalsGene)
+            pvalsGene <- melt(pvalsGene, value.name=paste0("gene_", x), 
+                                id.vars="featureID", variable.name="sampleID")
+            return(pvalsGene)
+        })
+        pvalsGene <- merge(pvalsGene[[1]], pvalsGene[[2]], 
+                            by=c("featureID", "sampleID"))
+        
+        # merge with gene pval matrix
+        dt <- merge(dt, pvalsGene, by=c("featureID", "sampleID"))
+        dt[,`:=`(pval=gene_pval, padj=gene_padj, 
+                gene_pval=NULL, gene_padj=NULL)]
+        
+        # sort
+        dt <- dt[order(sampleID, featureID, type, -aberrant,
+                        padj, -abs(deltaPsi))][
+                !duplicated(data.table(sampleID, featureID, type))]
     }
-
+    
     # return object
     dt
 }
 
 
-#' @describeIn getter_setter_functions Dependend on the level of verbosity 
+#' @describeIn getter_setter_functions Dependent on the level of verbosity 
 #' the algorithm reports more or less to the user. 0 means being quiet 
 #' and 10 means everything.
 #' @export

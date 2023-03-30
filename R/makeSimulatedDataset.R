@@ -435,9 +435,10 @@ makeSimulatedFraserDataSet_Multinomial <- function(m=200, j=1000, q=10,
 #' @examples 
 #' # A generic dataset
 #' fds <- makeSimulatedFraserDataSet()
+#' fds <- calculatePSIValues(fds)
 #' fds <- injectOutliers(fds, minDpsi=0.2, freq=1E-3)
 #' @export
-injectOutliers <- function(fds, type=c("psi5", "psi3", "theta"),
+injectOutliers <- function(fds, type=psiTypes,
                     freq=1E-3, minDpsi=0.2, minCoverage=2,
                     deltaDistr="uniformDistr", verbose=FALSE,
                     method=c('samplePSI', 'meanPSI', 'simulatedPSI'),
@@ -472,6 +473,9 @@ injectOutliers <- function(fds, type=c("psi5", "psi3", "theta"),
         setAssayMatrix(fds, type="psi3", "originalOtherCounts",
                 withDimnames=FALSE) <- 
                         counts(fds, type="psi3", side="other")
+        setAssayMatrix(fds, type="jaccard", "originalOtherCounts",
+                       withDimnames=FALSE) <- 
+                        counts(fds, type="jaccard", side="other")
     }
 
     # get infos from the fds
@@ -500,7 +504,9 @@ injectOutliers <- function(fds, type=c("psi5", "psi3", "theta"),
     dt[,groupSize:=.N, by=groupID]
 
     # Get groups where outlier can be injected
-    available_groups <- dt[groupSize > ifelse(type == "theta", 0, 1), unique(groupID)]
+    available_groups <- dt[groupSize > ifelse(type == "theta" | 
+                                                type == "jaccard", 0, 1), 
+                            unique(groupID)]
     
     # e.g. for psi3/5: no donor/acceptor 
     # groups with at least 2 junctions (e.g in simulationBB)

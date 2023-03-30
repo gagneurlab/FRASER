@@ -6,7 +6,7 @@
 \usage{
 injectOutliers(
   fds,
-  type = c("psi5", "psi3", "theta"),
+  type = psiTypes,
   freq = 0.001,
   minDpsi = 0.2,
   minCoverage = 2,
@@ -50,5 +50,6 @@ Inject artificial outliers in an existing fds
 \examples{
 # A generic dataset
 fds <- makeSimulatedFraserDataSet()
+fds <- calculatePSIValues(fds)
 fds <- injectOutliers(fds, minDpsi=0.2, freq=1E-3)
 }

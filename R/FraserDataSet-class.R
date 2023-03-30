@@ -218,13 +218,13 @@ showFraserDataSet <- function(object) {
     cat("\n")
     
     cat("-------------------- BAM parameters --------------------\n")
-    if(identical(scanBamParam(FraserDataSet()), scanBamParam(object))){
-        cat(paste0("Default used with: ",
-                "bamMapqFilter=", bamMapqFilter(scanBamParam(object))
-        ))
-    } else {
+    # if(identical(scanBamParam(FraserDataSet()), scanBamParam(object))){
+    #     cat(paste0("Default used with: ",
+    #             "bamMapqFilter=", bamMapqFilter(scanBamParam(object))
+    #     ))
+    # } else {
         show(scanBamParam(object))
-    }
+    # }
     cat("\n\n")
 }
 

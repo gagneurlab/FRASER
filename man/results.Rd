@@ -2,7 +2,6 @@
 % Please edit documentation in R/AllGenerics.R
 \name{results,FraserDataSet-method}
 \alias{results,FraserDataSet-method}
-\alias{resultsByGenes}
 \alias{aberrant,FraserDataSet-method}
 \title{Extracting results and aberrant splicing events}
 \usage{
@@ -10,26 +9,31 @@
   object,
   sampleIDs = samples(object),
   padjCutoff = 0.05,
-  zScoreCutoff = NA,
-  deltaPsiCutoff = 0.3,
+  deltaPsiCutoff = 0.1,
+  rhoCutoff = NA,
+  aggregate = FALSE,
+  collapse = FALSE,
   minCount = 5,
-  psiType = c("psi3", "psi5", "theta"),
+  psiType = psiTypes,
+  geneColumn = "hgnc_symbol",
+  all = FALSE,
+  returnTranscriptomewideResults = TRUE,
   additionalColumns = NULL,
-  BPPARAM = bpparam(),
-  ...
+  BPPARAM = bpparam()
 )
-
-resultsByGenes(res, geneColumn = "hgncSymbol", method = "BY")
 
 \S4method{aberrant}{FraserDataSet}(
   object,
-  type = currentType(object),
+  type = fitMetrics(object),
   padjCutoff = 0.05,
-  deltaPsiCutoff = 0.3,
-  zScoreCutoff = NA,
+  deltaPsiCutoff = 0.1,
   minCount = 5,
+  rhoCutoff = NA,
   by = c("none", "sample", "feature"),
   aggregate = FALSE,
+  geneColumn = "hgnc_symbol",
+  subsetName = NULL,
+  all = FALSE,
   ...
 )
 }
@@ -41,15 +45,37 @@ retrieved}
 
 \item{padjCutoff}{The FDR cutoff to be applied or NA if not requested.}
 
-\item{zScoreCutoff}{The z-score cutoff to be applied or NA if not requested.}
-
 \item{deltaPsiCutoff}{The cutoff on delta psi or NA if not requested.}
+
+\item{rhoCutoff}{The cutoff value on the fitted rho value 
+(overdispersion parameter of the betabinomial) above which 
+junctions are filtered}
+
+\item{aggregate}{If TRUE the returned object is aggregated to the feature 
+level (i.e. gene level).}
+
+\item{collapse}{Only takes effect if \code{aggregate=TRUE}. 
+If TRUE, collapses results across the different psi 
+types to return only one row per feature (gene) and sample.}
 
 \item{minCount}{The minimum count value of the total coverage of an intron 
 to be considered as significant.
 result}
 
 \item{psiType}{The psi types for which the results should be retrieved.}
+
+\item{geneColumn}{The column name of the column that has the gene annotation 
+that will be used for gene-level pvalue computation.}
+
+\item{all}{By default FALSE, only significant introns (or genes) are listed 
+in the results. If TRUE, results are assembled for all 
+samples and introns/genes regardless of significance.}
+
+\item{returnTranscriptomewideResults}{If FDR corrected pvalues for subsets 
+of genes of interest have been calculated, this parameter 
+indicates whether additionally the transcriptome-wide results 
+should be returned as well (default), or whether only results 
+for those subsets should be retrieved.}
 
 \item{additionalColumns}{Character vector containing the names of additional 
 columns from mcols(fds) that should appear in the result table 
@@ -58,26 +84,15 @@ are included.}
 
 \item{BPPARAM}{The BiocParallel parameter.}
 
-\item{...}{Further arguments can be passed to the method. If "zscores", 
-"padjVals" or "dPsi" is given, the values of those arguments
-are used to define the aberrant events.}
-
-\item{res}{Result as created with \code{results()}}
-
-\item{geneColumn}{The name of the column in \code{mcols(res)} that contains 
-the gene symbols.}
-
-\item{method}{The p.adjust method that is being used to adjust p values per
-sample.}
-
 \item{type}{Splicing type (psi5, psi3 or theta)}
 
 \item{by}{By default \code{none} which means no grouping. But if 
 \code{sample} or \code{feature} is specified the sum by 
 sample or feature is returned}
 
-\item{aggregate}{If TRUE the returned object is based on the grouped 
-features}
+\item{...}{Further arguments can be passed to the method. If "n",
+"padjVals", "dPsi" or "rhoVals" are given, the values of those 
+arguments are used to define the aberrant events.}
 }
 \value{
 For \code{results}: GRanges object containing significant results.
@@ -95,24 +110,36 @@ aberrant splicing events based on the given cutoffs.
 # get data, fit and compute p-values and z-scores
 fds <- createTestFraserDataSet()
 
-# extract results: for this example dataset, z score cutoff of 2 is used to
-# get at least one result and show the output
-res <- results(fds, padjCutoff=NA, zScoreCutoff=3, deltaPsiCutoff=0.05)
+# extract results: for this example dataset, no cutoffs are used to
+# show the output of the results function
+res <- results(fds, all=TRUE)
 res
 
 # aggregate the results by genes (gene symbols need to be annotated first 
 # using annotateRanges() function)
-resultsByGenes(res)
+results(fds, padjCutoff=NA, deltaPsiCutoff=0.1, aggregate=TRUE)
+
+# aggregate the results by genes and collapse over all psi types to obtain 
+# only one row per gene in the results table 
+results(fds, padjCutoff=NA, deltaPsiCutoff=0.1, aggregate=TRUE, 
+        collapse=TRUE)
 
 # get aberrant events per sample: on the example data, nothing is aberrant
 # based on the adjusted p-value
-aberrant(fds, type="psi5", by="sample")
+aberrant(fds, type="jaccard", by="sample")
 
 # get aberrant events per gene (first annotate gene symbols)
 fds <- annotateRangesWithTxDb(fds)
-aberrant(fds, type="psi5", by="feature", zScoreCutoff=2, padjCutoff=NA,
-        aggregate=TRUE)
+aberrant(fds, type="jaccard", by="feature", padjCutoff=NA, aggregate=TRUE)
         
 # find aberrant junctions/splice sites
-aberrant(fds, type="psi5")
+aberrant(fds, type="jaccard")
+
+# retrieve results limiting FDR correction to only a subset of genes
+# first, we need to create a list of genes per sample that will be tested
+geneList <- list('sample1'=c("TIMMDC1"), 'sample2'=c("MCOLN1"))
+fds <- calculatePadjValues(fds, type="jaccard", 
+                 subsets=list("exampleSubset"=geneList))
+results(fds, all=TRUE, returnTranscriptomewideResults=FALSE)
+
 }

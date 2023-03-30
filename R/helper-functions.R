@@ -71,7 +71,7 @@ checkReadType <- function(fds, type){
 
     # check if type is null or missing
     if(missing(type) | is.null(type)){
-        if(verbose(fds) > 0){
+        if(verbose(fds) > 3){
             warning("Read type was not specified!",
                     "We will assume the default: 'j'")
         }
@@ -79,7 +79,7 @@ checkReadType <- function(fds, type){
     }
     type <- unique(type)
     stopifnot(isScalarCharacter(type))
-    correctTypes <- c(psi3="j", psi5="j", theta="ss")
+    correctTypes <- c(psi3="j", psi5="j", theta="ss", jaccard="j")
 
     # check if it is already the correct type
     if(type %in% correctTypes) return(type)
@@ -109,7 +109,7 @@ checkReadType <- function(fds, type){
 #'
 #' @noRd
 whichPSIType <- function(type){
-    unlist(regmatches(type, gregexpr("psi(3|5)|theta", type, perl=TRUE)))
+    unlist(regmatches(type, gregexpr("psi(3|5)|theta|jaccard", type, perl=TRUE)))
 }
 
 #'
@@ -122,7 +122,8 @@ whichReadType <- function(fds, name){
     # check writing
     if(name == "ss" | endsWith(name, "theta"))
         return("ss")
-    if(name == "j"  | endsWith(name, "psi5") | endsWith(name, "psi3"))
+    if(name == "j"  | endsWith(name, "psi5") | endsWith(name, "psi3") | 
+            endsWith(name, "jaccard"))
         return("j")
 
     # check assay names
@@ -355,18 +356,18 @@ assayExists <- function(fds, assayName){
     return(aexists)
 }
 
-getAssayAsVector <- function(fds, prefix, psiType, sampleID){
+getAssayAsVector <- function(fds, prefix, psiType=currentType(fds), sampleID){
     as.vector(assay(fds, paste0(prefix, psiType))[,sampleID])
 }
 
 
-variableJunctions <- function(fds, type, minDeltaPsi=0.1){
+variableJunctions <- function(fds, type=currentType(fds), minDeltaPsi=0.1){
     psi <- K(fds, type=type)/N(fds, type=type)
     j2keep <- rowMaxs(abs(psi - rowMeans(psi, na.rm=TRUE)), na.rm=TRUE)
     j2keep >= minDeltaPsi
 }
 
-subsetKMostVariableJunctions <- function(fds, type, n){
+subsetKMostVariableJunctions <- function(fds, type=currentType(fds), n){
     curX <- x(fds, type=type, all=TRUE, center=FALSE, noiseAlpha=NULL)
     xsd <- colSds(curX)
     nMostVarJuncs <- which(xsd >= sort(xsd, TRUE)[min(length(xsd), n*2)])
@@ -375,7 +376,8 @@ subsetKMostVariableJunctions <- function(fds, type, n){
     ans
 }
 
-getSubsetVector <- function(fds, type, minDeltaPsi=0.1, nSubset=15000){
+getSubsetVector <- function(fds, type=currentType(fds), minDeltaPsi=0.1, 
+                            nSubset=15000){
     # get any variable intron
     ans <- variableJunctions(fds, type, minDeltaPsi=minDeltaPsi)
 
@@ -549,6 +551,130 @@ getStrandString <- function(fds){
     return(strand)
 }
 
+
+#'
+#' Check if adjusted pvalues have been computed for a given set of filters.
+#' @noRd
+checkPadjAvailableForFilters <- function(fds, type=currentType(fds), 
+                    filters=list(), dist="BetaBinomial", aggregate=FALSE,
+                    subsetName=NULL){
+    dist <- match.arg(dist, choices=c("BetaBinomial", "Binomial", "Normal"))
+    aname <- paste0("padj", dist)
+    aname <- ifelse(isTRUE(aggregate), paste0(aname, "_gene"), aname)
+    aname <- ifelse(!is.null(subsetName), paste0(aname, "_", subsetName), aname)
+
+    # add information on used filters
+    for(n in sort(names(filters))){
+        aname_new <- paste0(aname, "_", n, filters[[n]])
+        if(n == "rho" && filters[[n]] == 1){
+            if(any(grepl(aname_new, assayNames(fds))) ||
+                    any(grepl(aname_new, names(metadata(fds))))){
+                aname <- aname_new
+            }
+        }else{
+            aname <- aname_new
+        }
+    }
+    aname <- paste(aname, type, sep="_")
+    if(isTRUE(aggregate)){
+        pvalsAvailable <- aname %in% names(metadata(fds))
+    } else{
+        pvalsAvailable <- aname %in% assayNames(fds)
+    }
+    return(pvalsAvailable)
+}
+
+#'
+#' Find most aberrant junction for each aberrant gene
+#' 
+#' @param gr GRanges object with information about junctions.
+#' @param aberrantGenes Significant genes for which the corresponding junction 
+#'     should be extracted. 
+#' @param pvals Vector of pvalues (for one sample).
+#' @param dpsi Vector of delta psi values (for one sample).
+#' @param aberrantJunctions Vector indicating which junctions are considered 
+#'     aberrant. 
+#' @param geneColumn Name of the column in mcols(fds) that has gene annotation.
+#' @noRd
+findJunctionsForAberrantGenes <- function(gr, aberrantGenes, pvals, dpsi, 
+                                aberrantJunctions, geneColumn="hgnc_symbol"){
+    dt <- data.table(idx=mcols(gr)$idx, 
+                        geneID=mcols(gr)[,geneColumn],
+                        pval=pvals, 
+                        dpsi=abs(dpsi),
+                        aberrant=aberrantJunctions)
+    dt[, dt_idx:=seq_len(.N)]
+    dt_tmp <- dt[, splitGenes(geneID), by="dt_idx"]
+    dt <- dt[dt_tmp$dt_idx,]
+    dt[,`:=`(geneID=dt_tmp$V1, dt_idx=NULL)]
+    dt <- dt[geneID %in% aberrantGenes,]
+    dt <- dt[!is.na(aberrant) & aberrant == TRUE,]
+    
+    # sort per gene by lowest pvalue / highest deltaPsi and return index
+    dt <- dt[order(geneID, -aberrant, pval, -dpsi)]
+    dt <- dt[!duplicated(dt, by="geneID"),]
+    
+    # remove gene-level significant result if no junction in that gene passed
+    # the filters
+    dt <- dt[!is.na(pval),]
+    
+    junctionsToReport <- dt[,idx]
+    names(junctionsToReport) <- dt[,geneID]
+    junctionsToReport <- sort(junctionsToReport)
+    return(junctionsToReport)
+}
+
+collapseResTablePerGene <- function(res, geneColumn="hgncSymbol"){
+    if(length(res) == 0){
+        return(res)
+    }
+    if(!is.data.table(res)){
+        res <- as.data.table(res)
+    }
+    
+    if(any(!c("pValue", "pValueGene", geneColumn) %in% colnames(res))){
+        stop("For collapsing per gene, the results table needs to contain ",
+            "the columns pValue, pValueGene and ", geneColumn, ".")
+    }
+    
+    res <- res[order(res$pValueGene, res$pValue)]
+    naIdx <- is.na(res[, get(geneColumn)])
+    ansNoNA <- res[!is.na(res[, get(geneColumn)]),]
+    
+    # get final result table
+    dupIdx <- duplicated(data.table(as.vector(ansNoNA[, get(geneColumn)]), 
+                                    as.vector(ansNoNA$sampleID)))
+    ans <- res[!naIdx,][!dupIdx,]
+    return(ans)
+}
+
+#' ignores NA in unique if other values than NA are present
+#' @noRd
+uniqueIgnoreNA <- function(x){
+    uniq <- unique(x)
+    if(length(uniq) > 1) uniq <- uniq[!is.na(uniq)]
+    return(uniq)
+}
+
+#' split string of gene names into vector
+#' @noRd
+splitGenes <- function(x, sep=";"){
+    return(unlist(strsplit(as.character(x), sep, fixed=TRUE)))
+}
+
+#' cap string of gene names to show max 3 gene names
+#' @noRd
+limitGeneNamesList <- function(gene_names, maxLength=3){
+    gene_names <- as.character(gene_names)
+    numFeatures <- unlist(lapply(gene_names, function(x) length(splitGenes(x))))
+    gene_names[numFeatures > maxLength] <- 
+        unlist(lapply(gene_names[numFeatures > maxLength], function(x){
+            paste(c(splitGenes(x)[seq_len(maxLength)], "..."), 
+                    collapse=";") 
+        } ))
+    return(gene_names)
+}
+
 checkForAndCreateDir <- function(object, dir){
     verbose <- 0
     if(is(object, "FraserDataSet")){
@@ -569,4 +695,3 @@ checkForAndCreateDir <- function(object, dir){
     }
     return(TRUE)
 }
-

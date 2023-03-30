@@ -27,6 +27,8 @@ predict_outliers <- function(fds, type, implementation, BPPARAM){
 
     fds <- calculatePvalues(fds, type=type, implementation=implementation,
             BPPARAM=BPPARAM)
+    fds <- calculatePadjValues(fds, type=type, geneLevel=FALSE, 
+            BPPARAM=BPPARAM)
 
     return(fds)
 }
@@ -50,7 +52,7 @@ eval_prot <- function(fds, type){
     }, FUN.VALUE=logical(length(unique(index))) ) ) + 0
 
     if(any(is.na(scores))){
-        warning(sum(is.na(scores)), " P-values where NAs.")
+        # warning(sum(is.na(scores)), " P-values where NAs.")
         scores[is.na(scores)] <- min(scores, na.rm=TRUE)-1
     }
     pr <- pr.curve(scores, weights.class0=labels)
@@ -111,17 +113,18 @@ findEncodingDim <- function(i, fds, type, params, implementation,
 #' @examples
 #'   # generate data
 #'   fds <- makeSimulatedFraserDataSet(m=15, j=20)
+#'   fds <- calculatePSIValues(fds)
 #'   
 #'   # run hyperparameter optimization
-#'   fds <- optimHyperParams(fds, type="psi5", q_param=c(2, 5))
+#'   fds <- optimHyperParams(fds, type="jaccard", q_param=c(2, 5))
 #'   
 #'   # get estimated optimal dimension of the latent space
-#'   bestQ(fds, type="psi5")
-#'   hyperParams(fds, type="psi5")
+#'   bestQ(fds, type="jaccard")
+#'   hyperParams(fds, type="jaccard")
 #'   
 #' @export
-optimHyperParams <- function(fds, type, implementation="PCA",
-                    q_param=seq(2, min(40, ncol(fds)), by=3),
+optimHyperParams <- function(fds, type=psiTypes, implementation="PCA",
+                    q_param=getEncDimRange(fds),
                     noise_param=0, minDeltaPsi=0.1,
                     iterations=5, setSubset=50000, injectFreq=1e-2,
                     BPPARAM=bpparam(), internalThreads=1, plot=TRUE, 
@@ -227,3 +230,19 @@ optimHyperParams <- function(fds, type, implementation="PCA",
     return(fds)
 }
 
+#' Get default range of latent space dimensions to test during hyper param opt
+#' @noRd
+getEncDimRange <- function(fds, mp=3){
+    # Get range for latent space dimension
+    a <- 2 
+    b <- min(ncol(fds), nrow(fds)) / mp   # N/mp
+    
+    maxSteps <- 12
+    if(mp < 6){
+        maxSteps <- 15
+    }
+    
+    Nsteps <- min(maxSteps, b)
+    pars_q <- round(exp(seq(log(a),log(b),length.out = Nsteps))) %>% unique
+    return(pars_q)
+}

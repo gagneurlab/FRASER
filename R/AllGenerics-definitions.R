@@ -146,3 +146,14 @@ setGeneric("nonSplicedReads",
 #' @export
 setGeneric("nonSplicedReads<-", signature = "object", 
         function(object, value) standardGeneric("nonSplicedReads<-"))
+
+#' @rdname plotFunctions
+#' @export
+setGeneric("plotManhattan", function(object, ...) 
+    standardGeneric("plotManhattan"))
+
+#' @rdname filtering
+#' @export
+setGeneric("filterVariability", function(object, ...)
+    standardGeneric("filterVariability"))
+
