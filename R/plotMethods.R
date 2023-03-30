@@ -1568,7 +1568,7 @@ plotManhattan.FRASER <- function(object, sampleID, value="pvalue",
     stopifnot(sampleID %in% samples(object))
     type <- match.arg(type)
     additional_args <- list(...)
-    padjCutoff <- 0.05
+    padjCutoff <- 0.1
     if("padjCutoff" %in% names(additional_args)){
         padjCutoff <- additional_args$padjCutoff
     }

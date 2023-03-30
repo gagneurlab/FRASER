@@ -961,7 +961,7 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff,
 #' 
 #' @export
 setMethod("results", "FraserDataSet", function(object, 
-                    sampleIDs=samples(object), padjCutoff=0.05,
+                    sampleIDs=samples(object), padjCutoff=0.1,
                     deltaPsiCutoff=0.1,
                     rhoCutoff=NA, aggregate=FALSE, collapse=FALSE,
                     minCount=5, psiType=psiTypes,
@@ -1016,7 +1016,7 @@ setMethod("results", "FraserDataSet", function(object,
 })
 
 aberrant.FRASER <- function(object, type=fitMetrics(object), 
-                                padjCutoff=0.05, deltaPsiCutoff=0.1, 
+                                padjCutoff=0.1, deltaPsiCutoff=0.1, 
                                 minCount=5, rhoCutoff=NA,
                                 by=c("none", "sample", "feature"), 
                                 aggregate=FALSE, geneColumn="hgnc_symbol", 
