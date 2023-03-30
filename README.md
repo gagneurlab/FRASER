@@ -16,9 +16,16 @@ Please cite our method paper if you use it in a publication:
 ## What's new
 
 FRASER 2.0, an improved version of FRASER that uses the Intron Jaccard Index as 
-its splice metric instead of FRASER's previous three metrics, is now available 
-and used by default (version 1.99.0 and above). The manuscript describing these 
-changes in more detail will be available soon. 
+its splice metric instead of FRASER's previous three metrics along with some other 
+parameter optimizations of pseudocount, filtering settings and default delta cutoff, 
+is now available and used by default (version 1.99.0 and above). 
+To change the splice metric, set `fitMetrics(fds)` to one or more of the metrics 
+specified in `FRASER::psiTypes`. For FRASER 2.0 and the Intron Jaccard Index, the 
+new default delta cutoff is 0.1 instead of the previous value of 0.3. When using 
+the 3 previous metrics, the delta cutoff should therefore be manually set to 0.3 
+during results extraction, e.g. `results(fds, deltaPsiCutoff=0.3,...)`.
+
+The manuscript describing these changes in more detail will be available soon. 
 
 ## Installation
 
