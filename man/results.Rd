@@ -8,7 +8,7 @@
 \S4method{results}{FraserDataSet}(
   object,
   sampleIDs = samples(object),
-  padjCutoff = 0.05,
+  padjCutoff = 0.1,
   deltaPsiCutoff = 0.1,
   rhoCutoff = NA,
   aggregate = FALSE,
@@ -25,7 +25,7 @@
 \S4method{aberrant}{FraserDataSet}(
   object,
   type = fitMetrics(object),
-  padjCutoff = 0.05,
+  padjCutoff = 0.1,
   deltaPsiCutoff = 0.1,
   minCount = 5,
   rhoCutoff = NA,
