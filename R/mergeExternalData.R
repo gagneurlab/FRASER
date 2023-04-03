@@ -100,8 +100,8 @@ mergeExternalData <- function(fds, countFiles, sampleIDs, annotation=NULL){
     # merge psi5/psi3 data
     #
     extractExtData <- function(fds, countFun, type, ov, extData, extName){
-        ctsOri <- as.matrix(countFun(fds, type=type)[from(ov),])
-        ctsExt <- as.matrix(mcols(extData[[extName]])[to(ov),])
+        ctsOri <- as.matrix(countFun(fds, type=type)[from(ov),,drop=FALSE])
+        ctsExt <- as.matrix(mcols(extData[[extName]])[to(ov),,drop=FALSE])
         ans <- cbind(ctsOri, ctsExt)
         mode(ans) <- "integer"
         ans
