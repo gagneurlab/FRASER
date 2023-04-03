@@ -788,7 +788,8 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff,
             deltaPsiVals <- deltaPsiValue(tmp_x, type)
             rho          <- rho(tmp_x, type)
             aberrant     <- aberrant.FRASER(tmp_x, type=type, 
-                                            padjCutoff=fdrCutoff, 
+                                            padjCutoff=ifelse(isTRUE(aggregate), 
+                                                        NA, fdrCutoff), 
                                             deltaPsiCutoff=dPsiCutoff, 
                                             minCount=minCount, 
                                             rhoCutoff=rhoCutoff,
@@ -1080,6 +1081,10 @@ aberrant.FRASER <- function(object, type=fitMetrics(object),
     if(is.na(padjCutoff)){
         padjCutoff <- 1
     }
+    if(isTRUE(aggregate)){
+        padjCutoffGene <- padjCutoff
+        padjCutoff <- 1
+    }
     
     if(isTRUE(all)){
         aberrantEvents <- matrix(TRUE, nrow=nrow(object), ncol=ncol(object))
@@ -1121,7 +1126,7 @@ aberrant.FRASER <- function(object, type=fitMetrics(object),
         if(isFALSE(all)){
             aberrantEvents <- aberrantEvents & as.matrix(
                     padj_gene[rownames(aberrantEvents),colnames(aberrantEvents)]
-                ) <= padjCutoff
+                ) <= padjCutoffGene
         }
     }
     

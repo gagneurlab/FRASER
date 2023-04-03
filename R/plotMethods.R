@@ -337,25 +337,6 @@ plotVolcano.FRASER <- function(object, sampleID,
         theme(legend.position="none") +
         scale_color_manual(values=c("gray40", "firebrick"))
     
-    if(!is.na(deltaPsiCutoff)){
-        g <- g + 
-            geom_vline(xintercept=c(-deltaPsiCutoff, deltaPsiCutoff),
-                    color="firebrick", linetype=2)
-    }
-    
-    if(!is.na(padjCutoff)){
-        if(dt[padj <= padjCutoff, .N] > 0){
-            padj_line <- min(dt[padj <= padjCutoff, -log10(pval)])
-            padj_line <- min(dt[padj <= padjCutoff, -log10(pval)])
-        }
-        if(!"padj_line" %in% ls() || padj_line > 10 || is.na(padj_line)){
-            padj_line <- 6
-        }
-        g <- g + 
-            geom_hline(yintercept=padj_line, color="firebrick", linetype=4)
-    }
-    
-    
     if(isFALSE(basePlot)){
         g <- g + xlab(paste("delta", 
                             ggplotLabelPsi(type, asCharacter=TRUE)[[1]])) +

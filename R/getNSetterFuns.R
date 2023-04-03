@@ -748,16 +748,18 @@ getPlottingDT <- function(fds, axis=c("row", "col"), type=currentType(fds),
     )
     dt[, deltaPsi:=obsPsi - predPsi]
 
-    # add aberrant information to it
-    aberrantVec <- aberrant(fds, ..., padjVals=dt[,.(padj)],
-        dPsi=dt[,.(deltaPsi)], n=dt[,.(n)], 
-        rhoVals=dt[,.(rho)], aggregate=FALSE)
-    dt[,aberrant:=aberrantVec]
-
     # if requested return gene p values
     if(isTRUE(aggregate)){
-        dt <- dt[!is.na(featureID)]
+        # get gene-level aberrant status
+        aberrantGeneLevel <- aberrant(fds[, idxcol], ..., aggregate=TRUE)
+        aberrantGeneLevel <- melt(
+                data.table(featureID=rownames(aberrantGeneLevel), 
+                           aberrantGeneLevel), 
+                value.name="aberrant", id.vars="featureID", 
+                variable.name="sampleID")
+        
         # split featureID into several rows if more than one
+        dt <- dt[!is.na(featureID)]
         dt[, dt_idx:=seq_len(.N)]
         dt_tmp <- dt[, splitGenes(featureID), by="dt_idx"]
         dt <- dt[dt_tmp$dt_idx,]
@@ -780,6 +782,10 @@ getPlottingDT <- function(fds, axis=c("row", "col"), type=currentType(fds),
         pvalsGene <- merge(pvalsGene[[1]], pvalsGene[[2]], 
                             by=c("featureID", "sampleID"))
         
+        # merge with gene level aberrant status
+        pvalsGene <- merge(pvalsGene, aberrantGeneLevel, 
+                           by=c("featureID", "sampleID"))
+        
         # merge with gene pval matrix
         dt <- merge(dt, pvalsGene, by=c("featureID", "sampleID"))
         dt[,`:=`(pval=gene_pval, padj=gene_padj, 
@@ -789,6 +795,12 @@ getPlottingDT <- function(fds, axis=c("row", "col"), type=currentType(fds),
         dt <- dt[order(sampleID, featureID, type, -aberrant,
                         padj, -abs(deltaPsi))][
                 !duplicated(data.table(sampleID, featureID, type))]
+    } else{
+        # add aberrant information to it
+        aberrantVec <- aberrant(fds, ..., padjVals=dt[,.(padj)],
+                                dPsi=dt[,.(deltaPsi)], n=dt[,.(n)], 
+                                rhoVals=dt[,.(rho)], aggregate=FALSE)
+        dt[,aberrant:=aberrantVec]
     }
     
     # return object
