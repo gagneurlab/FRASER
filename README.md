@@ -26,7 +26,7 @@ new default delta cutoff is 0.1 instead of the previous value of 0.3. When using
 the 3 previous metrics, the delta cutoff should be set manually to 0.3 
 during results extraction, e.g. `results(fds, deltaPsiCutoff=0.3,...)`.
 
-The manuscript describing these changes in more detail will be available soon. 
+The preprint describing these changes in more detail is available in [medRxiv](https://www.medrxiv.org/content/10.1101/2023.03.31.23287997v1).
 
 ## Installation
 
