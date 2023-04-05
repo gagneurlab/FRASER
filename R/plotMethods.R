@@ -1026,8 +1026,8 @@ plotFilterExpression <- function(fds, bins=200, legend.position=c(0.8, 0.8),
         scale_y_log10() +
         scale_fill_manual(values=colors, name="Passed",
                 labels=c("True", "False")) +
-        xlab("Mean Junction Expression") +
-        ylab("Count") +
+        xlab("Mean Intron Expression") +
+        ylab("Introns") +
         ggtitle("Expression filtering") +
         theme_bw() +
         theme(legend.position=legend.position)
@@ -1044,17 +1044,19 @@ plotFilterVariability <- function(fds, bins=200, legend.position=c(0.8, 0.8),
                                     onlyExpressedIntrons=FALSE){
     
     # check that expression filter has been calculated
-    if(!("passedVariability" %in% colnames(mcols(fds, type="j")))){
+    mcolNames <- colnames(mcols(fds, type="j"))
+    if(!("passedVariability" %in% mcolNames)){
         stop("Please calculate the expression filter values first with the ",
                 "filterVariability function.")
     }
     
     # get plotting data
+    delta_cols <- mcolNames[grepl("maxD", mcolNames)]
+    if(any(delta_cols == "maxDJaccard")){
+        delta_cols <- "maxDJaccard"
+    }
     dt <- data.table(
-        value=pmax(mcols(fds, type="j")[['maxDPsi3']], 
-                    mcols(fds, type="j")[['maxDPsi5']],
-                    mcols(fds, type="j")[['maxDThetaDonor']],
-                    mcols(fds, type="j")[['maxDThetaAcceptor']]),
+        value=apply(mcols(fds, type="j")[, delta_cols, drop=FALSE], 1, max),
         passed=mcols(fds, type="j")[['passedVariability']])
     if(isTRUE(onlyExpressedIntrons)){
         dt[,passed:=mcols(fds, type="j")[['passed']]]
@@ -1066,24 +1068,31 @@ plotFilterVariability <- function(fds, bins=200, legend.position=c(0.8, 0.8),
 
     if(dir.exists(nonVarDir)){
         nV_stored <- loadHDF5SummarizedExperiment(dir=nonVarDir) 
+        mcolNames_stored <- colnames(mcols(nV_stored))
+        delta_cols_stored <- mcolNames_stored[grepl("maxD", mcolNames_stored)]
+        if(any(delta_cols_stored == "maxDJaccard")){
+            delta_cols_stored <- "maxDJaccard"
+        }
         nonVar_dt <- data.table(
-            value=pmax(mcols(nV_stored)[['maxDPsi3']], 
-                        mcols(nV_stored)[['maxDPsi5']],
-                        mcols(nV_stored)[['maxDThetaDonor']],
-                        mcols(nV_stored)[['maxDThetaAcceptor']]),
+            value=apply(mcols(nV_stored)[,delta_cols_stored, drop=FALSE], 1, max),
             passed=FALSE)
         dt <- rbind(dt, nonVar_dt)
     }
     
     dt[,passed:=factor(passed, levels=c(TRUE, FALSE))]
     colors <- brewer.pal(3, "Dark2")[seq_len(2)]
+    if(delta_cols == "maxDJaccard"){
+        xlab <- bquote("Maximal" ~ Delta ~ "to mean J per intron")         
+    } else{
+        xlab <- bquote("Maximal" ~ Delta ~ "to mean" ~Psi[5] ~ "," ~ Psi[3] ~ "or" ~ theta ~ "per intron") 
+    }
     ggplot(dt, aes(value, fill=passed)) +
         geom_histogram(bins=bins) +
         scale_y_log10() + 
         scale_fill_manual(values=colors, name="Passed",
                             labels=c("True", "False")) +
-        xlab(bquote("Maximal Junction" ~ Delta*Psi[5] ~ "or" ~ Delta*Psi[3])) +
-        ylab("Count") +
+        xlab(xlab) +
+        ylab("Introns") +
         ggtitle("Variability filtering") +
         theme_bw() +
         theme(legend.position=legend.position)
