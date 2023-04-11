@@ -152,10 +152,10 @@ jobs:
         
       - name: Init tinytex
         uses: r-lib/actions/setup-tinytex@v2
-        run: tlmgr --version
         
       - name: Install tinytex packages
         run: |
+          tlmgr --version
           tlmgr install bera caption changepage enumitem everysel fancyhdr footmisc grfext index marginfix mathtools ms nowidow parnotes parskip placeins preprint ragged2e side soul titlesec tocbibind xstring
           tlmgr list --only-installed
 
