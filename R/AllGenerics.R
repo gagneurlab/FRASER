@@ -1088,7 +1088,7 @@ aberrant.FRASER <- function(object, type=fitMetrics(object),
     
     if(isTRUE(all)){
         aberrantEvents <- matrix(TRUE, nrow=nrow(object), ncol=ncol(object))
-        colnames(aberrantEvents) <- colnames(fds)
+        colnames(aberrantEvents) <- colnames(object)
     } else{
         aberrantEvents <- as.matrix(padj) <= padjCutoff
         
