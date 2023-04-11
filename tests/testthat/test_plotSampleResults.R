@@ -1,5 +1,26 @@
 context("Test generation of results")
 
+test_that("Results function", {
+    # get subset to speed up test
+    fds <- getFraser()
+    
+    # intron-level results
+    res <- results(fds, aggregate=FALSE, all=TRUE)
+    expect_equal(length(res), prod(dim(fds)))
+    res_signif <- results(fds, aggregate=FALSE, all=FALSE,
+                            padjCutoff=NA, deltaPsiCutoff=0.01)
+    expect_equal(length(res_signif), 1)
+    
+    # gene-level results
+    res_gene <- results(fds, aggregate=TRUE, all=TRUE)
+    expect_equal(length(res_gene), 
+                    prod(dim(pVals(fds, level="gene", type="jaccard"))))
+    res_gene_signif <- results(fds, aggregate=TRUE, all=FALSE,
+                          padjCutoff=NA, deltaPsiCutoff=0.01)
+    expect_equal(length(res_gene_signif), 1)
+    
+})
+
 test_that("Main plotting function", {
     # get subset to speed up test
     # fds <- getFraser()

@@ -3,7 +3,7 @@ context("Test distribution plots for given results/junction")
 test_that("Main junction distribution plot", {
     # get results
     fds <- getFraser()
-    res <- results(fds, padjCutoff=1, deltaPsiCutoff=NA)
+    res <- results(fds, all=TRUE)
 
     # plot distributions
     expect_silent(plotExpression(fds, result=res[1]))
