@@ -35,6 +35,7 @@ plotManhattan(object, ...)
   label = NULL,
   deltaPsiCutoff = 0.1,
   padjCutoff = 0.1,
+  subsetName = NULL,
   ...
 )
 
@@ -45,6 +46,7 @@ plotManhattan(object, ...)
   padjCutoff = 0.1,
   deltaPsiCutoff = 0.1,
   aggregate = TRUE,
+  subsetName = NULL,
   BPPARAM = bpparam(),
   ...
 )
@@ -58,6 +60,7 @@ plotExpression(
   basePlot = TRUE,
   main = NULL,
   label = "aberrant",
+  subsetName = NULL,
   ...
 )
 
@@ -70,6 +73,7 @@ plotSpliceMetricRank(
   basePlot = TRUE,
   main = NULL,
   label = "aberrant",
+  subsetName = NULL,
   ...
 )
 
@@ -82,6 +86,7 @@ plotExpectedVsObservedPsi(
   main = NULL,
   basePlot = TRUE,
   label = "aberrant",
+  subsetName = NULL,
   ...
 )
 
@@ -98,6 +103,7 @@ plotExpectedVsObservedPsi(
   basePlot = TRUE,
   label = "aberrant",
   Ncpus = min(3, getDTthreads()),
+  subsetName = NULL,
   ...
 )
 
@@ -187,6 +193,7 @@ plotBamCoverageFromResultTable(
   chr = NULL,
   main = paste0("sample: ", sampleID),
   chrColor = c("black", "darkgrey"),
+  subsetName = NULL,
   ...
 )
 }
@@ -218,6 +225,11 @@ list of gene symbols or sampleIDs.}
 
 \item{padjCutoff, deltaPsiCutoff}{Significance or delta
 psi cutoff to mark outliers}
+
+\item{subsetName}{The name of a subset of genes of interest for which FDR 
+corrected pvalues were previously computed. Those FDR values 
+on the subset will then be used to determine aberrant status. 
+Default is NULL (using transcriptome-wide FDR corrected pvalues).}
 
 \item{BPPARAM}{BiocParallel parameter to use.}
 
@@ -505,13 +517,23 @@ either show the full range of the gene with the outlier junction or only a
 certain region around the outlier.
 }
 \examples{
+\dontshow{set.seed(42)}
 # create full FRASER object 
 fds <- makeSimulatedFraserDataSet(m=40, j=200)
 fds <- calculatePSIValues(fds)
 fds <- filterExpressionAndVariability(fds, filter=FALSE)
 # this step should be done for more dimensions in practice
 fds <- optimHyperParams(fds, "jaccard", q_param=c(2,5,10,25))
-fds <- FRASER(fds)
+
+# assign gene names to show functionality on test dataset
+# use fds <- annotateRanges(fds) on real data
+mcols(fds, type="j")$hgnc_symbol <- 
+    paste0("gene", sample(1:25, nrow(fds), replace=TRUE))
+
+# fit and calculate pvalues
+genesOfInterest <- rep(list(paste0("gene", sample(1:25, 10))), 4)
+names(genesOfInterest) <- c("sample1", "sample6", "sample15", "sample23")
+fds <- FRASER(fds, subsets=list("testSet"=genesOfInterest))
 
 # QC plotting
 plotFilterExpression(fds)
@@ -522,14 +544,30 @@ plotEncDimSearch(fds, type="jaccard")
 
 # extract results 
 plotAberrantPerSample(fds, aggregate=FALSE)
-plotVolcano(fds, "sample1", "jaccard")
+plotAberrantPerSample(fds, aggregate=TRUE, subsetName="testSet")
+plotVolcano(fds, "sample2", "jaccard", label="aberrant")
+plotVolcano(fds, "sample1", "jaccard", aggregate=TRUE, subsetName="testSet")
 
 # dive into gene/sample level results
-res <- results(fds)
+res <- as.data.table(results(fds))
 res
 plotExpression(fds, result=res[1])
 plotQQ(fds, result=res[1])
 plotExpectedVsObservedPsi(fds, res=res[1])
+plotSpliceMetricRank(fds, res=res[1])
+
+# other ways to call these plotting functions
+plotExpression(fds, idx=10, sampleID="sample1", type="jaccard")
+plotExpression(fds, result=res[FDR_set == "testSet",][1], 
+                 subsetName="testSet")
+plotQQ(fds, idx=10, sampleID="sample1", type="jaccard")
+plotQQ(fds, result=res[FDR_set == "testSet",][1], subsetName="testSet")
+plotExpectedVsObservedPsi(fds, idx=10, sampleID="sample1", type="jaccard")
+plotExpectedVsObservedPsi(fds, result=res[FDR_set == "testSet",][1], 
+                 subsetName="testSet")
+plotSpliceMetricRank(fds, idx=10, sampleID="sample1", type="jaccard")
+plotSpliceMetricRank(fds, result=res[FDR_set == "testSet",][1], 
+                 subsetName="testSet")
 
 # create manhattan plot of pvalues by genomic position
 if(require(ggbio)){

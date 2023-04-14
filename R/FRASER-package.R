@@ -104,7 +104,7 @@
 #'          scale_color_brewer scale_color_discrete scale_linetype_manual 
 #'          annotate geom_histogram scale_fill_manual xlim scale_colour_manual
 #'          element_blank annotation_logticks ylim quo_name facet_grid 
-#'          facet_wrap geom_text
+#'          facet_wrap geom_text guides guide_legend
 #'
 #' @importFrom tibble as_tibble %>%
 #'

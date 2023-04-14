@@ -46,6 +46,10 @@
 #'             samples. Labelling can be turned off by setting 
 #'             \code{label=NULL}. The user can also provide a custom 
 #'             list of gene symbols or sampleIDs.
+#' @param subsetName The name of a subset of genes of interest for which FDR 
+#'             corrected pvalues were previously computed. Those FDR values 
+#'             on the subset will then be used to determine aberrant status. 
+#'             Default is NULL (using transcriptome-wide FDR corrected pvalues).
 #' @param BPPARAM BiocParallel parameter to use.
 #' @param Ncpus Number of cores to use.
 #' @param plotType The type of plot that should be shown as character string. 
@@ -241,13 +245,23 @@
 #'             plotExpectedVsObservedPsi plotEncDimSearch plotManhattan
 #'             plotBamCoverage plotBamCoverageFromResultTable
 #' @examples
+#' \dontshow{set.seed(42)}
 #' # create full FRASER object 
 #' fds <- makeSimulatedFraserDataSet(m=40, j=200)
 #' fds <- calculatePSIValues(fds)
 #' fds <- filterExpressionAndVariability(fds, filter=FALSE)
 #' # this step should be done for more dimensions in practice
 #' fds <- optimHyperParams(fds, "jaccard", q_param=c(2,5,10,25))
-#' fds <- FRASER(fds)
+#' 
+#' # assign gene names to show functionality on test dataset
+#' # use fds <- annotateRanges(fds) on real data
+#' mcols(fds, type="j")$hgnc_symbol <- 
+#'     paste0("gene", sample(1:25, nrow(fds), replace=TRUE))
+#' 
+#' # fit and calculate pvalues
+#' genesOfInterest <- rep(list(paste0("gene", sample(1:25, 10))), 4)
+#' names(genesOfInterest) <- c("sample1", "sample6", "sample15", "sample23")
+#' fds <- FRASER(fds, subsets=list("testSet"=genesOfInterest))
 #' 
 #' # QC plotting
 #' plotFilterExpression(fds)
@@ -258,14 +272,30 @@
 #' 
 #' # extract results 
 #' plotAberrantPerSample(fds, aggregate=FALSE)
-#' plotVolcano(fds, "sample1", "jaccard")
+#' plotAberrantPerSample(fds, aggregate=TRUE, subsetName="testSet")
+#' plotVolcano(fds, "sample2", "jaccard", label="aberrant")
+#' plotVolcano(fds, "sample1", "jaccard", aggregate=TRUE, subsetName="testSet")
 #' 
 #' # dive into gene/sample level results
-#' res <- results(fds)
+#' res <- as.data.table(results(fds))
 #' res
 #' plotExpression(fds, result=res[1])
 #' plotQQ(fds, result=res[1])
 #' plotExpectedVsObservedPsi(fds, res=res[1])
+#' plotSpliceMetricRank(fds, res=res[1])
+#' 
+#' # other ways to call these plotting functions
+#' plotExpression(fds, idx=10, sampleID="sample1", type="jaccard")
+#' plotExpression(fds, result=res[FDR_set == "testSet",][1], 
+#'                  subsetName="testSet")
+#' plotQQ(fds, idx=10, sampleID="sample1", type="jaccard")
+#' plotQQ(fds, result=res[FDR_set == "testSet",][1], subsetName="testSet")
+#' plotExpectedVsObservedPsi(fds, idx=10, sampleID="sample1", type="jaccard")
+#' plotExpectedVsObservedPsi(fds, result=res[FDR_set == "testSet",][1], 
+#'                  subsetName="testSet")
+#' plotSpliceMetricRank(fds, idx=10, sampleID="sample1", type="jaccard")
+#' plotSpliceMetricRank(fds, result=res[FDR_set == "testSet",][1], 
+#'                  subsetName="testSet")
 #' 
 #' # create manhattan plot of pvalues by genomic position
 #' if(require(ggbio)){
@@ -311,15 +341,19 @@ NULL
 plotVolcano.FRASER <- function(object, sampleID, 
                     type=fitMetrics(object), basePlot=TRUE, 
                     aggregate=FALSE, main=NULL, label=NULL,
-                    deltaPsiCutoff=0.1, padjCutoff=0.1, ...){
+                    deltaPsiCutoff=0.1, padjCutoff=0.1, subsetName=NULL, ...){
     
     type <- match.arg(type)
 
     dt <- getPlottingDT(object, axis="col", type=type, idx=sampleID,
             aggregate=aggregate, deltaPsiCutoff=deltaPsiCutoff, 
-            padjCutoff=padjCutoff, ...)
+            padjCutoff=padjCutoff, subsetName=subsetName, ...)
+    dt[is.na(padj), aberrant:=NA]
+    dt[aberrant == TRUE, aberrantLabel:="aberrant"]
+    dt[aberrant == FALSE, aberrantLabel:="not aberrant"]
+    dt[is.na(aberrant), aberrantLabel:="not in tested group"]
     
-    g <- ggplot(dt, aes(x=deltaPsi, y=-log10(pval), color=aberrant, 
+    g <- ggplot(dt, aes(x=deltaPsi, y=-log10(pval), color=aberrantLabel, 
                         label=featureID, text=paste0(
             "SampleID: ", sampleID, "<br>",
             "featureID: ", featureID, "<br>",
@@ -333,9 +367,12 @@ plotVolcano.FRASER <- function(object, sampleID,
                 bquote(paste(Delta, .(ggplotLabelPsi(type)[[1]]) ))
             )) +
         ylab(expression(paste(-log[10], "(P value)"))) +
+        scale_color_manual(values=c("not aberrant"="gray40", 
+                                    "aberrant"="firebrick",
+                                    "not in tested group"="gray90")) +
         theme_bw() +
-        theme(legend.position="none") +
-        scale_color_manual(values=c("gray40", "firebrick"))
+        theme(legend.position="bottom") +
+        guides(alpha="none", color=guide_legend(title=""))
     
     if(isFALSE(basePlot)){
         g <- g + xlab(paste("delta", 
@@ -371,9 +408,17 @@ plotVolcano.FRASER <- function(object, sampleID,
             main <- as.expression(bquote(paste(
                 bold("Volcano plot: "), .(sampleID), ", ",
                 .(ggplotLabelPsi(type)[[1]]))))
-        }  
+        }
     }
-    g <- g + ggtitle(main)
+    if(is.null(subsetName)){
+        subtitle <- NULL
+    } else{
+        subtitle <- paste0("FDR across ", 
+                           ifelse(isTRUE(aggregate), "genes", "introns"),
+                           " in the ", subsetName, 
+                           " group (N=", dt[!is.na(padj), .N], ")")
+    }
+    g <- g + ggtitle(main, subtitle=subtitle)
     
     plotBasePlot(g, basePlot)
 }
@@ -393,7 +438,7 @@ setMethod("plotVolcano", signature="FraserDataSet", plotVolcano.FRASER)
 plotAberrantPerSample.FRASER <- function(object, main, 
                     type=fitMetrics(object),
                     padjCutoff=0.1, deltaPsiCutoff=0.1,
-                    aggregate=TRUE, BPPARAM=bpparam(), ...){
+                    aggregate=TRUE, subsetName=NULL, BPPARAM=bpparam(), ...){
 
     type <- match.arg(type, several.ok=TRUE)
 
@@ -403,14 +448,27 @@ plotAberrantPerSample.FRASER <- function(object, main,
             main <- paste(main, "by gene")
         }
     }
+    if(is.null(subsetName)){
+        subtitle <- NULL
+    } else{
+        subtitle <- paste0("FDR across genes in the ", subsetName, " group")
+    }
 
     # extract outliers
     outliers <- bplapply(type, aberrant, object=object, by="sample",
             padjCutoff=padjCutoff, 
             deltaPsiCutoff=deltaPsiCutoff, aggregate=aggregate, ..., 
-            BPPARAM=BPPARAM)
+            subsetName=subsetName, BPPARAM=BPPARAM)
     dt2p <- rbindlist(lapply(seq_along(outliers), function(idx){
         vals <- outliers[[idx]]
+        padj_assay <- padjVals(object, type=type[idx], subsetName=subsetName,
+                                level=ifelse(isTRUE(aggregate), "gene", "site"))
+        testedSamples <- names(
+            which(colSums(is.na(padj_assay)) != nrow(padj_assay)))
+        if(length(testedSamples) == 0){
+            stop("No non-NA padj values found for the tested group.")
+        }
+        vals <- vals[testedSamples]
         data.table(type=type[idx], value=sort(vals), median=median(vals),
                 rank=seq_along(vals))
     }))
@@ -421,7 +479,7 @@ plotAberrantPerSample.FRASER <- function(object, main,
         geom_hline(aes(yintercept=median, color=type, lty="Median")) +
         theme_bw() +
         theme_cowplot() + background_grid(major="xy", minor="xy") +
-        ggtitle(main) +
+        ggtitle(main, subtitle=subtitle) +
         xlab("Sample rank") +
         ylab("Number of outliers") +
         scale_color_brewer(palette="Dark2", name=element_blank(),
@@ -457,7 +515,8 @@ setMethod("plotAberrantPerSample", signature="FraserDataSet",
 #' @export
 plotExpression <- function(fds, type=fitMetrics(fds),
                     idx=NULL, result=NULL, colGroup=NULL, 
-                    basePlot=TRUE, main=NULL, label="aberrant", ...){
+                    basePlot=TRUE, main=NULL, label="aberrant", 
+                    subsetName=NULL, ...){
     if(!is.null(result)){
         type <- as.character(result$type)
         idx <- getIndexFromResultTable(fds, result)
@@ -465,7 +524,8 @@ plotExpression <- function(fds, type=fitMetrics(fds),
         type <- match.arg(type)
     }
 
-    dt <- getPlottingDT(fds, axis="row", type=type, idx=idx, ...)
+    dt <- getPlottingDT(fds, axis="row", type=type, idx=idx, 
+                        subsetName=subsetName, ...)
     dt[,featureID:=limitGeneNamesList(featureID, maxLength=3)]
     
     if(!is.null(colGroup)){
@@ -476,17 +536,27 @@ plotExpression <- function(fds, type=fitMetrics(fds),
     }
     dt[,aberrant:=factor(aberrant, levels=c("TRUE", "FALSE"))]
 
+    gr <- granges(rowRanges(fds,type=type)[idx,])
+    genomic_pos_label <- paste0(seqnames(gr), ":", start(gr), "-", end(gr), 
+                                ":", strand(gr))
     if(is.null(main)){
         if(isTRUE(basePlot)){
             main <- as.expression(bquote(bold(paste(
                 .(ggplotLabelPsi(type)[[1]]), " expression plot: ",
-                bolditalic(.(as.character(dt[,unique(featureID)]))),
-                " (site ", .(as.character(dt[,unique(idx)])), ")"))))
+                .(genomic_pos_label),
+                " (", bolditalic(.(as.character(dt[,unique(featureID)]))), 
+                "; row index: ", .(as.character(dt[,unique(idx)])), ")"))))
         } else{
             main <- paste0(ggplotLabelPsi(type, asCharacter=TRUE)[[1]], 
-                        " expression plot: ", dt[,unique(featureID)], 
-                        " (site ", dt[,unique(idx)], ")")
+                           " expression plot: ", genomic_pos_label,
+                           " (", dt[,unique(featureID)],
+                           "; row index: ", dt[,unique(idx)], ")")
         }
+    }
+    if(is.null(subsetName)){
+        subtitle <- NULL
+    } else{
+        subtitle <- paste0("FDR across genes in the ", subsetName, " group")
     }
 
     g <- ggplot(dt, aes(x=n + 2, y=k + 1, color=aberrant, label=sampleID, 
@@ -505,7 +575,7 @@ plotExpression <- function(fds, type=fitMetrics(fds),
         theme(legend.position="none", title=) +
         xlab("Total junction coverage + 2 (N)") +
         ylab("Junction count + 1 (K)") +
-        ggtitle(main) +
+        ggtitle(main, subtitle=subtitle) +
         annotation_logticks(sides='bl')
     
     if(isTRUE(basePlot) && !is.null(label)){
@@ -548,7 +618,8 @@ plotExpression <- function(fds, type=fitMetrics(fds),
 #' @export
 plotSpliceMetricRank <- function(fds, type=fitMetrics(fds),
                            idx=NULL, result=NULL, colGroup=NULL, 
-                           basePlot=TRUE, main=NULL, label="aberrant", ...){
+                           basePlot=TRUE, main=NULL, label="aberrant", 
+                           subsetName=NULL, ...){
     if(!is.null(result)){
         type <- as.character(result$type)
         idx <- getIndexFromResultTable(fds, result)
@@ -556,7 +627,8 @@ plotSpliceMetricRank <- function(fds, type=fitMetrics(fds),
         type <- match.arg(type)
     }
     
-    dt <- getPlottingDT(fds, axis="row", type=type, idx=idx, ...)
+    dt <- getPlottingDT(fds, axis="row", type=type, idx=idx, 
+                        subsetName=subsetName, ...)
     dt[,featureID:=limitGeneNamesList(featureID, maxLength=3)]
     
     # rank on observed value of splice metric of interest
@@ -576,22 +648,20 @@ plotSpliceMetricRank <- function(fds, type=fitMetrics(fds),
     
     if(is.null(main)){
         if(isTRUE(basePlot)){
-            # main <- as.expression(bquote(bold(paste(
-            #     .(ggplotLabelPsi(type)[[1]]), " rank plot: ",
-            #     .(genomic_pos_label),
-            #     " (", bolditalic(.(as.character(dt[,unique(featureID)]))), 
-            #     ")"))))
             main <- as.expression(bquote(bold(paste(
                     .(genomic_pos_label),
                     " (", bolditalic(.(as.character(dt[,unique(featureID)]))), 
-                    ")"))))
+                    "; row index: ", .(as.character(dt[,unique(idx)])), ")"))))
         } else{
-            # main <- paste0(ggplotLabelPsi(type, asCharacter=TRUE)[[1]], 
-            #                " rank plot: ", dt[,unique(featureID)], 
-            #                " (site ", dt[,unique(idx)], ")")
             main <- paste0(genomic_pos_label,
-                " (", dt[,unique(featureID)], ")")
+                " (", dt[,unique(featureID)],
+                "; row index: ", dt[,unique(idx)], ")")
         }
+    }
+    if(is.null(subsetName)){
+        subtitle <- NULL
+    } else{
+        subtitle <- paste0("FDR across genes in the ", subsetName, " group")
     }
     
     if(isTRUE(basePlot)){
@@ -614,7 +684,7 @@ plotSpliceMetricRank <- function(fds, type=fitMetrics(fds),
         theme(legend.position="none", title=) +
         xlab("Sample rank") +
         ylab(ylab) +
-        ggtitle(main, subtitle=paste0("fds row index: ", dt[,unique(idx)])) +
+        ggtitle(main, subtitle=subtitle) +
         ylim(0,1)
     
     
@@ -659,28 +729,35 @@ plotSpliceMetricRank <- function(fds, type=fitMetrics(fds),
 #' @export
 plotExpectedVsObservedPsi <- function(fds, type=fitMetrics(fds),
                     idx=NULL, result=NULL, colGroup=NULL, main=NULL,
-                    basePlot=TRUE, label="aberrant", ...){
+                    basePlot=TRUE, label="aberrant", subsetName=NULL, ...){
     type <- match.arg(type)
     
     # get plotting data
     dt   <- getPlottingDT(fds, axis="row", type=type, result=result, 
-            idx=idx, ...)
+            idx=idx, subsetName=subsetName, ...)
     type <- as.character(unique(dt$type))
     idx  <- unique(dt$idx)
     dt[,featureID:=limitGeneNamesList(featureID, maxLength=3)]
     
+    gr <- granges(rowRanges(fds,type=type)[idx,])
+    genomic_pos_label <- paste0(seqnames(gr), ":", start(gr), "-", end(gr), 
+                                ":", strand(gr))
     if(is.null(main)){
         if(isTRUE(basePlot)){
             main <- as.expression(bquote(bold(paste(
-                .(ggplotLabelPsi(type)[[1]]), 
-                " observed expression vs prediction plot: ",
-                bolditalic(.(as.character(dt[,unique(featureID)]))),
-                " (site ", .(as.character(idx)), ")"))))
+                .(genomic_pos_label),
+                " (", bolditalic(.(as.character(dt[,unique(featureID)]))), 
+                "; row index: ", .(as.character(dt[,unique(idx)])), ")"))))
         } else{
-            main <- paste0(ggplotLabelPsi(type, asCharacter=TRUE)[[1]], 
-                            " observed expression vs prediction plot: ", 
-                            dt[,unique(featureID)], " (site ", idx, ")")
+            main <- paste0(genomic_pos_label,
+                           " (", dt[,unique(featureID)],
+                           "; row index: ", dt[,unique(idx)], ")")
         }
+    }
+    if(is.null(subsetName)){
+        subtitle <- NULL
+    } else{
+        subtitle <- paste0("FDR across genes in the ", subsetName, " group")
     }
     
     if(!is.null(colGroup)){
@@ -716,7 +793,7 @@ plotExpectedVsObservedPsi <- function(fds, type=fitMetrics(fds),
         theme(legend.position="none") +
         xlab(xlab) +
         ylab(ylab) +
-        ggtitle(main)
+        ggtitle(main, subtitle=subtitle)
     
     if(isTRUE(basePlot) && !is.null(label)){
         if(isScalarCharacter(label) && label == "aberrant"){
@@ -752,7 +829,7 @@ plotExpectedVsObservedPsi <- function(fds, type=fitMetrics(fds),
 plotQQ.FRASER <- function(object, type=NULL, idx=NULL, result=NULL, 
                     aggregate=FALSE, global=FALSE, main=NULL, conf.alpha=0.05,
                     samplingPrecision=3, basePlot=TRUE, label="aberrant",
-                    Ncpus=min(3, getDTthreads()), ...){
+                    Ncpus=min(3, getDTthreads()), subsetName=NULL, ...){
 
     # check parameters
     if(is.null(aggregate)){
@@ -768,7 +845,8 @@ plotQQ.FRASER <- function(object, type=NULL, idx=NULL, result=NULL,
             type <- fitMetrics(object)
         }
         dt <- rbindlist(bplapply(type, getPlottingDT, fds=object, axis="col",
-                idx=TRUE, aggregate=aggregate, Ncpus=Ncpus, ...))
+                idx=TRUE, aggregate=aggregate, subsetName=subsetName, 
+                Ncpus=Ncpus, ...))
         # remove duplicated entries donor/acceptor sites if not aggregated 
         # by a feature
         if(isFALSE(aggregate)){
@@ -780,7 +858,8 @@ plotQQ.FRASER <- function(object, type=NULL, idx=NULL, result=NULL,
             dots[["pvalLevel"]] <- "junction"
         }
         dots <- append(list(fds=object, axis="row", type=type, idx=idx, 
-                            result=result, aggregate=aggregate), 
+                            result=result, aggregate=aggregate, 
+                            subsetName=subsetName), 
                         dots)
         dt <- do.call(getPlottingDT, args=dots)
     }
@@ -791,19 +870,29 @@ plotQQ.FRASER <- function(object, type=NULL, idx=NULL, result=NULL,
             type <- as.character(dt[,unique(type)])
             featureID <- as.character(dt[,unique(featureID)])
             featureID <- limitGeneNamesList(featureID, maxLength=3)
+            idx <- dt[, unique(idx)]
+            gr <- granges(rowRanges(object,type=type)[idx,])
+            genomic_pos_label <- paste0(seqnames(gr), ":", 
+                                    start(gr), "-", end(gr), ":", strand(gr))
             if(isTRUE(basePlot)){
                 main <- as.expression(bquote(bold(paste(
-                        .(ggplotLabelPsi(type)[[1]]),
-                        " Q-Q plot: ", bolditalic(.(featureID)),
-                        " (site ", .(as.character(dt[,unique(idx)])), ")"))))
+                    .(ggplotLabelPsi(type)[[1]]), " Q-Q plot: ",
+                    .(genomic_pos_label),
+                    " (", bolditalic(.(featureID)), 
+                    "; row index: ", .(as.character(idx)), ")"))))
             } else{
-                main <- paste0(ggplotLabelPsi(type, asCharacter=TRUE)[[1]],
-                                " Q-Q plot: ", featureID, 
-                                " (site ", dt[,unique(idx)], ")")
+                main <- paste0(ggplotLabelPsi(type, asCharacter=TRUE)[[1]], 
+                               " Q-Q plot: ", genomic_pos_label,
+                               " (", featureID, 
+                               "; row index: ", idx, ")")
             }
         }
     }
-
+    if(is.null(subsetName) || isTRUE(global)){
+        subtitle <- NULL
+    } else{
+        subtitle <- paste0("FDR across genes in the ", subsetName, " group")
+    }
 
     # points
     dt2p <- dt[order(type, pval)]
@@ -835,7 +924,7 @@ plotQQ.FRASER <- function(object, type=NULL, idx=NULL, result=NULL,
                 "<br>SampleID: ", sampleID, "<br>K: ", k, "<br>N: ", n))) +
         geom_point() +
         theme_bw() +
-        ggtitle(main) 
+        ggtitle(main, subtitle=subtitle) 
     
     if(isTRUE(basePlot)){
         g <- g +
@@ -1543,8 +1632,8 @@ plotBamCoverageFromResultTable <- function(fds, result, show_full_gene=FALSE,
 plotManhattan.FRASER <- function(object, sampleID, value="pvalue", 
                                 type=fitMetrics(object), chr=NULL, 
                                 main=paste0("sample: ", sampleID), 
-                                chrColor=c("black", "darkgrey"),
-                                ...){
+                                chrColor=c("black", "darkgrey"), 
+                                subsetName=NULL, ...){
     # check necessary packages
     if (!requireNamespace('ggbio')){
         stop("For this function, the ggbio package is required.")
@@ -1572,8 +1661,8 @@ plotManhattan.FRASER <- function(object, sampleID, value="pvalue",
     seqlevelsStyle(gr_sample) <- seqlevelsStyle(object)
     mcols(gr_sample)[,"pvalue"] <- -log10(
         pVals(object, type=type, level="junction")[,sampleID])
-    mcols(gr_sample)[,"padjust"] <- -log10(
-        padjVals(object, type=type, level="site")[,sampleID])
+    mcols(gr_sample)[,"padjust"] <- -log10(padjVals(object, type=type, 
+                            level="site", subsetName=subsetName)[,sampleID])
     mcols(gr_sample)[,"delta"] <- deltaPsiValue(object, type=type)[,sampleID]
     
     # Add values to granges
