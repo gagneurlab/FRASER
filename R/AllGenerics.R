@@ -913,6 +913,10 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff,
 #'              indicates whether additionally the transcriptome-wide results 
 #'              should be returned as well (default), or whether only results 
 #'              for those subsets should be retrieved.
+#' @param subsetName The name of a subset of genes of interest for which FDR 
+#'             corrected pvalues were previously computed. Those FDR values 
+#'             on the subset will then be used to determine aberrant status. 
+#'             Default is NULL (using transcriptome-wide FDR corrected pvalues).
 #' @param ... Further arguments can be passed to the method. If "n",  
 #'              "padjVals", "dPsi" or "rhoVals" are given, the values of those 
 #'              arguments are used to define the aberrant events.

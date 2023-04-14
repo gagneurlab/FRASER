@@ -104,7 +104,8 @@ NULL
 FRASER <- function(fds, q, type=fitMetrics(fds), 
                    implementation=c("PCA", "PCA-BB-Decoder", "AE-weighted", 
                                     "AE", "BB"), 
-                    iterations=15, BPPARAM=bpparam(), correction, ...){
+                    iterations=15, BPPARAM=bpparam(), correction, 
+                    subsets=NULL, ...){
     # Check input
     implementation <- match.arg(implementation)
     if (!missing("correction")){
@@ -143,7 +144,7 @@ FRASER <- function(fds, q, type=fitMetrics(fds),
         fds <- calculatePvalues(fds, type=i)
 
         message(date(), ": Adjust p values for: '", i, "'.")
-        fds <- calculatePadjValues(fds, type=i)
+        fds <- calculatePadjValues(fds, type=i, subsets=subsets)
 
         # message(date(), ": Compute Z scores for: '", i, "'.")
         # fds <- calculateZscore(fds, type=i)
