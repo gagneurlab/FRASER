@@ -696,7 +696,7 @@ getIndexFromResultTable <- function(fds, resultTable){
 
 getPlottingDT <- function(fds, axis=c("row", "col"), type=currentType(fds), 
                     result=NULL, idx=NULL, aggregate=FALSE, pvalLevel="site", 
-                    Ncpus=3, geneColumn="hgnc_symbol", ...){
+                    Ncpus=3, geneColumn="hgnc_symbol", subsetName=NULL, ...){
     if(!is.null(result)){
         type <- as.character(result$type)
         idx  <- getIndexFromResultTable(fds, result)
@@ -740,7 +740,8 @@ getPlottingDT <- function(fds, axis=c("row", "col"), type=currentType(fds),
             n         = c(n),
             pval      = c(pVals(fds, type=type, 
                                 level=pvalLevel)[idxrow, idxcol]),
-            padj      = c(padjVals(fds, type=type)[idxrow, idxcol]),
+            padj      = c(padjVals(fds, type=type, 
+                                    subsetName=subsetName)[idxrow, idxcol]),
             obsPsi    = c(k/n),
             predPsi   = c(predictedMeans(fds, type)[idxrow, idxcol]),
             rho       = rep(rho(fds, type=type)[idxrow], 
@@ -751,7 +752,8 @@ getPlottingDT <- function(fds, axis=c("row", "col"), type=currentType(fds),
     # if requested return gene p values
     if(isTRUE(aggregate)){
         # get gene-level aberrant status
-        aberrantGeneLevel <- aberrant(fds[, idxcol], ..., aggregate=TRUE)
+        aberrantGeneLevel <- aberrant(fds[, idxcol], ..., aggregate=TRUE,
+                                        subsetName=subsetName)
         aberrantGeneLevel <- melt(
                 data.table(featureID=rownames(aberrantGeneLevel), 
                            aberrantGeneLevel), 
@@ -771,7 +773,7 @@ getPlottingDT <- function(fds, axis=c("row", "col"), type=currentType(fds),
                 pvalsGene <- pVals(fds, type=type, 
                                     level="gene")[,idxcol,drop=FALSE]
             } else {
-                pvalsGene <- padjVals(fds, type=type, 
+                pvalsGene <- padjVals(fds, type=type, subsetName=subsetName,
                                     level="gene")[,idxcol,drop=FALSE]
             }
             pvalsGene <- data.table(featureID=rownames(pvalsGene), pvalsGene)
@@ -799,7 +801,8 @@ getPlottingDT <- function(fds, axis=c("row", "col"), type=currentType(fds),
         # add aberrant information to it
         aberrantVec <- aberrant(fds, ..., padjVals=dt[,.(padj)],
                                 dPsi=dt[,.(deltaPsi)], n=dt[,.(n)], 
-                                rhoVals=dt[,.(rho)], aggregate=FALSE)
+                                rhoVals=dt[,.(rho)], aggregate=FALSE, 
+                                subsetName=subsetName)
         dt[,aberrant:=aberrantVec]
     }
     

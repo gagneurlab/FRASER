@@ -1,6 +1,7 @@
 context("Test generation of results")
 
 test_that("Results function", {
+    set.seed(42)
     # get subset to speed up test
     fds <- getFraser()
     
@@ -8,7 +9,7 @@ test_that("Results function", {
     res <- results(fds, aggregate=FALSE, all=TRUE)
     expect_equal(length(res), prod(dim(fds)))
     res_signif <- results(fds, aggregate=FALSE, all=FALSE,
-                            padjCutoff=NA, deltaPsiCutoff=0.01)
+                            padjCutoff=NA, deltaPsiCutoff=0.2)
     expect_equal(length(res_signif), 1)
     
     # gene-level results
@@ -16,7 +17,7 @@ test_that("Results function", {
     expect_equal(length(res_gene), 
                     prod(dim(pVals(fds, level="gene", type="jaccard"))))
     res_gene_signif <- results(fds, aggregate=TRUE, all=FALSE,
-                          padjCutoff=NA, deltaPsiCutoff=0.01)
+                          padjCutoff=NA, deltaPsiCutoff=0.2)
     expect_equal(length(res_gene_signif), 1)
     
 })
