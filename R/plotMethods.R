@@ -1170,10 +1170,11 @@ plotFilterVariability <- function(fds, bins=200, legend.position=c(0.8, 0.8),
     
     dt[,passed:=factor(passed, levels=c(TRUE, FALSE))]
     colors <- brewer.pal(3, "Dark2")[seq_len(2)]
-    if(delta_cols == "maxDJaccard"){
+    if(any(delta_cols == "maxDJaccard")){
         xlab <- bquote("Maximal" ~ Delta ~ "to mean J per intron")         
     } else{
-        xlab <- bquote("Maximal" ~ Delta ~ "to mean" ~Psi[5] ~ "," ~ Psi[3] ~ "or" ~ theta ~ "per intron") 
+        xlab <- bquote("Maximal" ~ Delta ~ "to mean" ~Psi[5] ~ "," ~ Psi[3] ~ 
+                        "or" ~ theta ~ "per intron") 
     }
     ggplot(dt, aes(value, fill=passed)) +
         geom_histogram(bins=bins) +
