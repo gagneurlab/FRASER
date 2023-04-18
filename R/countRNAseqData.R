@@ -495,7 +495,7 @@ countSplitReads <- function(sampleID, fds, NcpuPerSample=1, genome=NULL,
     chromosomes <- extractChromosomes(bamfile)
     
     if(isFALSE(keepNonStandardChromosomes)){
-        chr_gr <- GRanges(seqnames=paste0(chromosomes, ":1-2"))
+        chr_gr <- GRanges(seqnames=chromosomes, ranges=IRanges(1, 2))
         chromosomes <- standardChromosomes(chr_gr)
     }
     
