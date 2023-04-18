@@ -1,7 +1,12 @@
+CHANGES IN VERSION 1.99.3
+-------------------------
+    o Bugfix for contig names containing certain characters
+    
 CHANGES IN VERSION 1.99.2
 -------------------------
     o Update of the plot functions to support colorring aberrant status based 
       on p values computed on subsets of genes
+      
 -------------------------
     o Major update to FRASER2:
         o Introduction of new & more robust splice metric Intron Jaccard Index

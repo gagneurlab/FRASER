@@ -1,7 +1,7 @@
 Package: FRASER
 Type: Package
 Title: Find RAre Splicing Events in RNA-Seq Data
-Version: 1.99.2
+Version: 1.99.3
 Date: 2022-11-25
 Authors@R: c(
     person("Christian", "Mertes", role=c("aut", "cre"), 
