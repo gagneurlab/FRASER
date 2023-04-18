@@ -362,14 +362,14 @@ plotVolcano.FRASER <- function(object, sampleID,
             "p value: ", signif(pval, 5), "<br>",
             "delta Psi: ", round(deltaPsi, 2), "<br>",
             "Type: ", type))) +
-        geom_point(aes(alpha=ifelse(aberrant == TRUE, 1, 0.8))) +
+        geom_point(aes(alpha=ifelse(aberrantLabel == "aberrant", 1, 0.8))) +
         xlab(as.expression(
                 bquote(paste(Delta, .(ggplotLabelPsi(type)[[1]]) ))
             )) +
         ylab(expression(paste(-log[10], "(P value)"))) +
-        scale_color_manual(values=c("not aberrant"="gray40", 
+        scale_color_manual(values=c("not aberrant"="black", 
                                     "aberrant"="firebrick",
-                                    "not in tested group"="gray90")) +
+                                    "not in tested group"="lightsteelblue")) +
         theme_bw() +
         theme(legend.position="bottom") +
         guides(alpha="none", color=guide_legend(title=""))
