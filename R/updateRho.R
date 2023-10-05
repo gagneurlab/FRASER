@@ -27,10 +27,15 @@ updateRho <- function(fds, type, rhoRange, BPPARAM, verbose){
     return(fds)
 }
 
-estRho <- function(idx, k, n, y, rhoRange, nll, control=list(), lambda=1e-4){
-    ki <- k[idx,]
-    ni <- n[idx,]
-    yi <- y[idx,]
+estRho <- function(idx, k, n, y, rhoRange, nll, control=list(), lambda=1e-4, 
+                   exclusionMat=NULL){
+    if(is.null(exclusionMat)){
+        exclusionMat <- matrix(FALSE, ncol=ncol(k), nrow=nrow(k))
+    }
+    
+    ki <- k[idx,!exclusionMat[idx,]]
+    ni <- n[idx,!exclusionMat[idx,]]
+    yi <- y[idx,!exclusionMat[idx,]]
     
     # est <- optimize(f=nll, interval=rhoRange, yi=yi, ki=ki, ni=ni, 
     #                 maximum=FALSE, tol=0.0000001)
@@ -122,4 +127,33 @@ methodOfMomentsRho <- function(k, n, rhoRange=c(1e-5, 1 - 1e-5)){
     rho <- pmin(rho, rhoRange[2])
     
     return(rho)
+}
+
+#'
+#' Update rho step for autoencoder (as second pass in two-pass mode excluding
+#' outlier samples)
+#'
+#' @noRd
+updateRhoTwoPass <- function(fds, exclusionMat, type, y, rhoRange, BPPARAM, verbose){
+    
+    k <- K(fds)
+    n <- N(fds)
+    
+    # fitparameters <- bplapply(seq_len(nrow(k)), estRho, nll=truncNLL_rho,
+    #         k=k, n=n, y=y, rhoRange=rhoRange, BPPARAM=BPPARAM)
+    fitparameters <- bplapply(seq_len(nrow(k)), estRho, 
+                              nll=fullNLLRho_penalized,
+                              k=k, n=n, y=y, rhoRange=rhoRange, lambda=1e-4,
+                              BPPARAM=BPPARAM, exclusionMat=exclusionMat)
+    
+    rho(fds) <- plogis(vapply(fitparameters, "[[", 
+                              double(1), "minimum"))
+    
+    if(isTRUE(verbose)){
+        stxt <- capture.output(summary(rho(fds)))
+        message(date(), ": rho fit:\n\t", paste(stxt, collapse="\n\t"))
+    }
+    
+    validObject(fds)
+    return(fds)
 }

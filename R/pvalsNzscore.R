@@ -44,7 +44,10 @@ calculateZscore <- function(fds, type=currentType(fds), logit=TRUE){
 #' @export
 calculatePvalues <- function(fds, type=currentType(fds),
                     implementation="PCA", BPPARAM=bpparam(),
-                    distributions=c("betabinomial"), capN=5*1e5){
+                    distributions=c("betabinomial"), capN=5*1e5, 
+                    twoPassMode=FALSE, twoPassFDRcutoff=1e-3, 
+                    twoPassRhoRange=c(-30, 30)){
+    distributions <- tolower(distributions)
     distributions <- match.arg(distributions, several.ok=TRUE,
             choices=c("betabinomial", "binomial", "normal"))
     
@@ -109,6 +112,13 @@ calculatePvalues <- function(fds, type=currentType(fds),
         pvals <- 2 * pmin(pval, 1 - pval + dval, 0.5)
         pVals(fds, dist="BetaBinomial", level="junction", 
                 withDimnames=FALSE) <- pvals
+        if(isTRUE(twoPassMode)){
+            fds <- calculateTwoPassPvalues(fds, type=type, 
+                                twoPassFDRcutoff = twoPassFDRcutoff,
+                                implementation=implementation, 
+                                BPPARAM=BPPARAM, distribution="BetaBinomial", 
+                                rhoRange=twoPassRhoRange)
+        }
     }
     
     if("binomial" %in% distributions){
@@ -120,6 +130,13 @@ calculatePvalues <- function(fds, type=currentType(fds),
         pvals <- 2 * pmin(pval, 1 - pval + dval, 0.5)
         pVals(fds, dist="Binomial", level="junction", 
                 withDimnames=FALSE) <- pvals
+        if(isTRUE(twoPassMode)){
+            fds <- calculateTwoPassPvalues(fds, type=type, 
+                                twoPassFDRcutoff = twoPassFDRcutoff,
+                                implementation=implementation, 
+                                BPPARAM=BPPARAM, distribution="Binomial", 
+                                rhoRange=twoPassRhoRange)
+        }
     }
     
     if("normal" %in% distributions){
@@ -132,6 +149,14 @@ calculatePvalues <- function(fds, type=currentType(fds),
         pvals <- 2 * pmin(pval, 1 - pval, 0.5)
         pVals(fds, dist="Normal", level="junction", 
                 withDimnames=FALSE) <- pvals
+        if(isTRUE(twoPassMode)){
+            fds <- calculateTwoPassPvalues(fds, type=type, 
+                                twoPassFDRcutoff = twoPassFDRcutoff,
+                                implementation=implementation, 
+                                BPPARAM=BPPARAM, distribution="Normal", 
+                                rhoRange=twoPassRhoRange)
+        }
+        
     }
     
     fds
@@ -552,6 +577,60 @@ calculatePadjValuesOnSubset <- function(fds, genesToTest, subsetName,
     
     message(date(), ": finished FDR calculation on subset of genes.")
     validObject(fds)
+    return(fds)
+}
+
+calculateTwoPassPvalues <- function(fds, type=currentType(fds), 
+                            twoPassFDRcutoff = 1e-3, implementation="PCA", 
+                            distribution="BetaBinomial", rhoRange=c(-30, 30),
+                            BPPARAM=bpparam()){
+    
+    distribution <- match.arg(distribution, several.ok=FALSE, 
+                                choices=c("BetaBinomial", "Binomial", "Normal"))
+    
+    # get FDR across all samples for each intron
+    p <- pVals(fds, type=type, level="junction", dist=distribution)
+    fdrAcrossSamples <- t(apply(p, 1, p.adjust, method="BY"))
+    
+    # get samples which should be excluded from rho fit
+    exMat <- fdrAcrossSamples <= twoPassFDRcutoff
+    
+    # get introns with more than 1 sample to exclude from rho fit
+    exSum <- rowSums(exMat)
+    idxToReestimate <- which(exSum > 0)
+    
+    if(length(idxToReestimate) == 0){
+        warning("There were no introns for which the two-pass mode could ", 
+                "be applied.")
+        return(fds)
+    }
+    
+    # re-estimate rho
+    fdsSub <- fds[idxToReestimate,]
+    dontWriteHDF5(fdsSub) <- TRUE
+    yAll <- predictY(fds, noiseAlpha=currentNoiseAlpha(fds)) # on the full fds
+    message(date(), ": Updating rho values in two-pass mode ...")
+    fdsSub <- updateRhoTwoPass(fdsSub, exclusionMat=exMat[idxToReestimate,], 
+                            y=yAll[idxToReestimate,], type=type, 
+                            rhoRange=rhoRange, verbose=TRUE, BPPARAM=BPPARAM)
+    message(date(), ": Finished two-pass mode update of rho values")
+    rhoTwoPass <- rho(fdsSub, type=type)
+    
+    # re-assign updated rho values to fds object
+    rho <- rho(fds, type=type)
+    rho[idxToReestimate] <- rhoTwoPass
+    rho(fds, type=type) <- rho
+    
+    # re-compute nominal junction-level pvalues and assign to fds object
+    message(date(), ": Re-calculating p-values after rho update ...")
+    fdsSub <- calculatePvalues(fds=fdsSub, type=type, 
+                                implementation=implementation, 
+                                distributions=distribution, BPPARAM=BPPARAM,
+                                twoPassMode=FALSE)
+    p[idxToReestimate,] <- pVals(fdsSub, type=type, level="junction", 
+                                    dist=distribution)
+    pVals(fds, type=type, level="junction", dist=distribution) <- p
+    
     return(fds)
 }
 
