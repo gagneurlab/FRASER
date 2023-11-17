@@ -40,7 +40,7 @@ opts_chunk$set(
 
 \author{
     Christian Mertes$^{1}$, Ines Scheller$^{1}$, Julien Gagneur$^{1}$ \\
-    \small{$^{1}$ Technische Universit\"at M\"unchen, Department of 
+    \small{$^{1}$ Technical University of Munich, Department of 
         Informatics, Garching, Germany}
 }
 
@@ -190,7 +190,7 @@ previously captured with either of the metrics $\psi_5$, $\psi_3$, $\theta$.
 }
 
 The Intron Jaccard Index considers both split and nonsplit reads and is 
-defined as the jaccard index of the set of donor reads (reads sharing a donor 
+defined as the Jaccard index of the set of donor reads (reads sharing a donor 
 site with the intron of interest and nonsplit reads at that donor site) and 
 acceptor reads (reads sharing an acceptor site with the intron of interest and
 nonsplit reads at that acceptor site): 
@@ -203,11 +203,11 @@ nonsplit reads at that acceptor site):
 
 \section{Quick guide to \fraser{}}
 
-Here we quickly show how to do an analysis with \fraser{}, starting from a
-sample annotation table and the corresponding bam files. First, we create an
-\fds{} from the sample annotation and count the relevant reads in the bam files.
+Here we show how to do an analysis with \fraser{}, starting from a
+sample annotation table and raw data (RNA-seq BAM files). First, we create a
+\fds{} object from the sample annotation and count the relevant reads in the BAM files.
 Then, we compute the $\psi/\theta$ values and
-filter out introns that are just noise. Secondly, we run the full
+filter out introns that are lowly expressed. Secondly, we run the full
 pipeline using the command \Rfunction{FRASER}. In the last step, we extract the
 results table from the \fds{} using the \Rfunction{results} function.
 Additionally, the user can create several analysis plots directly from the
@@ -218,7 +218,7 @@ fitted \fds{} object. These plotting functions are described in section
 # load FRASER library
 library(FRASER)
 
-# count data
+# count raw data
 fds <- createTestFraserSettings()
 fds <- countRNAData(fds)
 fds
@@ -226,11 +226,11 @@ fds
 # compute stats
 fds <- calculatePSIValues(fds)
 
-# filtering junction with low expression
+# filter junctions with low expression
 fds <- filterExpressionAndVariability(fds, minExpressionInOneSample=20,
        minDeltaPsi=0.0, filter=TRUE)
 
-# we provide two ways to anntoate introns with the corresponding gene symbols:
+# we provide two ways to annotate introns with the corresponding gene symbols:
 # the first way uses TxDb-objects provided by the user as shown here
 library(TxDb.Hsapiens.UCSC.hg19.knownGene)
 library(org.Hs.eg.db)
@@ -242,16 +242,16 @@ fds <- annotateRangesWithTxDb(fds, txdb=txdb, orgDb=orgDb)
 # with a specific latentspace dimension
 fds <- FRASER(fds, q=c(jaccard=2))
 
-# alternatively, we also provide a way to use biomart for the annotation:
+# Alternatively, we also provide a way to use BioMart for the annotation:
 # fds <- annotateRanges(fds)
 
-# get results: we recommend to use an FDR cutoff 0.05, but due to the small
-# dataset size we extract all events and their associated values
+# get results: we recommend to use an FDR cutoff of 0.05, but due to the small
+# dataset size, we extract all events and their associated values
 # eg: res <- results(fds, padjCutoff=0.05, deltaPsiCutoff=0.1)
 res <- results(fds, all=TRUE)
 res
 
-# result visualization
+# result visualization, aggregate=TRUE means that results are aggregated at the gene level 
 plotVolcano(fds, sampleID="sample1", type="jaccard", aggregate=TRUE)
 
 @
@@ -261,22 +261,21 @@ plotVolcano(fds, sampleID="sample1", type="jaccard", aggregate=TRUE)
 The analysis workflow of \fraser{} for detecting rare aberrant splicing events
 in RNA-seq data can be divided into the following steps:
 \begin{enumerate}
-    \item Data import or Counting reads \ref{sec:dataPreparation}
+    \item Data import or counting reads \ref{sec:dataPreparation}
     \item Data preprocessing and QC \ref{sec:DataPreprocessing}
     \item Correcting for confounders \ref{sec:correction}
-    \item Calculate P-values \ref{sec:P-value-calculation}
-    \item Calculate Z-scores \ref{sec:Z-score-calculation}
-    \item Visualize the results \ref{sec:result-vis}
+    \item Calculating P-values \ref{sec:P-value-calculation}
+    \item Visualizing the results \ref{sec:result-vis}
 \end{enumerate}
 
-Step 3-5 are wrapped up in one function \Rfunction{FRASER}, but each step can
-be called individually and parametrizied. Either way, data preprocessing should
+Steps 3 and 4 are wrapped up in one function \Rfunction{FRASER}, but each step can
+be called individually and parametrized. Either way, data preprocessing should
 be done before starting the analysis, so that samples failing quality
 measurements or introns stemming from background noise are discarded.
 
 Detailed explanations of each step are given in the following subsections.
 
-For this tutorial we will use the a small example dataset that is contained
+For this tutorial, we will use the a small example dataset that is contained
 in the package.
 
 \subsection{Data preparation}
@@ -285,7 +284,7 @@ in the package.
 \subsubsection{Creating a \fds{} and Counting reads}
 \label{sec:CountingReads}
 
-To start a RNA-seq data analysis with \fraser{} some preparation steps are
+To start an RNA-seq data analysis with \fraser{} some preparation steps are
 needed. The first step is the creation of a \fds{} which derives from a
 RangedSummarizedExperiment object. To create the \fds, sample annotation and
 two count matrices are needed: one containing counts for the splice junctions,
@@ -296,10 +295,10 @@ splice junctions.
 You can first create the \fds{} with only the sample annotation and
 subsequently count the reads as described in \ref{sec:CountingReads}. For this,
 we need a table with basic informations which then can be transformed into a
-\Rclass{FraserSettings} object. The minimum of information per sample is an
-unique sample name, the path to the aligned bam file.
-Additionally groups can be specified for the P-value calculations later.
-If a \textbf{NA} is assigned no P-values will be calculated. An example sample
+\Rclass{FraserSettings} object. The minimum of information per sample is a
+unique sample name and the path to the BAM file.
+Additionally groups can be specified for the P-value calculations.
+If a \textbf{NA} is assigned, no P-values will be calculated. An example sample
 table is given within the package:
 
 <<sampleData Table, echo=TRUE>>=
@@ -308,7 +307,7 @@ sampleTable <- fread(system.file(
 head(sampleTable)
 @
 
-To create a settings object for \fraser{} the constructor
+To create a settings object for \fraser{}, the constructor
 \Rfunction{FraserSettings} should be called with at least a sampleData table.
 For an example have a look into the \Rfunction{createTestFraserSettings}.
 In addition to the sampleData you can specify further parameters.
@@ -326,7 +325,7 @@ options from the sample annotation above:
 <<FRASER setting example1, echo=TRUE>>=
 # convert it to a bamFile list
 bamFiles <- system.file(sampleTable[,bamFile], package="FRASER", mustWork=TRUE)
-sampleTable[,bamFile:=bamFiles]
+sampleTable[, bamFile := bamFiles]
 
 # create FRASER object
 settings <- FraserDataSet(colData=sampleTable, workingDir="FRASER_output")
@@ -343,15 +342,15 @@ settings <- createTestFraserSettings()
 settings
 @
 
-Counting of the reads are straight forward and is done through the
+Counting the reads is straightforward and is done through the
 \Rfunction{countRNAData} function. The only required parameter is the
-FraserSettings object. First all split reads are extracted from each individual
-sample and cached if enabled. Then a dataset wide junction map is created
+FraserSettings object. First, all split reads are extracted from each individual
+sample and cached if enabled. Then a dataset-wide junction map is created
 (all visible junctions over all samples). After that for each sample the
-non-spliced reads at each given donor and acceptor site is counted. The
+non-spliced reads at each given donor and acceptor site are counted. The
 resulting \Rclass{FraserDataSet} object contains two
-\Rclass{SummarizedExperiment} objects for each the junctions and the splice
-sites.
+\Rclass{SummarizedExperiment} objects, one for the junctions and one for the 
+splice sites.
 
 <<parallelize example, eval=FALSE>>=
 # example of how to use parallelization: use 10 cores or the maximal number of
@@ -375,7 +374,7 @@ If the count matrices already exist, you can use these matrices directly
 together with the sample annotation from above to create the \fds:
 
 <<create fds with counts, echo=TRUE>>=
-# example sample annoation for precalculated count matrices
+# example sample annotation for precalculated count matrices
 sampleTable <- fread(system.file("extdata", "sampleTable_countTable.tsv",
         package="FRASER", mustWork=TRUE))
 head(sampleTable)
@@ -405,13 +404,13 @@ slides\footnote{\url{http://tinyurl.com/RNA-ASHG-presentation}}.
 At the time of writing this vignette, we recommend that the RNA-seq data should
 be aligned with a splice-aware aligner like STAR\cite{Dobin2013} or
 GEM\cite{MarcoSola2012}.
-To gain better results, at least 20 samples should be sequenced and they should
-be processed with the same protocol and origin from the same tissue.
+To obtain better results, at least 23 samples should be sequenced and they should
+be processed with the same protocol and originated from the same tissue.
 
 \subsubsection{Filtering}
 \label{sec:filtering}
 
-Before we can filter the data, we have to compute the main splicing metric:
+Before filtering the data, we have to compute the main splicing metrics:
 the $\psi$-value (Percent Spliced In) and the Intron Jaccard Index.
 
 <<calculate psi/jaccard values, echo=TRUE>>=
@@ -419,14 +418,14 @@ fds <- calculatePSIValues(fds)
 fds
 @
 
-Now we can have some cut-offs to filter down the number of junctions we want to
+Now we can filter down the number of junctions we want to
 test later on.
 
-Currently, we keep only junctions which support the following:
+Currently, we suggest keeping only junctions which support the following:
 
 \begin{itemize}
-  \item At least one sample has 20 reads
-  \item 5\% of the samples have at least 1 read
+  \item At least one sample has 20 (or more) reads
+  \item 5\% (or more) of the samples have at least 1 read
 \end{itemize}
 
 Furthemore one could filter for:
@@ -437,7 +436,7 @@ Furthemore one could filter for:
 
 
 <<filter_junctions, echo=TRUE>>=
-fds <- filterExpressionAndVariability(fds, minDeltaPsi=0.0, filter=FALSE)
+fds <- filterExpressionAndVariability(fds, minDeltaPsi=0, filter=FALSE)
 
 plotFilterExpression(fds, bins=100)
 @
@@ -479,7 +478,7 @@ plotCountCorHeatmap(fds, type="jaccard", logit=TRUE, normalized=FALSE,
 
 \subsection{Detection of aberrant splicing events}
 
-After preprocessing the raw data and visualizing it, we can start our analysis.
+After preprocessing the raw data and visualizing it, we can start with our analysis.
 Let's start with the first step in the aberrant splicing detection: the model
 fitting.
 
@@ -491,11 +490,11 @@ latent space with a dimension $q=10$ . Using the correct dimension is crucial
 to have the best performance (see \ref{sec:encDim}). Alternatively, one can
 also use a PCA to correct the data.
 The wrapper function \Rfunction{FRASER} both fits the model and calculates the
-p-values and z-scores for all $\psi$ types. For more details see section
+p-values for all $\psi$ types. For more details see section
 \ref{sec:details}.
 
 <<model fitting, echo=TRUE>>=
-# This is computational heavy on real size datasets and can take awhile
+# This is computational heavy on real datasets and can take some hours
 fds <- FRASER(fds, q=c(jaccard=3))
 @
 
@@ -508,15 +507,15 @@ plotCountCorHeatmap(fds, type="jaccard", normalized=TRUE, logit=TRUE)
 
 \subsubsection{Calling splicing outliers}
 
-Before we extract the results, we should add the human readable HGNC symbols.
+Before we extract the results, we should add HGNC symbols to the junctions.
 \fraser{} comes already with an annotation function. The function uses
 \Biocpkg{biomaRt} in the background to overlap the genomic ranges with 
 the known HGNC symbols. To have more flexibilty on the annotation, one can
 also provide a custom `txdb` object to annotate the HGNC symbols.
 
 Here we assume a beta binomial distribution and call outliers based on the
-significance level. The user can choose between a p value cutoff, a Z score
-cutoff or a cutoff on the $\Delta\psi$ values between the observed and expected
+significance level. The user can choose between a p value cutoff,
+a cutoff on the $\Delta\psi$ values between the observed and expected
 $\psi$ values or both.
 
 <<result table, echo=TRUE>>=
@@ -543,7 +542,7 @@ the following additional information:
 \begin{itemize}
     \item sampleID: the sampleID in which this aberrant event occurred
     \item hgncSymbol: the gene symbol of the gene that contains the splice
-    junction or site if available
+    junction or site, if available
     \item type: the metric for which the aberrant event was detected (either
     jaccard for Intron Jaccard Index or psi5 for $\psi_5$, psi3 for $\psi_3$ or 
     theta for $\theta$)
