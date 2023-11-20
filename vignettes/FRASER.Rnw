@@ -458,8 +458,8 @@ Since $\psi$ values are ratios within a sample, one might think that there
 should not be as much correlation structure as observed in gene expression data
 within the splicing data.
 
-This is not true as we do see strong sample co-variation across different
-tissues and cohorts. Let's have a look into our data to see if we do have
+However, we do see strong sample co-variation across different
+tissues and cohorts. Let's have a look into our demo data to see if we it has
 correlation structure or not. To have a better estimate, we use the logit
 transformed $\psi$ values to compute the correlation.
 
@@ -534,7 +534,7 @@ fds <- annotateRangesWithTxDb(fds, txdb=txdb, orgDb=orgDb)
 res <- results(fds)
 @
 
-\subsubsection{Interpreting the result table}
+\subsubsection{Interpreting the results table}
 
 The function \Rfunction{results} retrieves significant events based on the
 specified cutoffs as a \Rclass{GRanges} object which contains the genomic
@@ -578,19 +578,18 @@ junction where the event is detected; an aberrant $\psi_3$ value might indicate
 aberrant donor site usage of the junction where the event is detected; and an 
 aberrant $\theta$ value might indicate partial or full intron retention, or 
 exon truncation or elongation. As the Intron Jaccard Index combines the 
-previously described metrics, an aberrant Intron Jaccard value can indicate any
-of the above described cases. We recommend using a genome browser to 
-investigate interesting detected events in more detail. \fraser{}2 also 
-provides the function \Rfunction{plotBamCoverageFromResultTable} to create a 
-sashimi plot for an outlier in the results table directly in R (if paths to 
+three metrics, an aberrant Intron Jaccard value can indicate any
+of the above described cases. We recommend inspecting the outliers using IGV. 
+\fraser{}2 also provides the function \Rfunction{plotBamCoverageFromResultTable} 
+to create a sashimi plot for an outlier in the results table directly in R (if paths to 
 bam files are available in the \fds{} object).
 
 <<result_table, echo=TRUE>>=
-# to show result visualization functions for this tutorial, no cutoff used
+# for visualization purposes for this tutorial, no cutoffs were used
 res <- results(fds, all=TRUE)
 res
 
-# for the gene level pvalues, gene symbols need to be annotated the fds object
+# for the gene level pvalues, gene symbols need to be added to the fds object
 # before calling the calculatePadjValues function (part of FRASER() function)
 # as we previously called FRASER() before annotating genes, we run it again here
 fds <- calculatePadjValues(fds, type="jaccard", geneLevel=TRUE)
@@ -601,7 +600,7 @@ res_gene
 
 \subsection{Finding splicing candidates in patients}
 
-Let's hava a look at sample 10 and check if we got some splicing
+Let's have a look at sample 10 and check if we got some splicing
 candidates for this sample.
 
 <<finding_candidates, echo=TRUE>>=
@@ -618,14 +617,14 @@ sampleRes
 To have a closer look at the junction level, use the following functions:
 
 <<plot_expression, echo=TRUE, eval=FALSE>>=
-plotExpression(fds, type="jaccard", result=sampleRes[9])
+plotExpression(fds, type="jaccard", result=sampleRes[9]) # plots the 9th row
 plotSpliceMetricRank(fds, type="jaccard", result=sampleRes[9])
 plotExpectedVsObservedPsi(fds, result=sampleRes[9])
 @
 
 \subsection{Saving and loading a \fds{}}
 
-A \fds{} object can be easily saved and reloaded at any time as follows:
+A \fds{} object can be easily saved and reloaded as follows:
 
 <<save_load, echo=TRUE>>=
 # saving a fds
@@ -646,7 +645,7 @@ fds <- loadFraserDataSet(file=file.path(workingDir(fds),
 
 The function \Rfunction{FRASER} is a convenient wrapper function that takes 
 care of correcting for confounders, fitting the beta binomial distribution and 
-calculating p-values and z-scores for all $\psi$ types. To have more control 
+calculating p-values for all $\psi$ types. To have more control 
 over the individual steps, the different functions can also be called 
 separately. The following sections give a short explanation of these steps.
 
@@ -668,8 +667,8 @@ confounders in the data. Currently the following methods are implemented:
 
 <<control confounders, echo=TRUE>>=
 # Using an alternative way to correct splicing ratios
-# here: only 2 iteration to speed the calculation up
-# for the vignette, the default is 15 iterations
+# here: only 2 iterations to speed the calculation up for the vignette
+# the default is 15 iterations
 fds <- fit(fds, q=3, type="jaccard", implementation="PCA-BB-Decoder", 
             iterations=2)
 @
@@ -677,8 +676,8 @@ fds <- fit(fds, q=3, type="jaccard", implementation="PCA-BB-Decoder",
 \subsubsection{Finding the dimension of the latent space}
 \label{sec:encDim}
 
-For the previous call, the dimension $q$ of the latent space has been fixed to 
-$q=10$. Since working with the correct $q$ is very important, the \fraser{} 
+For the previous call, the dimension $q$ of the latent space has been fixed. 
+Since working with the correct $q$ is very important, the \fraser{} 
 package also provides the function \Rfunction{optimHyperParams} that can be 
 used to estimate the dimension $q$ of the latent space of the data. It works by 
 artificially injecting outliers into the data and then comparing the AUC of 
@@ -751,15 +750,15 @@ head(padjVals(fds, type="jaccard", subsetName="exampleSubset"))
 \subsection{Result visualization}
 \label{sec:result-vis}
 
-In addition to the plotting methods \Rfunction{plotVolcano},
+Besides the plotting methods \Rfunction{plotVolcano},
 \Rfunction{plotExpression}, \Rfunction{plotExpectedVsObservedPsi},
 \Rfunction{plotSpliceMetricRank}, 
 \Rfunction{plotFilterExpression} and \Rfunction{plotEncDimSearch} used above,
-the \fraser{} package provides two additional functions to visualize the
+the \fraser{} package provides additional functions to visualize the
 results:
 
 \Rfunction{plotAberrantPerSample} displays the number of aberrant events per
-sample based on the given cutoff values and \Rfunction{plotQQ} gives a 
+sample of the whole cohort based on the given cutoff values and \Rfunction{plotQQ} gives a 
 quantile-quantile plot either for a single junction/splice site or globally.
 
 <<result_visualization, echo=TRUE>>=
