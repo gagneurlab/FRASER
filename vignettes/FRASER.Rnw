@@ -77,7 +77,14 @@ diseases.
 \begin{center}
 \begin{tabular}{ | l | }
 \hline
-If you use \fraser{} in published research, please cite:  \\
+If you use \fraser{} version >= 1.99.0 in published research, please cite:  \\
+\\
+Scheller I, Lutz K, Mertes C, \emph{et al.}
+\textbf{Improved detection of aberrant splicing with FRASER 2.0} \\
+\textbf{using the Intron Jaccard Index}, medrXiv, 2023, \\
+\emph{\url{https://doi.org/10.1101/2023.03.31.23287997}} \\
+\hline
+For previous versions of \fraser{}, please cite:  \\
 \\
 Mertes C, Scheller I, Yepez V, \emph{et al.}
 \textbf{Detection of aberrant splicing events} \\
@@ -404,7 +411,7 @@ slides\footnote{\url{http://tinyurl.com/RNA-ASHG-presentation}}.
 At the time of writing this vignette, we recommend that the RNA-seq data should
 be aligned with a splice-aware aligner like STAR\cite{Dobin2013} or
 GEM\cite{MarcoSola2012}.
-To obtain better results, at least 23 samples should be sequenced and they should
+To obtain better results, at least 50 samples should be sequenced and they should
 be processed with the same protocol and originated from the same tissue.
 
 \subsubsection{Filtering}
@@ -425,7 +432,7 @@ Currently, we suggest keeping only junctions which support the following:
 
 \begin{itemize}
   \item At least one sample has 20 (or more) reads
-  \item 5\% (or more) of the samples have at least 1 read
+  \item 25\% (or more) of the samples have at least 10 reads
 \end{itemize}
 
 Furthemore one could filter for:
@@ -550,9 +557,9 @@ the following additional information:
     this event (at intron or splice site level depending on metric)
     \item pValueGene, padjustGene: only present in the gene-level results table,
     gives the p-value and FDR adjusted p-value at gene-level
-    \item psiValue: the value of $\psi_5$, $\psi_3$ or $\theta$ metric
-    (depending on the type column) of this junction or splice site for the
-    sample in which it is detected as aberrant
+    \item psiValue: the value of the splice metric (see 'type' column for the 
+    name of the metric) of this junction or splice site for the sample in which 
+    it is detected as aberrant
     \item deltaPsi: the $\Delta\psi$-value of the event in this sample, which
     is the difference between the actual observed $\psi$ and the expected $\psi$
     \item counts, totalCounts: the count (k) and total count (n) of the splice
