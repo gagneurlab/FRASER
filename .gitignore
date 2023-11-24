@@ -13,7 +13,6 @@ inst/tmp*
 # ignore vignette artefacts
 FraseR.pdf
 cache
-vignettes/*.pdf
 vignettes/*.tex
 vignettes/*.txt
 vignettes/*.log
