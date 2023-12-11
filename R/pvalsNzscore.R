@@ -629,7 +629,8 @@ calculateTwoPassPvalues <- function(fds, type=currentType(fds),
                                 twoPassMode=FALSE)
     p[idxToReestimate,] <- pVals(fdsSub, type=type, level="junction", 
                                     dist=distribution)
-    pVals(fds, type=type, level="junction", dist=distribution) <- p
+    pVals(fds, type=type, level="junction", dist=distribution, 
+            withDimnames=FALSE) <- p
     
     return(fds)
 }
