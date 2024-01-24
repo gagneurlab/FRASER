@@ -5,9 +5,9 @@
 \alias{[,FraserDataSet,ANY,ANY,ANY-method}
 \title{Subsetting by indices for junctions}
 \usage{
-\method{subset}{FRASER}(x, i, j, by = c("j", "ss"))
+\method{subset}{FRASER}(x, i, j, by = c("j", "ss"), drop = FALSE)
 
-\S4method{[}{FraserDataSet,ANY,ANY,ANY}(x, i, j, by = c("j", "ss"))
+\S4method{[}{FraserDataSet,ANY,ANY,ANY}(x, i, j, by = c("j", "ss"), drop = FALSE)
 }
 \arguments{
 \item{x}{A \code{FraserDataSet} object}
