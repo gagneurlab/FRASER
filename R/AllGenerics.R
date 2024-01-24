@@ -240,7 +240,7 @@ setReplaceMethod("nonSplicedReads", "FraserDataSet", function(object, value){
 #'     fds[1:10,by="ss"]
 #'
 #' @rdname subset
-subset.FRASER <- function(x, i, j, by=c("j", "ss")){
+subset.FRASER <- function(x, i, j, by=c("j", "ss"), drop = FALSE){
     if(length(by) == 1){
         by <- whichReadType(x, by)
     }
@@ -288,14 +288,14 @@ subset.FRASER <- function(x, i, j, by=c("j", "ss")){
         idxNSR <- rowData(x, type="ss")[['spliceSiteID']] %in% ssIdx
 
         # subset it
-        nsrObj <- nsrObj[idxNSR,j]
+        nsrObj <- nsrObj[idxNSR,j,drop]
     }
 
     # subset the inheritate SE object
     if(length(x) == 0){
         i <- NULL
     }
-    subX <- as(as(x, "RangedSummarizedExperiment")[i,j], "FraserDataSet")
+    subX <- as(as(x, "RangedSummarizedExperiment")[i,j,drop], "FraserDataSet")
 
     # create new FraserDataSet object
     newx <- new("FraserDataSet",
