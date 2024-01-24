@@ -288,14 +288,14 @@ subset.FRASER <- function(x, i, j, by=c("j", "ss"), drop = FALSE){
         idxNSR <- rowData(x, type="ss")[['spliceSiteID']] %in% ssIdx
 
         # subset it
-        nsrObj <- nsrObj[idxNSR,j,drop]
+        nsrObj <- nsrObj[idxNSR,j,drop=drop]
     }
 
     # subset the inheritate SE object
     if(length(x) == 0){
         i <- NULL
     }
-    subX <- as(as(x, "RangedSummarizedExperiment")[i,j,drop], "FraserDataSet")
+    subX <- as(as(x, "RangedSummarizedExperiment")[i,j,drop=drop], "FraserDataSet")
 
     # create new FraserDataSet object
     newx <- new("FraserDataSet",
