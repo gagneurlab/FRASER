@@ -230,7 +230,7 @@ setReplaceMethod("nonSplicedReads", "FraserDataSet", function(object, value){
 #' @param x A \code{FraserDataSet} object
 #' @param i A integer vector to subset the rows/ranges
 #' @param j A integer vector to subset the columns/samples
-#' @param by a character (j or ss) definig if we subset by
+#' @param by a character (j or ss) defining if we subset by
 #'             junctions or splice sites
 #' @return A subsetted \code{FraserDataSet} object
 #' @examples
@@ -288,14 +288,14 @@ subset.FRASER <- function(x, i, j, by=c("j", "ss"), drop = FALSE){
         idxNSR <- rowData(x, type="ss")[['spliceSiteID']] %in% ssIdx
 
         # subset it
-        nsrObj <- nsrObj[idxNSR,j,drop=drop]
+        nsrObj <- nsrObj[idxNSR,j,drop=FALSE]
     }
 
     # subset the inheritate SE object
     if(length(x) == 0){
         i <- NULL
     }
-    subX <- as(as(x, "RangedSummarizedExperiment")[i,j,drop=drop], "FraserDataSet")
+    subX <- as(as(x, "RangedSummarizedExperiment")[i,j,drop=FALSE], "FraserDataSet")
 
     # create new FraserDataSet object
     newx <- new("FraserDataSet",
