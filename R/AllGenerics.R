@@ -51,9 +51,9 @@ asFDS <- function(x){
 #' mcols(fds, type="psi5")
 #' mcols(fds, type="theta")
 #' seqlevels(fds)
-#' seqlevels(mapSeqlevels(fds, style="UCSC"))
-#' seqlevels(mapSeqlevels(fds, style="Ensembl"))
-#' seqlevels(mapSeqlevels(fds, style="dbSNP"))
+#' seqlevels(mapSeqlevels(fds[,,,drop=FALSE], style="UCSC"))
+#' seqlevels(mapSeqlevels(fds[,,,drop=FALSE], style="Ensembl"))
+#' seqlevels(mapSeqlevels(fds[,,,drop=FALSE], style="dbSNP"))
 #' 
 #' @author Christian Mertes \email{mertes@@in.tum.de}
 #' @author Ines Scheller \email{scheller@@in.tum.de}
@@ -236,9 +236,9 @@ setReplaceMethod("nonSplicedReads", "FraserDataSet", function(object, value){
 #' @return A subsetted \code{FraserDataSet} object
 #' @examples
 #'     fds <- createTestFraserDataSet()
-#'     fds[1:10,2:3]
-#'     fds[,samples(fds) %in% c("sample1", "sample2")]
-#'     fds[1:10,by="ss"]
+#'     fds[1:10,2:3,,drop=FALSE]
+#'     fds[,samples(fds) %in% c("sample1", "sample2"),,drop=FALSE]
+#'     fds[1:10,by="ss",,drop=FALSE]
 #'
 #' @rdname subset
 subset.FRASER <- function(x, i, j, by=c("j", "ss"), drop = FALSE){

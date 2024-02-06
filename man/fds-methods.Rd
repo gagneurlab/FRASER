@@ -175,9 +175,9 @@ rowRanges(fds, type="theta")
 mcols(fds, type="psi5")
 mcols(fds, type="theta")
 seqlevels(fds)
-seqlevels(mapSeqlevels(fds, style="UCSC"))
-seqlevels(mapSeqlevels(fds, style="Ensembl"))
-seqlevels(mapSeqlevels(fds, style="dbSNP"))
+seqlevels(mapSeqlevels(fds[,,,drop=FALSE], style="UCSC"))
+seqlevels(mapSeqlevels(fds[,,,drop=FALSE], style="Ensembl"))
+seqlevels(mapSeqlevels(fds[,,,drop=FALSE], style="dbSNP"))
 
 }
 \author{
