@@ -5,7 +5,7 @@ test_generate_count_example <- function(recount=FALSE){
     # get a new object for only one sample
     if(recount || !"test_fdsSample3" %in% ls()){
 
-        test_fdsSample3 <- getFraser()[,"sample3"]
+        test_fdsSample3 <- getFraser()[,"sample3",,drop=FALSE]
         name(test_fdsSample3) <- "onlySample3"
 
         # count the sample
@@ -51,7 +51,7 @@ test_generate_strand_specific_count_example <- function(recount=FALSE){
     if(recount || !"test_fdsSample3_stranded" %in% ls()){
         
         test_fdsSample3_stranded <- createTestFraserSettings(
-            workingDir=file.path(tempdir(), "strandSpecific"))[,"sample3"]
+            workingDir=file.path(tempdir(), "strandSpecific"))[,"sample3",,drop=FALSE]
         name(test_fdsSample3_stranded) <- "onlySample3_stranded"
         strandSpecific(test_fdsSample3_stranded) <- TRUE
         pairedEnd(test_fdsSample3_stranded) <- TRUE

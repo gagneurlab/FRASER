@@ -673,7 +673,7 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff, zscoreCutoff,
         ans <- lapply(seq_along(sampleChunks), function(idx){
             message(date(), ": Process chunk: ", idx, " for: ", type)
             sc <- sampleChunks[[idx]]
-            tmp_x <- object[,sc]
+            tmp_x <- object[,sc,,drop=FALSE]
 
             # extract values
             rawCts       <- as.matrix(K(tmp_x))
