@@ -51,9 +51,9 @@ asFDS <- function(x){
 #' mcols(fds, type="psi5")
 #' mcols(fds, type="theta")
 #' seqlevels(fds)
-#' seqlevels(mapSeqlevels(fds[,,,drop=FALSE], style="UCSC"))
-#' seqlevels(mapSeqlevels(fds[,,,drop=FALSE], style="Ensembl"))
-#' seqlevels(mapSeqlevels(fds[,,,drop=FALSE], style="dbSNP"))
+#' seqlevels(mapSeqlevels(fds, style="UCSC", drop=FALSE))
+#' seqlevels(mapSeqlevels(fds, style="Ensembl", drop=FALSE))
+#' seqlevels(mapSeqlevels(fds, style="dbSNP", drop=FALSE))
 #' 
 #' @author Christian Mertes \email{mertes@@in.tum.de}
 #' @author Ines Scheller \email{scheller@@in.tum.de}
@@ -851,9 +851,9 @@ resultsByGenes <- function(res, geneColumn="hgncSymbol", method="BY"){
 #' 
 #' @rdname fds-methods
 #' @export
-mapSeqlevels <- function(fds, style="UCSC", ...){
+mapSeqlevels <- function(fds, style="UCSC", ..., drop=FALSE){
 
-    mappings <- na.omit(GenomeInfoDb::mapSeqlevels(seqlevels(fds), style, ...))
+    mappings <- na.omit(GenomeInfoDb::mapSeqlevels(seqlevels(fds), style, ..., drop=FALSE))
     # fix missing names() when fds has only a single chromosome
     if(is.null(names(mappings))){ 
         names(mappings) <- seqlevels(fds)
