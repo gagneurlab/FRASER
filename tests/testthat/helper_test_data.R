@@ -22,7 +22,7 @@ test_generate_count_example <- function(recount=FALSE){
         end  =c(7592749, 7595171, 7595320)
     ))
     test_rangeOV  <- findOverlaps(test_range, test_fdsSample3, type = "equal")
-    test_rangeFDS <- test_fdsSample3[to(test_rangeOV)]
+    test_rangeFDS <- test_fdsSample3[to(test_rangeOV),,drop=FALSE]
 
     #
     # This is manually counted from the IGV browser
@@ -72,7 +72,7 @@ test_generate_strand_specific_count_example <- function(recount=FALSE){
     test_rangeOV_stranded  <- findOverlaps(test_range_stranded, 
                                     test_fdsSample3_stranded, type = "equal")
     test_rangeFDS_stranded <- 
-        test_fdsSample3_stranded[to(test_rangeOV_stranded)]
+        test_fdsSample3_stranded[to(test_rangeOV_stranded),,drop=FALSE]
     
     #
     # This is manually counted from the IGV browser 
