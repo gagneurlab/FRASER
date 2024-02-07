@@ -51,9 +51,9 @@ asFDS <- function(x){
 #' mcols(fds, type="psi5")
 #' mcols(fds, type="theta")
 #' seqlevels(fds)
-#' seqlevels(mapSeqlevels(fds, style="UCSC", drop=FALSE))
-#' seqlevels(mapSeqlevels(fds, style="Ensembl", drop=FALSE))
-#' seqlevels(mapSeqlevels(fds, style="dbSNP", drop=FALSE))
+#' seqlevels(mapSeqlevels(fds, style="UCSC"))
+#' seqlevels(mapSeqlevels(fds, style="Ensembl"))
+#' seqlevels(mapSeqlevels(fds, style="dbSNP"))
 #' 
 #' @author Christian Mertes \email{mertes@@in.tum.de}
 #' @author Ines Scheller \email{scheller@@in.tum.de}
@@ -232,7 +232,7 @@ setReplaceMethod("nonSplicedReads", "FraserDataSet", function(object, value){
 #' @param j A integer vector to subset the columns/samples
 #' @param by a character (j or ss) defining if we subset by
 #'             junctions or splice sites
-#' @param dropBool Currently not used 
+#' @param drop Currently not used 
 #' @return A subsetted \code{FraserDataSet} object
 #' @examples
 #'     fds <- createTestFraserDataSet()
@@ -851,9 +851,9 @@ resultsByGenes <- function(res, geneColumn="hgncSymbol", method="BY"){
 #' 
 #' @rdname fds-methods
 #' @export
-mapSeqlevels <- function(fds, style="UCSC", ..., drop=FALSE){
+mapSeqlevels <- function(fds, style="UCSC", ...){
 
-    mappings <- na.omit(GenomeInfoDb::mapSeqlevels(seqlevels(fds), style, ..., drop=FALSE))
+    mappings <- na.omit(GenomeInfoDb::mapSeqlevels(seqlevels(fds), style, ...))
     # fix missing names() when fds has only a single chromosome
     if(is.null(names(mappings))){ 
         names(mappings) <- seqlevels(fds)
