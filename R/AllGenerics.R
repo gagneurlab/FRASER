@@ -865,7 +865,7 @@ mapSeqlevels <- function(fds, style="UCSC", ..., drop=FALSE){
         nonSplicedReads(fds) <- keepStandardChromosomes(nonSplicedReads(fds))
         validObject(fds)
     }
-    fds <- fds[as.vector(seqnames(fds)) %in% names(mappings)]
+    fds <- fds[as.vector(seqnames(fds)) %in% names(mappings),,,drop=FALSE]
 
     seqlevels(fds) <- as.vector(mappings)
     seqlevels(nonSplicedReads(fds)) <- as.vector(mappings)
