@@ -74,7 +74,8 @@ Imports:
     tools,
     utils,
     VGAM
-Suggests: 
+Suggests:
+    magick,
     BiocStyle,
     knitr,
     rmarkdown,
