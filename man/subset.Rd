@@ -18,6 +18,8 @@
 
 \item{by}{a character (j or ss) definig if we subset by
 junctions or splice sites}
+
+\item{drop}{currently not used}
 }
 \value{
 A subsetted \code{FraserDataSet} object
