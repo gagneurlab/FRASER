@@ -5,7 +5,7 @@ test_generate_count_example <- function(recount=FALSE){
     # get a new object for only one sample
     if(recount || !"test_fdsSample3" %in% ls()){
 
-        test_fdsSample3 <- getFraser()[,"sample3",,drop=FALSE]
+        test_fdsSample3 <- getFraser()[,"sample3"]
         name(test_fdsSample3) <- "onlySample3"
 
         # count the sample
@@ -22,7 +22,7 @@ test_generate_count_example <- function(recount=FALSE){
         end  =c(7592749, 7595171, 7595320)
     ))
     test_rangeOV  <- findOverlaps(test_range, test_fdsSample3, type = "equal")
-    test_rangeFDS <- test_fdsSample3[to(test_rangeOV),,,drop=FALSE]
+    test_rangeFDS <- test_fdsSample3[to(test_rangeOV)]
 
     #
     # This is manually counted from the IGV browser
@@ -51,7 +51,7 @@ test_generate_strand_specific_count_example <- function(recount=FALSE){
     if(recount || !"test_fdsSample3_stranded" %in% ls()){
         
         test_fdsSample3_stranded <- createTestFraserSettings(
-            workingDir=file.path(tempdir(), "strandSpecific"))[,"sample3",,drop=FALSE]
+            workingDir=file.path(tempdir(), "strandSpecific"))[,"sample3"]
         name(test_fdsSample3_stranded) <- "onlySample3_stranded"
         strandSpecific(test_fdsSample3_stranded) <- TRUE
         pairedEnd(test_fdsSample3_stranded) <- TRUE
@@ -72,7 +72,7 @@ test_generate_strand_specific_count_example <- function(recount=FALSE){
     test_rangeOV_stranded  <- findOverlaps(test_range_stranded, 
                                     test_fdsSample3_stranded, type = "equal")
     test_rangeFDS_stranded <- 
-        test_fdsSample3_stranded[to(test_rangeOV_stranded),,,drop=FALSE]
+        test_fdsSample3_stranded[to(test_rangeOV_stranded)]
     
     #
     # This is manually counted from the IGV browser 

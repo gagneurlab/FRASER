@@ -420,7 +420,7 @@ After looking at the expression distribution between filtered and unfiltered
 junctions, we can now subset the dataset:
 
 <<subset to filtered junctions, echo=TRUE>>=
-fds_filtered <- fds[mcols(fds, type="j")[,"passed"],,,drop=FALSE]
+fds_filtered <- fds[mcols(fds, type="j")[,"passed"]]
 fds_filtered
 # filtered_fds not further used for this tutorial because the example dataset
 # is otherwise too small

@@ -5,9 +5,9 @@
 \alias{[,FraserDataSet,ANY,ANY,ANY-method}
 \title{Subsetting by indices for junctions}
 \usage{
-\method{subset}{FRASER}(x, i, j, by = c("j", "ss"), drop = FALSE)
+\method{subset}{FRASER}(x, i, j, by = c("j", "ss"), ..., drop = FALSE)
 
-\S4method{[}{FraserDataSet,ANY,ANY,ANY}(x, i, j, by = c("j", "ss"), drop = FALSE)
+\S4method{[}{FraserDataSet,ANY,ANY,ANY}(x, i, j, by = c("j", "ss"), ..., drop = FALSE)
 }
 \arguments{
 \item{x}{A \code{FraserDataSet} object}
@@ -16,10 +16,10 @@
 
 \item{j}{A integer vector to subset the columns/samples}
 
-\item{by}{a character (j or ss) definig if we subset by
+\item{by}{a character (j or ss) defining if we subset by
 junctions or splice sites}
 
-\item{drop}{currently not used}
+\item{drop}{Currently not used}
 }
 \value{
 A subsetted \code{FraserDataSet} object
@@ -29,8 +29,8 @@ Providing subsetting by indices through the single-bracket operator
 }
 \examples{
     fds <- createTestFraserDataSet()
-    fds[1:10,2:3,,drop=FALSE]
-    fds[,samples(fds) \%in\% c("sample1", "sample2"),,drop=FALSE]
-    fds[1:10,by="ss",,drop=FALSE]
+    fds[1:10,2:3]
+    fds[,samples(fds) \%in\% c("sample1", "sample2")]
+    fds[1:10,by="ss"]
 
 }

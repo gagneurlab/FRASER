@@ -459,8 +459,8 @@ getSplitCountCacheFile <- function(sampleID, settings){
 #' @export
 countSplitReads <- function(sampleID, fds, NcpuPerSample=1, genome=NULL, 
                     recount=FALSE, keepNonStandardChromosomes=TRUE,
-                    bamfile=bamFile(fds[,sampleID,,drop=FALSE]),
-                    pairedend=pairedEnd(fds[,sampleID,,drop=FALSE]),
+                    bamfile=bamFile(fds[,sampleID]),
+                    pairedend=pairedEnd(fds[,sampleID]),
                     strandmode=strandSpecific(fds),
                     cacheFile=getSplitCountCacheFile(sampleID, fds),
                     scanbamparam=scanBamParam(fds),
@@ -856,11 +856,11 @@ countNonSplicedReads <- function(sampleID, splitCountRanges, fds,
     }
     
     
-    bamFile <- bamFile(fds[,samples(fds) == sampleID,,drop=FALSE])[[1]]
+    bamFile <- bamFile(fds[,samples(fds) == sampleID])[[1]]
     
     # unstranded case: for counting only non spliced reads we 
     # skip this information
-    isPairedEnd <- pairedEnd(fds[,samples(fds) == sampleID,,drop=FALSE])[[1]]
+    isPairedEnd <- pairedEnd(fds[,samples(fds) == sampleID])[[1]]
     doAutosort <- isPairedEnd
     
     # check cache if available

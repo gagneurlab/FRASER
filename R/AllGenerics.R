@@ -236,12 +236,12 @@ setReplaceMethod("nonSplicedReads", "FraserDataSet", function(object, value){
 #' @return A subsetted \code{FraserDataSet} object
 #' @examples
 #'     fds <- createTestFraserDataSet()
-#'     fds[1:10,2:3,,drop=FALSE]
-#'     fds[,samples(fds) %in% c("sample1", "sample2"),,drop=FALSE]
-#'     fds[1:10,by="ss",,drop=FALSE]
+#'     fds[1:10,2:3]
+#'     fds[,samples(fds) %in% c("sample1", "sample2")]
+#'     fds[1:10,by="ss"]
 #'
 #' @rdname subset
-subset.FRASER <- function(x, i, j, by=c("j", "ss"), drop = FALSE){
+subset.FRASER <- function(x, i, j, by=c("j", "ss"), ..., drop=FALSE){
     if(length(by) == 1){
         by <- whichReadType(x, by)
     }
@@ -312,7 +312,7 @@ subset.FRASER <- function(x, i, j, by=c("j", "ss"), drop = FALSE){
 }
 #' @rdname subset
 #' @export
-setMethod("[", c("FraserDataSet", "ANY", "ANY"), subset.FRASER)
+setMethod("[", c("FraserDataSet", "ANY", "ANY", drop="ANY"), subset.FRASER)
 
 
 #'
@@ -673,7 +673,7 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff, zscoreCutoff,
         ans <- lapply(seq_along(sampleChunks), function(idx){
             message(date(), ": Process chunk: ", idx, " for: ", type)
             sc <- sampleChunks[[idx]]
-            tmp_x <- object[,sc,,drop=FALSE]
+            tmp_x <- object[,sc]
 
             # extract values
             rawCts       <- as.matrix(K(tmp_x))
@@ -865,7 +865,7 @@ mapSeqlevels <- function(fds, style="UCSC", ...){
         nonSplicedReads(fds) <- keepStandardChromosomes(nonSplicedReads(fds))
         validObject(fds)
     }
-    fds <- fds[as.vector(seqnames(fds)) %in% names(mappings),,,drop=FALSE]
+    fds <- fds[as.vector(seqnames(fds)) %in% names(mappings)]
 
     seqlevels(fds) <- as.vector(mappings)
     seqlevels(nonSplicedReads(fds)) <- as.vector(mappings)
