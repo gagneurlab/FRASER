@@ -232,6 +232,7 @@ setReplaceMethod("nonSplicedReads", "FraserDataSet", function(object, value){
 #' @param j A integer vector to subset the columns/samples
 #' @param by a character (j or ss) defining if we subset by
 #'             junctions or splice sites
+#' @param ... Parameters passed on
 #' @param drop Currently not used 
 #' @return A subsetted \code{FraserDataSet} object
 #' @examples
