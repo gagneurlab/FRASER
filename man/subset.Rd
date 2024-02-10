@@ -19,6 +19,8 @@
 \item{by}{a character (j or ss) defining if we subset by
 junctions or splice sites}
 
+\item{...}{Parameters passed on}
+
 \item{drop}{Currently not used}
 }
 \value{
