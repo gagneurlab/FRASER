@@ -234,8 +234,11 @@ setReplaceMethod("nonSplicedReads", "FraserDataSet", function(object, value){
 #' @param x A \code{FraserDataSet} object
 #' @param i A integer vector to subset the rows/ranges
 #' @param j A integer vector to subset the columns/samples
-#' @param by a character (j or ss) definig if we subset by
+#' @param by a character (j or ss) defining if we subset by
 #'             junctions or splice sites
+#' @param ... Parameters currently not used or passed on
+#' @param drop No dimension reduction is done. And the \code{drop}
+#'             parameter is currently not used at all.
 #' @return A subsetted \code{FraserDataSet} object
 #' @examples
 #'     fds <- createTestFraserDataSet()
@@ -244,7 +247,7 @@ setReplaceMethod("nonSplicedReads", "FraserDataSet", function(object, value){
 #'     fds[1:10,by="ss"]
 #'
 #' @rdname subset
-subset.FRASER <- function(x, i, j, by=c("j", "ss")){
+subset.FRASER <- function(x, i, j, by=c("j", "ss"), ..., drop=FALSE){
     if(length(by) == 1){
         by <- whichReadType(x, by)
     }
@@ -292,14 +295,14 @@ subset.FRASER <- function(x, i, j, by=c("j", "ss")){
         idxNSR <- rowData(x, type="ss")[['spliceSiteID']] %in% ssIdx
 
         # subset it
-        nsrObj <- nsrObj[idxNSR,j]
+        nsrObj <- nsrObj[idxNSR,j,drop=FALSE]
     }
 
     # subset the inheritate SE object
     if(length(x) == 0){
         i <- NULL
     }
-    subX <- as(as(x, "RangedSummarizedExperiment")[i,j], "FraserDataSet")
+    subX <- as(as(x, "RangedSummarizedExperiment")[i,j,drop=FALSE], "FraserDataSet")
 
     # create new FraserDataSet object
     newx <- new("FraserDataSet",
@@ -315,7 +318,7 @@ subset.FRASER <- function(x, i, j, by=c("j", "ss")){
 }
 #' @rdname subset
 #' @export
-setMethod("[", c("FraserDataSet", "ANY", "ANY"), subset.FRASER)
+setMethod("[", c("FraserDataSet", "ANY", "ANY", drop="ANY"), subset.FRASER)
 
 
 #'
