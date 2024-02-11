@@ -12,3 +12,12 @@ test_that("counts", {
     expect_equal(counts(fds, type="theta", side='other'),
             N(fds, "theta") - K(fds, "theta"))
 })
+
+test_that("generic functions", {
+    # test that the correct functions are selected and called
+    methDef <- selectMethod("[", c("FraserDataSet", "ANY", "ANY", drop="ANY"))
+    expect_equal(slot(methDef, "defined")[["x"]], "FraserDataSet")
+    methDef <- selectMethod("[", 
+            c("FraserDataSet", "ANY", "ANY", drop="missing"))
+    expect_equal(slot(methDef, "defined")[["x"]], "FraserDataSet")
+})
