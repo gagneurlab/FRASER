@@ -2,14 +2,17 @@ Package: FRASER
 Type: Package
 Title: Find RAre Splicing Events in RNA-Seq Data
 Version: 1.99.3
-Date: 2022-11-25
+Date: 2024-02-11
 Authors@R: c(
     person("Christian", "Mertes", role=c("aut", "cre"), 
-            email="mertes@in.tum.de"),
-    person("Ines", "Scheller",  role=c("aut"), email="scheller@in.tum.de"),
-    person("Karoline", "Lutz", role=c("aut")),
-    person("Vicente", "Yepez", role=c("ctb"), email="yepez@in.tum.de"),
-    person("Julien", "Gagneur", role=c("aut"), email="gagneur@in.tum.de"))
+            email="mertes@in.tum.de", comment=c(ORCID="0000-0002-1091-205X")),
+    person("Ines", "Scheller", role=c("aut"), email="scheller@in.tum.de",
+            comment=c(ORCID="0000-0003-4533-7857")),
+    person("Karoline", "Lutz", role=c("ctb"), email="lutzk@in.tum.de"),
+    person("Vicente", "Yepez", role=c("aut"), email="yepez@in.tum.de",
+            comment=c(ORCID="0000-0001-7916-3643")),
+    person("Julien", "Gagneur", role=c("aut"), email="gagneur@in.tum.de",
+            comment=c(ORCID="0000-0002-8924-8365")))
 Description: Detection of rare aberrant splicing events in transcriptome 
     profiles. Read count ratio expectations are modeled by an autoencoder to
     control for confounding factors in the data. Given these expectations, 
@@ -28,8 +31,8 @@ biocViews:
     Coverage
 License: MIT + file LICENSE
 URL: https://github.com/gagneurlab/FRASER
-BugRepots: https://github.com/gagneurlab/FRASER/issues
-RoxygenNote: 7.2.3
+BugReports: https://github.com/gagneurlab/FRASER/issues
+RoxygenNote: 7.3.1
 Encoding: UTF-8
 VignetteBuilder: knitr
 Depends:
@@ -75,7 +78,8 @@ Imports:
     tools,
     utils,
     VGAM
-Suggests: 
+Suggests:
+    magick,
     BiocStyle,
     knitr,
     rmarkdown,

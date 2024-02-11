@@ -5,9 +5,9 @@
 \alias{[,FraserDataSet,ANY,ANY,ANY-method}
 \title{Subsetting by indices for junctions}
 \usage{
-\method{subset}{FRASER}(x, i, j, by = c("j", "ss"))
+\method{subset}{FRASER}(x, i, j, by = c("j", "ss"), ..., drop = FALSE)
 
-\S4method{[}{FraserDataSet,ANY,ANY,ANY}(x, i, j, by = c("j", "ss"))
+\S4method{[}{FraserDataSet,ANY,ANY,ANY}(x, i, j, by = c("j", "ss"), ..., drop = FALSE)
 }
 \arguments{
 \item{x}{A \code{FraserDataSet} object}
@@ -16,8 +16,13 @@
 
 \item{j}{A integer vector to subset the columns/samples}
 
-\item{by}{a character (j or ss) definig if we subset by
+\item{by}{a character (j or ss) defining if we subset by
 junctions or splice sites}
+
+\item{...}{Parameters currently not used or passed on}
+
+\item{drop}{No dimension reduction is done. And the \code{drop}
+parameter is currently not used at all.}
 }
 \value{
 A subsetted \code{FraserDataSet} object
