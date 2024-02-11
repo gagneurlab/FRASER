@@ -232,8 +232,9 @@ setReplaceMethod("nonSplicedReads", "FraserDataSet", function(object, value){
 #' @param j A integer vector to subset the columns/samples
 #' @param by a character (j or ss) defining if we subset by
 #'             junctions or splice sites
-#' @param ... Parameters passed on
-#' @param drop Currently not used 
+#' @param ... Parameters currently not used or passed on
+#' @param drop No dimension reduction is done. And the \code{drop}
+#'             parameter is currently not used at all.
 #' @return A subsetted \code{FraserDataSet} object
 #' @examples
 #'     fds <- createTestFraserDataSet()

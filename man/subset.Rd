@@ -19,9 +19,10 @@
 \item{by}{a character (j or ss) defining if we subset by
 junctions or splice sites}
 
-\item{...}{Parameters passed on}
+\item{...}{Parameters currently not used or passed on}
 
-\item{drop}{Currently not used}
+\item{drop}{No dimension reduction is done. And the \code{drop}
+parameter is currently not used at all.}
 }
 \value{
 A subsetted \code{FraserDataSet} object
