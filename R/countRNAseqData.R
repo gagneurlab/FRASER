@@ -146,6 +146,13 @@ countRNAData <- function(fds, NcpuPerSample=1, minAnchor=5, recount=FALSE,
     stopifnot(is.numeric(minAnchor) & minAnchor >= 1)
     minAnchor <- as.integer(minAnchor)
     
+    # Check mixed strand type
+    ss <- strandSpecific(fds)
+    if ((any(ss == 0) && any(ss == 1)) || (any(ss == 0) && any(ss == 2))){
+        stop(paste("Data contains a mix of stranded and unstranded samples.\n ",
+                        "Please consider analyzing them separately."))
+    }
+    
     # load needed genomes if provided
     if(!(is.null(genome) | any(is.na(unique(genome))))){
         for(i in unique(genome)){
@@ -400,13 +407,19 @@ addCountsToFraserDataSet <- function(fds, splitCounts, nonSplitCounts){
     
     # check for valid fds
     validObject(fds)
+  
+    # Check mixed strand type
+    ss <- strandSpecific(fds)
+    if ((any(ss == 0) && any(ss == 1)) || (any(ss == 0) && any(ss == 2))){
+        stop(paste("Data contains a mix of stranded and unstranded samples.\n ",
+               "Please consider analyzing them separately."))
+    }
     
     # create final FRASER dataset
     fds <- new("FraserDataSet",
                 splitCounts,
                 name            = name(fds),
                 bamParam        = scanBamParam(fds),
-                strandSpecific  = strandSpecific(fds),
                 workingDir      = workingDir(fds),
                 nonSplicedReads = nonSplitCounts,
                 metadata        = metadata(fds)
@@ -461,7 +474,7 @@ countSplitReads <- function(sampleID, fds, NcpuPerSample=1, genome=NULL,
                     recount=FALSE, keepNonStandardChromosomes=TRUE,
                     bamfile=bamFile(fds[,sampleID]),
                     pairedend=pairedEnd(fds[,sampleID]),
-                    strandmode=strandSpecific(fds),
+                    strandmode=strandSpecific(fds[,sampleID]),
                     cacheFile=getSplitCountCacheFile(sampleID, fds),
                     scanbamparam=scanBamParam(fds),
                     coldata=colData(fds)){
@@ -865,6 +878,7 @@ countNonSplicedReads <- function(sampleID, splitCountRanges, fds,
     # unstranded case: for counting only non spliced reads we 
     # skip this information
     isPairedEnd <- pairedEnd(fds[,samples(fds) == sampleID])[[1]]
+    strand <- strandSpecific(fds[,samples(fds) == sampleID])[[1]]
     doAutosort <- isPairedEnd
     
     # check cache if available
@@ -906,7 +920,7 @@ countNonSplicedReads <- function(sampleID, splitCountRanges, fds,
             allowMultiOverlap=TRUE,
             checkFragLength=FALSE,
             minMQS=bamMapqFilter(scanBamParam(fds)),
-            strandSpecific=as.integer(strandSpecific(fds)),
+            strandSpecific=strand,
             
             # activating long read mode
             isLongRead=longRead,
