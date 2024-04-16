@@ -54,7 +54,10 @@ createTestFraserSettings <- function(workingDir="FRASER_output"){
 
 #' @rdname createTestFraserDataSet
 #' @export
-createTestFraserDataSet <- function(workingDir="FRASER_output", rerun=FALSE){
+createTestFraserDataSet <- function(workingDir="FRASER_output", rerun=FALSE,
+                                    metrics="jaccard"){
+    metrics <- match.arg(metrics, several.ok=TRUE, 
+                            choices=c("jaccard", "psi5", "psi3", "theta"))
     # check if file exists already
     hdf5Files <- file.path(workingDir, "savedObjects", "Data_Analysis", 
             "fds-object.RDS")
@@ -84,6 +87,7 @@ createTestFraserDataSet <- function(workingDir="FRASER_output", rerun=FALSE){
     suppressMessages({ fds <- annotateRangesWithTxDb(fds) })
     
     # run FRASER pipeline
+    fitMetrics(fds) <- metrics
     fds <- FRASER(fds, q=c(jaccard=2, psi5=2, psi3=2, theta=2), iterations=2)
     
     # save data for later 

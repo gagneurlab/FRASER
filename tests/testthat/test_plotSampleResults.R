@@ -7,18 +7,33 @@ test_that("Results function", {
     
     # intron-level results
     res <- results(fds, aggregate=FALSE, all=TRUE)
-    expect_equal(length(res), prod(dim(fds)))
+    res <- as.data.table(res)
+    for(psiType in psiTypes){
+        expect_equal(res[type == psiType, .N], 
+                    prod(dim(pVals(fds, level="junction", type=psiType))))
+    }
     res_signif <- results(fds, aggregate=FALSE, all=FALSE,
-                            padjCutoff=NA, deltaPsiCutoff=0.2)
-    expect_equal(length(res_signif), 1)
+                            padjCutoff=NA, deltaPsiCutoff=0.01)
+    res_signif <- as.data.table(res_signif)
+    expect_equal(res_signif[type == "jaccard", .N], 1)
+    expect_equal(res_signif[type == "psi5", .N], 8)
+    expect_equal(res_signif[type == "psi3", .N], 3)
+    expect_equal(res_signif[type == "theta", .N], 6)
     
     # gene-level results
     res_gene <- results(fds, aggregate=TRUE, all=TRUE)
-    expect_equal(length(res_gene), 
-                    prod(dim(pVals(fds, level="gene", type="jaccard"))))
+    res_gene <- as.data.table(res_gene)
+    for(psiType in psiTypes){
+        expect_equal(res_gene[type == psiType, .N], 
+                    prod(dim(pVals(fds, level="gene", type=psiType))))
+    }
     res_gene_signif <- results(fds, aggregate=TRUE, all=FALSE,
-                          padjCutoff=NA, deltaPsiCutoff=0.2)
-    expect_equal(length(res_gene_signif), 1)
+                          padjCutoff=NA, deltaPsiCutoff=0.01)
+    res_gene_signif <- as.data.table(res_gene_signif)
+    expect_equal(res_gene_signif[type == "jaccard", .N], 1)
+    expect_equal(res_gene_signif[type == "psi5", .N], 4)
+    expect_equal(res_gene_signif[type == "psi3", .N], 2)
+    expect_equal(res_gene_signif[type == "theta", .N], 3)
     
 })
 
