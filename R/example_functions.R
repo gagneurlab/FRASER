@@ -10,6 +10,8 @@
 #'                \code{FRASER_output} in the current working directory.
 #' @param rerun Defaults to \code{FALSE}. If set to \code{TRUE} it reruns the
 #'                full fit of the model.
+#' @param metrics The splice metrics that should be included in the test fds. 
+#'              One or several of 'jaccard', 'psi5', 'psi3' or 'theta'.
 #' @return A FraserDataSet object that contains a test case 
 #' 
 #' @examples

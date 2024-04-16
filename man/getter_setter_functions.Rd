@@ -106,6 +106,10 @@ correct set of requested p values.}
 
 \item{dist}{Distribution for which the p-values should be extracted.}
 
+\item{subsetName}{The name of a subset of genes of interest for which FDR 
+corrected pvalues were previously computed. 
+Default is NULL (using transcriptome-wide FDR corrected pvalues).}
+
 \item{all}{Logical value indicating whether \code{hyperParams(fds)} should 
 return the results of all evaluated parameter combinations or only 
 for the optimal parameter combination.}
