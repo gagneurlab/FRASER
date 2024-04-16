@@ -1111,6 +1111,9 @@ aberrant.FRASER <- function(object, type=fitMetrics(object),
             aberrantEvents <- aberrantEvents & as.matrix(rho <= rhoCutoff)
         }
         aberrantEvents[is.na(aberrantEvents)] <- FALSE
+        if(is.null(colnames(aberrantEvents))){
+            colnames(aberrantEvents) <- colnames(object)
+        }
     }
         
     if(isTRUE(aggregate)){
