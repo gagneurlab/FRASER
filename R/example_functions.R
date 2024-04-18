@@ -10,6 +10,8 @@
 #'                \code{FRASER_output} in the current working directory.
 #' @param rerun Defaults to \code{FALSE}. If set to \code{TRUE} it reruns the
 #'                full fit of the model.
+#' @param metrics The splice metrics that should be included in the test fds. 
+#'              One or several of 'jaccard', 'psi5', 'psi3' or 'theta'.
 #' @return A FraserDataSet object that contains a test case 
 #' 
 #' @examples
@@ -54,7 +56,10 @@ createTestFraserSettings <- function(workingDir="FRASER_output"){
 
 #' @rdname createTestFraserDataSet
 #' @export
-createTestFraserDataSet <- function(workingDir="FRASER_output", rerun=FALSE){
+createTestFraserDataSet <- function(workingDir="FRASER_output", rerun=FALSE,
+                                    metrics="jaccard"){
+    metrics <- match.arg(metrics, several.ok=TRUE, 
+                            choices=c("jaccard", "psi5", "psi3", "theta"))
     # check if file exists already
     hdf5Files <- file.path(workingDir, "savedObjects", "Data_Analysis", 
             "fds-object.RDS")
@@ -84,6 +89,7 @@ createTestFraserDataSet <- function(workingDir="FRASER_output", rerun=FALSE){
     suppressMessages({ fds <- annotateRangesWithTxDb(fds) })
     
     # run FRASER pipeline
+    fitMetrics(fds) <- metrics
     fds <- FRASER(fds, q=c(jaccard=2, psi5=2, psi3=2, theta=2), iterations=2)
     
     # save data for later 

@@ -7,7 +7,11 @@
 \usage{
 createTestFraserSettings(workingDir = "FRASER_output")
 
-createTestFraserDataSet(workingDir = "FRASER_output", rerun = FALSE)
+createTestFraserDataSet(
+  workingDir = "FRASER_output",
+  rerun = FALSE,
+  metrics = "jaccard"
+)
 }
 \arguments{
 \item{workingDir}{Directory where to store HDF5 and RDS files. Defaults to
@@ -15,6 +19,9 @@ createTestFraserDataSet(workingDir = "FRASER_output", rerun = FALSE)
 
 \item{rerun}{Defaults to \code{FALSE}. If set to \code{TRUE} it reruns the
 full fit of the model.}
+
+\item{metrics}{The splice metrics that should be included in the test fds. 
+One or several of 'jaccard', 'psi5', 'psi3' or 'theta'.}
 }
 \value{
 A FraserDataSet object that contains a test case

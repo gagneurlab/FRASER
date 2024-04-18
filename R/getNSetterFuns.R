@@ -10,6 +10,9 @@
 #' @param level Indicates if the retrieved p values should be adjusted on the 
 #'          donor/acceptor site-level (default) or if unadjusted junction-level 
 #'          p values should be returned.
+#' @param subsetName The name of a subset of genes of interest for which FDR 
+#'          corrected pvalues were previously computed. 
+#'          Default is NULL (using transcriptome-wide FDR corrected pvalues).
 #' @param filters A named list giving the filters that were applied for masking 
 #'          during p value correction. Used for storing and retrieving the 
 #'          correct set of requested p values.
