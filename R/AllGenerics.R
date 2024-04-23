@@ -992,6 +992,8 @@ setMethod("results", "FraserDataSet", function(object,
                 aggregate=aggregate, collapse=collapse, geneColumn=geneColumn,
                 subsetName=NULL, additionalColumns=additionalColumns, 
                 BPPARAM=BPPARAM)
+        # to restore previous column order
+        prevColOrder <- colnames(as.data.table(res))
     }
     
     # add results for FDR_subsets if requested
@@ -1010,16 +1012,63 @@ setMethod("results", "FraserDataSet", function(object,
             res <- unlist(GRangesList(unlist(list(res, resls_subsets))))
         } else{
             res <- unlist(GRangesList(unlist(resls_subsets)))
-        }
-        
-        # sort it if existing
-        if(length(res) > 0){
-            res <- res[order(res$pValue)]
-            if(isTRUE(aggregate)){
-                res <- res[!is.na(res$pValueGene)]
-            }
+            # restore previous column order
+            prevColOrder <- colnames(as.data.table(resls_subsets[[1]]))
         }
     }
+    
+    # sort it if existing
+    if(length(res) > 0){
+        
+        # dcast to have only one row per gene-sample combination
+        res <- as.data.table(res)
+        if(isTRUE(aggregate)){
+            dcastCols <- c("pValueGene", "padjustGene")
+        } else{
+            dcastCols <- "padjust"
+        }
+        res <- dcast(res, ... ~ FDR_set, value.var=dcastCols)
+        
+        # rename column back to padjust for tw results after dcast
+        if(any(grepl("transcriptome-wide", colnames(res)))){
+            if(isTRUE(aggregate)){
+                setnames(res, "pValueGene_transcriptome-wide", "pValueGene")
+                setnames(res, "padjustGene_transcriptome-wide", "padjustGene")
+            } else{
+                setnames(res, "transcriptome-wide", "padjust")
+            }
+            
+        } else{
+            res[, padjust := NA]
+            if(isTRUE(aggregate)){
+                res[, pValueGene := NA]
+                res[, padjustGene := NA]
+            }
+        }
+        
+        # restore previous column order
+        setcolorder(res, prevColOrder[prevColOrder != "FDR_set"])
+        
+        # rename padjust columns for other gene sets to padjust_setname
+        for(setName in FDRsets){
+            setnames(res, setName, paste0("padjust_", setName), 
+                        skip_absent=TRUE)
+        }
+        
+        # revert back to GRanges
+        res <- makeGRangesFromDataFrame(res, keep.extra.columns=TRUE)
+        
+        # order rows based on transcriptome-wide FDR
+        res <- res[order(res$pValue)]
+        if(isTRUE(aggregate) & isTRUE(returnTranscriptomewideResults)){
+            res <- res[!is.na(res$pValueGene)]
+        }
+        
+        
+    } else{
+        res$FDR_set <- NULL
+    }
+    
     return(res)
 })
 
