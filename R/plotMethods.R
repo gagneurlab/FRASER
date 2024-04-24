@@ -286,16 +286,13 @@
 #' 
 #' # other ways to call these plotting functions
 #' plotExpression(fds, idx=10, sampleID="sample1", type="jaccard")
-#' plotExpression(fds, result=res[FDR_set == "testSet",][1], 
-#'                  subsetName="testSet")
+#' plotExpression(fds, result=res[1], subsetName="testSet")
 #' plotQQ(fds, idx=10, sampleID="sample1", type="jaccard")
-#' plotQQ(fds, result=res[FDR_set == "testSet",][1], subsetName="testSet")
+#' plotQQ(fds, result=res[1], subsetName="testSet")
 #' plotExpectedVsObservedPsi(fds, idx=10, sampleID="sample1", type="jaccard")
-#' plotExpectedVsObservedPsi(fds, result=res[FDR_set == "testSet",][1], 
-#'                  subsetName="testSet")
+#' plotExpectedVsObservedPsi(fds, result=res[1], subsetName="testSet")
 #' plotSpliceMetricRank(fds, idx=10, sampleID="sample1", type="jaccard")
-#' plotSpliceMetricRank(fds, result=res[FDR_set == "testSet",][1], 
-#'                  subsetName="testSet")
+#' plotSpliceMetricRank(fds, result=res[1], subsetName="testSet")
 #' 
 #' # create manhattan plot of pvalues by genomic position
 #' if(require(ggbio)){
@@ -819,7 +816,7 @@ plotExpectedVsObservedPsi <- function(fds, type=fitMetrics(fds),
 
     if(is.null(colGroup)){
         g <- g + scale_colour_manual(
-            values=c("FALSE"="gray70", "TRUE"="firebrick"))
+            values=c("gray70", "firebrick"))
     }
     
     plotBasePlot(g, basePlot)
