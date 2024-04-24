@@ -82,8 +82,8 @@ validateStrandSpecific <- function(object) {
     # Check mixed strand type
     ss <- strandSpecific(object)
     if ((any(ss == 0) && any(ss == 1)) || (any(ss == 0) && any(ss == 2))){
-      stop(paste("Error: Data contains a mix of stranded and unstranded samples.\n ",
-                 "Please consider analyzing them separately."))
+      stop(paste("Data contains a mix of stranded and unstranded samples.\n ",
+                 "Please analyse them separately to ensure consistency during counting."))
     }
     NULL
 }

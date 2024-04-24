@@ -547,8 +547,12 @@ getBPParam <- function(worker, tasks=0, ...){
 }
 
 getStrandString <- function(fds){
-    strand <- sapply(strandSpecific(fds)+1L, switch, "no", "yes", "reverse")
-    strand <- paste(collapse=", ", strand)
+    strand <- sapply(strandSpecific(fds)+1L, switch, "no", "yes (forward)", "yes (reverse)")
+    if (length(unique(strand)) == 2){
+        strand <- "yes (forward and reverse)"
+    } else {
+        strand <- unique(strand)
+    }
     return(strand)
 }
 

@@ -155,7 +155,7 @@ setMethod("strandSpecific", "FraserDataSet", function(object) {
         warning("Strand is not specified. Please set the used RNA-seq",
                 " protocol by using 'strandSpecific(object) <- c(...)'.",
                 "\n\nWe assume as default a non stranded protocol.")
-        return(0)
+        return(rep(0, ncol(object)))
     }
     return(colData(object)$strand)
 })
@@ -163,6 +163,17 @@ setMethod("strandSpecific", "FraserDataSet", function(object) {
 #' @export
 #' @rdname fds-methods
 setReplaceMethod("strandSpecific", "FraserDataSet", function(object, value) {
+    if (length(value) != ncol(object)){
+        if(length(value) == 1){
+            warning("Only one value is provided as strand for all samples.\n",
+                  "  We assume that all samples are of the same provided strand.")
+                  strandSpecific(object) <- rep(value, ncol(object))
+        }
+        else{
+            stop("Number of strand values should be equal to the number of samples: (",
+                  paste0(length(value), " != ", ncol(object), ")"))
+        }
+    }
     if(is.logical(value)){
         value <- as.integer(value)
     }
