@@ -558,16 +558,13 @@ plotSpliceMetricRank(fds, res=res[1])
 
 # other ways to call these plotting functions
 plotExpression(fds, idx=10, sampleID="sample1", type="jaccard")
-plotExpression(fds, result=res[FDR_set == "testSet",][1], 
-                 subsetName="testSet")
+plotExpression(fds, result=res[1], subsetName="testSet")
 plotQQ(fds, idx=10, sampleID="sample1", type="jaccard")
-plotQQ(fds, result=res[FDR_set == "testSet",][1], subsetName="testSet")
+plotQQ(fds, result=res[1], subsetName="testSet")
 plotExpectedVsObservedPsi(fds, idx=10, sampleID="sample1", type="jaccard")
-plotExpectedVsObservedPsi(fds, result=res[FDR_set == "testSet",][1], 
-                 subsetName="testSet")
+plotExpectedVsObservedPsi(fds, result=res[1], subsetName="testSet")
 plotSpliceMetricRank(fds, idx=10, sampleID="sample1", type="jaccard")
-plotSpliceMetricRank(fds, result=res[FDR_set == "testSet",][1], 
-                 subsetName="testSet")
+plotSpliceMetricRank(fds, result=res[1], subsetName="testSet")
 
 # create manhattan plot of pvalues by genomic position
 if(require(ggbio)){
