@@ -146,13 +146,6 @@ countRNAData <- function(fds, NcpuPerSample=1, minAnchor=5, recount=FALSE,
     stopifnot(is.numeric(minAnchor) & minAnchor >= 1)
     minAnchor <- as.integer(minAnchor)
     
-    # Check mixed strand type
-    ss <- strandSpecific(fds)
-    if ((any(ss == 0) && any(ss == 1)) || (any(ss == 0) && any(ss == 2))){
-        stop(paste("Data contains a mix of stranded and unstranded samples.\n ",
-                        "Please consider analyzing them separately."))
-    }
-    
     # load needed genomes if provided
     if(!(is.null(genome) | any(is.na(unique(genome))))){
         for(i in unique(genome)){
@@ -407,13 +400,6 @@ addCountsToFraserDataSet <- function(fds, splitCounts, nonSplitCounts){
     
     # check for valid fds
     validObject(fds)
-  
-    # Check mixed strand type
-    ss <- strandSpecific(fds)
-    if ((any(ss == 0) && any(ss == 1)) || (any(ss == 0) && any(ss == 2))){
-        stop(paste("Data contains a mix of stranded and unstranded samples.\n ",
-               "Please consider analyzing them separately."))
-    }
     
     # create final FRASER dataset
     fds <- new("FraserDataSet",
@@ -481,7 +467,7 @@ countSplitReads <- function(sampleID, fds, NcpuPerSample=1, genome=NULL,
     
     # check for valid fds
     validObject(fds)
-    
+  
     # check cache if available
     if(isFALSE(recount) && !is.null(cacheFile) && file.exists(cacheFile)){
         cache <- readRDS(cacheFile)
