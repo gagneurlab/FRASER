@@ -35,6 +35,14 @@ test_that("Results function", {
     expect_equal(res_gene_signif[type == "psi3", .N], 2)
     expect_equal(res_gene_signif[type == "theta", .N], 3)
     
+    # results on subset of genes during FDR
+    geneList <- list('sample1'=c("TIMMDC1"), 'sample2'=c("MCOLN1"))
+    fds <- calculatePadjValues(fds, type="jaccard", 
+                     subsets=list("exampleSubset"=geneList))
+    expect_equal(length(results(fds, all=TRUE, psiType="jaccard")), 
+                prod(dim(fds)))
+    expect_error(results(fds, all=TRUE, psiType="psi5"))
+    
 })
 
 test_that("Main plotting function", {
