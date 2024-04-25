@@ -167,7 +167,7 @@ setReplaceMethod("strandSpecific", "FraserDataSet", function(object, value) {
         if(length(value) == 1){
             warning("Only one value is provided as strand for all samples.\n",
                   "  We assume that all samples are of the same provided strand.")
-                  strandSpecific(object) <- rep(value, ncol(object))
+            strandSpecific(object) <- rep(value, ncol(object))
         }
         else{
             stop("Number of strand values should be equal to the number of samples: (",
