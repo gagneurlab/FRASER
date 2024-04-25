@@ -151,25 +151,44 @@ setReplaceMethod("workingDir", "FraserDataSet", function(object, value) {
 #' @export
 #' @rdname fds-methods
 setMethod("strandSpecific", "FraserDataSet", function(object) {
-    return(slot(object, "strandSpecific"))
+    if(!"strand" %in% colnames(colData(object))){
+        warning("Strand is not specified. Please set the used RNA-seq",
+                " protocol by using 'strandSpecific(object) <- c(...)'.",
+                "\n\nWe assume as default a non stranded protocol.")
+        return(rep(0, ncol(object)))
+    }
+    return(colData(object)$strand)
 })
 
 #' @export
 #' @rdname fds-methods
 setReplaceMethod("strandSpecific", "FraserDataSet", function(object, value) {
+    if (length(value) != ncol(object)){
+        if(length(value) == 1){
+            warning("Only one value is provided as strand for all samples.\n",
+                  "  We assume that all samples are of the same provided strand.")
+            strandSpecific(object) <- rep(value, ncol(object))
+        }
+        else{
+            stop("Number of strand values should be equal to the number of samples: (",
+                  paste0(length(value), " != ", ncol(object), ")"))
+        }
+    }
     if(is.logical(value)){
         value <- as.integer(value)
     }
     if(is.character(value)){
-        value <- switch(tolower(value),
-                        'no' = 0L,
-                        'unstranded' = 0L,
-                        'yes' = 1L,
-                        'stranded' = 1L,
-                        'reverse' = 2L,
-                        -1L)
+        val_chr <- tolower(value)
+        value <- sapply(val_chr, switch, 'no' = 0L, 'unstranded' = 0L, 
+                'yes' = 1L, 'stranded' = 1L, 'reverse' = 2L, -1L)
+        if(any(value < 0)){
+          stop("Please specify correct strandness of the samples.", 
+                  " It needs to be one of: 'no', 'unstranded', 'yes',",
+                  " 'stranded' or 'reverse'.", "\n\nIt was specified: ", 
+                  paste(collapse = ", ", val_chr[value < 0]))
+        }
     }
-    slot(object, "strandSpecific") <- value
+    colData(object)$strand <- as.integer(value)
     validObject(object)
     return(object)
 })
@@ -309,7 +328,6 @@ subset.FRASER <- function(x, i, j, by=c("j", "ss"), ..., drop=FALSE){
             subX,
             name            = name(x),
             bamParam        = scanBamParam(x),
-            strandSpecific  = strandSpecific(x),
             workingDir      = workingDir(x),
             nonSplicedReads = nsrObj
     )

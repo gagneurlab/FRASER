@@ -14,14 +14,12 @@ setClass("FraserDataSet",
     slots = list(
         name            = "character",
         bamParam        = "ScanBamParam",
-        strandSpecific  = "integer",
         workingDir      = "character",
         nonSplicedReads = "RangedSummarizedExperiment"
     ),
     prototype = list(
         name            = "Data Analysis",
         bamParam        = ScanBamParam(mapqFilter=0),
-        strandSpecific  = 0L,
         workingDir      = "FRASER_output",
         nonSplicedReads = SummarizedExperiment(rowRanges=GRanges())
     )
@@ -73,9 +71,19 @@ validateBamParam <- function(object) {
 }
 
 validateStrandSpecific <- function(object) {
-    if(!isScalarInteger(object@strandSpecific)) {
-        return(paste("The 'strandSpecific' option must be 0L (unstranded),",
-                        "1L (stranded) or 2L (reverse)."))
+    sampleData <- as.data.table(colData(object))
+    if("strand" %in% colnames(sampleData) && 
+            (!is.integer(sampleData[,strand]) 
+                || any(!sampleData[,strand] %in% 0:2))){
+        return(paste("The 'strand' column in the sample annotation in",
+                "'colData(fds)' must be empty or contain only integers:",
+                "0L == 'no', 1L == 'yes', 2L == 'reverse'."))
+    }
+    # Check mixed strand type
+    ss <- strandSpecific(object)
+    if ((any(ss == 0) && any(ss == 1)) || (any(ss == 0) && any(ss == 2))){
+      stop(paste("Data contains a mix of stranded and unstranded samples.\n ",
+                 "Please analyse them separately to ensure consistency during counting."))
     }
     NULL
 }
@@ -85,8 +93,8 @@ validatePairedEnd <- function(object) {
     if("pairedEnd" %in% colnames(sampleData) && 
             any(!is.logical(sampleData[,pairedEnd]))){
         return(paste("The 'pairedEnd' column in the sample annotation in",
-                    "'colData(fds)' must only contain logical values ",
-                    "(TRUE or FALSE)."))
+                "'colData(fds)' must only contain logical values ",
+                "(TRUE or FALSE)."))
     }
     NULL
 }
@@ -114,7 +122,8 @@ validateNonSplicedReadsType <- function(object) {
         return("'nonSplicedReads' must be a RangedSummarizedExperiment object")
     }
     if(length(object) != 0 && dim(object@nonSplicedReads)[2] != dim(object)[2]){
-        return("The nonSplicedReads dimensions are not correct. This is a internal error!")
+        return(paste("The nonSplicedReads dimensions are not correct.",
+                "This is a internal error!"))
     }
     ans <- validObject(object@nonSplicedReads)
     if(!isScalarLogical(ans) || ans == FALSE){
@@ -134,21 +143,24 @@ validateAssays <- function(object){
     NULL
 }
 
-# for non-empty fds objects check if non-spliced reads are overlapping with at least 1 donor/acceptor site
+# for non-empty fds objects check if non-spliced reads are overlapping 
+# with at least 1 donor/acceptor site
 validateNonSplicedReadsSanity <- function(object){
     # fds object must have samples and junctions
     if(all(dim(object) > c(0,0))){
 
         # fds object must be annotated with start/end/spliceSite indexes
-        if("startID" %in% names(mcols(object)) && "endID" %in% names(mcols(object)) &&
-           "spliceSiteID" %in% names(mcols(object, type="theta"))){
+        if(all(c("startID", "endID") %in% names(mcols(object))) &&
+                        "spliceSiteID" %in% names(mcols(object, type="theta"))){
 
-                # check that every spliceSiteID matches either a start or end index
-                if(length( intersect( mcols(object, type="theta")$spliceSiteID, unlist(mcols(object)[, c("startID", "endID")] ) ) )
-                      != nrow(nonSplicedReads(object))){
-                return("The nonSplicedReads do not have corresponding splitReads. This is probably the result of merging")
-                }
+            # check that every spliceSiteID matches either a start or end index
+            if(nrow(nonSplicedReads(object)) != length(intersect(
+                    mcols(object, type="theta")$spliceSiteID, 
+                    unlist(mcols(object)[, c("startID", "endID")])))){
+                return(paste("The nonSplicedReads do not have corresponding",
+                        "splitReads. This is probably the result of merging"))
             }
+        }
     }
     NULL
 }
