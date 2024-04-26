@@ -5,13 +5,28 @@
 [![Coverage status](https://codecov.io/gh/c-mertes/FRASER/branch/master/graph/badge.svg)](https://codecov.io/github/c-mertes/FRASER/branch/master)
 [![License](https://img.shields.io/github/license/mashape/apistatus.svg?maxAge=2592000)](https://github.com/c-mertes/FRASER/blob/master/LICENSE)
 
-FRASER is a tool to detect aberrant splicing events in RNA-seq data. The method is described and published in [Nature Communications](https://doi.org/doi:10.1038/s41467-020-20573-7) and available through [Bioconductor](https://doi.org/doi:10.18129/B9.bioc.FRASER). It is also part of the [Detection of RNA Outlier Pipeline (DROP)](https://github.com/gagneurlab/drop). The DROP pipeline is described and published in [Nature Protocols](https://doi.org/doi:10.1038/s41596-020-00462-5).
+FRASER is a tool to detect aberrant splicing events in RNA-seq data. The method is described and published in [Nature Communications](https://doi.org/doi:10.1038/s41467-020-20573-7) and available through [Bioconductor](https://doi.org/doi:10.18129/B9.bioc.FRASER). It is also part of the [Detection of RNA Outlier Pipeline (DROP)](https://github.com/gagneurlab/drop). DROP is described and published in [Nature Protocols](https://doi.org/doi:10.1038/s41596-020-00462-5).
                                                                              
 The FRASER framework and workflow aims to assist the diagnostics in the field of rare diseases where RNA-seq is performed to identify aberrant splicing defects. For a short tutorial on how to use FRASER on a dataset please use the [vignette](http://bioconductor.org/packages/release/bioc/vignettes/FRASER/inst/doc/FRASER.pdf) or our Colab tutorial at: [http://tinyurl.com/RNA-ASHG-colab](http://tinyurl.com/RNA-ASHG-colab). The Colab is based on a workshop that we presented at ASHG 2019/2020.
 
 Please cite our method paper if you use it in a publication:
 
 > Mertes, C., Scheller, I.F., Yépez, V.A. *et al.* Detection of aberrant splicing events in RNA-seq data using FRASER. *Nat Commun* **12**, 529 (2021). https://doi.org/10.1038/s41467-020-20573-7
+
+## What's new
+
+FRASER 2.0, an improved version of FRASER, is now available and used by default (version 1.99.0 and above).
+FRASER 2.0 uses the Intron Jaccard Index as its splice metric instead of FRASER's 
+previous three metrics along with some other parameter optimizations of pseudocount, 
+filtering settings and default delta cutoff. 
+ 
+To change the splice metric, set `fitMetrics(fds)` to one or more of the metrics 
+specified in `FRASER::psiTypes`. For FRASER 2.0 and the Intron Jaccard Index, the 
+new default delta cutoff is 0.1 instead of the previous value of 0.3. When using 
+the 3 previous metrics, the delta cutoff should be set manually to 0.3 
+during results extraction, e.g. `results(fds, deltaPsiCutoff=0.3,...)`.
+
+The preprint describing these changes in more detail is available in [medRxiv](https://www.medrxiv.org/content/10.1101/2023.03.31.23287997v1).
 
 ## Installation
 

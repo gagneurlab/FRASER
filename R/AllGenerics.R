@@ -11,9 +11,9 @@ asFDS <- function(x){
 
 #'
 #' @title Getter/Setter methods for the FraserDataSet
-#' 
-#' @description The following methods are getter and setter methods to extract or set
-#' certain values of a FraserDataSet object. 
+#'
+#' @description The following methods are getter and setter methods to extract 
+#' or set certain values of a FraserDataSet object. 
 #' 
 #' \code{samples} sets or gets the sample IDs; \code{condition} ;
 #' \code{}
@@ -66,6 +66,9 @@ NULL
 #' @rdname fds-methods
 #' @export
 setMethod("samples", "FraserDataSet", function(object) {
+    if(!is.null(colnames(object))){
+        return(colnames(object))
+    }
     return(as.character(colData(object)[,"sampleID"]))
 })
 
@@ -74,6 +77,7 @@ setMethod("samples", "FraserDataSet", function(object) {
 setReplaceMethod("samples", "FraserDataSet", function(object, value) {
     colData(object)[,"sampleID"] <- as.character(value)
     rownames(colData(object)) <- colData(object)[,"sampleID"]
+    colnames(object) <- as.character(value)
     validObject(object)
     return(object)
 })
@@ -147,25 +151,44 @@ setReplaceMethod("workingDir", "FraserDataSet", function(object, value) {
 #' @export
 #' @rdname fds-methods
 setMethod("strandSpecific", "FraserDataSet", function(object) {
-    return(slot(object, "strandSpecific"))
+    if(!"strand" %in% colnames(colData(object))){
+        warning("Strand is not specified. Please set the used RNA-seq",
+                " protocol by using 'strandSpecific(object) <- c(...)'.",
+                "\n\nWe assume as default a non stranded protocol.")
+        return(rep(0, ncol(object)))
+    }
+    return(colData(object)$strand)
 })
 
 #' @export
 #' @rdname fds-methods
 setReplaceMethod("strandSpecific", "FraserDataSet", function(object, value) {
+    if (length(value) != ncol(object)){
+        if(length(value) == 1){
+            warning("Only one value is provided as strand for all samples.\n",
+                  "  We assume that all samples are of the same provided strand.")
+            strandSpecific(object) <- rep(value, ncol(object))
+        }
+        else{
+            stop("Number of strand values should be equal to the number of samples: (",
+                  paste0(length(value), " != ", ncol(object), ")"))
+        }
+    }
     if(is.logical(value)){
         value <- as.integer(value)
     }
     if(is.character(value)){
-        value <- switch(tolower(value),
-                        'no' = 0L,
-                        'unstranded' = 0L,
-                        'yes' = 1L,
-                        'stranded' = 1L,
-                        'reverse' = 2L,
-                        -1L)
+        val_chr <- tolower(value)
+        value <- sapply(val_chr, switch, 'no' = 0L, 'unstranded' = 0L, 
+                'yes' = 1L, 'stranded' = 1L, 'reverse' = 2L, -1L)
+        if(any(value < 0)){
+          stop("Please specify correct strandness of the samples.", 
+                  " It needs to be one of: 'no', 'unstranded', 'yes',",
+                  " 'stranded' or 'reverse'.", "\n\nIt was specified: ", 
+                  paste(collapse = ", ", val_chr[value < 0]))
+        }
     }
-    slot(object, "strandSpecific") <- value
+    colData(object)$strand <- as.integer(value)
     validObject(object)
     return(object)
 })
@@ -305,7 +328,6 @@ subset.FRASER <- function(x, i, j, by=c("j", "ss"), ..., drop=FALSE){
             subX,
             name            = name(x),
             bamParam        = scanBamParam(x),
-            strandSpecific  = strandSpecific(x),
             workingDir      = workingDir(x),
             nonSplicedReads = nsrObj
     )
@@ -518,12 +540,14 @@ setReplaceMethod("rowRanges", "FraserDataSet", FRASER.rowRanges.replace)
 #' @examples 
 #'  fds <- createTestFraserDataSet()
 #'  
-#'  counts(fds, type="psi5", side="ofInterest")
-#'  counts(fds, type="psi5", side="other")
+#'  counts(fds, side="ofInterest")
+#'  counts(fds, type="jaccard", side="other")
+#'  head(K(fds))
+#'  head(K(fds, type="psi5"))
 #'  head(K(fds, type="psi3"))
 #'  head(N(fds, type="theta"))
 #'  
-setMethod("counts", "FraserDataSet", function(object, type=NULL,
+setMethod("counts", "FraserDataSet", function(object, type=currentType(object),
             side=c("ofInterest", "otherSide")){
     side <- match.arg(side)
     if(side=="ofInterest"){
@@ -539,8 +563,9 @@ setMethod("counts", "FraserDataSet", function(object, type=NULL,
     # extract psi value from type
     type <- whichPSIType(type)
     if(length(type) == 0 | length(type) > 1){
-        stop(paste0("Please provide a correct psi type: psi5, psi3, or ",
-                    "theta. Not the given one: '", type, "'."))
+        stop(paste0("Please provide a correct psi type: psi5, psi3, ",
+                    "theta or jaccard. Not the given one: '", 
+                    type, "'."))
     }
     aname <- paste0("rawOtherCounts_", type)
     if(!aname %in% assayNames(object)){
@@ -554,7 +579,8 @@ setMethod("counts", "FraserDataSet", function(object, type=NULL,
 #' setter for count data
 #' 
 #' @rdname counts
-setReplaceMethod("counts", "FraserDataSet", function(object, type=NULL,
+setReplaceMethod("counts", "FraserDataSet", function(object, 
+                    type=currentType(object),
                     side=c("ofInterest", "otherSide"), ..., value){
     side <- match.arg(side)
 
@@ -581,149 +607,289 @@ setAs("DataFrame", "matrix", function(from){
     as.matrix(as(from, "data.table")) })
 
 #'
+#' Mapping of chromosome names
+#'
+#' @param fds FraserDataSet
+#' @param style The style of the chromosome names.
+#' @param ... Further parameters. For mapSeqLevels: further parameters 
+#'     passed to GenomeInfoDb::mapSeqlevels().
+#' 
+#' @rdname fds-methods
+#' @export
+mapSeqlevels <- function(fds, style="UCSC", ...){
+    
+    mappings <- na.omit(GenomeInfoDb::mapSeqlevels(seqlevels(fds), style, ...))
+    # fix missing names() when fds has only a single chromosome
+    if(is.null(names(mappings))){ 
+        names(mappings) <- seqlevels(fds)
+    }
+    
+    if(length(mappings) != length(seqlevels(fds))){
+        message(date(), ": Drop non standard chromosomes for compatibility.")
+        fds <- keepStandardChromosomes(fds)
+        nonSplicedReads(fds) <- keepStandardChromosomes(nonSplicedReads(fds))
+        validObject(fds)
+    }
+    fds <- fds[as.vector(seqnames(fds)) %in% names(mappings)]
+    
+    seqlevels(fds) <- as.vector(mappings)
+    seqlevels(nonSplicedReads(fds)) <- as.vector(mappings)
+    
+    return(fds)
+}
+
+#'
 #' retrieve a single sample result object
 #' @noRd
-resultsSingleSample <- function(sampleID, gr, pvals, padjs, zscores, psivals,
-                rawCts, rawTotalCts, deltaPsiVals, muPsi, psiType, fdrCut,
-                zscoreCut, dPsiCut, rowMeansK, rowMeansN, minCount,
-                additionalColumns){
-
-    zscore  <- zscores[,sampleID]
-    dpsi    <- deltaPsiVals[,sampleID]
-    pval    <- pvals[,sampleID]
-    padj    <- padjs[,sampleID]
-
-    goodCut <- !logical(length(zscore))
-    if(!is.na(zscoreCut)){
-        goodCut <- goodCut & na2default(abs(zscore) >= zscoreCut, TRUE)
+resultsSingleSample <- function(sampleID, gr, pvals, padjs, 
+                                psivals, rawCts, rawTotalCts, rawNonsplitCts, 
+                                rawNsProportion, nsProportion_99quantile,
+                                deltaPsiVals, psiType, rowMeansK, rowMeansN, 
+                                aberrant, aggregate, rho, 
+                                pvalsGene=NULL, padjsGene=NULL, 
+                                aberrantGene, additionalColumns,
+                                geneColumn="hgnc_symbol"){
+    mcols(gr)$idx <- seq_along(gr)
+    # if gene level results, find the most aberrant junction per gene first
+    if(isTRUE(aggregate)){
+        goodGenes <- rownames(aberrantGene)[aberrantGene[,sampleID] & 
+                                        !is.na(aberrantGene[,sampleID])]
+        geneJunctions <- findJunctionsForAberrantGenes(gr=gr, 
+                            aberrantGenes=goodGenes, 
+                            pvals=pvals[,sampleID], 
+                            dpsi=deltaPsiVals[,sampleID],
+                            geneColumn=geneColumn,
+                            aberrantJunctions=aberrant[,sampleID])    
+        goodCut <- rep(FALSE, nrow(pvals))
+        goodCut[geneJunctions] <- TRUE
+    } else{
+        goodCut <- aberrant[,sampleID]
     }
-    if(!is.na(dPsiCut)){
-        goodCut <- goodCut & na2default(abs(dpsi) >= dPsiCut, TRUE)
-    }
-    if(!is.na(fdrCut)){
-        goodCut <- goodCut & na2false(padj <= fdrCut)
-    }
-    if(!is.na(minCount)){
-        goodCut <- goodCut & rawTotalCts[,sampleID] >= minCount
-    }
-
+    
     ans <- granges(gr[goodCut])
-
+    
     if(!any(goodCut)){
         return(ans)
     }
-
-    if(!"hgnc_symbol" %in% colnames(mcols(gr))){
-        mcols(gr)$hgnc_symbol <- NA_character_
+    mcols(ans)$idx <- mcols(gr)$idx[goodCut]
+    
+    if(!geneColumn %in% colnames(mcols(gr))){
+        mcols(gr)[,geneColumn] <- NA_character_
     }
-
+    
     # extract data
     mcols(ans)$sampleID        <- Rle(sampleID)
     if("hgnc_symbol" %in% colnames(mcols(gr))){
-        mcols(ans)$hgncSymbol <- Rle(mcols(gr[goodCut])$hgnc_symbol)
+        mcols(ans)$hgncSymbol <- Rle(mcols(gr[goodCut])[,geneColumn])
     }
-    if("other_hgnc_symbol" %in% colnames(mcols(gr))){
-        mcols(ans)$addHgncSymbols <- Rle(mcols(gr[goodCut])$other_hgnc_symbol)
-    }
+    
     mcols(ans)$type            <- Rle(psiType)
-    mcols(ans)$pValue          <- signif(pval[goodCut], 5)
-    mcols(ans)$padjust         <- signif(padj[goodCut], 5)
-    mcols(ans)$zScore          <- Rle(round(zscore[goodCut], 2))
+    mcols(ans)$pValue          <- signif(pvals[goodCut,sampleID], 5)
+    mcols(ans)$padjust         <- signif(padjs[goodCut,sampleID], 5)
     mcols(ans)$psiValue        <- Rle(round(psivals[goodCut,sampleID], 2))
-    mcols(ans)$deltaPsi        <- Rle(round(dpsi[goodCut], 2))
-    mcols(ans)$meanCounts      <- Rle(round(rowMeansK[goodCut], 2))
-    mcols(ans)$meanTotalCounts <- Rle(round(rowMeansN[goodCut], 2))
+    mcols(ans)$deltaPsi        <- round(deltaPsiVals[goodCut,sampleID], 2)
     mcols(ans)$counts          <- Rle(rawCts[goodCut, sampleID])
     mcols(ans)$totalCounts     <- Rle(rawTotalCts[goodCut, sampleID])
+    mcols(ans)$meanCounts      <- Rle(round(rowMeansK[goodCut], 2))
+    mcols(ans)$meanTotalCounts <- Rle(round(rowMeansN[goodCut], 2))
+    
+    if(psiType == "jaccard"){
+        mcols(ans)$nonsplitCounts <- 
+            Rle(round(rawNonsplitCts[goodCut, sampleID], 2))
+        mcols(ans)$nonsplitProportion <- 
+            Rle(round(rawNsProportion[goodCut, sampleID], 2))
+        mcols(ans)$nonsplitProportion_99quantile  <- 
+            Rle(round(nsProportion_99quantile[goodCut], 2))
+    }
     
     if(!is.null(additionalColumns)){
         for(column in additionalColumns){
             mcols(ans)[,column] <- Rle(mcols(gr[goodCut])[,column])
         }
     }
-
-    return(ans[order(mcols(ans)$pValue)])
+    
+    if(isTRUE(aggregate)){
+        # report junction more than once if it is significant for several genes
+        nrGenesPerJunction <- table(geneJunctions)
+        ans <- rep(ans, nrGenesPerJunction[as.character(mcols(ans)$idx)])
+        mcols(ans)$hgncSymbol <- 
+            as.data.table(ans)[, names(geneJunctions)[geneJunctions == idx], 
+                                by = eval(colnames(mcols(ans)))][,V1]
+        
+        # add gene level pvalue    
+        mcols(ans)$pValueGene  <- 
+            signif(pvalsGene[mcols(ans)$hgncSymbol,sampleID], 5)
+        mcols(ans)$padjustGene <- 
+            signif(padjsGene[mcols(ans)$hgncSymbol,sampleID], 5)
+        mcols(ans)$hgncSymbol <- Rle(mcols(ans)$hgncSymbol)
+    }
+    
+    # remove helper column
+    mcols(ans)$idx <- NULL
+    
+    
+    return(ans[order(mcols(ans)$pValue, -abs(mcols(ans)$deltaPsi))])
 }
 
-FRASER.results <- function(object, sampleIDs, fdrCutoff, zscoreCutoff, 
-                    dPsiCutoff, psiType, BPPARAM=bpparam(), maxCols=20, 
-                    minCount, additionalColumns=NULL){
-
-    # check input
-    checkNaAndRange(fdrCutoff,    min=0, max=1,   scalar=TRUE, na.ok=TRUE)
-    checkNaAndRange(dPsiCutoff,   min=0, max=1,   scalar=TRUE, na.ok=TRUE)
-    checkNaAndRange(zscoreCutoff, min=0, max=100, scalar=TRUE, na.ok=TRUE)
-    checkNaAndRange(minCount,     min=0, max=Inf, scalar=TRUE, na.ok=TRUE)
-
+FRASER.results <- function(object, sampleIDs, fdrCutoff, 
+                            dPsiCutoff, minCount, rhoCutoff, psiType, 
+                            maxCols=20, aggregate=FALSE, collapse=FALSE,
+                            geneColumn="hgnc_symbol", BPPARAM=bpparam(), 
+                            subsetName=NULL, all=all, additionalColumns=NULL){
+    
     stopifnot(is(object, "FraserDataSet"))
     stopifnot(all(sampleIDs %in% samples(object)))
-
+    
+    if("annotatedJunction" %in% colnames(mcols(object, type="j")) && 
+            !("annotatedJunction" %in% additionalColumns)){
+        additionalColumns <- c(additionalColumns, "annotatedJunction")
+    }
+    
+    # only extract results for requested psiTypes if pvals exist for them
+    stopifnot(all(psiType %in% psiTypes))
+    if(is.na(rhoCutoff)){
+        rhoCutoff <- 1
+    }
+    pvalsAvailable <- checkPadjAvailableForFilters(object, type=psiType,
+                                                   filters=list(rho=rhoCutoff), 
+                                                   aggregate=aggregate,
+                                                   subsetName=subsetName)
+    psiType <- psiType[pvalsAvailable]
+    if(all(isFALSE(pvalsAvailable))){
+        stop("For the splice metric(s), pvalues are not yet computed. \n", 
+             "Please compute them first by running the ",
+             "calculatePadjValues function.")
+    }
+    
     resultsls <- bplapply(psiType, BPPARAM=BPPARAM, function(type){
-        message(date(), ": Collecting results for: ", type)
+        message(date(), ": Collecting results for: ", type,
+                ifelse(is.null(subsetName), " (transcriptome-wide)",
+                       paste0(" (", subsetName, ")")))
         currentType(object) <- type
         gr <- rowRanges(object, type=type)
-
+        
         # first get row means
         rowMeansK <- rowMeans(K(object, type=type))
         rowMeansN <- rowMeans(N(object, type=type))
-
+        
+        # get proportion of nonsplitCounts among all counts (N) for each intron
+        if(type == "jaccard"){
+            rawNonsplitCts  <- as.matrix(assay(object, "rawCountsJnonsplit"))
+            rawNsProportion <- rawNonsplitCts / as.matrix(N(object))
+            nsProportion_99quantile <- 
+                rowQuantiles(rawNsProportion, probs=0.99)
+        } else{
+            rawNonsplitCts  <- NULL
+            rawNsProportion <- NULL
+            nsProportion_99quantile <- NULL
+        }
+        
         # then iterate by chunk
         chunkCols <- getMaxChunks2Read(fds=object, assayName=type, max=maxCols)
         sampleChunks <- getSamplesByChunk(fds=object, sampleIDs=sampleIDs,
-                chunkSize=chunkCols)
-
+                                            chunkSize=chunkCols)
+        
         ans <- lapply(seq_along(sampleChunks), function(idx){
             message(date(), ": Process chunk: ", idx, " for: ", type)
             sc <- sampleChunks[[idx]]
             tmp_x <- object[,sc]
-
+            
             # extract values
             rawCts       <- as.matrix(K(tmp_x))
             rawTotalCts  <- as.matrix(N(tmp_x))
-            pvals        <- as.matrix(pVals(tmp_x))
-            padjs        <- as.matrix(padjVals(tmp_x))
-            zscores      <- as.matrix(zScores(tmp_x))
+            pvals        <- as.matrix(pVals(tmp_x, 
+                                            filters=list(rho=rhoCutoff)))
+            padjs        <- as.matrix(padjVals(tmp_x, 
+                                            subsetName=subsetName,
+                                            filters=list(rho=rhoCutoff)))
             psivals      <- as.matrix(assay(tmp_x, type))
             muPsi        <- as.matrix(predictedMeans(tmp_x))
             psivals_pc   <- (rawCts + pseudocount()) /
-                                (rawTotalCts + 2*pseudocount())
-            deltaPsiVals <- psivals_pc - muPsi
-
+                (rawTotalCts + 2*pseudocount())
+            deltaPsiVals <- deltaPsiValue(tmp_x, type)
+            rho          <- rho(tmp_x, type)
+            aberrant     <- aberrant.FRASER(tmp_x, type=type, 
+                                            padjCutoff=ifelse(isTRUE(aggregate), 
+                                                        NA, fdrCutoff), 
+                                            deltaPsiCutoff=dPsiCutoff, 
+                                            minCount=minCount, 
+                                            rhoCutoff=rhoCutoff,
+                                            aggregate=FALSE,
+                                            all=all,
+                                            geneColumn=geneColumn,
+                                            subsetName=subsetName)
+            if(isTRUE(aggregate)){
+                pvalsGene    <- as.matrix(pVals(tmp_x, level="gene", 
+                                                filters=list(rho=rhoCutoff)))
+                padjsGene    <- as.matrix(padjVals(tmp_x, level="gene",
+                                                   subsetName=subsetName, 
+                                                filters=list(rho=rhoCutoff)))
+                aberrantGene <- aberrant.FRASER(tmp_x, type=type, 
+                                                padjCutoff=fdrCutoff, 
+                                                deltaPsiCutoff=dPsiCutoff, 
+                                                minCount=minCount, 
+                                                rhoCutoff=rhoCutoff,
+                                                aggregate=TRUE,
+                                                all=all,
+                                                geneColumn=geneColumn,
+                                                subsetName=subsetName)
+            } else{
+                pvalsGene    <- NULL
+                padjsGene    <- NULL
+                aberrantGene <- NULL
+            }
+            
             if(length(sc) == 1){
                 colnames(pvals) <- sc
                 colnames(padjs) <- sc
-                colnames(zscores) <- sc
                 colnames(deltaPsiVals) <- sc
             }
             
             # create result table
             sampleRes <- lapply(sc,
-                    resultsSingleSample, gr=gr, pvals=pvals, padjs=padjs,
-                    zscores=zscores, psiType=type, psivals=psivals,
-                    deltaPsiVals=deltaPsiVals, muPsi=muPsi, rawCts=rawCts,
-                    rawTotalCts=rawTotalCts, fdrCut=fdrCutoff,
-                    zscoreCut=zscoreCutoff, dPsiCut=dPsiCutoff,
-                    rowMeansK=rowMeansK, rowMeansN=rowMeansN, 
-                    minCount=minCount, additionalColumns=additionalColumns)
-
+                        resultsSingleSample, gr=gr, pvals=pvals, 
+                        padjs=padjs, psiType=type, 
+                        psivals=psivals, deltaPsiVals=deltaPsiVals, 
+                        rawCts=rawCts, rawTotalCts=rawTotalCts, 
+                        rawNonsplitCts=rawNonsplitCts[,sc,drop=FALSE], 
+                        rawNsProportion=rawNsProportion[,sc,drop=FALSE],
+                        nsProportion_99quantile=nsProportion_99quantile,
+                        rowMeansK=rowMeansK, rowMeansN=rowMeansN, 
+                        aberrant=aberrant, aggregate=aggregate,
+                        rho=rho, geneColumn=geneColumn,
+                        pvalsGene=pvalsGene, padjsGene=padjsGene,
+                        aberrantGene=aberrantGene, 
+                        additionalColumns=additionalColumns)
+            
             # return combined result
             return(unlist(GRangesList(sampleRes)))
         })
-
+        
         unlist(GRangesList(ans))
     })
-
+    
     # merge results
     ans <- unlist(GRangesList(resultsls))
-
+    
     # sort it if existing
     if(length(ans) > 0){
         ans <- ans[order(ans$pValue)]
+        if(is.null(subsetName)){
+            mcols(ans)[["FDR_set"]] <- "transcriptome-wide"
+        } else{
+            mcols(ans)[["FDR_set"]] <- subsetName
+        }
     }
-
+    
+    # collapse into one row per gene if requested
+    if(isTRUE(aggregate) && isTRUE(collapse)){
+        ans <- collapseResTablePerGene(ans)
+    }
+    
     # return only the results
     return(ans)
 }
+
 
 #'
 #' Extracting results and aberrant splicing events
@@ -736,31 +902,45 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff, zscoreCutoff,
 #' @param sampleIDs A vector of sample IDs for which results should be 
 #' retrieved
 #' @param padjCutoff The FDR cutoff to be applied or NA if not requested.
-#' @param zScoreCutoff The z-score cutoff to be applied or NA if not requested.
 #' @param deltaPsiCutoff The cutoff on delta psi or NA if not requested.
 #' @param minCount The minimum count value of the total coverage of an intron 
 #' to be considered as significant.
 #' result
+#' @param rhoCutoff The cutoff value on the fitted rho value 
+#' (overdispersion parameter of the betabinomial) above which 
+#' junctions are filtered 
 #' @param psiType The psi types for which the results should be retrieved.
 #' @param additionalColumns Character vector containing the names of additional 
 #' columns from mcols(fds) that should appear in the result table 
 #' (e.g. ensembl_gene_id). Default is \code{NULL}, so no additional columns 
 #' are included. 
 #' @param BPPARAM The BiocParallel parameter.
-#' @param res Result as created with \code{results()}
-#' @param geneColumn The name of the column in \code{mcols(res)} that contains 
-#'     the gene symbols.   
-#' @param method The p.adjust method that is being used to adjust p values per
-#'     sample.
 #' @param type Splicing type (psi5, psi3 or theta)
 #' @param by By default \code{none} which means no grouping. But if 
 #'              \code{sample} or \code{feature} is specified the sum by 
 #'              sample or feature is returned
-#' @param aggregate If TRUE the returned object is based on the grouped 
-#'              features
-#' @param ... Further arguments can be passed to the method. If "zscores", 
-#'              "padjVals" or "dPsi" is given, the values of those arguments
-#'              are used to define the aberrant events.
+#' @param aggregate If TRUE the returned object is aggregated to the feature 
+#'              level (i.e. gene level).
+#' @param collapse Only takes effect if \code{aggregate=TRUE}. 
+#'              If TRUE, collapses results across the different psi 
+#'              types to return only one row per feature (gene) and sample.
+#' @param geneColumn The column name of the column that has the gene annotation 
+#'              that will be used for gene-level pvalue computation.
+#' @param all By default FALSE, only significant introns (or genes) are listed 
+#'             in the results. If TRUE, results are assembled for all 
+#'             samples and introns/genes regardless of significance. 
+#' @param returnTranscriptomewideResults If FDR corrected pvalues for subsets 
+#'              of genes of interest have been calculated, this parameter 
+#'              indicates whether additionally the transcriptome-wide results 
+#'              should be returned as well (default), or whether only results 
+#'              for those subsets should be retrieved.
+#' @param subsetName The name of a subset of genes of interest for which FDR 
+#'             corrected pvalues were previously computed. Those FDR values 
+#'             on the subset will then be used to determine aberrant status. 
+#'             Default is NULL (using transcriptome-wide FDR corrected pvalues).
+#' @param ... Further arguments can be passed to the method. If "n",  
+#'              "padjVals", "dPsi" or "rhoVals" are given, the values of those 
+#'              arguments are used to define the aberrant events.
 #'
 #' @return For \code{results}: GRanges object containing significant results.
 #'     For \code{aberrant}: Either a of logical values of size 
@@ -773,186 +953,268 @@ FRASER.results <- function(object, sampleIDs, fdrCutoff, zscoreCutoff,
 #' # get data, fit and compute p-values and z-scores
 #' fds <- createTestFraserDataSet()
 #' 
-#' # extract results: for this example dataset, z score cutoff of 2 is used to
-#' # get at least one result and show the output
-#' res <- results(fds, padjCutoff=NA, zScoreCutoff=3, deltaPsiCutoff=0.05)
+#' # extract results: for this example dataset, no cutoffs are used to
+#' # show the output of the results function
+#' res <- results(fds, all=TRUE)
 #' res
 #' 
 #' # aggregate the results by genes (gene symbols need to be annotated first 
 #' # using annotateRanges() function)
-#' resultsByGenes(res)
+#' results(fds, padjCutoff=NA, deltaPsiCutoff=0.1, aggregate=TRUE)
+#'
+#' # aggregate the results by genes and collapse over all psi types to obtain 
+#' # only one row per gene in the results table 
+#' results(fds, padjCutoff=NA, deltaPsiCutoff=0.1, aggregate=TRUE, 
+#'         collapse=TRUE)
 #'
 #' # get aberrant events per sample: on the example data, nothing is aberrant
 #' # based on the adjusted p-value
-#' aberrant(fds, type="psi5", by="sample")
+#' aberrant(fds, type="jaccard", by="sample")
 #' 
 #' # get aberrant events per gene (first annotate gene symbols)
 #' fds <- annotateRangesWithTxDb(fds)
-#' aberrant(fds, type="psi5", by="feature", zScoreCutoff=2, padjCutoff=NA,
-#'         aggregate=TRUE)
+#' aberrant(fds, type="jaccard", by="feature", padjCutoff=NA, aggregate=TRUE)
 #'         
 #' # find aberrant junctions/splice sites
-#' aberrant(fds, type="psi5")
+#' aberrant(fds, type="jaccard")
+#' 
+#' # retrieve results limiting FDR correction to only a subset of genes
+#' # first, we need to create a list of genes per sample that will be tested
+#' geneList <- list('sample1'=c("TIMMDC1"), 'sample2'=c("MCOLN1"))
+#' fds <- calculatePadjValues(fds, type="jaccard", 
+#'                  subsets=list("exampleSubset"=geneList))
+#' results(fds, all=TRUE, returnTranscriptomewideResults=FALSE)
+#' 
 #' @export
 setMethod("results", "FraserDataSet", function(object, 
-                    sampleIDs=samples(object), padjCutoff=0.05,
-                    zScoreCutoff=NA, deltaPsiCutoff=0.3,
-                    minCount=5, psiType=c("psi3", "psi5", "theta"),
-                    additionalColumns=NULL, BPPARAM=bpparam(), ...){
-    FRASER.results(object=object, sampleIDs=sampleIDs, fdrCutoff=padjCutoff,
-            zscoreCutoff=zScoreCutoff, dPsiCutoff=deltaPsiCutoff,
-            minCount=minCount, psiType=match.arg(psiType, several.ok=TRUE),
-            additionalColumns=additionalColumns, BPPARAM=BPPARAM)
+                    sampleIDs=samples(object), padjCutoff=0.1,
+                    deltaPsiCutoff=0.1,
+                    rhoCutoff=NA, aggregate=FALSE, collapse=FALSE,
+                    minCount=5, psiType=psiTypes,
+                    geneColumn="hgnc_symbol", all=FALSE,
+                    returnTranscriptomewideResults=TRUE,
+                    additionalColumns=NULL, BPPARAM=bpparam()){
+    psiType <- match.arg(psiType, several.ok=TRUE)
+    FDRsets <- availableFDRsubsets(object)
+    
+    if(isFALSE(returnTranscriptomewideResults) && is.null(FDRsets)){
+        warning("Retrieving transcriptome-wide results as no other ",
+                "FDR subsets are available in the fds object.")
+        returnTranscriptomewideResults <- TRUE
+    } 
+    if(isTRUE(returnTranscriptomewideResults)){
+        res <- FRASER.results(object=object, sampleIDs=sampleIDs, 
+                fdrCutoff=padjCutoff, dPsiCutoff=deltaPsiCutoff, 
+                rhoCutoff=rhoCutoff, minCount=minCount, 
+                psiType=psiType, all=all,
+                aggregate=aggregate, collapse=collapse, geneColumn=geneColumn,
+                subsetName=NULL, additionalColumns=additionalColumns, 
+                BPPARAM=BPPARAM)
+        # to restore previous column order
+        prevColOrder <- colnames(as.data.table(res))
+    }
+    
+    # add results for FDR_subsets if requested
+    if(!is.null(FDRsets)){
+        resls_subsets <- lapply(FDRsets, function(setName){
+            res_sub <- FRASER.results(object=object, sampleIDs=sampleIDs, 
+                fdrCutoff=padjCutoff, dPsiCutoff=deltaPsiCutoff, 
+                rhoCutoff=rhoCutoff, minCount=minCount, 
+                psiType=psiType, all=all,
+                aggregate=aggregate, collapse=collapse, geneColumn=geneColumn,
+                subsetName=setName, additionalColumns=additionalColumns, 
+                BPPARAM=BPPARAM)
+        })
+        
+        if(isTRUE(returnTranscriptomewideResults)){
+            res <- unlist(GRangesList(unlist(list(res, resls_subsets))))
+        } else{
+            res <- unlist(GRangesList(unlist(resls_subsets)))
+            # restore previous column order
+            prevColOrder <- colnames(as.data.table(resls_subsets[[1]]))
+        }
+    }
+    
+    # sort it if existing
+    if(length(res) > 0){
+        
+        # dcast to have only one row per gene-sample combination
+        res <- as.data.table(res)
+        if(isTRUE(aggregate)){
+            dcastCols <- c("pValueGene", "padjustGene")
+        } else{
+            dcastCols <- "padjust"
+        }
+        res <- dcast(res, ... ~ FDR_set, value.var=dcastCols)
+        
+        # rename column back to padjust for tw results after dcast
+        if(any(grepl("transcriptome-wide", colnames(res)))){
+            if(isTRUE(aggregate)){
+                setnames(res, "pValueGene_transcriptome-wide", "pValueGene")
+                setnames(res, "padjustGene_transcriptome-wide", "padjustGene")
+            } else{
+                setnames(res, "transcriptome-wide", "padjust")
+            }
+            
+        } else{
+            res[, padjust := NA]
+            if(isTRUE(aggregate)){
+                res[, pValueGene := NA]
+                res[, padjustGene := NA]
+            }
+        }
+        
+        # restore previous column order
+        setcolorder(res, prevColOrder[prevColOrder != "FDR_set"])
+        
+        # rename padjust columns for other gene sets to padjust_setname
+        for(setName in FDRsets){
+            setnames(res, setName, paste0("padjust_", setName), 
+                        skip_absent=TRUE)
+        }
+        
+        # revert back to GRanges
+        res <- makeGRangesFromDataFrame(res, keep.extra.columns=TRUE)
+        
+        # order rows based on transcriptome-wide FDR
+        res <- res[order(res$pValue)]
+        if(isTRUE(aggregate) & isTRUE(returnTranscriptomewideResults)){
+            res <- res[!is.na(res$pValueGene)]
+        }
+        
+        
+    } else{
+        res$FDR_set <- NULL
+    }
+    
+    return(res)
 })
 
-#' @rdname results
-#' @export
-resultsByGenes <- function(res, geneColumn="hgncSymbol", method="BY"){
-    # sort by pvalue
-    res <- res[order(res$pValue)]
-
-    # extract subset
-    if(is(res, "GRanges")){
-        ans <- as.data.table(mcols(res)[,c(geneColumn, "pValue", "sampleID")])
-        colnames(ans) <- c("features", "pval", "sampleID")
-    } else {
-        ans <- featureNames <- res[,.(
-                features=get(geneColumn), pval=pValue, sampleID=sampleID)]
-    }
-
-    # remove NAs
-    naIdx <- ans[,is.na(features)]
-    ansNoNA <- ans[!is.na(features)]
-
-    # compute pvalues by gene
-    ansNoNA[,pByFeature:=min(p.adjust(pval, method="holm")),
-            by="sampleID,features"]
-
-    # subset to lowest pvalue by gene
-    dupIdx <- duplicated(ansNoNA[,.(features,sampleID)])
-    ansGenes <- ansNoNA[!dupIdx]
-
-    # compute FDR
-    ansGenes[,fdrByFeature:=p.adjust(pByFeature, method=method),
-            by="sampleID"]
-
-    # get final result table
-    finalAns <- res[!naIdx][!dupIdx]
-    finalAns$pValueGene  <- ansGenes$pByFeature
-    finalAns$padjustGene <- ansGenes$fdrByFeature
-    finalAns
-}
-
-#'
-#' Mapping of chromosome names
-#'
-#' @param fds FraserDataSet
-#' @param style The style of the chromosome names.
-#' @param ... Further parameters. For mapSeqLevels: further parameters 
-#'     passed to GenomeInfoDb::mapSeqlevels().
-#' 
-#' @rdname fds-methods
-#' @export
-mapSeqlevels <- function(fds, style="UCSC", ...){
-
-    mappings <- na.omit(GenomeInfoDb::mapSeqlevels(seqlevels(fds), style, ...))
-    # fix missing names() when fds has only a single chromosome
-    if(is.null(names(mappings))){ 
-        names(mappings) <- seqlevels(fds)
-    }
-
-    if(length(mappings) != length(seqlevels(fds))){
-        message(date(), ": Drop non standard chromosomes for compatibility.")
-        fds <- keepStandardChromosomes(fds)
-        nonSplicedReads(fds) <- keepStandardChromosomes(nonSplicedReads(fds))
-        validObject(fds)
-    }
-    fds <- fds[as.vector(seqnames(fds)) %in% names(mappings)]
-
-    seqlevels(fds) <- as.vector(mappings)
-    seqlevels(nonSplicedReads(fds)) <- as.vector(mappings)
-
-    return(fds)
-}
-
-
-aberrant.FRASER <- function(object, type=currentType(object), padjCutoff=0.05,
-                    deltaPsiCutoff=0.3, zScoreCutoff=NA, minCount=5,
-                    by=c("none", "sample", "feature"), aggregate=FALSE, ...){
-
-    checkNaAndRange(zScoreCutoff,   min=0, max=Inf, na.ok=TRUE)
-    checkNaAndRange(padjCutoff,     min=0, max=1,   na.ok=TRUE)
-    checkNaAndRange(deltaPsiCutoff, min=0, max=1,   na.ok=TRUE)
+aberrant.FRASER <- function(object, type=fitMetrics(object), 
+                                padjCutoff=0.1, deltaPsiCutoff=0.1, 
+                                minCount=5, rhoCutoff=NA,
+                                by=c("none", "sample", "feature"), 
+                                aggregate=FALSE, geneColumn="hgnc_symbol", 
+                                subsetName=NULL, all=FALSE, ...){
+    
+    checkNaAndRange(padjCutoff,     min=0, max=1,   scalar=TRUE,   na.ok=TRUE)
+    checkNaAndRange(deltaPsiCutoff, min=0, max=1,   scalar=TRUE,   na.ok=TRUE)
+    checkNaAndRange(rhoCutoff,      min=0, max=1,   scalar=TRUE,   na.ok=TRUE)
+    checkNaAndRange(minCount,       min=0, max=Inf, scalar=TRUE,   na.ok=TRUE)
     by <- match.arg(by)
-
+    type <- match.arg(type)
+    
+    if(is.na(rhoCutoff)){
+        rhoCutoff <- 1
+    }
+    
     dots <- list(...)
     if("n" %in% names(dots)){
         n <- dots[['n']]
     } else {
         n <- N(object, type=type)
     }
-    if("zscores" %in% names(dots)){
-        zscores <- dots[['zscores']]
-    } else {
-        zscores <- zScores(object, type=type)
-    }
     if("padjVals" %in% names(dots)){
         padj <- dots[['padjVals']]
     } else {
-        padj <- padjVals(object, type=type)
+        # check if padj values are available for the given filters
+        pvalsAvailable <- checkPadjAvailableForFilters(object, type=type,
+                                                filters=list(rho=rhoCutoff), 
+                                                aggregate=aggregate,
+                                                subsetName=subsetName)
+        if(isFALSE(pvalsAvailable)){
+            stop("For the given filters, pvalues are not yet computed. \n", 
+                    "Please compute them first by running the ",
+                    "calculatePadjValues function with the requested filters.")
+        }
+        padj <- padjVals(object, type=type, level="site", subsetName=subsetName,
+                        filters=list(rho=rhoCutoff))
     }
     if("dPsi" %in% names(dots)){
         dpsi <- dots[['dPsi']]
     } else {
         dpsi <- deltaPsiValue(object, type=type)
     } 
-    
-    
-    # create cutoff matrix
-    goodCutoff <- matrix(TRUE, nrow=nrow(zscores), ncol=ncol(zscores),
-            dimnames=dimnames(zscores))
-    if("hgnc_symbol" %in% colnames(mcols(object, type=type)) &
-                nrow(mcols(object, type=type)) == nrow(goodCutoff)){
-        rownames(goodCutoff) <- mcols(object, type=type)[,"hgnc_symbol"]
-    } else if(isTRUE(aggregate)){
-        stop("Please provide hgnc symbols to compute gene p values!")
-    }
-    
-    # check each cutoff if in use (not NA)
-    if(!is.na(minCount)){
-        goodCutoff <- goodCutoff & as.matrix(n >= minCount)
-    }
-    if(!is.na(zScoreCutoff)){
-        goodCutoff <- goodCutoff & as.matrix(abs(zscores) >= zScoreCutoff)
-    }
-    if(!is.na(deltaPsiCutoff)){
-        goodCutoff <- goodCutoff & as.matrix(abs(dpsi) >= deltaPsiCutoff)
-    }
-    if(!is.na(padjCutoff)){
-        goodCutoff <- goodCutoff & as.matrix(padj <= padjCutoff)
-    }
-    goodCutoff[is.na(goodCutoff)] <- FALSE
-    
-    # check if we should go for aggregation
-    # TODO to speed it up we only use any hit within a feature
-    # but should do a holm's + BY correction per gene and genome wide
+    if("rhoVals" %in% names(dots)){
+        rho <- dots[['rhoVals']]
+    } else {
+        rho <- matrix(rho(object, type=type), 
+                        nrow=nrow(dpsi), ncol=ncol(dpsi))
+    } 
     if(isTRUE(aggregate)){
-        goodCutoff <- as.matrix(data.table(goodCutoff, keep.rownames=TRUE)[,
-                as.data.table(t(colAnys(as.matrix(.SD)))), by=rn][,-1])
-        rownames(goodCutoff) <- unique(mcols(object, type=type)[,"hgnc_symbol"])
-        colnames(goodCutoff) <- colnames(zscores)
+        if("padjGeneVals" %in% names(dots)){
+            padj_gene <- dots[['padjGeneVals']]
+        } else{
+            padj_gene <- padjVals(object, type=type, level="gene", 
+                                subsetName=subsetName,
+                                filters=list(rho=rhoCutoff))    
+        }
+        
     }
     
-    # return results
-    if(by == "feature"){
-        return(rowSums(goodCutoff))
+    if(is.na(padjCutoff)){
+        padjCutoff <- 1
     }
-    if(by == "sample"){
-        return(colSums(goodCutoff))
+    if(isTRUE(aggregate)){
+        padjCutoffGene <- padjCutoff
+        padjCutoff <- 1
     }
-    return(goodCutoff)
+    
+    if(isTRUE(all)){
+        aberrantEvents <- matrix(TRUE, nrow=nrow(object), ncol=ncol(object))
+        colnames(aberrantEvents) <- colnames(object)
+    } else{
+        aberrantEvents <- as.matrix(padj) <= padjCutoff
+        
+        # check each cutoff if in use (not NA)
+        if(!is.na(minCount)){
+            aberrantEvents <- aberrantEvents & as.matrix(n >= minCount)
+        }
+        if(!is.na(deltaPsiCutoff)){
+            aberrantEvents <- aberrantEvents & 
+                as.matrix(abs(dpsi) >= deltaPsiCutoff)
+        }
+        if(!is.na(rhoCutoff)){
+            aberrantEvents <- aberrantEvents & as.matrix(rho <= rhoCutoff)
+        }
+        aberrantEvents[is.na(aberrantEvents)] <- FALSE
+        if(is.null(colnames(aberrantEvents))){
+            colnames(aberrantEvents) <- colnames(object)
+        }
+    }
+        
+    if(isTRUE(aggregate)){
+        if(is.null(rownames(padj_gene))){
+            stop("Missing rownames for gene-level padj values.")
+        }
+        # reduce aberrant matrix to one row per gene 
+        # (TRUE if any junction is aberrant for each sample)
+        ab_dt <- data.table(geneID=getGeneIDs(object, type=type, unique=FALSE,
+                                                geneColumn=geneColumn), 
+                            aberrantEvents)
+        ab_dt[, dt_idx:=seq_len(.N)]
+        dt_tmp <- ab_dt[!is.na(geneID), splitGenes(geneID), by="dt_idx"]
+        ab_dt <- ab_dt[dt_tmp$dt_idx]
+        ab_dt[,`:=`(geneID=dt_tmp$V1, dt_idx=NULL)]
+        ab_dt <- ab_dt[,lapply(.SD, any), by="geneID"]
+        aberrantEvents <- as.matrix(ab_dt[,-1])
+        rownames(aberrantEvents) <- ab_dt[,geneID]
+        
+        if(isFALSE(all)){
+            aberrantEvents <- aberrantEvents & as.matrix(
+                    padj_gene[rownames(aberrantEvents),colnames(aberrantEvents)]
+                ) <= padjCutoffGene
+        }
+    }
+    
+    return(switch(match.arg(by),
+                    none = aberrantEvents,
+                    sample = colSums(aberrantEvents, na.rm=TRUE),
+                    feature = rowSums(aberrantEvents, na.rm=TRUE)
+    ))
 }
 
 #' @rdname results
 #' @export
 setMethod("aberrant", "FraserDataSet", aberrant.FRASER)
+

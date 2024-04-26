@@ -361,7 +361,7 @@ getNonSplitReadCountsForAllSamples <- function(fds, splitCountRanges,
             " splice junctions are found.")
     
     # extract donor and acceptor sites
-    spliceSiteCoords <- extractSpliceSiteCoordinates(splitCountRanges, fds)
+    spliceSiteCoords <- extractSpliceSiteCoordinates(splitCountRanges)
     message(date(), ": In total ", length(spliceSiteCoords),
             " splice sites (acceptor/donor) will be counted ...")
     
@@ -406,7 +406,6 @@ addCountsToFraserDataSet <- function(fds, splitCounts, nonSplitCounts){
                 splitCounts,
                 name            = name(fds),
                 bamParam        = scanBamParam(fds),
-                strandSpecific  = strandSpecific(fds),
                 workingDir      = workingDir(fds),
                 nonSplicedReads = nonSplitCounts,
                 metadata        = metadata(fds)
@@ -461,14 +460,14 @@ countSplitReads <- function(sampleID, fds, NcpuPerSample=1, genome=NULL,
                     recount=FALSE, keepNonStandardChromosomes=TRUE,
                     bamfile=bamFile(fds[,sampleID]),
                     pairedend=pairedEnd(fds[,sampleID]),
-                    strandmode=strandSpecific(fds),
+                    strandmode=strandSpecific(fds[,sampleID]),
                     cacheFile=getSplitCountCacheFile(sampleID, fds),
                     scanbamparam=scanBamParam(fds),
                     coldata=colData(fds)){
     
     # check for valid fds
     validObject(fds)
-    
+  
     # check cache if available
     if(isFALSE(recount) && !is.null(cacheFile) && file.exists(cacheFile)){
         cache <- readRDS(cacheFile)
@@ -495,7 +494,7 @@ countSplitReads <- function(sampleID, fds, NcpuPerSample=1, genome=NULL,
     chromosomes <- extractChromosomes(bamfile)
     
     if(isFALSE(keepNonStandardChromosomes)){
-        chr_gr <- GRanges(seqnames=paste0(chromosomes, ":1-2"))
+        chr_gr <- GRanges(seqnames=chromosomes, ranges=IRanges(1, 2))
         chromosomes <- standardChromosomes(chr_gr)
     }
     
@@ -568,6 +567,10 @@ countSplitReadsPerChromosome <- function(chromosome, bamFile,
         galignment <- readGAlignmentPairs(
                 bamFile, param=param, strandMode=strandMode)
     }
+    
+    # remove read pairs with NA seqnames 
+    # (occurs if reads of a pair align to different chromosomes)
+    galignment <- galignment[!is.na(seqnames(galignment))]
     
     # remove the strand information if unstranded data
     if(isFALSE(as.logical(strandMode))){
@@ -852,7 +855,7 @@ countNonSplicedReads <- function(sampleID, splitCountRanges, fds,
         }
         
         # extract donor and acceptor sites
-        spliceSiteCoords <- extractSpliceSiteCoordinates(splitCountRanges, fds)
+        spliceSiteCoords <- extractSpliceSiteCoordinates(splitCountRanges)
     }
     
     
@@ -861,6 +864,7 @@ countNonSplicedReads <- function(sampleID, splitCountRanges, fds,
     # unstranded case: for counting only non spliced reads we 
     # skip this information
     isPairedEnd <- pairedEnd(fds[,samples(fds) == sampleID])[[1]]
+    strand <- strandSpecific(fds[,samples(fds) == sampleID])[[1]]
     doAutosort <- isPairedEnd
     
     # check cache if available
@@ -895,13 +899,14 @@ countNonSplicedReads <- function(sampleID, splitCountRanges, fds,
     
     # extract the counts with Rsubread
     tmp_ssc <- checkSeqLevelStyle(spliceSiteCoords, fds, sampleID, TRUE)
-    anno <- GRanges2SAF(tmp_ssc, minAnchor=minAnchor)
+    # use minAnchor+1 here to allow for small variants in the anchor region
+    anno <- GRanges2SAF(tmp_ssc, minAnchor=(minAnchor+1))
     rsubreadCounts <- featureCounts(files=bamFile, annot.ext=anno,
             minOverlap=minAnchor*2, 
             allowMultiOverlap=TRUE,
             checkFragLength=FALSE,
             minMQS=bamMapqFilter(scanBamParam(fds)),
-            strandSpecific=as.integer(strandSpecific(fds)),
+            strandSpecific=strand,
             
             # activating long read mode
             isLongRead=longRead,
@@ -974,17 +979,12 @@ readJunctionMap <- function(junctionMap){
 
 #' extracts the splice site coordinates from a junctions GRange object (
 #' @noRd
-extractSpliceSiteCoordinates <- function(junctions, fds){
+extractSpliceSiteCoordinates <- function(junctions){
     
-    if(strandSpecific(fds) >= 1L){
-        spliceSiteCoords <- unlist(GRangesList(
-            extractSpliceSiteCoordsPerStrand(junctions, "+"),
-            extractSpliceSiteCoordsPerStrand(junctions, "-")
-        ))
-    } else {
-        strand(junctions) <- "*"
-        spliceSiteCoords <- extractSpliceSiteCoordsPerStrand(junctions, "*")
-    }
+    spliceSiteCoords <- unlist(GRangesList(
+        lapply(unique(strand(junctions)), extractSpliceSiteCoordsPerStrand, 
+                junctions=junctions)
+    ))
     
     return(unique(sort(spliceSiteCoords)))
 }
@@ -1049,15 +1049,21 @@ annotateSpliceSite <- function(gr){
     dt <- GRanges2SAF(gr)
     
     # extract donor/acceptor annotation
-    startSideDT <- dt[,.(End=Start, type="start"),by="Chr,Start,Strand"]
-    endSideDT   <- dt[,.(Start=End, type="end"  ),by="Chr,End,Strand"]
+    startSiteDT <- dt[,.(End=Start, type="start"),by="Chr,Start,Strand"]
+    endSiteDT   <- dt[,.(Start=End, type="end"  ),by="Chr,End,Strand"]
+    startSiteDT[,Start:=Start-1]
+    endSiteDT[,End:=End+1]
     
     # annotate and enumerate donor/acceptor
-    annotadedDT <- rbind(startSideDT, endSideDT)
-    annotadedDT[,id:=seq_len(nrow(annotadedDT))]
+    annotatedDT <- rbind(startSiteDT, endSiteDT)
+    annotatedDT[,id:=.GRP, by="Chr,Start,End,Strand"]
+    
+    # set back start / end positions for merging with junction ranges
+    annotatedDT[type == "start", Start:=End]
+    annotatedDT[type == "end", End:=Start]
     
     # convert back to granges
-    annogr <- makeGRangesFromDataFrame(annotadedDT, keep.extra.columns=TRUE)
+    annogr <- makeGRangesFromDataFrame(annotatedDT, keep.extra.columns=TRUE)
     
     ids <- lapply(c("start", "end"), function(type){
         # reduce annogr to only the specific type to prevent overlap

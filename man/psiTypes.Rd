@@ -3,18 +3,18 @@
 \docType{data}
 \name{psiTypes}
 \alias{psiTypes}
-\title{Available psi types}
+\title{Available splice metrics}
 \format{
-An object of class \code{character} of length 3.
+An object of class \code{character} of length 4.
 }
 \usage{
 psiTypes
 }
 \description{
-Available psi types
+Available splice metrics
 }
 \examples{
-  # to show available psi types:
+  # to show all available splice metrics:
   psiTypes
 
 }

@@ -17,6 +17,10 @@
 #'             \code{TxDb.Hsapiens.UCSC.hg19.knownGene}.
 #' @param orgDb An \code{orgDb} object or a data table to map the feature names.
 #'             If this is NULL, then \code{org.Hs.eg.db} is used as the default.
+#' @param filter A named list specifying the filters which should be applied to 
+#'             subset to e.g. only protein-coding genes for annotation. 
+#'             \code{names(filter)} needs to be column names in the given 
+#'             orgDb object (default: no filtering).
 #' @param keytype The keytype or column name of gene IDs in the \code{TxDb}
 #'             object (see 
 #'             \code{\link[AnnotationDbi:AnnotationDb-class]{keytypes}}
@@ -32,13 +36,13 @@
 #' # either using biomart with GRCh38
 #' try({
 #'   fds <- annotateRanges(fds, GRCh=38)
-#'   rowRanges(fds, type="psi5")[,c("hgnc_symbol")]
+#'   rowRanges(fds, type="j")[,c("hgnc_symbol")]
 #' })
 #' 
 #' # either using biomart with GRCh37
 #' try({
 #'   fds <- annotateRanges(fds, featureName="hgnc_symbol_37", GRCh=37)
-#'   rowRanges(fds, type="psi5")[,c("hgnc_symbol_37")]
+#'   rowRanges(fds, type="j")[,c("hgnc_symbol_37")]
 #' })
 #'  
 #' # or with a provided TxDb object
@@ -47,7 +51,7 @@
 #' require(org.Hs.eg.db)
 #' orgDb <- org.Hs.eg.db
 #' fds <- annotateRangesWithTxDb(fds, txdb=txdb, orgDb=orgDb)
-#' rowRanges(fds, type="psi5")[,"hgnc_symbol"]
+#' rowRanges(fds, type="j")[,"hgnc_symbol"]
 #' 
 #' @rdname annotateRanges
 #' @export
@@ -59,9 +63,6 @@ annotateRanges <- function(fds, feature="hgnc_symbol", featureName=feature,
     if(length(fds) == 0) return(fds)
     
     # useEnsembl only understands GRCh=37 or GRCh=NULL (uses 38 then)
-    if(is.null(GRCh)){
-        GRCh <- 38
-    }
     if(GRCh == 38){
         GRCh <- NULL
     }
@@ -89,17 +90,16 @@ annotateRanges <- function(fds, feature="hgnc_symbol", featureName=feature,
     annotation <- getFeatureAsGRange(ensembl, feature, featureName,
             biotype, useUSCS)
 
-    # annotate split reads
-    for(i in c("psi3", "theta")){
-        gr <- rowRanges(fds, type=i)
-        if(any(strand(gr) == "*")){
-            strand(annotation) <- "*"
-        }
-        annos <- getAnnotationFeature(data=gr, featureName, annotation)
-        mcols(fds, type=i)[[featureName]] <- annos[["feature"]]
-        mcols(fds, type=i)[[paste0("other_", featureName)]] <- 
-            annos[["other_features"]]
+    # annotate splice sites first
+    gr <- rowRanges(fds, type="theta")
+    if(any(strand(gr) == "*")){
+        strand(annotation) <- "*"
     }
+    annos <- getAnnotationFeature(data=gr, featureName, annotation)
+    mcols(fds, type="theta")[[featureName]] <- annos
+    
+    # annotate junctions with genes at donor and acceptor sites
+    fds <- annotateFeatureFromSpliceSite(fds, featureName)
 
     return(fds)
 }
@@ -108,7 +108,7 @@ annotateRanges <- function(fds, feature="hgnc_symbol", featureName=feature,
 #' @export
 annotateRangesWithTxDb <- function(fds, feature="SYMBOL", 
                     featureName="hgnc_symbol", keytype="ENTREZID",
-                    txdb=NULL, orgDb=NULL){
+                    txdb=NULL, orgDb=NULL, filter=list()){
     gene_id <- NULL
     
     # check input
@@ -132,40 +132,48 @@ annotateRangesWithTxDb <- function(fds, feature="SYMBOL",
         }
     }
     
-    for(i in c("psi3", "theta")){
-        # get GRanges object with the split reads which should be annotated
-        gr <- rowRanges(fds, type=i)
-        
-        # get the annotation to compare to
-        anno <- genes(txdb)
-        if(is.data.table(orgDb)){
-            tmp <- merge(x=as.data.table(anno)[,.(gene_id)], y=orgDb, 
-                    by.y=keytype, by.x="gene_id", all.x=TRUE, sort=FALSE)[,
-                            .(gene_id, feature=get(feature))]
-            setnames(tmp, "feature", feature)
-        } else {
-            tmp  <- as.data.table(select(orgDb, keys=mcols(anno)[,"gene_id"], 
-                    columns=feature, keytype=keytype))
-        }
-        
-        # add the new feature to the annotation
-        tmp[, uniqueID := .GRP, by=keytype]
-        anno <- anno[tmp[,uniqueID]]
-        mcols(anno)[[featureName]] <- tmp[,get(feature)]
-        
-        # clean up of NA and "" ids
-        anno <- anno[!is.na(mcols(anno)[,featureName]),]
-        anno <- anno[mcols(anno)[,featureName] != "",]
-        if(any(strand(gr) == "*")){
-            strand(anno) <- "*"
-        }
-        
-        # retrieve the feature of interest for the split reads
-        annos <- getAnnotationFeature(data=gr, featureName, anno)
-        mcols(fds, type=i)[[featureName]] <- annos[["feature"]]
-        mcols(fds, type=i)[[paste0("other_", featureName)]] <- 
-            annos[["other_features"]]
+    # get GRanges object with the splice sites which should be annotated
+    gr <- rowRanges(fds, type="theta")
+    
+    # get the annotation to compare to
+    anno <- genes(txdb)
+    if(is.data.table(orgDb)){
+        tmp <- merge(x=as.data.table(anno)[,.(gene_id)], y=orgDb, 
+                by.y=keytype, by.x="gene_id", all.x=TRUE, sort=FALSE)[,
+                            c("gene_id", feature, names(filter)), with=FALSE]
+    } else {
+        tmp  <- as.data.table(select(orgDb, keys=mcols(anno)[,"gene_id"], 
+                columns=c(feature, names(filter)), keytype=keytype))
     }
+        
+    # filter genes as specified by user (e.g. only protein_coding)
+    tmp[, include:=TRUE]
+    if(!is.null(filter) & length(filter) > 0 & !is.null(names(filter))){
+        for(n in names(filter)){
+            stopifnot(n %in% colnames(tmp))
+            tmp[!(get(n) %in% filter[[n]]), include:=FALSE]
+        }
+    }
+    
+    # add the new feature to the annotation
+    tmp[, uniqueID := .GRP, by=keytype]
+    tmp <- tmp[include == TRUE,]
+    anno <- anno[tmp[,uniqueID]]
+    mcols(anno)[[featureName]] <- tmp[,get(feature)]
+        
+    # clean up of NA and "" ids
+    anno <- anno[!is.na(mcols(anno)[,featureName]),]
+    anno <- anno[mcols(anno)[,featureName] != "",]
+    if(any(strand(gr) == "*")){
+        strand(anno) <- "*"
+    }
+    
+    # retrieve the feature of interest for the splice sites
+    annos <- getAnnotationFeature(data=gr, featureName, anno)
+    mcols(fds, type="theta")[[featureName]] <- annos
+    
+    # transfer annoated features for splice sites to junctions
+    fds <- annotateFeatureFromSpliceSite(fds, featureName)
     
     return(fds)   
 }
@@ -228,14 +236,12 @@ getAnnotationFeature <- function(data, feature, annotation){
     }
     
     # extract only the feature and group them with a ";"
-    featureDT <- featureDT[,
-            list(first_feature=unique(feature)[1], 
-                other_features=paste(unique(feature)[-1], collapse = ";")),
-            by="from"
-    ]
+    featureDT <- featureDT[,feature:=paste(unique(feature), collapse = ";"),
+                            by="from"]
+    featureDT <- featureDT[!duplicated(featureDT),]
+    featureDT[feature == "NA", feature:=NA]
 
-    return(list(feature=featureDT[order(from),first_feature],
-                other_features=featureDT[order(from),other_features]))
+    return(featureDT[order(from),feature])
 }
 
 
@@ -264,7 +270,8 @@ findAnnotatedJunction <- function(fds, annotation, annotateNames=TRUE,
     # check if strandspecific data is used
     gr <- rowRanges(fds, type="psi5")
     
-    if(isFALSE(as.logical(stranded))){
+    # 
+    if(isFALSE(as.logical(unique(stranded)))){
         strand(gr) <- "*"
     }
     
@@ -314,4 +321,27 @@ findAnnotatedJunction <- function(fds, annotation, annotateNames=TRUE,
     fds
 }
 
-
+#' annotate junctions with genes at donor and acceptor sites
+#' @noRd
+annotateFeatureFromSpliceSite <- function(fds, featureName){
+    ssdt <- data.table(spliceSiteID=mcols(fds, type="theta")$spliceSiteID,
+                        genes=mcols(fds, type="theta")[[featureName]] 
+    )
+    junction_dt <- data.table(startID=mcols(fds, type="psi3")$startID,
+                                endID=mcols(fds, type="psi3")$endID
+    )
+    junction_dt <- merge(junction_dt, ssdt, all.x=TRUE, 
+                        by.x="startID", by.y="spliceSiteID", sort=FALSE)
+    setnames(junction_dt, "genes", "genes_donor")
+    junction_dt <- merge(junction_dt, ssdt, all.x=TRUE, 
+                        by.x="endID", by.y="spliceSiteID", sort=FALSE)
+    setnames(junction_dt, "genes", "genes_acceptor")
+    
+    junction_dt[,genes:=paste(uniqueIgnoreNA(
+                    c(splitGenes(genes_donor), splitGenes(genes_acceptor))), 
+                    collapse=";"),
+                by="startID,endID"]
+    junction_dt[genes == "NA", genes:=NA]
+    mcols(fds, type="j")[[featureName]] <- junction_dt[,genes]
+    return(fds)
+}

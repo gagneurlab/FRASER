@@ -10,8 +10,8 @@
   implementation = c("PCA", "PCA-BB-Decoder", "AE", "AE-weighted", "PCA-BB-full",
     "fullAE", "PCA-regression", "PCA-reg-full", "PCA-BB-Decoder-no-weights", "BB"),
   q,
-  type = "psi3",
-  rhoRange = c(1e-08, 1 - 1e-08),
+  type = psiTypes,
+  rhoRange = c(-30, 30),
   weighted = FALSE,
   noiseAlpha = 1,
   convergence = 1e-05,
@@ -35,7 +35,7 @@ Should be fitted using \code{\link{optimHyperParams}} if unknown.
 If a named vector is provided it is used for the different
 splicing types.}
 
-\item{type}{The type of PSI (psi5, psi3 or theta for theta/splicing 
+\item{type}{The type of PSI (jaccard, psi5, psi3 or theta for theta/splicing 
 efficiency)}
 
 \item{rhoRange}{Defines the range of values that rho parameter from the 

@@ -69,6 +69,7 @@ mergeExternalData <- function(fds, countFiles, sampleIDs, annotation=NULL){
     extCts <- lapply(reqNames, function(id){
         gr <- makeGRangesFromDataFrame(fread(countFiles[id]),
                 keep.extra.columns=TRUE)
+        seqlevelsStyle(gr) <- seqlevelsStyle(fds) #force fds style onto external counts
         if(any(!sampleIDs %in% colnames(mcols(gr)))){
             stop("Can not find provided sampleID in count data. Missing IDs: ",
                     paste(collapse=", ",
@@ -99,8 +100,8 @@ mergeExternalData <- function(fds, countFiles, sampleIDs, annotation=NULL){
     # merge psi5/psi3 data
     #
     extractExtData <- function(fds, countFun, type, ov, extData, extName){
-        ctsOri <- as.matrix(countFun(fds, type=type)[from(ov),])
-        ctsExt <- as.matrix(mcols(extData[[extName]])[to(ov),])
+        ctsOri <- as.matrix(countFun(fds, type=type)[from(ov),,drop=FALSE])
+        ctsExt <- as.matrix(mcols(extData[[extName]])[to(ov),,drop=FALSE])
         ans <- cbind(ctsOri, ctsExt)
         mode(ans) <- "integer"
         ans
@@ -154,7 +155,6 @@ mergeExternalData <- function(fds, countFiles, sampleIDs, annotation=NULL){
     ans <- new("FraserDataSet",
             name = name(fds),
             bamParam = scanBamParam(fds),
-            strandSpecific = strandSpecific(fds),
             workingDir = workingDir(fds),
             colData = newColData,
             assays = Assays(SimpleList(

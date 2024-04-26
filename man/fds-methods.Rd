@@ -141,8 +141,8 @@ passed to GenomeInfoDb::mapSeqlevels().}
 Getter method return the respective current value.
 }
 \description{
-The following methods are getter and setter methods to extract or set
-certain values of a FraserDataSet object. 
+The following methods are getter and setter methods to extract 
+or set certain values of a FraserDataSet object. 
 
 \code{samples} sets or gets the sample IDs; \code{condition} ;
 \code{}

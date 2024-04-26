@@ -33,7 +33,7 @@ test_that("Strand spcific counting", {
     fds <- createTestFraserSettings()
     strandSpecific(fds) <- TRUE
     ans <- countSplitReadsPerChromosome("chrUn_gl000218", bamFile(fds)[1], 
-            pairedEnd=TRUE, strandMode=strandSpecific(fds), genome=NULL,
+            pairedEnd=TRUE, strandMode=strandSpecific(fds)[1], genome=NULL,
             scanBamParam=scanBamParam(fds))
     expect_equivalent(ans, GRanges())
     
@@ -51,7 +51,7 @@ test_that("test minAnchor", {
         "sample3", features, fds, minAnchor=25, recount=TRUE)) })
     
     expect_equivalent(c(7, 8, 0, 0, 7), ctnNS5[,1])
-    expect_equivalent(c(5, 8, 0, 0, 6), ctnNS25[,1])
+    expect_equivalent(c(5, 8, 0, 0, 7), ctnNS25[,1])
 })
 
 test_that("Test psi values", {

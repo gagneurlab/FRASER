@@ -5,15 +5,18 @@
 \alias{calculateZscore}
 \alias{calculatePvalues}
 \alias{calculatePadjValues}
+\alias{calculatePadjValuesOnSubset}
 \title{FRASER: Find RAre Splicing Events in RNA-seq data}
 \usage{
 FRASER(
   fds,
   q,
+  type = fitMetrics(fds),
   implementation = c("PCA", "PCA-BB-Decoder", "AE-weighted", "AE", "BB"),
   iterations = 15,
   BPPARAM = bpparam(),
   correction,
+  subsets = NULL,
   ...
 )
 
@@ -28,7 +31,26 @@ calculatePvalues(
   capN = 5 * 1e+05
 )
 
-calculatePadjValues(fds, type = currentType(fds), method = "BY")
+calculatePadjValues(
+  fds,
+  type = currentType(fds),
+  method = "BY",
+  rhoCutoff = NA,
+  geneLevel = TRUE,
+  geneColumn = "hgnc_symbol",
+  subsets = NULL,
+  BPPARAM = bpparam()
+)
+
+calculatePadjValuesOnSubset(
+  fds,
+  genesToTest,
+  subsetName,
+  type = currentType(fds),
+  method = "BY",
+  geneColumn = "hgnc_symbol",
+  BPPARAM = bpparam()
+)
 }
 \arguments{
 \item{fds}{A \code{\link{FraserDataSet}} object}
@@ -37,6 +59,9 @@ calculatePadjValues(fds, type = currentType(fds), method = "BY")
 Should be fitted using \code{\link{optimHyperParams}} if unknown.
 If a named vector is provided it is used for the different
 splicing types.}
+
+\item{type}{The type of PSI (jaccard, psi5, psi3 or theta for theta/splicing 
+efficiency)}
 
 \item{implementation}{The method that should be used to correct for 
 confounders.}
@@ -48,10 +73,14 @@ not yet converged after these number of iterations, the fit stops anyway.}
 
 \item{correction}{Deprecated. The name changed to implementation.}
 
-\item{...}{Additional parameters passed on to the internal fit function}
+\item{subsets}{A named list of named lists specifying any number of gene 
+subsets (can differ per sample). For each subset, FDR correction
+will be limited to genes in the subset, and the FDR corrected 
+pvalues stored as an assay in the fds object in addition to the 
+transcriptome-wide FDR corrected pvalues. See the examples for 
+how to use this argument.}
 
-\item{type}{The type of PSI (psi5, psi3 or theta for theta/splicing 
-efficiency)}
+\item{...}{Additional parameters passed on to the internal fit function}
 
 \item{logit}{Indicates if z scores are computed on the logit scale (default) 
 or in the natural (psi) scale.}
@@ -62,7 +91,24 @@ calculated. Possible are beta-binomial, binomial and normal.}
 \item{capN}{Counts are capped at this value to speed up the p-value 
 calculation}
 
-\item{method}{The p.adjust method that should be used.}
+\item{method}{The p.adjust method that should be used for genome-wide 
+multiple testing correction.}
+
+\item{rhoCutoff}{The cutoff value on the fitted rho value 
+(overdispersion parameter of the betabinomial) above which junctions are 
+masked with NA during p value adjustment (default: NA, no masking).}
+
+\item{geneLevel}{Logical value indiciating whether gene-level p values 
+should be calculated. Defaults to TRUE.}
+
+\item{geneColumn}{The column name of the column that has the gene annotation 
+that will be used for gene-level pvalue computation.}
+
+\item{genesToTest}{A named list with the subset of genes to test per sample.
+The names must correspond to the sampleIDs in the given fds object.}
+
+\item{subsetName}{The name under which the resulting FDR corrected pvalues 
+will be stored in metadata(fds).}
 }
 \value{
 FraserDataSet
@@ -104,11 +150,21 @@ psi.
 
 \item \code{calculatePvalues()}: This function calculates two-sided p-values based on 
 the beta-binomial distribution (or binomial or normal if desired). The 
-returned p values are already adjusted with Holm's method per donor or 
+returned p values are not yet adjusted with Holm's method per donor or 
 acceptor site, respectively.
 
 \item \code{calculatePadjValues()}: This function adjusts the previously calculated 
-p-values per sample for multiple testing.
+p-values per sample for multiple testing. First, the previoulsy calculated 
+junction-level p values are adjusted with Holm's method per donor or 
+acceptor site, respectively. Then, if gene symbols have been annotated to 
+junctions (and not otherwise requested), gene-level p values are computed.
+
+\item \code{calculatePadjValuesOnSubset()}: This function does FDR correction only for all junctions 
+in a certain subset of genes which can differ per sample. Requires gene 
+symbols to have been annotated to junctions. As with the full FDR 
+correction across all junctions, first the previously calculated 
+junction-level p values are adjusted with Holm's method per donor or 
+acceptor site, respectively. Then, gene-level p values are computed.
 
 }}
 \examples{
@@ -132,16 +188,32 @@ fds <- FRASER(fds, q=2, implementation="PCA")
 # The functions run inside the FRASER function can also be directly 
 # run themselves. 
 # To directly run the fit function:
-fds <- fit(fds, implementation="PCA", q=2, type="psi5")
+fds <- fit(fds, implementation="PCA", q=2, type="jaccard")
 
 # To directly run the nomial and adjusted p value and z score 
 # calculation, the following functions can be used:
-fds <- calculatePvalues(fds, type="psi5")
-head(pVals(fds, type="psi5"))
-fds <- calculatePadjValues(fds, type="psi5", method="BY")
-head(padjVals(fds, type="psi5"))
-fds <- calculateZscore(fds, type="psi5")
-head(zScores(fds, type="psi5")) 
+fds <- calculatePvalues(fds, type="jaccard")
+head(pVals(fds, type="jaccard"))
+fds <- calculatePadjValues(fds, type="jaccard", method="BY")
+head(padjVals(fds, type="jaccard"))
+fds <- calculateZscore(fds, type="jaccard")
+head(zScores(fds, type="jaccard")) 
+
+# example of restricting FDR correction to subsets of genes of interest
+genesOfInterest <- list("sample1"=c("TIMMDC1"), "sample2"=c("MCOLN1"))
+fds <- calculatePadjValues(fds, type="jaccard", 
+                 subsets=list("exampleSubset"=genesOfInterest))
+padjVals(fds, type="jaccard", subsetName="exampleSubset")
+padjVals(fds, type="jaccard", level="gene", subsetName="exampleSubset")
+fds <- calculatePadjValues(fds, type="jaccard", 
+                 subsets=list("anotherExampleSubset"=c("TIMMDC1")))
+padjVals(fds, type="jaccard", subsetName="anotherExampleSubset")
+
+# only adding FDR corrected pvalues on a subset without calculating 
+# transcriptome-wide FDR again:
+fds <- calculatePadjValuesOnSubset(fds, genesToTest=genesOfInterest, 
+         subsetName="setOfInterest", type="jaccard")
+padjVals(fds, type="jaccard", subsetName="setOfInterest")
 
 }
 \seealso{

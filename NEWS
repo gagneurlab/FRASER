@@ -1,3 +1,32 @@
+CHANGES IN VERSION 1.99.3
+-------------------------
+    o Bugfix for contig names containing certain characters
+    
+CHANGES IN VERSION 1.99.2
+-------------------------
+    o Update of the plot functions to support colorring aberrant status based 
+      on p values computed on subsets of genes
+      
+-------------------------
+    o Major update to FRASER2:
+        o Introduction of new & more robust splice metric Intron Jaccard Index
+        o Only Intron Jaccard Index metric used by default    
+        o Improved gene level pvalue calculation and internal storage
+        o Introduction of option to limit FDR correction to user-defined 
+          subsets of genes per sample (e.g. OMIM genes with rare variant)
+        o Updated internal pseudocount parameter and default delta Jaccard 
+          cutoff    
+        o Junction filtering adapted to usage of Intron Jaccard Index metric
+            o Require min expression of N >= 10 in 25% of the samples
+        o Results table:
+            o Functionality to flag outliers in blacklist regions of the genome
+            o Functionality to annotate the predicted type of aberrantSplicing 
+              (e.g. exon skipping, intron retention etc.)
+        o Several updates in the plotting functions    
+            o introduction of manhattan plot functionality
+            o possibility to create sashimi plots to visualize read coverage in 
+              the bam files for outliers
+
 CHANGES IN VERSION 1.8.1
 -------------------------
     o Bugfix in merging splicing counts (#41)

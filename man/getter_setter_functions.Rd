@@ -15,10 +15,13 @@
 \alias{zScores}
 \alias{pVals}
 \alias{padjVals}
+\alias{availableFDRsubsets}
 \alias{predictedMeans}
 \alias{deltaPsiValue}
 \alias{currentType}
 \alias{currentType<-}
+\alias{fitMetrics}
+\alias{fitMetrics<-}
 \alias{pseudocount}
 \alias{hyperParams}
 \alias{dontWriteHDF5}
@@ -35,9 +38,26 @@ rho(fds, type = currentType(fds))
 
 zScores(fds, type = currentType(fds), byGroup = FALSE, ...)
 
-pVals(fds, type = currentType(fds), level = "site", dist = "BetaBinomial", ...)
+pVals(
+  fds,
+  type = currentType(fds),
+  level = "site",
+  filters = list(),
+  dist = "BetaBinomial",
+  ...
+)
 
-padjVals(fds, type = currentType(fds), dist = c("BetaBinomial"), ...)
+padjVals(
+  fds,
+  type = currentType(fds),
+  dist = c("BetaBinomial"),
+  level = "site",
+  subsetName = NULL,
+  filters = list(),
+  ...
+)
+
+availableFDRsubsets(fds)
 
 predictedMeans(fds, type = currentType(fds))
 
@@ -46,6 +66,10 @@ deltaPsiValue(fds, type = currentType(fds))
 currentType(fds)
 
 currentType(fds) <- value
+
+fitMetrics(fds)
+
+fitMetrics(fds) <- value
 
 pseudocount(value = NULL)
 
@@ -70,13 +94,21 @@ verbose(fds) <- value
 
 \item{byGroup}{If TRUE, aggregation by donor/acceptor site will be done.}
 
-\item{...}{Internally used parameteres.}
+\item{...}{Internally used parameters.}
 
 \item{level}{Indicates if the retrieved p values should be adjusted on the 
 donor/acceptor site-level (default) or if unadjusted junction-level 
 p values should be returned.}
 
+\item{filters}{A named list giving the filters that were applied for masking 
+during p value correction. Used for storing and retrieving the 
+correct set of requested p values.}
+
 \item{dist}{Distribution for which the p-values should be extracted.}
+
+\item{subsetName}{The name of a subset of genes of interest for which FDR 
+corrected pvalues were previously computed. 
+Default is NULL (using transcriptome-wide FDR corrected pvalues).}
 
 \item{all}{Logical value indicating whether \code{hyperParams(fds)} should 
 return the results of all evaluated parameter combinations or only 
@@ -110,6 +142,9 @@ beta-binomial distribution
 
 \item \code{padjVals()}: This returns the adjusted p-values.
 
+\item \code{availableFDRsubsets()}: This returns the names of FDR subsets 
+for which adjusted p values have been calculated.
+
 \item \code{predictedMeans()}: This returns the fitted mu (i.e. psi) 
 values.
 
@@ -117,10 +152,17 @@ values.
 observed and the fitted psi values.
 
 \item \code{currentType()}: Returns the psi type that is used 
-within several methods in the FRASER package.
+within several methods in the FRASER package (defaults to jaccard).
 
 \item \code{currentType(fds) <- value}: Sets the psi type that is to be used 
 within several methods in the FRASER package.
+
+\item \code{fitMetrics()}: Returns the splice metrics that will be
+fitted (defaults to jaccard, used within several methods in the 
+FRASER package).
+
+\item \code{fitMetrics(fds) <- value}: Sets the splice metrics that will be 
+fitted (used within several methods in the FRASER package).
 
 \item \code{pseudocount()}: Sets and returns the pseudo count used 
 within the FRASER fitting procedure.
@@ -140,7 +182,7 @@ assays should be stored as hdf5 files.
 \item \code{dontWriteHDF5(fds) <- value}: Sets whether the assays should be stored 
 as hdf5 files.
 
-\item \code{verbose()}: Dependend on the level of verbosity 
+\item \code{verbose()}: Dependent on the level of verbosity 
 the algorithm reports more or less to the user. 0 means being quiet 
 and 10 means everything.
 
@@ -156,7 +198,7 @@ dontWriteHDF5(fds)
 dontWriteHDF5 <- TRUE
 
 # get/set the splice metric for which results should be retrieved 
-currentType(fds) <- "psi5"
+currentType(fds) <- "jaccard"
 currentType(fds)
 
 # get fitted parameters
@@ -167,6 +209,9 @@ rho(fds)
 # get statistics
 pVals(fds)
 padjVals(fds)
+
+# zscore not calculated by default
+fds <- calculateZscore(fds, type="jaccard")
 zScores(fds)
 
 # set and get pseudocount
@@ -174,9 +219,9 @@ pseudocount(4L)
 pseudocount()
 
 # retrieve or set a mask to exclude certain junctions in the fitting step
-featureExclusionMask(fds, type="theta") <- sample(
-        c(FALSE, TRUE), nrow(mcols(fds, type="theta")), replace=TRUE)
-featureExclusionMask(fds, type="theta")
+featureExclusionMask(fds, type="jaccard") <- sample(
+        c(FALSE, TRUE), nrow(mcols(fds, type="jaccard")), replace=TRUE)
+featureExclusionMask(fds, type="jaccard")
 
 # controlling the verbosity level of the output of some algorithms
 verbose(fds) <- 2

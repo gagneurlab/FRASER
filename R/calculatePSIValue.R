@@ -14,14 +14,14 @@
 #'
 #' @inheritParams countRNA
 #' @param types A vector with the psi types which should be calculated. Default 
-#' is all of psi5, psi3 and theta.
+#' is all of jaccard, psi5, psi3 and theta.
 #' @param overwriteCts FALSE or TRUE (the default) the total counts (aka N) will
 #'              be recalculated based on the existing junction counts (aka K)
 #' @return FraserDataSet
 #' @export
 #' @examples
 #'   fds <- createTestFraserDataSet()
-#'   fds <- calculatePSIValues(fds, types="psi5")
+#'   fds <- calculatePSIValues(fds, types="jaccard")
 #'   
 #'   ### usually one would run this function for all psi types by using:
 #'   # fds <- calculatePSIValues(fds)
@@ -35,6 +35,10 @@ calculatePSIValues <- function(fds, types=psiTypes, overwriteCts=FALSE,
         fds <- calculatePSIValuePrimeSite(fds, psiType=psiType,
                                 overwriteCts=overwriteCts, BPPARAM=BPPARAM)
     }
+    
+    # calculate intron jaccard index
+    fds <- calculateIntronNonsplitSum(fds, overwriteCts=overwriteCts)
+    fds <- calculateJaccardIntronIndex(fds, overwriteCts=overwriteCts)
     
     # calculate the delta psi value
     for(psiType in types){
@@ -183,7 +187,7 @@ calculateSitePSIValue <- function(fds, overwriteCts, BPPARAM){
     # check input
     stopifnot(is(fds, "FraserDataSet"))
     
-    message(date(), ": Calculate the PSI site values ...")
+    message(date(), ": Calculate the theta values ...")
     
     psiName <- "theta"
     psiROCName <- "rawOtherCounts_theta"
@@ -318,4 +322,102 @@ getOtherCountsCacheFolder <- function(fds){
     
     # return it
     return(cachedir)
+}
+
+#'
+#' calculates the jaccard intron value for the given junctions
+#'
+#' @noRd
+calculateJaccardIntronIndex <- function(fds, overwriteCts){
+    stopifnot(is(fds, "FraserDataSet"))
+    
+    message(date(), ": Calculate the Jaccard Intron values ...")
+    
+    # check if we have computed N_psi3, N_psi5 and K_nonsplit already
+    if(!all(c(paste0("rawOtherCounts_psi", c(5, 3)), "rawCountsJnonsplit") %in% 
+            assayNames(fds))){
+        stop("Please calculate N_psi3, N_psi5 and K_nonsplit first before ", 
+                "calling this function.")
+    }
+    
+    # calculate intron jaccard value
+    jaccard_denom <- N(fds, "psi3") + N(fds, "psi5") + 
+                        assay(fds, "rawCountsJnonsplit") - K(fds, type="j")
+    jaccardValues <- K(fds, type="j") / jaccard_denom 
+    otherCounts_jaccard <- jaccard_denom - K(fds, type="j")
+    
+    # assign it to our object
+    assay(fds, type="j", "jaccard", withDimnames=FALSE) <- jaccardValues
+    
+    if(isTRUE(overwriteCts) || 
+            !("rawOtherCounts_jaccard" %in% assayNames(fds))){
+        assay(fds, type="j", "rawOtherCounts_jaccard", 
+                withDimnames=FALSE) <- otherCounts_jaccard
+    }
+    
+    return(fds)
+}
+
+#' Calculates the sum of nonsplit reads overlapping either the donor or 
+#' acceptor splice site and stores it as a new assay (one value for each 
+#' junction and sample).
+#' 
+#' @noRd
+calculateIntronNonsplitSum <- function(fds, overwriteCts){
+    stopifnot(is(fds, "FraserDataSet"))
+    
+    message(date(), ": Calculate the total nonsplit counts for each intron ", 
+                "...")
+    
+    
+    # get splice site nonsplit counts
+    nsr_ss <- K(fds, "theta")
+    
+    # retrieve junction and splice site annotation
+    junction_dt <- as.data.table(rowRanges(fds, type="j"))[,
+                                                    .(seqnames, start, end, 
+                                                    strand, startID, endID)]
+    junction_dt[, j_idx:=seq_len(.N)]
+    ss_map <- data.table(spliceSiteID=rowRanges(fds, type="ss")$spliceSiteID, 
+                            nsr_idx=seq_len(nrow(nonSplicedReads(fds))))
+    
+    junction_dt <- merge(junction_dt, ss_map, 
+                            by.x="startID", by.y="spliceSiteID",
+                            all.x=TRUE)
+    setnames(junction_dt, "nsr_idx", "start_idx")
+    junction_dt <- merge(junction_dt, ss_map, 
+                            by.x="endID", by.y="spliceSiteID", 
+                            all.x=TRUE)
+    setnames(junction_dt, "nsr_idx", "end_idx")
+    
+    # for each junction, find the two rows in K_theta corresponding to its 
+    # donor and acceptor splice site
+    donor_sites <-  junction_dt[!is.na(start_idx),]
+    acc_sites <- junction_dt[!is.na(end_idx),]
+    
+    # set nsr counts to 0 for junctions for which no mapping by spliceSiteID 
+    # could be found
+    nsr_donor <- matrix(0, nrow=nrow(fds), ncol=ncol(fds))
+    nsr_acc <- matrix(0, nrow=nrow(fds), ncol=ncol(fds))
+    
+    nsr_donor[donor_sites[,j_idx],] <- 
+        as.matrix(nsr_ss[donor_sites[,start_idx],])
+    nsr_acc[acc_sites[,j_idx],] <- 
+        as.matrix(nsr_ss[acc_sites[,end_idx],])
+    
+    # sum them
+    nsr_j <- nsr_donor + nsr_acc
+    
+    if(nrow(nsr_j) != nrow(fds)){
+        warning("Unequal number of junctions in fds and junctions with ",
+                "computed nonsplit count sum!")
+    }
+    
+    # assign it to our object
+    if(isTRUE(overwriteCts) || 
+            !("rawCountsJnonsplit" %in% assayNames(fds))){
+        assay(fds, type="j", "rawCountsJnonsplit", withDimnames=FALSE) <- nsr_j
+    }
+    
+    return(fds)
 }

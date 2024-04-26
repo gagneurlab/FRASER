@@ -2,8 +2,9 @@
 #' Main autoencoder fit function
 #'
 #' @noRd
-fitAutoencoder <- function(fds, q, type="psi3", noiseAlpha=1, minDeltaPsi=0.1,
-                    rhoRange=c(1e-5, 1-1e-5), lambda=0, convergence=1e-5,
+fitAutoencoder <- function(fds, q, type=currentType(fds), noiseAlpha=1, 
+                    minDeltaPsi=0.1,
+                    rhoRange=c(-30, 30), lambda=0, convergence=1e-5,
                     iterations=15, initialize=TRUE, control=list(),
                     BPPARAM=bpparam(), verbose=FALSE, nrDecoderBatches=5,
                     weighted=FALSE, nSubset=15000, multiRho=FALSE,
