@@ -45,6 +45,7 @@ createTestFraserSettings <- function(workingDir="FRASER_output"){
     
     # create FRASER object
     fds <- FraserDataSet(colData=sampleTable, workingDir=workingDir)
+    strandSpecific(fds) <- 'no'
 
     # dont use hdf5 for example data set
     dontWriteHDF5(fds) <- TRUE
