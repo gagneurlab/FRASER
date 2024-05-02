@@ -93,7 +93,7 @@ mergeExternalData <- function(fds, countFiles, sampleIDs, annotation=NULL){
     rownames(annotation) <- annotation[,"sampleID"]
     newColData <- DataFrame(rbind(fill=TRUE,
             as.data.table(colData(fds)),
-            as.data.table(annotation[sampleIDs,])))
+            as.data.table(annotation[sampleIDs,,drop=FALSE])))
     rownames(newColData) <- newColData[,"sampleID"]
 
     #
