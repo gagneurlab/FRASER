@@ -815,7 +815,7 @@ checkIntergenic <- function(junctions_gr, i, refseq.genes){
     # check if distance to nearest is > 1000 -> intergenic
     # otherwise up/downstream
     dist = min(distance(test_junction, refseq.genes), na.rm = TRUE)
-    if(dist > 0){
+    if(is.finite(dist) && dist > 0){
         # find nearest and compare starts
         if(start(refseq.genes[nearest(junctions_gr[i], 
                                         refseq.genes)]) > start){
