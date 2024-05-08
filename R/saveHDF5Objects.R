@@ -73,11 +73,6 @@ loadFraserDataSet <- function(dir, name=NULL, file=NULL, upgrade=FALSE){
     # ensure strandSpecific slot is up-to-date with new vector format
     if("strandSpecific" %in% slotNames(fds)){
         strandSpecific(fds) <- slot(fds, "strandSpecific")    
-    } else{
-        # adapt type of strandSpecific if needed (changed logical -> integer)
-        if(is.logical(strandSpecific(fds))){
-            strandSpecific(fds) <- as.integer(strandSpecific(fds))
-        }
     }
     
     
