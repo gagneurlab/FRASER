@@ -73,6 +73,11 @@ loadFraserDataSet <- function(dir, name=NULL, file=NULL, upgrade=FALSE){
     # ensure strandSpecific slot is up-to-date with new vector format
     if("strandSpecific" %in% slotNames(fds)){
         strandSpecific(fds) <- slot(fds, "strandSpecific")    
+    }
+    
+    
+    e <- try(assays(fds), silent=TRUE)
+    if(is.error(e)){
         if(grepl("DelayedMatrix .* representation .* Please update it ",
                 as.character(e))){
             if(isTRUE(upgrade)){
