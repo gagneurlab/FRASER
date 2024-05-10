@@ -43,6 +43,9 @@ createTestFraserSettings <- function(workingDir="FRASER_output"){
     # check that NHDF is NA group
     sampleTable[gene=='NHDF', condition:=NA]
     
+    # set strand specificity column in colData
+    sampleTable[, strand := 0L]
+    
     # create FRASER object
     fds <- FraserDataSet(colData=sampleTable, workingDir=workingDir)
 
