@@ -5,10 +5,10 @@ test_that("Test hyper param testing", {
     fds <- calculatePSIValues(fds)
     
     # test BB no hyper params and accessors
-    fds <- optimHyperParams(fds, type="psi3", implementation="BB")
+    fds <- estimateBestQ(fds, type="psi3", useOHT=FALSE, implementation="BB")
     expect_true(is.na(hyperParams(fds, type="psi3")[,q]))
     
-    fds <- optimHyperParams(fds, type="psi5", minDeltaPsi=0.01, plot=FALSE,
+    fds <- estimateBestQ(fds, type="psi5", useOHT=FALSE, minDeltaPsi=0.01, plot=FALSE,
             q_param = c(2,3), noise_param=c(1), iterations=2, BPPARAM=bpparam())
     
     expect_equal(c(2,5), dim(hyperParams(fds, type="psi5", all=TRUE)))

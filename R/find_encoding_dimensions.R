@@ -342,7 +342,7 @@ medianMarchenkoPastur <- function(ncol, nrow){
     y <- rep(0, length(x))
     for (numCols in 1:length(x)){
       # Approximate integral using Gauss-Kronrod Quadrature
-      y[numCols] <- quadgk(dmp, a=betaMinus, b=x[numCols], ndf=nrow, pdim=ncol)
+      y[numCols] <- pracma::quadgk(RMTstat::dmp, a=betaMinus, b=x[numCols], ndf=nrow, pdim=ncol)
     }  
     
     # Set new boundaries for x that yield the closest results to 0.5

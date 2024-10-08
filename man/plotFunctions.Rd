@@ -523,7 +523,7 @@ fds <- makeSimulatedFraserDataSet(m=40, j=200)
 fds <- calculatePSIValues(fds)
 fds <- filterExpressionAndVariability(fds, filter=FALSE)
 # this step should be done for more dimensions in practice
-fds <- optimHyperParams(fds, "jaccard", q_param=c(2,5,10,25))
+fds <- estimateBestQ(fds, type="jaccard", useOHT=FALSE, q_param=c(2,5,10,25))
 
 # assign gene names to show functionality on test dataset
 # use fds <- annotateRanges(fds) on real data

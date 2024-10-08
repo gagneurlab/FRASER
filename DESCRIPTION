@@ -77,7 +77,9 @@ Imports:
     tibble,
     tools,
     utils,
-    VGAM
+    VGAM,
+    RMTstat,
+    pracma
 Suggests:
     magick,
     BiocStyle,
@@ -90,7 +92,8 @@ Suggests:
     rtracklayer,
     SGSeq,
     ggbio,
-    biovizBase
+    biovizBase,
+    denoiseR
 LinkingTo:
     RcppArmadillo,
     Rcpp
