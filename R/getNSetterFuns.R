@@ -529,8 +529,8 @@ hyperParams <- function(fds, type=currentType(fds), all=FALSE){
     if(is.null(ans)){
         return(ans)
     }
-    if(isFALSE(all)){
-        ans <- ans[aroc == max(aroc)][1]
+    if(isFALSE(all) && "aroc" %in% names(ans)){
+      ans <- ans[aroc == max(aroc)][1]
     }
     ans
 }
