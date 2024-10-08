@@ -251,7 +251,7 @@
 #' fds <- calculatePSIValues(fds)
 #' fds <- filterExpressionAndVariability(fds, filter=FALSE)
 #' # this step should be done for more dimensions in practice
-#' fds <- optimHyperParams(fds, "jaccard", q_param=c(2,5,10,25))
+#' fds <- estimateBestQ(fds, type="jaccard", useOHT=FALSE, q_param=c(2,5,10,25))
 #' 
 #' # assign gene names to show functionality on test dataset
 #' # use fds <- annotateRanges(fds) on real data
@@ -1013,9 +1013,15 @@ plotEncDimSearch.FRASER <- function(object, type=psiTypes,
     plotType <- match.arg(plotType)
     data <- hyperParams(object, type=type, all=TRUE)
     if (is.null(data)) {
-        warning(paste("no hyperparameters were estimated for", type, 
-                        "\nPlease use `optimHyperParams` to compute them."))
-        return(NULL)
+      warning(paste("No hyperparameters were estimated for", type, 
+                        "\nPlease use `estimateBestQ` to compute them."))
+      return(NULL)
+    }
+    else if ("oht" %in% names(data)) {
+      warning(paste("OHT was used to estimate the optimal encoding dimension.",
+                    "A visualization of the method will be included soon.", 
+                    collapse="\n"))
+      return(NULL)
     }
     if(!"nsubset" %in% colnames(data)){
         data[,nsubset:="NA"]

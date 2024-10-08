@@ -520,9 +520,9 @@ noise <- function(fds, type=currentType(fds)){
     return(fds)
 }
 
-#' @describeIn getter_setter_functions This returns the results of the 
-#' hyperparameter optimization NULL if the hyperparameter 
-#' opimization was not run yet.
+#' @describeIn getter_setter_functions This returns the results of OHT or the 
+#' hyperparameter optimization. It returns NULL if \code{\link{estimateBestQ}}
+#' was not run yet.
 #' @export
 hyperParams <- function(fds, type=currentType(fds), all=FALSE){
     ans <- metadata(fds)[[paste0("hyperParams_", type)]]
@@ -540,10 +540,10 @@ hyperParams <- function(fds, type=currentType(fds), all=FALSE){
     return(fds)
 }
 
-#' @describeIn getter_setter_functions This returns the optimal size of the 
-#' latent space according to the hyperparameter optimization or a simple 
-#' estimate of about a tenth of the number of samples if the hyperparameter 
-#' opimization was not run yet.
+#' @describeIn getter_setter_functions This returns the optimal latent space
+#' dimension estimated by OHT or a hyperparameter optimization. If  
+#' \code{\link{estimateBestQ}} has not been run before, a simple estimate of 
+#' about a tenth of the number of samples is returned. 
 #' @export
 bestQ <- function(fds, type=currentType(fds)){
     ans <- hyperParams(fds, type=type)[1,q]
