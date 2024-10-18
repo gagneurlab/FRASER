@@ -697,8 +697,8 @@ for a subset of the dataset and recommend to use the faster OHT approach:
 
 <<findBestQ, echo=TRUE>>=
 set.seed(42)
-# Optimal Hard Thresholding
-fds <- estimateBestQ(fds, type="jaccard", useOHT=TRUE, plot=FALSE)
+# Optimal Hard Thresholding (default method)
+fds <- estimateBestQ(fds, type="jaccard", plot=FALSE)
 # hyperparameter opimization
 fds <- estimateBestQ(fds, type="jaccard", useOHT=FALSE, plot=FALSE)
 
