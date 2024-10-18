@@ -92,8 +92,7 @@ Suggests:
     rtracklayer,
     SGSeq,
     ggbio,
-    biovizBase,
-    denoiseR
+    biovizBase
 LinkingTo:
     RcppArmadillo,
     Rcpp
