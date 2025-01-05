@@ -107,7 +107,7 @@ plotExpectedVsObservedPsi(
   ...
 )
 
-\S4method{plotEncDimSearch}{FraserDataSet}(object, type = psiTypes, plotType = c("auc", "loss"))
+\S4method{plotEncDimSearch}{FraserDataSet}(object, type = psiTypes, plotType = c("auc", "loss", "sv"))
 
 plotFilterExpression(
   fds,

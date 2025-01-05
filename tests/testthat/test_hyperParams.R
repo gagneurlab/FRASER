@@ -38,13 +38,10 @@ test_that("Test Optimal Hard Thresholding", {
   fds <- calculatePSIValues(fds)
   fds <- estimateBestQ(fds, type="jaccard", useOHT=TRUE)
   
-  expect_equal(c(1,2), dim(hyperParams(fds, type="jaccard")))
+  expect_equal(c(1,3), dim(hyperParams(fds, type="jaccard")))
   expect_equal(metadata(fds)$hyperParams_jaccard[1,q],
                bestQ(fds, type="jaccard"))
-  expect_warning(plotEncDimSearch(fds, "jaccard"), 
-                 paste("OHT was used to estimate the optimal encoding dimension.",
-                       "A visualization of the method will be included soon.", 
-                       collapse="\n"))
+  expect_is(suppressWarnings(plotEncDimSearch(fds, "jaccard", plotType="sv")), "ggplot")
 })
 
 test_that("Test optimalSVHTCoef", {

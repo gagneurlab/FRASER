@@ -183,17 +183,17 @@ estimateBestQ <- function(fds, type="jaccard", useOHT=TRUE, implementation="PCA"
         } 
         cat("Optimal encoding dimension:", latentDim, "\n")
         
-        data <- data.table(
-          q=latentDim,
-          oht=cutoff
-          )
+        data <- data.table(singular_values=sv)
+        data <- data[, q:=.I]
+        data <- data[-.N] # remove last entry (close to zero, impedes visualization)
+        data <- data[, oht:=FALSE]
+        data <- data[q==latentDim, oht:=TRUE] # set optimal latent dimension
+        data <- data[order(-oht)]
       
         hyperParams(fds, type=type) <- data
-        #TODO: integrate singular value plot into plotEncDimSearch function
-        #if(isTRUE(plot)){
-        #  print(plotEncDimSearch(fds, type=type, plotType="sv"))
-        #}
-        
+        if(isTRUE(plot)){
+          print(plotEncDimSearch(fds, type=type, plotType="sv"))
+        }
         return(fds)
       }
       

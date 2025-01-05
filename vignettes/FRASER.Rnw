@@ -693,24 +693,22 @@ and Donoho\cite{Gavish2013}. Alternatively, a hyperparameter optimization can be
 performed that works by artificially injecting outliers into the data and then 
 comparing the AUC of recalling these outliers for different values of $q$. Since 
 this hyperparameter optimization step is quite CPU-intensive, we only show it here 
-for a subset of the dataset and recommend to use the faster OHT approach:
+for a subset of the dataset and recommend to use the faster OHT approach. The results
+from the estimation of the optimal latent space dimension can be visualized with the
+function \Rfunction{plotEncDimSearch}.
 
 <<findBestQ, echo=TRUE>>=
 set.seed(42)
 # Optimal Hard Thresholding (default method)
 fds <- estimateBestQ(fds, type="jaccard", plot=FALSE)
-# hyperparameter opimization
+plotEncDimSearch(fds, type="jaccard", plotType="sv")
+
+# Hyperparameter opimization
 fds <- estimateBestQ(fds, type="jaccard", useOHT=FALSE, plot=FALSE)
+plotEncDimSearch(fds, type="jaccard", plotType="auc")
 
 # retrieve the estimated optimal dimension of the latent space
 bestQ(fds, type="jaccard")
-@
-
-The results from this hyper parameter optimization can be visualized with the
-function \Rfunction{plotEncDimSearch}.
-
-<<figure_findBestQ, echo=TRUE>>=
-plotEncDimSearch(fds, type="jaccard")
 @
 
 \subsection{P-value calculation}
