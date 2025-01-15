@@ -116,8 +116,16 @@ loadFraserDataSet <- function(dir, name=NULL, file=NULL, upgrade=FALSE){
             path(assay(fds, aname, withDimnames=FALSE)) <- afile
         } else if("DelayedMatrix" == 
                     class(assay(fds, aname, withDimnames=FALSE))){
-            slot(slot(slot(assay(fds, aname, withDimnames=FALSE), 
-                    "seed"), "seed"), "filepath") <- afile
+	    tryCatch(
+		{
+                    slot(slot(slot(assay(fds, aname, withDimnames=FALSE), 
+                        "seed"), "seed"), "filepath") <- afile
+	        },
+	        error = function(e) {
+		    slot(slot(slot(slot(assay(fds, aname, withDimnames = FALSE),
+                        "seed"), "seed"), "seed"), "filepath") <- afile
+	        }
+	    )   
         # if its a HDF5 matrix we have one seed less
         } else {
             slot(slot(assay(fds, aname, withDimnames=FALSE), 
