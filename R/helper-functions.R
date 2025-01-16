@@ -700,3 +700,61 @@ checkForAndCreateDir <- function(object, dir){
     }
     return(TRUE)
 }
+
+updateSeqlevelsStyle <- function(bsgenome, genome_assembly, new_style, old_style, conversion_dict_path){
+  if (genome_assembly == "hg19" || genome_assembly == "hs37d5") {
+    conversion_dict_path <- file.path(conversion_dict_path, "hg19_NCBI2UCSC.txt")
+    if (!file.exists(conversion_dict_path)) {
+      file_url <- "https://www.cmm.in.tum.de/public/paper/FRASER/hg19_NCBI2UCSC.txt"
+      message(paste0("Downloading seqlevelStyle conversion dict: "), file_url)
+      
+      response <- httr::GET(file_url, httr::write_disk(conversion_dict_path, overwrite = TRUE))
+      
+      if (response$status_code != 200) {
+        stop(paste0("Failed to download the file. Status code:", response$status_code,
+                    ".\nPlease download the file manually from ", file_url, " to the following directory: ", conversion_dict_path))
+      }
+    }
+    assembly_report <- fread(conversion_dict_path)
+  }
+  else if (genome_assembly == "hg38" || genome_assembly == "GRCh38") {
+    conversion_dict_path <- file.path(conversion_dict_path, "hg38_NCBI2UCSC.txt")
+    if (!file.exists(conversion_dict_path)) {
+      file_url <- "https://www.cmm.in.tum.de/public/paper/FRASER/hg38_NCBI2UCSC.txt"
+      message(paste0("Downloading seqlevelStyle conversion dict: "), file_url)
+      
+      response <- httr::GET(file_url, httr::write_disk(conversion_dict_path, overwrite = TRUE))
+      
+      if (response$status_code != 200) {
+        stop(paste0("Failed to download the file. Status code:", response$status_code,
+                    ".\nPlease download the file manually from ", file_url, " to the following directory: ", conversion_dict_path))
+      } 
+    }
+    assembly_report <- fread(conversion_dict_path)
+  }
+  
+  if (new_style == "UCSC") {
+    assembly_report <- assembly_report[NCBI_Genome_Name != ""]
+    mapping <- setNames(assembly_report$`UCSC.style.name`, assembly_report$`Sequence.Name`)
+  } 
+  else {  # new_style == "NCBI"
+    mapping <- setNames(assembly_report$`Sequence.Name`, assembly_report$`UCSC.style.name`)
+  }
+  
+  mapping <- mapping[names(mapping) != "na" & mapping != "na"]
+  new_seqnames <- unname(mapping[seqnames(bsgenome)])
+  
+  seqnames(bsgenome) <- new_seqnames
+  
+  if (new_style == "UCSC" & old_style == "NCBI"){
+    seqinfo(bsgenome)@genome <- assembly_report[!(is.na(NCBI_Genome_Name) | NCBI_Genome_Name == ""), NCBI_Genome_Name]
+  }
+  else if (new_style == "NCBI" & old_style=="UCSC"){ # new_style == "NCBI"
+    seqinfo(bsgenome)@genome <- assembly_report[!(is.na(UCSC_Genome_Name) | UCSC_Genome_Name == ""), UCSC_Genome_Name]
+  }
+
+  ## Next line also accesses ftp and won't work behind a proxy.
+  # seqlevelsStyle(bsgenome) <- new_style
+  
+  return (bsgenome)
+}
