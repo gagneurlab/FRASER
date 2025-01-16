@@ -61,6 +61,7 @@ Imports:
     ggplot2,
     ggrepel,
     HDF5Array,
+    httr,
     matrixStats,
     methods,
     OUTRIDER,
