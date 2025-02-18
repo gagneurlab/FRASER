@@ -103,9 +103,9 @@ findEncodingDim <- function(i, fds, type, params, implementation,
 #' @param internalThreads The number of threads used internally.
 #' @param injectFreq The frequency with which outliers are injected into the 
 #' data.
-#' @param plot If \code{TRUE}, a plot of the area under the curve and the 
-#' model loss for each evaluated parameter combination will be displayed after 
-#' the hyperparameter optimization finishes.
+#' @param plot If \code{TRUE}, a plot of the singular values (OHT) or the area
+#' under the curve and the model loss for each evaluated parameter
+#' combination (grid-search) will be displayed after the estimation procedure.
 #' @param delayed If FALSE, count matrices will be loaded into memory (faster 
 #' calculations), otherwise the function works on the delayedMatrix 
 #' representations (more memory efficient). The default value depends on the 
@@ -204,7 +204,7 @@ estimateBestQ <- function(fds, type="jaccard", useOHT=TRUE, implementation="PCA"
       }
     } 
   
-    # Hyperparamter optimization
+    # Hyperparamter optimization (grid-search)
     else{
       if(isFALSE(needsHyperOpt(implementation))){
           message(date(), ": For correction '", implementation, "' no hyper ",

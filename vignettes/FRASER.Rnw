@@ -703,7 +703,7 @@ set.seed(42)
 fds <- estimateBestQ(fds, type="jaccard", plot=FALSE)
 plotEncDimSearch(fds, type="jaccard", plotType="sv")
 
-# Hyperparameter opimization
+# Hyperparameter optimization (grid-search)
 fds <- estimateBestQ(fds, type="jaccard", useOHT=FALSE, plot=FALSE)
 plotEncDimSearch(fds, type="jaccard", plotType="auc")
 
