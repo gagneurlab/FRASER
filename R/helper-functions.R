@@ -700,3 +700,38 @@ checkForAndCreateDir <- function(object, dir){
     }
     return(TRUE)
 }
+
+#' updates bsgenome seqlevelsStyle manually instead of using GenomeInfoDb
+#' @noRd
+updateSeqlevelsStyle <- function(bsgenome, genome_assembly, new_style, old_style){
+  if (genome_assembly == "hg19" || genome_assembly == "hs37d5") {
+    assembly_report <- fread(system.file(
+      "extdata", "seqLevels_dict/hg19_NCBI2UCSC.tsv", package="FRASER", mustWork=TRUE))
+  }
+  else if (genome_assembly == "hg38" || genome_assembly == "GRCh38") {
+    assembly_report <- fread(system.file(
+      "extdata", "seqLevels_dict/hg38_NCBI2UCSC.tsv", package="FRASER", mustWork=TRUE))
+  }
+  
+  if (new_style == "UCSC") {
+    assembly_report <- assembly_report[NCBI_Genome_Name != ""]
+    mapping <- setNames(assembly_report$`UCSC.style.name`, assembly_report$`Sequence.Name`)
+  } 
+  else {  # new_style == "NCBI"
+    mapping <- setNames(assembly_report$`Sequence.Name`, assembly_report$`UCSC.style.name`)
+  }
+  
+  mapping <- mapping[names(mapping) != "na" & mapping != "na"]
+  new_seqnames <- unname(mapping[seqnames(bsgenome)])
+  
+  seqnames(bsgenome) <- new_seqnames
+  
+  if (new_style == "UCSC" & old_style == "NCBI"){
+    seqinfo(bsgenome)@genome <- assembly_report[!(is.na(NCBI_Genome_Name) | NCBI_Genome_Name == ""), NCBI_Genome_Name]
+  }
+  else if (new_style == "NCBI" & old_style=="UCSC"){ # new_style == "NCBI"
+    seqinfo(bsgenome)@genome <- assembly_report[!(is.na(UCSC_Genome_Name) | UCSC_Genome_Name == ""), UCSC_Genome_Name]
+  }
+  
+  return (bsgenome)
+}

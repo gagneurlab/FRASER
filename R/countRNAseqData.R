@@ -508,7 +508,15 @@ countSplitReads <- function(sampleID, fds, NcpuPerSample=1, genome=NULL,
         if(is.character(genome)){
             genome <- getBSgenome(genome)
         }
-        seqlevelsStyle(genome) <- seqlevelsStyle(chromosomes)[1]
+        tryCatch(
+            {
+                seqlevelsStyle(genome) <- seqlevelsStyle(chromosomes)[1]
+            },
+            error = function(e) {
+                warning("Could not update genome's seqlevelsStyle using GenomeInfoDb package. Updating manually now...")
+                genome <- updateSeqlevelsStyle(genome, metadata(genome)$genome, seqlevelsStyle(chromosomes)[1], metadata(genome)$provider)
+            }
+        )
         chrLengths <- extractChromosomeLengths(bamfile)
         mismatchChrs <- which(
             seqlengths(genome)[chromosomes] != chrLengths[chromosomes])
