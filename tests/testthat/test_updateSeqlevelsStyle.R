@@ -5,7 +5,7 @@ test_that("hg38, UCSC to NCBI", {
   bsgenome <- genome
   
   seqlevelsStyle(bsgenome) <- "NCBI"
-  genome <- updateSeqlevelsStyle(genome, metadata(genome)$genome, "NCBI", metadata(genome)$provider, "./")
+  genome <- updateSeqlevelsStyle(genome, metadata(genome)$genome, "NCBI", metadata(genome)$provider)
   
   expect_equal(seqnames(genome), seqnames(bsgenome))
 })
@@ -15,7 +15,7 @@ test_that("hg38, NCBI to UCSC", {
   bsgenome <- genome
   
   seqlevelsStyle(bsgenome) <- "UCSC"
-  genome <- updateSeqlevelsStyle(genome, metadata(genome)$genome, "UCSC", metadata(genome)$provider, "./")
+  genome <- updateSeqlevelsStyle(genome, metadata(genome)$genome, "UCSC", metadata(genome)$provider)
   
   expect_equal(seqnames(genome), seqnames(bsgenome))
 })
@@ -25,7 +25,7 @@ test_that("hg19, NCBI to UCSC", {
   bsgenome <- genome
   
   seqlevelsStyle(bsgenome) <- "UCSC"
-  genome <- updateSeqlevelsStyle(genome, metadata(genome)$genome, "UCSC", metadata(genome)$provider, "./")
+  genome <- updateSeqlevelsStyle(genome, metadata(genome)$genome, "UCSC", metadata(genome)$provider)
   
   expect_equal(seqnames(genome), seqnames(bsgenome))
 })
@@ -35,7 +35,7 @@ test_that("hg19, UCSC to NCBI", {
   bsgenome <- genome
   
   seqlevelsStyle(bsgenome) <- "NCBI"
-  genome <- updateSeqlevelsStyle(genome, metadata(genome)$genome, "NCBI", metadata(genome)$provider, "./")
+  genome <- updateSeqlevelsStyle(genome, metadata(genome)$genome, "NCBI", metadata(genome)$provider)
   
   expect_equal(seqnames(genome), seqnames(bsgenome))
 })
