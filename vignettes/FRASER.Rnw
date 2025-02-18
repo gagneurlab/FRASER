@@ -4,6 +4,8 @@
 %\VignetteEncoding{UTF-8}
 
 \documentclass[11pt]{article}
+\usepackage{xcolor}
+\definecolor{fgcolor}{rgb}{0,0,0}
 
 <<style-knitr, eval=TRUE, echo=FALSE, results="asis">>=
 BiocStyle::latex()
@@ -684,27 +686,29 @@ fds <- fit(fds, q=3, type="jaccard", implementation="PCA-BB-Decoder",
 
 For the previous call, the dimension $q$ of the latent space has been fixed. 
 Since working with the correct $q$ is very important, the \fraser{} 
-package also provides the function \Rfunction{optimHyperParams} that can be 
-used to estimate the dimension $q$ of the latent space of the data. It works by 
-artificially injecting outliers into the data and then comparing the AUC of 
-recalling these outliers for different values of $q$. Since this hyperparameter 
-optimization step can take some time for the full dataset, we only show it here 
-for a subset of the dataset:
+package also provides the function \Rfunction{estimateBestQ} that can be 
+used to estimate the dimension $q$ of the latent space of the data. Per default,
+it uses the deterministic Optimal Hard Thresholding (OHT) method established by Gavish 
+and Donoho\cite{Gavish2013}. Alternatively, a hyperparameter optimization can be
+performed that works by artificially injecting outliers into the data and then 
+comparing the AUC of recalling these outliers for different values of $q$. Since 
+this hyperparameter optimization step is quite CPU-intensive, we only show it here 
+for a subset of the dataset and recommend to use the faster OHT approach. The results
+from the estimation of the optimal latent space dimension can be visualized with the
+function \Rfunction{plotEncDimSearch}.
 
 <<findBestQ, echo=TRUE>>=
 set.seed(42)
-# hyperparameter opimization
-fds <- optimHyperParams(fds, type="jaccard", plot=FALSE)
+# Optimal Hard Thresholding (default method)
+fds <- estimateBestQ(fds, type="jaccard", plot=FALSE)
+plotEncDimSearch(fds, type="jaccard", plotType="sv")
+
+# Hyperparameter optimization (grid-search)
+fds <- estimateBestQ(fds, type="jaccard", useOHT=FALSE, plot=FALSE)
+plotEncDimSearch(fds, type="jaccard", plotType="auc")
 
 # retrieve the estimated optimal dimension of the latent space
 bestQ(fds, type="jaccard")
-@
-
-The results from this hyper parameter optimization can be visualized with the
-function \Rfunction{plotEncDimSearch}.
-
-<<figure_findBestQ, echo=TRUE>>=
-plotEncDimSearch(fds, type="jaccard")
 @
 
 \subsection{P-value calculation}
