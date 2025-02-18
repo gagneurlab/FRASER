@@ -30,8 +30,6 @@ new default delta cutoff is 0.1 instead of the previous value of 0.3. When using
 the 3 previous metrics, the delta cutoff should be set manually to 0.3 
 during results extraction, e.g. `results(fds, deltaPsiCutoff=0.3,...)`.
 
-The preprint describing these changes in more detail is available in [medRxiv](https://www.medrxiv.org/content/10.1101/2023.03.31.23287997v1).
-
 ## Installation
 
 `FRASER` is an R/Bioconductor software package requiring a running 
@@ -66,7 +64,7 @@ at the Troubleshooting section or submit an issue on
 [GitHub](https://github.com/gagneurlab/FRASER/issues).
 
 
-### Toubleshooting
+### Troubleshooting
 
 #### Error in UseMethod("filter_")
 When using FRASER with R3.6 one might observe the following error:
@@ -85,11 +83,11 @@ BiocManager::install("Bioconductor/BiocFileCache", ask=FALSE, update=FALSE)
 
 #### Missing libraries while compiling R packages
 
-On some Linux distributions we need the developer libraries for compiling the R packages.
+On some Linux distributions, we need the developer libraries for compiling the R packages.
 
 To install those packages, please run as administrator: 
 
-For Ubuntu or Debian based systems:
+For Ubuntu or Debian-based systems:
 ```
 sudo apt-get install build-essential libcurl4-gnutls-dev libxml2-dev libssl-dev zlib1g-dev libmysqld-dev
 ```
