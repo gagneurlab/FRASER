@@ -701,36 +701,16 @@ checkForAndCreateDir <- function(object, dir){
     return(TRUE)
 }
 
-updateSeqlevelsStyle <- function(bsgenome, genome_assembly, new_style, old_style, conversion_dict_path){
+#' updates bsgenome seqlevelsStyle manually instead of using GenomeInfoDb
+#' @noRd
+updateSeqlevelsStyle <- function(bsgenome, genome_assembly, new_style, old_style){
   if (genome_assembly == "hg19" || genome_assembly == "hs37d5") {
-    conversion_dict_path <- file.path(conversion_dict_path, "hg19_NCBI2UCSC.txt")
-    if (!file.exists(conversion_dict_path)) {
-      file_url <- "https://www.cmm.in.tum.de/public/paper/FRASER/hg19_NCBI2UCSC.txt"
-      message(paste0("Downloading seqlevelStyle conversion dict: "), file_url)
-      
-      response <- httr::GET(file_url, httr::write_disk(conversion_dict_path, overwrite = TRUE))
-      
-      if (response$status_code != 200) {
-        stop(paste0("Failed to download the file. Status code:", response$status_code,
-                    ".\nPlease download the file manually from ", file_url, " to the following directory: ", conversion_dict_path))
-      }
-    }
-    assembly_report <- fread(conversion_dict_path)
+    assembly_report <- fread(system.file(
+      "extdata", "seqLevels_dict/hg19_NCBI2UCSC.tsv", package="FRASER", mustWork=TRUE))
   }
   else if (genome_assembly == "hg38" || genome_assembly == "GRCh38") {
-    conversion_dict_path <- file.path(conversion_dict_path, "hg38_NCBI2UCSC.txt")
-    if (!file.exists(conversion_dict_path)) {
-      file_url <- "https://www.cmm.in.tum.de/public/paper/FRASER/hg38_NCBI2UCSC.txt"
-      message(paste0("Downloading seqlevelStyle conversion dict: "), file_url)
-      
-      response <- httr::GET(file_url, httr::write_disk(conversion_dict_path, overwrite = TRUE))
-      
-      if (response$status_code != 200) {
-        stop(paste0("Failed to download the file. Status code:", response$status_code,
-                    ".\nPlease download the file manually from ", file_url, " to the following directory: ", conversion_dict_path))
-      } 
-    }
-    assembly_report <- fread(conversion_dict_path)
+    assembly_report <- fread(system.file(
+      "extdata", "seqLevels_dict/hg38_NCBI2UCSC.tsv", package="FRASER", mustWork=TRUE))
   }
   
   if (new_style == "UCSC") {
@@ -752,9 +732,6 @@ updateSeqlevelsStyle <- function(bsgenome, genome_assembly, new_style, old_style
   else if (new_style == "NCBI" & old_style=="UCSC"){ # new_style == "NCBI"
     seqinfo(bsgenome)@genome <- assembly_report[!(is.na(UCSC_Genome_Name) | UCSC_Genome_Name == ""), UCSC_Genome_Name]
   }
-
-  ## Next line also accesses ftp and won't work behind a proxy.
-  # seqlevelsStyle(bsgenome) <- new_style
   
   return (bsgenome)
 }

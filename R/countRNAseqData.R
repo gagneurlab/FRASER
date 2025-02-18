@@ -514,7 +514,7 @@ countSplitReads <- function(sampleID, fds, NcpuPerSample=1, genome=NULL,
             },
             error = function(e) {
                 warning("Could not update genome's seqlevelsStyle using GenomeInfoDb package. Updating manually now...")
-                genome <- updateSeqlevelsStyle(genome, metadata(genome)$genome, seqlevelsStyle(chromosomes)[1], metadata(genome)$provider, fds@workingDir)
+                genome <- updateSeqlevelsStyle(genome, metadata(genome)$genome, seqlevelsStyle(chromosomes)[1], metadata(genome)$provider)
             }
         )
         chrLengths <- extractChromosomeLengths(bamfile)
