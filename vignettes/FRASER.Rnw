@@ -81,15 +81,15 @@ If you use \fraser{} version >= 1.99.0 in published research, please cite:  \\
 \\
 Scheller I, Lutz K, Mertes C, \emph{et al.}
 \textbf{Improved detection of aberrant splicing with FRASER 2.0} \\
-\textbf{using the Intron Jaccard Index}, medrXiv, 2023, \\
-\emph{\url{https://doi.org/10.1101/2023.03.31.23287997}} \\
+\textbf{and the Intron Jaccard Index}, Am J Hum Genet, 2023, \\
+\emph{\url{https://doi.org/10.1016/j.ajhg.2023.10.014}} \\
 \hline
 For previous versions of \fraser{}, please cite:  \\
 \\
 Mertes C, Scheller I, Yepez V, \emph{et al.}
 \textbf{Detection of aberrant splicing events} \\
-\textbf{in RNA-seq data with FRASER}, biorXiv, 2019, \\
-\emph{\url{https://doi.org/10.1101/2019.12.18.866830}} \\
+\textbf{in RNA-seq data using FRASER}, Nat Commun, 2021, \\
+\emph{\url{https://doi.org/10.1038/s41467-020-20573-7}} \\
 \hline
 \end{tabular}
 \end{center}
