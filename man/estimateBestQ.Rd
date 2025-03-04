@@ -55,9 +55,9 @@ data.}
 
 \item{internalThreads}{The number of threads used internally.}
 
-\item{plot}{If \code{TRUE}, a plot of the area under the curve and the 
-model loss for each evaluated parameter combination will be displayed after 
-the hyperparameter optimization finishes.}
+\item{plot}{If \code{TRUE}, a plot of the singular values (OHT) or the area
+under the curve and the model loss for each evaluated parameter
+combination (grid-search) will be displayed after the estimation procedure.}
 
 \item{delayed}{If FALSE, count matrices will be loaded into memory (faster 
 calculations), otherwise the function works on the delayedMatrix 

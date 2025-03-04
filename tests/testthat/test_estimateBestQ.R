@@ -16,7 +16,7 @@ test_that("Test hyper param optimization", {
     expect_equal(metadata(fds)$hyperParams_psi5[order(-aroc)][1,q],
             bestQ(fds, type="psi5"))
     expect_equal(1, bestNoise(fds, type="psi5"))
-    expect_is(suppressWarnings(plotEncDimSearch(fds, "psi5")), "ggplot")
+    expect_is(suppressWarnings(plotEncDimSearch(fds, "psi5", plotType="auc")), "ggplot")
 })
 
 test_that("Test Optimal Hard Thresholding", {

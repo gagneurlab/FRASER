@@ -53,7 +53,8 @@
 #' @param BPPARAM BiocParallel parameter to use.
 #' @param Ncpus Number of cores to use.
 #' @param plotType The type of plot that should be shown as character string. 
-#'             For plotEncDimSearch, it has to be either \code{"auc"} 
+#'             For plotEncDimSearch, it has to be either \code{"sv"} for a plot
+#'             of the singular values against their rank, \code{"auc"} 
 #'             for a plot of the area under the curve (AUC) or 
 #'             \code{"loss"} for the model loss. For the correlation heatmap,
 #'             it can be either \code{"sampleCorrelation"} for a
@@ -1008,7 +1009,7 @@ setMethod("plotQQ", signature="FraserDataSet", plotQQ.FRASER)
 
 
 plotEncDimSearch.FRASER <- function(object, type=psiTypes, 
-                    plotType=c("auc", "loss", "sv")){
+                    plotType=c("sv", "auc", "loss")){
     type <- match.arg(type)
     plotType <- match.arg(plotType)
     data <- hyperParams(object, type=type, all=TRUE)
