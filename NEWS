@@ -1,3 +1,13 @@
+CHANGES IN VERSION 2.0.0
+-------------------------
+    o Add Optimal Hard Thresholding to determine optimal encoding dimension #69
+    o Add singular value plot for optimal encoding dimension
+    o Add updateSeqlevelsStyle to change seqlevels without internet connection
+
+CHANGES IN VERSION 1.99.4
+-------------------------
+    o Bugfix for strand specificity of samples in counting
+
 CHANGES IN VERSION 1.99.3
 -------------------------
     o Bugfix for contig names containing certain characters

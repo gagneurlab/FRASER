@@ -31,7 +31,7 @@
 confounders.}
 
 \item{q}{The encoding dimensions to be used during the fitting proceadure.
-Should be fitted using \code{\link{optimHyperParams}} if unknown.
+Should be fitted using \code{\link{estimateBestQ}} if unknown.
 If a named vector is provided it is used for the different
 splicing types.}
 

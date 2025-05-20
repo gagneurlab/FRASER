@@ -167,14 +167,14 @@ fitted (used within several methods in the FRASER package).
 \item \code{pseudocount()}: Sets and returns the pseudo count used 
 within the FRASER fitting procedure.
 
-\item \code{hyperParams()}: This returns the results of the 
-hyperparameter optimization NULL if the hyperparameter 
-opimization was not run yet.
+\item \code{hyperParams()}: This returns the results of OHT or the 
+hyperparameter optimization. It returns NULL if \code{\link{estimateBestQ}}
+was not run yet.
 
-\item \code{bestQ()}: This returns the optimal size of the 
-latent space according to the hyperparameter optimization or a simple 
-estimate of about a tenth of the number of samples if the hyperparameter 
-opimization was not run yet.
+\item \code{bestQ()}: This returns the optimal latent space
+dimension estimated by OHT or a hyperparameter optimization. If  
+\code{\link{estimateBestQ}} has not been run before, a simple estimate of 
+about a tenth of the number of samples is returned.
 
 \item \code{dontWriteHDF5()}: Gets the current value of whether the 
 assays should be stored as hdf5 files.

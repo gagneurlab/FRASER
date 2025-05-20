@@ -107,7 +107,7 @@ plotExpectedVsObservedPsi(
   ...
 )
 
-\S4method{plotEncDimSearch}{FraserDataSet}(object, type = psiTypes, plotType = c("auc", "loss"))
+\S4method{plotEncDimSearch}{FraserDataSet}(object, type = psiTypes, plotType = c("sv", "auc", "loss"))
 
 plotFilterExpression(
   fds,
@@ -251,7 +251,8 @@ reduce number of points to plot. Defines the digits to round to.}
 \item{Ncpus}{Number of cores to use.}
 
 \item{plotType}{The type of plot that should be shown as character string. 
-For plotEncDimSearch, it has to be either \code{"auc"} 
+For plotEncDimSearch, it has to be either \code{"sv"} for a plot
+of the singular values against their rank, \code{"auc"} 
 for a plot of the area under the curve (AUC) or 
 \code{"loss"} for the model loss. For the correlation heatmap,
 it can be either \code{"sampleCorrelation"} for a
@@ -523,7 +524,7 @@ fds <- makeSimulatedFraserDataSet(m=40, j=200)
 fds <- calculatePSIValues(fds)
 fds <- filterExpressionAndVariability(fds, filter=FALSE)
 # this step should be done for more dimensions in practice
-fds <- optimHyperParams(fds, "jaccard", q_param=c(2,5,10,25))
+fds <- estimateBestQ(fds, type="jaccard", useOHT=FALSE, q_param=c(2,5,10,25))
 
 # assign gene names to show functionality on test dataset
 # use fds <- annotateRanges(fds) on real data

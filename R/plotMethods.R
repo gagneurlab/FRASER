@@ -53,7 +53,8 @@
 #' @param BPPARAM BiocParallel parameter to use.
 #' @param Ncpus Number of cores to use.
 #' @param plotType The type of plot that should be shown as character string. 
-#'             For plotEncDimSearch, it has to be either \code{"auc"} 
+#'             For plotEncDimSearch, it has to be either \code{"sv"} for a plot
+#'             of the singular values against their rank, \code{"auc"} 
 #'             for a plot of the area under the curve (AUC) or 
 #'             \code{"loss"} for the model loss. For the correlation heatmap,
 #'             it can be either \code{"sampleCorrelation"} for a
@@ -251,7 +252,7 @@
 #' fds <- calculatePSIValues(fds)
 #' fds <- filterExpressionAndVariability(fds, filter=FALSE)
 #' # this step should be done for more dimensions in practice
-#' fds <- optimHyperParams(fds, "jaccard", q_param=c(2,5,10,25))
+#' fds <- estimateBestQ(fds, type="jaccard", useOHT=FALSE, q_param=c(2,5,10,25))
 #' 
 #' # assign gene names to show functionality on test dataset
 #' # use fds <- annotateRanges(fds) on real data
@@ -1008,62 +1009,96 @@ setMethod("plotQQ", signature="FraserDataSet", plotQQ.FRASER)
 
 
 plotEncDimSearch.FRASER <- function(object, type=psiTypes, 
-                    plotType=c("auc", "loss")){
+                    plotType=c("sv", "auc", "loss")){
     type <- match.arg(type)
     plotType <- match.arg(plotType)
     data <- hyperParams(object, type=type, all=TRUE)
     if (is.null(data)) {
-        warning(paste("no hyperparameters were estimated for", type, 
-                        "\nPlease use `optimHyperParams` to compute them."))
-        return(NULL)
+      warning(paste("No hyperparameters were estimated for", type, 
+                        "\nPlease use `estimateBestQ` to compute them."))
+      return(NULL)
     }
-    if(!"nsubset" %in% colnames(data)){
-        data[,nsubset:="NA"]
-    }
-    data[,noise:=as.factor(noise)]
-    data[,nsubset:=as.factor(nsubset)]
     
-    data[,isOptimalQ:= q == .SD[aroc == max(aroc), q], by="nsubset,noise"]
-
-    if(plotType == "auc"){
-        
-        g1 <- ggplot(data, aes(q, aroc, col=nsubset, linetype=noise)) +
-            geom_point() +
-            geom_smooth(method="loess", formula=y~x) +
-            geom_vline(data=data[isOptimalQ == TRUE,], 
-                    mapping=aes(xintercept=q, col=nsubset, linetype=noise)) +
-            geom_text(data=data[isOptimalQ == TRUE,], 
-                        aes(y=0.0, q+1, label=q)) +
-            ggtitle(as.expression(bquote(bold(paste(
-                "Q estimation for ", .(ggplotLabelPsi(type)[[1]])))))) +
-            xlab("Estimated q") +
-            ylab("Area under the PR curve") +
-            theme_bw(base_size=16)
-        
-        if(data[,uniqueN(nsubset)] == 1 & data[,uniqueN(noise)] == 1){
-            g1 <- g1 + theme(legend.position='none')
-        }
-        
-        g1
+    if (plotType == "sv") {
+      if (type!="jaccard"){
+        warning(paste("A singular value plot can only be generated for the",
+                      "Intron Jaccard Indices.", 
+                      collapse="\n"))
+        return(NULL)}
+      else if (!("oht" %in% names(data))) {
+        warning(paste("Please use `estimateBestQ` to compute the singular values",
+                      "using OHT before visualizing them.", 
+                      collapse="\n"))
+        return(NULL)}
+      
+      opt_data <- data[oht==TRUE,]
+      
+      g0 <- ggplot(data, aes(q, singular_values)) + 
+        geom_line(color="blue") +
+        geom_vline(xintercept = opt_data$q, linetype = "dashed", color = "darkgray") +
+        geom_text(data=opt_data, aes(x = q+3, y = singular_values, 
+                      label = q), color = "darkgray", size=4.5) +
+        xlab("Singular value rank (Estimated q)") +
+        ylab("Log(singular value)") + 
+        theme_bw(base_size=16) +
+        scale_y_log10() +
+        ggtitle(as.expression(bquote(bold(paste(
+          "Q estimation for ", .(ggplotLabelPsi(type)[[1]]))))))
+      g0
     }
-    else{
 
-        g2 <- ggplot(data, aes(q, eval, col=nsubset, linetype=noise)) +
-            geom_point() +
-            geom_smooth() +
-            geom_vline(data=data[isOptimalQ == TRUE,], 
-                    mapping=aes(xintercept=q, col=nsubset, linetype=noise)) +
-            ggtitle(as.expression(bquote(bold(paste(
-                "Q estimation for ", .(ggplotLabelPsi(type)[[1]])))))) +
-            xlab("Estimated q") +
-            ylab("Model loss") +
-            theme_bw(base_size=16)
+    else if(plotType == "auc"){
+      if(!"nsubset" %in% colnames(data)){
+        data[,nsubset:="NA"]
+      }
+      data[,noise:=as.factor(noise)]
+      data[,nsubset:=as.factor(nsubset)]
+      data[,isOptimalQ:= q == .SD[aroc == max(aroc), q], by="nsubset,noise"]
         
-        if(data[,uniqueN(nsubset)] == 1 & data[,uniqueN(noise)] == 1){
-            g2 <- g2 + theme(legend.position='none')
-        }
-        
-        g2
+      g1 <- ggplot(data, aes(q, aroc, col=nsubset, linetype=noise)) +
+          geom_point() +
+          geom_smooth(method="loess", formula=y~x) +
+          geom_vline(data=data[isOptimalQ == TRUE,], 
+                  mapping=aes(xintercept=q, col=nsubset, linetype=noise)) +
+          geom_text(data=data[isOptimalQ == TRUE,], 
+                      aes(y=0.0, q+1, label=q)) +
+          ggtitle(as.expression(bquote(bold(paste(
+              "Q estimation for ", .(ggplotLabelPsi(type)[[1]])))))) +
+          xlab("Estimated q") +
+          ylab("Area under the PR curve") +
+          theme_bw(base_size=16)
+      
+      if(data[,uniqueN(nsubset)] == 1 & data[,uniqueN(noise)] == 1){
+          g1 <- g1 + theme(legend.position='none')
+      }
+      
+      g1
+    }
+    
+    else{
+      if(!"nsubset" %in% colnames(data)){
+        data[,nsubset:="NA"]
+      }
+      data[,noise:=as.factor(noise)]
+      data[,nsubset:=as.factor(nsubset)]
+      data[,isOptimalQ:= q == .SD[aroc == max(aroc), q], by="nsubset,noise"]
+      
+      g2 <- ggplot(data, aes(q, eval, col=nsubset, linetype=noise)) +
+          geom_point() +
+          geom_smooth() +
+          geom_vline(data=data[isOptimalQ == TRUE,], 
+                  mapping=aes(xintercept=q, col=nsubset, linetype=noise)) +
+          ggtitle(as.expression(bquote(bold(paste(
+              "Q estimation for ", .(ggplotLabelPsi(type)[[1]])))))) +
+          xlab("Estimated q") +
+          ylab("Model loss") +
+          theme_bw(base_size=16)
+      
+      if(data[,uniqueN(nsubset)] == 1 & data[,uniqueN(noise)] == 1){
+          g2 <- g2 + theme(legend.position='none')
+      }
+      
+      g2
     }
 
 }
