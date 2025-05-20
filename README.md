@@ -1,6 +1,6 @@
 # FRASER - Find RAre Splicing Events in RNA-seq
 
-[![Build](https://github.com/c-mertes/FRASER/workflows/Build/badge.svg?branch=master)](https://github.com/c-mertes/FRASER/actions?query=workflow%3ABuild)
+[![R-CMD-check-bioc](https://github.com/gagneurlab/FRASER/actions/workflows/check-bioc.yml/badge.svg?branch=master)](https://github.com/gagneurlab/FRASER/actions/workflows/check-bioc.yml)
 [![Version](https://img.shields.io/github/v/release/c-mertes/FRASER)](https://github.com/c-mertes/FRASER/releases)
 [![Coverage status](https://codecov.io/gh/c-mertes/FRASER/branch/master/graph/badge.svg)](https://codecov.io/github/c-mertes/FRASER/branch/master)
 [![License](https://img.shields.io/github/license/mashape/apistatus.svg?maxAge=2592000)](https://github.com/c-mertes/FRASER/blob/master/LICENSE)
