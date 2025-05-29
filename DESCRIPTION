@@ -29,10 +29,10 @@ biocViews:
     Software,
     Genetics,
     Coverage
-License: MIT + file LICENSE
+License: file LICENSE
 URL: https://github.com/gagneurlab/FRASER
 BugReports: https://github.com/gagneurlab/FRASER/issues
-RoxygenNote: 7.3.1
+RoxygenNote: 7.3.2
 Encoding: UTF-8
 VignetteBuilder: knitr
 Depends:
