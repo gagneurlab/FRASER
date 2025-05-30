@@ -24,3 +24,4 @@ test_that("generic functions", {
             c("FraserDataSet", "ANY", "ANY", drop="missing"))
     expect_equal(slot(methDef, "defined")[["x"]], "FraserDataSet")
 })
+
