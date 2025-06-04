@@ -126,6 +126,7 @@ calculatePSIValuePrimeSite <- function(fds, psiType, overwriteCts, BPPARAM){
             }
             
             # write other counts and psi values to h5 file
+	    if (file.exists(cacheFile)) file.remove(cacheFile)
             # get defined chunk sizes
             chunkDims <- c(
                 min(nrow(countData), options()[['FRASER-hdf5-chunk-nrow']]),
