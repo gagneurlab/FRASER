@@ -1,3 +1,7 @@
+CHANGES IN VERSION 2.4.3
+-------------------------
+    o Fix bug in cache
+
 CHANGES IN VERSION 2.4.2
 -------------------------
     o Add Optimal Hard Thresholding to determine optimal encoding dimension #69
