@@ -20,6 +20,7 @@ or if you use FRASER2:
 ## What's new
 
 In version 2.4.3, instead of doing a grid search to determine the optimal encoding dimension of the denoising autoencoder, we now use the Optimal Hard Threshold (OHT). This makes the algorithm 6-10 times faster!
+
 ⚠️ Also, since this version, FRASER is released under `CC-BY-NC 4.0`,  meaning it requires a license for any commercial use. If you want to use it for commercial purposes, please contact us.
 
 FRASER 2.0, an improved version of FRASER, is now available and used by default (version 1.99.0 and above).
