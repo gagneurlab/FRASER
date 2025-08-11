@@ -571,8 +571,13 @@ countSplitReadsPerChromosome <- function(chromosome, bamFile,
     # if single end, count reads
     # if paired end, count pairs
     if(isFALSE(pairedEnd)){
-        galignment <- readGAlignments(bamFile, param=param)
-    } else{
+        galignment <- readGAlignments(bamFile, param=param)        
+
+        # remove the strand information if unstranded data
+        if(isFALSE(as.logical(strandMode))){
+            strand(galignment) <- "*"
+        }
+    } else {
         galignment <- readGAlignmentPairs(
                 bamFile, param=param, strandMode=strandMode)
     }
@@ -581,10 +586,6 @@ countSplitReadsPerChromosome <- function(chromosome, bamFile,
     # (occurs if reads of a pair align to different chromosomes)
     galignment <- galignment[!is.na(seqnames(galignment))]
     
-    # remove the strand information if unstranded data
-    if(isFALSE(as.logical(strandMode))){
-        strand(galignment) <- "*"
-    }
     # invert the strand information for reverse strand specific protocols
     # (only needed for single-end reads as real strand is already set for 
     # paired-end reads in the readGAlignmentPairs function)
