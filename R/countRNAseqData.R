@@ -568,8 +568,9 @@ countSplitReadsPerChromosome <- function(chromosome, bamFile,
         return(GRanges())
     }
     
-    # get reads from bam file
-    if(isFALSE(as.logical(strandMode)) || isFALSE(pairedEnd)){
+    # if single end, count reads
+    # if paired end, count pairs
+    if(isFALSE(pairedEnd)){
         galignment <- readGAlignments(bamFile, param=param)
     } else{
         galignment <- readGAlignmentPairs(
