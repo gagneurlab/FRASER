@@ -1,7 +1,7 @@
 #
 # all functions to generate test objects
 #
-test_generate_count_example <- function(recount=FALSE){
+test_generate_count_example <- function(recount=TRUE){
     # get a new object for only one sample
     if(recount || !"test_fdsSample3" %in% ls()){
 
@@ -27,18 +27,20 @@ test_generate_count_example <- function(recount=FALSE){
     #
     # This is manually counted from the IGV browser
     #
-    test_rawCountsJ   <- c(3, 13, 1)
-    test_rawCountsSS  <- c(9, 10, 0, 0, 10)
-    test_p5rawOCounts <- c(0, 1, 13)
-    test_p3rawOCounts <- c(0, 0, 0)
-    test_pSrawOCounts <- c(3, 3, 14, 13, 1)
+    test_rawCountsJ_SE <- c(3, 13, 1)
+    test_rawCountsJ_PE <- c(2, 10, 1)
+    test_rawCountsSS   <- c(7, 8, 0, 0, 7)
+    test_p5rawOCounts  <- c(0, 1, 10)
+    test_p3rawOCounts  <- c(0, 0, 0)
+    test_pSrawOCounts  <- c(2, 2, 11, 10, 1)
 
     return(list(
         test_fdsSample3=test_fdsSample3,
         test_range=test_range,
         test_rangeOV=test_rangeOV,
         test_rangeFDS=test_rangeFDS,
-        test_rawCountsJ=test_rawCountsJ,
+        test_rawCountsJ_SE=test_rawCountsJ_SE,
+        test_rawCountsJ_PE=test_rawCountsJ_PE,
         test_rawCountsSS=test_rawCountsSS,
         test_p5rawOCounts=test_p5rawOCounts,
         test_p3rawOCounts=test_p3rawOCounts,
@@ -46,7 +48,7 @@ test_generate_count_example <- function(recount=FALSE){
     ))
 }
 
-test_generate_strand_specific_count_example <- function(recount=FALSE){
+test_generate_strand_specific_count_example <- function(recount=TRUE){
     # get a new object for only one sample
     if(recount || !"test_fdsSample3_stranded" %in% ls()){
         
