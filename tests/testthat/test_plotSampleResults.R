@@ -15,10 +15,10 @@ test_that("Results function", {
     res_signif <- results(fds, aggregate=FALSE, all=FALSE,
                             padjCutoff=NA, deltaPsiCutoff=0.01)
     res_signif <- as.data.table(res_signif)
-    expect_equal(res_signif[type == "jaccard", .N], 1)
+    expect_equal(res_signif[type == "jaccard", .N], 3)
     expect_equal(res_signif[type == "psi5", .N], 7)
-    expect_equal(res_signif[type == "psi3", .N], 4)
-    expect_equal(res_signif[type == "theta", .N], 5)
+    expect_equal(res_signif[type == "psi3", .N], 6)
+    expect_equal(res_signif[type == "theta", .N], 8)
     
     # gene-level results
     res_gene <- results(fds, aggregate=TRUE, all=TRUE)
@@ -32,7 +32,7 @@ test_that("Results function", {
     res_gene_signif <- as.data.table(res_gene_signif)
     expect_equal(res_gene_signif[type == "jaccard", .N], 1)
     expect_equal(res_gene_signif[type == "psi5", .N], 3)
-    expect_equal(res_gene_signif[type == "psi3", .N], 2)
+    expect_equal(res_gene_signif[type == "psi3", .N], 3)
     expect_equal(res_gene_signif[type == "theta", .N], 2)
     
     # results on subset of genes during FDR

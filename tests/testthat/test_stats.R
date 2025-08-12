@@ -85,7 +85,7 @@ test_that("FDR on subset of genes", {
     fds <- getFraser()
     mcols(fds, type="j")$hgnc_symbol <- 
         rep(c("geneA", "geneB", "geneC", "geneD", "geneE"), 
-            times=c(3, 7, 5, 4, 6))
+            times=c(3, 7, 5, 4, 5))
     
     # define gene subset per sample
     genes_per_sample <- list(
@@ -99,7 +99,7 @@ test_that("FDR on subset of genes", {
                                        subsetName=subsetName, type="jaccard")
     subset_padj <- padjVals(fds, type="jaccard", subsetName=subsetName)
     expect_is(subset_padj, "matrix")
-    expect_equal(nrow(subset_padj), 25)
+    expect_equal(nrow(subset_padj), 24)
     expect_equal(ncol(subset_padj), 3)
     subset_padj_gene <- padjVals(fds, type="jaccard", level="gene", 
                                     subsetName=subsetName)
