@@ -37,7 +37,7 @@ test_that("Gene p value calculation with NAs", {
     mcols(fds, type="j")$hgnc_symbol <- rep(c("geneA", "geneB", "geneC"), 
                                             times=c(3, 4, 3))
     mcols(fds, type="ss")$hgnc_symbol <- rep(c("geneA", "geneB", "geneC"), 
-                                            times=c(4, 6, 4))
+                                            times=c(4, 6, 5))
     
     # simulate junction with bad rho fit to create partly NAs
     rho <- rho(fds, type="jaccard")
@@ -85,7 +85,7 @@ test_that("FDR on subset of genes", {
     fds <- getFraser()
     mcols(fds, type="j")$hgnc_symbol <- 
         rep(c("geneA", "geneB", "geneC", "geneD", "geneE"), 
-            times=c(3, 7, 5, 4, 8))
+            times=c(3, 7, 5, 4, 6))
     
     # define gene subset per sample
     genes_per_sample <- list(
@@ -98,13 +98,13 @@ test_that("FDR on subset of genes", {
     fds <- calculatePadjValuesOnSubset(fds, genesToTest=genes_per_sample, 
                                        subsetName=subsetName, type="jaccard")
     subset_padj <- padjVals(fds, type="jaccard", subsetName=subsetName)
-    expect_true(is(subset_padj, "matrix"))
-    expect_true(nrow(subset_padj) == 27)
-    expect_true(ncol(subset_padj) == 3)
+    expect_is(subset_padj, "matrix")
+    expect_equal(nrow(subset_padj), 25)
+    expect_equal(ncol(subset_padj), 3)
     subset_padj_gene <- padjVals(fds, type="jaccard", level="gene", 
                                     subsetName=subsetName)
-    expect_true(is(subset_padj_gene, "matrix"))
-    expect_true(nrow(subset_padj_gene) == 5)
-    expect_true(ncol(subset_padj_gene) == 3)
-      
+    expect_is(subset_padj_gene, "matrix")
+    expect_equal(nrow(subset_padj_gene), 5)
+    expect_equal(ncol(subset_padj_gene), 3)
+
 })
