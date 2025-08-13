@@ -1,6 +1,7 @@
 CHANGES IN VERSION 2.4.4
 -------------------------
-    o Bugfix: reading fragments instead of reads for paired-end data.
+    o Bugfix: reading fragments instead of read pairs for unstranded paired-end data. 
+      If you have such kind of data, please rerun the whole analysis from the start (make sure you have recount=TRUE).
 
 CHANGES IN VERSION 2.4.3
 -------------------------
@@ -19,7 +20,7 @@ CHANGES IN VERSION 1.99.4
 CHANGES IN VERSION 1.99.3
 -------------------------
     o Bugfix for contig names containing certain characters
-    o Update of the plot functions to support colorring aberrant status based 
+    o Update of the plot functions to support coloring aberrant status based 
       on p values computed on subsets of genes
     o Major update to FRASER2:
         o Introduction of new & more robust splice metric Intron Jaccard Index
