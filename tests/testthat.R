@@ -6,4 +6,5 @@ if(.Platform$OS.type != "unix") {
     register(SerialParam())
 }
 
+set.seed(42)
 test_check("FRASER")

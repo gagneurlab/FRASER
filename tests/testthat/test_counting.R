@@ -1,7 +1,7 @@
 context("Test counting")
 
 test_that("Count junctions", {
-    out <- capture.output(attach(test_generate_count_example()))
+    out <- capture.output(attach(test_generate_count_example(recount=TRUE)))
 
     expect_is(test_fdsSample3, "FraserDataSet")
 
@@ -9,9 +9,15 @@ test_that("Count junctions", {
     expect_equal(length(test_rangeFDS), 3)
     expect_equal(length(nonSplicedReads(test_rangeFDS)), 5)
 
-    # test the manually counted positions
-    expect_equal(as.vector(counts(test_rangeFDS, type="j")), test_rawCountsJ)
-    # expect_equal(as.vector(counts(test_rangeFDS, type="ss")), test_rawCountsSS)
+    # test the manually counted positions for PE counting
+    expect_equal(as.vector(counts(test_rangeFDS, type="j")), test_rawCountsJ_PE)
+    
+    # test the manually counted positions for SE counting
+    se_counting <- countSplitReadsPerChromosome("chr19", bamFile(test_fdsSample3), pairedEnd=FALSE, 
+            strandMode=0L, genome=NULL, scanBamParam=scanBamParam(test_fdsSample3))
+    test_rangeOV  <- findOverlaps(test_range, se_counting, type = "equal")
+    expect_equal(mcols(se_counting[to(test_rangeOV)])[['count']], test_rawCountsJ_SE)
+    
 })
 
 test_that("Strand spcific counting", {
@@ -31,7 +37,7 @@ test_that("Strand spcific counting", {
     
     # check for non empty chromosome but no split reads present
     fds <- createTestFraserSettings()
-    strandSpecific(fds) <- TRUE
+    strandSpecific(fds) <- rep(TRUE, length(samples(fds)))
     ans <- countSplitReadsPerChromosome("chrUn_gl000218", bamFile(fds)[1], 
             pairedEnd=TRUE, strandMode=strandSpecific(fds)[1], genome=NULL,
             scanBamParam=scanBamParam(fds))
@@ -57,27 +63,27 @@ test_that("test minAnchor", {
 test_that("Test psi values", {
     attach(test_generate_count_example())
 
-    expect_equal(as.vector(counts(test_rangeFDS, type="psi3")), test_rawCountsJ)
+    expect_equal(as.vector(counts(test_rangeFDS, type="psi3")), test_rawCountsJ_PE)
     expect_equal(test_p3rawOCounts,
         as.vector(counts(test_rangeFDS, type="psi3", side="other"))
     )
 
-    expect_equal(as.vector(counts(test_rangeFDS, type="psi5")), test_rawCountsJ)
+    expect_equal(as.vector(counts(test_rangeFDS, type="psi5")), test_rawCountsJ_PE)
     expect_equal(test_p5rawOCounts,
         as.vector(counts(test_rangeFDS, type="psi5", side="other"))
     )
 
-    #expect_equal(as.vector(counts(test_rangeFDS, type="theta")), test_rawCountsSS)
+    expect_equal(as.vector(counts(test_rangeFDS, type="theta")), test_rawCountsSS)
     expect_equal(test_pSrawOCounts,
         as.vector(counts(test_rangeFDS, type="theta", side="other"))
     )
 
     expect_equal(as.vector(assays(test_rangeFDS)[["psi3"]]),
-        test_rawCountsJ / (test_rawCountsJ + test_p3rawOCounts)
+        test_rawCountsJ_PE / (test_rawCountsJ_PE + test_p3rawOCounts)
     )
 
     expect_equal(as.vector(assays(test_rangeFDS)[["psi5"]]),
-        test_rawCountsJ / (test_rawCountsJ + test_p5rawOCounts)
+        test_rawCountsJ_PE / (test_rawCountsJ_PE + test_p5rawOCounts)
     )
 
     #expect_equal(as.vector(assays(test_rangeFDS)[["theta"]]),

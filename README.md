@@ -19,6 +19,8 @@ or if you use FRASER2:
 
 ## What's new
 
+In version 2.4.5, we fixed a bug affecting unstranded paired-end data. We were counting read fragments instead of read pairs. The counted split reads with the fixed method are, on average, lower by around 20%. If you have such data, please rerun your entire analysis from the start (make sure you have recount=TRUE).
+
 In version 2.4.3, instead of doing a grid search to determine the optimal encoding dimension of the denoising autoencoder, we now use the Optimal Hard Threshold (OHT). This makes the algorithm 6-10 times faster!
 
 ⚠️ Also, since this version, FRASER is released under `CC-BY-NC 4.0`,  meaning it requires a license for any commercial use. If you want to use it for commercial purposes, please contact us.

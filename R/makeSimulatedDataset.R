@@ -86,13 +86,13 @@ makeSimulatedFraserDataSet_BetaBinomial <- function(m=200, j=10000, q=10,
     k <- matrix(rbetabinom(j*m, size=n, prob=mu_psi, rho=rho_psi),
             nrow=j, ncol=m)
     mode(k) <- 'integer'
-    
-    
+
     #
     # Create FRASER data set
     #
     sampleIDs <- paste0("sample", seq_len(m))
-    anno <- data.table(sampleID = sampleIDs, bamFile=rep(NA, m))
+    anno <- data.table(sampleID = sampleIDs, 
+            bamFile=rep(NA, m), strand=rep(0L, m))
     fds <- FraserDataSet(colData=anno, ...)
     
     # put in n as rawcountsJ first so it doesn't complain later
@@ -122,8 +122,8 @@ makeSimulatedFraserDataSet_BetaBinomial <- function(m=200, j=10000, q=10,
             encodingDimension=q, evaluationLoss=1, evalMethod='simulation')
     
     # Store "other" counts
-    counts(fds, type="psi3", side="other", withDimnames=FALSE) <-    n - k
-    counts(fds, type="psi5", side="other", withDimnames=FALSE) <-    n - k
+    counts(fds, type="psi3", side="other", withDimnames=FALSE) <- n - k
+    counts(fds, type="psi5", side="other", withDimnames=FALSE) <- n - k
     counts(fds, type="theta", side="other", withDimnames=FALSE) <- n
     
     # store information about the simulation in the fds

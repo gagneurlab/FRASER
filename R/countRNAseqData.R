@@ -568,10 +568,16 @@ countSplitReadsPerChromosome <- function(chromosome, bamFile,
         return(GRanges())
     }
     
-    # get reads from bam file
-    if(isFALSE(as.logical(strandMode)) || isFALSE(pairedEnd)){
-        galignment <- readGAlignments(bamFile, param=param)
-    } else{
+    # if single end, count reads
+    # if paired end, count pairs
+    if(isFALSE(pairedEnd)){
+        galignment <- readGAlignments(bamFile, param=param)        
+
+        # remove the strand information if unstranded data
+        if(isFALSE(as.logical(strandMode))){
+            strand(galignment) <- "*"
+        }
+    } else {
         galignment <- readGAlignmentPairs(
                 bamFile, param=param, strandMode=strandMode)
     }
@@ -579,17 +585,6 @@ countSplitReadsPerChromosome <- function(chromosome, bamFile,
     # remove read pairs with NA seqnames 
     # (occurs if reads of a pair align to different chromosomes)
     galignment <- galignment[!is.na(seqnames(galignment))]
-    
-    # remove the strand information if unstranded data
-    if(isFALSE(as.logical(strandMode))){
-        strand(galignment) <- "*"
-    }
-    # invert the strand information for reverse strand specific protocols
-    # (only needed for single-end reads as real strand is already set for 
-    # paired-end reads in the readGAlignmentPairs function)
-    if(isFALSE(pairedEnd) && strandMode == 2L){
-        galignment <- invertStrand(galignment)
-    }
     
     # dont count if there is nothing to count
     if(length(galignment) == 0){
@@ -617,45 +612,55 @@ countSplitReadsPerChromosome <- function(chromosome, bamFile,
         }
     }
     
-    # get the junction positions and their counts
-    jc <- summarizeJunctions(galignment, genome=genome, 
-            with.revmap=(as.logical(strandMode) && pairedEnd) )
+    # get the junction positions and their counts and 
+    # use revmap for paired-end to count fragments (avoid double-counting reads)
+    jc <- summarizeJunctions(galignment, genome=genome, with.revmap=isTRUE(pairedEnd))
     
     if(length(jc) == 0){
         return(GRanges())
     }
     
-    # for strand specific counting: split result into counts for + and - strand
-    if(isTRUE(as.logical(strandMode))){
-        
-        # for paired-end reads: ensure that each read pair is only counted once
-        if(isTRUE(pairedEnd)){
-            fragment_counts <- vapply(jc@elementMetadata$revmap, 
-                                FUN=function(pairs){
-                                    strands <- strand(galignment[pairs,])
-                                    return(c(plus_score=sum(strands == "+"),
-                                            minus_score=sum(strands == "-")))
-                                }, FUN.VALUE=integer(2) )
-            mcols(jc)[,"plus_score"]  <- fragment_counts["plus_score",]
-            mcols(jc)[,"minus_score"] <- fragment_counts["minus_score",]
+    # for paired-end reads: ensure that each read pair is only counted once
+    if(isTRUE(pairedEnd)){
+
+        # for unstranded pairedend data: just count the revmap
+        if(isFALSE(as.logical(strandMode))){
+            mcols(jc)['score'] <- sapply(mcols(jc)[['revmap']], length)
+
+        # for stranded pairedend data: count only the pairs for each strand
+        } else {
+            gastrand <- strand(galignment)
+            fragment_counts <- sapply(mcols(jc)[['revmap']], 
+                FUN=function(pairs){ 
+                    tbl <- table(gastrand[pairs])
+                    # Ensure consistent dimensions by including all expected levels
+                    result <- c("+"=0, "-"=0, "*"=0)
+                    result[names(tbl)] <- tbl
+                    return(result)
+                }
+            )
+            mcols(jc)[,"plus_score"]  <- fragment_counts["+",]
+            mcols(jc)[,"minus_score"] <- fragment_counts["-",]
+
+            # create for each junction on each side that was found a row
+            jc_per_strand <- sapply(c("-", "+"), jc=jc, FUN=function(strand_name, jc){
+                col_name <- paste0(c('+'="plus", "-"="minus")[strand_name], "_score")
+                jcStrand <- jc
+                mcols(jcStrand)[['score']] <- mcols(jc)[[col_name]]
+                strand(jcStrand) <- strand_name
+                jcStrand <- jcStrand[mcols(jcStrand)[['score']] > 0]
+                return(jcStrand)
+            })
+
+            # combine the junctions for both strands
+            jc <- c(jc_per_strand[[1]], jc_per_strand[[2]])
         }
-        
-        jcPlus <- jc
-        mcols(jcPlus)[,"score"] <- mcols(jc)[,"plus_score"]
-        strand(jcPlus) <- "+"
-        jcPlus <- jcPlus[mcols(jcPlus)[,"score"] > 0,]
-        jcMinus <- jc
-        mcols(jcMinus)[,"score"] <- mcols(jc)[,"minus_score"]
-        strand(jcMinus) <- "-"
-        jcMinus <- jcMinus[mcols(jcMinus)[,"score"] > 0,]
-        jc <- c(jcPlus, jcMinus)
     }
     
     ans <- jc[,"score"]
     colnames(mcols(ans)) <- "count"
     
     # set predicted strand if present or set it to + if NA
-
     if(isFALSE(as.logical(strandMode)) && !is.null(genome) && 
                 length(ans) > 0){
         strand(ans) <- jc$intron_strand
