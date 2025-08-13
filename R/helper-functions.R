@@ -22,7 +22,7 @@ checkCountData <- function(fds, stop=TRUE){
         if(isFALSE(stop)) return(invisible(FALSE))
         stop("No counts detected! Please provide counts first.")
     }
-    if(!all(paste0("rawOtherCounts_", psiTypes) %in% assayNames(fds))){
+    if(!all(paste0("rawOtherCounts_", metadata(fds)$fit_metrics) %in% assayNames(fds))){
         if(isFALSE(stop)) return(invisible(FALSE))
         stop("Please compute first the total expression at each junction.")
     }
