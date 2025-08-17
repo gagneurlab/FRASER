@@ -69,6 +69,17 @@ If you have dependency issues while installing any package, please have a look
 at the Troubleshooting section or submit an issue on 
 [GitHub](https://github.com/gagneurlab/FRASER/issues).
 
+### Dependencies
+
+As of version 2.4.6, FRASER follows R package best practices by importing `data.table` 
+rather than depending on it. This change improves package loading behavior: when you 
+load FRASER, `data.table` functions are available within FRASER's namespace but 
+`data.table` is not automatically attached to your R session. This prevents potential 
+conflicts with other packages while maintaining full functionality.
+
+If you need `data.table` functions in your interactive R session, you can load it 
+explicitly with `library(data.table)`.
+
 
 ### Troubleshooting
 

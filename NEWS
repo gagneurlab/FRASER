@@ -1,3 +1,9 @@
+CHANGES IN VERSION 2.4.6
+-------------------------
+    o Move data.table from Depends to Imports following R package best practices
+      This change improves package loading behavior without affecting functionality
+      since data.table functions are already properly imported via @import directive
+
 CHANGES IN VERSION 2.4.4
 -------------------------
     o Bugfix: reading fragments instead of read pairs for unstranded paired-end data. 
