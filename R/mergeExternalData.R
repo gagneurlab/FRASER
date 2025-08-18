@@ -19,6 +19,8 @@
 #'           \code{n_theta}.
 #' @param sampleIDs The samples to be merged from the external data. 
 #' @param annotation A sample annotation of the external data (optional).
+#' @param types A vector with the psi types which should be calculated. Default 
+#'           is the fitted metrics of the input FraserDataSet.
 #' 
 #' @return Merged \code{FraserDataSet} object.
 #' 
@@ -35,7 +37,7 @@
 #' K(fds_merged, "psi5")
 #' 
 #' @export
-mergeExternalData <- function(fds, countFiles, sampleIDs, annotation=NULL){
+mergeExternalData <- function(fds, countFiles, sampleIDs, annotation=NULL, types=fitMetrics(fds)){
 
     # check input
     checkFraserDataSet(fds)
@@ -170,7 +172,7 @@ mergeExternalData <- function(fds, countFiles, sampleIDs, annotation=NULL){
     #
     # compute new psi values
     #
-    ans <- calculatePSIValues(ans)
+    ans <- calculatePSIValues(ans, types=types)
 
     ans
 }
