@@ -130,7 +130,16 @@ mergeExternalData <- function(fds, countFiles, sampleIDs, annotation=NULL){
             extCts[['k_theta']], type="equal")
 
     newCtsK_theta <- extractExtData(fds, K, "theta", ovss, extCts, "k_theta")
-    newCtsN_theta <- extractExtData(fds, N, "theta", ovss, extCts, "n_theta")
+    newCtsN_theta <- tryCatch(
+      {
+        extractExtData(fds, N, "theta", ovss, extCts, "n_theta")
+      },
+      error = function(e) {
+        message("Theta values for Jaccard metric are not needed, ignoring them ...")
+        # setting theta values to a dummy value
+        newCtsN_theta <- newCtsK_theta
+      }
+    )
     NSR_ranges <- rowRanges(fds, type="theta")[from(ovss),c("spliceSiteID", "type")]
 
     # Find the overlaps of the NSR with SR after merging/filtering
@@ -170,7 +179,7 @@ mergeExternalData <- function(fds, countFiles, sampleIDs, annotation=NULL){
     #
     # compute new psi values
     #
-    ans <- calculatePSIValues(ans)
+    ans <- calculatePSIValues(ans, types = fitMetrics(fds))
 
     ans
 }
