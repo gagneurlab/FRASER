@@ -61,8 +61,8 @@ mergeFDS <- function(fds1, fds2, join_type = c("outer", "inner"), fds_name="merg
   }
   
   
-  junction_counts_1 <- create_junction_counts(fds_1)
-  junction_counts_2 <- create_junction_counts(fds_2)
+  junction_counts_1 <- create_junction_counts(fds1)
+  junction_counts_2 <- create_junction_counts(fds2)
   
   
   
@@ -85,8 +85,8 @@ mergeFDS <- function(fds1, fds2, join_type = c("outer", "inner"), fds_name="merg
   
   junction_counts_merged[ ,c("startID.x","startID.y", "endID.x", "endID.y") := NULL]
   
-  splice_site_counts_1 <- create_split_counts(fds_1)
-  splice_site_counts_2 <- create_split_counts(fds_2)
+  splice_site_counts_1 <- create_split_counts(fds1)
+  splice_site_counts_2 <- create_split_counts(fds2)
   
   splice_site_counts_merged <- merge(splice_site_counts_1, splice_site_counts_2, by=c("start", "end", "seqnames", "width", "type"), all=T, )
   splice_site_counts_merged[ ,c("spliceSiteID.x","spliceSiteID.y") := NULL]
