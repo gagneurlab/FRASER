@@ -58,7 +58,7 @@ Imports:
     GenomicRanges,
     IRanges,
     grDevices,
-    ggplot2 (< 4.0.0),
+    ggplot2,
     ggrepel,
     HDF5Array,
     matrixStats,
