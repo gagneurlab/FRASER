@@ -87,19 +87,18 @@ annotateRanges <- function(fds, feature="hgnc_symbol", featureName=feature,
     useUSCS <- all(startsWith(seqlevels(fds), "chr"))
 
     # get gene annotation
-    annotation <- getFeatureAsGRange(ensembl, feature, featureName,
+    anno <- getFeatureAsGRange(ensembl, feature, featureName,
             biotype, useUSCS)
 
     # annotate splice sites first
     gr <- rowRanges(fds, type="theta")
-    if(any(strand(gr) == "*")){
-        strand(annotation) <- "*"
-    }
-    annos <- getAnnotationFeature(data=gr, featureName, annotation)
+    annos <- getAnnotationFeature(data=gr, featureName, anno)
     mcols(fds, type="theta")[[featureName]] <- annos
-    
-    # annotate junctions with genes at donor and acceptor sites
-    fds <- annotateFeatureFromSpliceSite(fds, featureName)
+
+    # annotate junctions
+    gr <- rowRanges(fds, type="j")
+    annos <- getAnnotationFeature(data=gr, featureName, anno)
+    mcols(fds, type="j")[[featureName]] <- annos
 
     return(fds)
 }
@@ -164,16 +163,16 @@ annotateRangesWithTxDb <- function(fds, feature="SYMBOL",
     # clean up of NA and "" ids
     anno <- anno[!is.na(mcols(anno)[,featureName]),]
     anno <- anno[mcols(anno)[,featureName] != "",]
-    if(any(strand(gr) == "*")){
-        strand(anno) <- "*"
-    }
     
-    # retrieve the feature of interest for the splice sites
+    # annotate splice sites first
+    gr <- rowRanges(fds, type="theta")
     annos <- getAnnotationFeature(data=gr, featureName, anno)
     mcols(fds, type="theta")[[featureName]] <- annos
-    
-    # transfer annoated features for splice sites to junctions
-    fds <- annotateFeatureFromSpliceSite(fds, featureName)
+
+    # annotate junctions
+    gr <- rowRanges(fds, type="j")
+    annos <- getAnnotationFeature(data=gr, featureName, anno)
+    mcols(fds, type="j")[[featureName]] <- annos
     
     return(fds)   
 }
@@ -218,6 +217,10 @@ getFeatureAsGRange <- function(ensembl, feature, featureName,
 #' @noRd
 getAnnotationFeature <- function(data, feature, annotation){
 
+    if(any(strand(data) == "*")){
+        strand(annotation) <- "*"
+    }
+    
     # find overlap with the query
     # suppress seqnames not in anothers object!
     # TODO: is there a nicer way to do this?
@@ -319,29 +322,4 @@ findAnnotatedJunction <- function(fds, annotation, annotateNames=TRUE,
     
     # return annotated object
     fds
-}
-
-#' annotate junctions with genes at donor and acceptor sites
-#' @noRd
-annotateFeatureFromSpliceSite <- function(fds, featureName){
-    ssdt <- data.table(spliceSiteID=mcols(fds, type="theta")$spliceSiteID,
-                        genes=mcols(fds, type="theta")[[featureName]] 
-    )
-    junction_dt <- data.table(startID=mcols(fds, type="psi3")$startID,
-                                endID=mcols(fds, type="psi3")$endID
-    )
-    junction_dt <- merge(junction_dt, ssdt, all.x=TRUE, 
-                        by.x="startID", by.y="spliceSiteID", sort=FALSE)
-    setnames(junction_dt, "genes", "genes_donor")
-    junction_dt <- merge(junction_dt, ssdt, all.x=TRUE, 
-                        by.x="endID", by.y="spliceSiteID", sort=FALSE)
-    setnames(junction_dt, "genes", "genes_acceptor")
-    
-    junction_dt[,genes:=paste(uniqueIgnoreNA(
-                    c(splitGenes(genes_donor), splitGenes(genes_acceptor))), 
-                    collapse=";"),
-                by="startID,endID"]
-    junction_dt[genes == "NA", genes:=NA]
-    mcols(fds, type="j")[[featureName]] <- junction_dt[,genes]
-    return(fds)
 }
