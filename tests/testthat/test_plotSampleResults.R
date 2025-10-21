@@ -30,10 +30,10 @@ test_that("Results function", {
     res_gene_signif <- results(fds, aggregate=TRUE, all=FALSE,
                           padjCutoff=NA, deltaPsiCutoff=0.01)
     res_gene_signif <- as.data.table(res_gene_signif)
-    expect_equal(res_gene_signif[type == "jaccard", .N], 1)
-    expect_equal(res_gene_signif[type == "psi5", .N], 3)
-    expect_equal(res_gene_signif[type == "psi3", .N], 3)
-    expect_equal(res_gene_signif[type == "theta", .N], 2)
+    expect_equal(res_gene_signif[type == "jaccard", uniqueN(paste(seqnames, start, end))], 1)
+    expect_equal(res_gene_signif[type == "psi5", uniqueN(paste(seqnames, start, end))], 3)
+    expect_equal(res_gene_signif[type == "psi3", uniqueN(paste(seqnames, start, end))], 3)
+    expect_equal(res_gene_signif[type == "theta", uniqueN(paste(seqnames, start, end))], 2)
     
     # results on subset of genes during FDR
     geneList <- list('sample1'=c("TIMMDC1"), 'sample2'=c("MCOLN1"))
