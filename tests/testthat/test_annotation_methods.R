@@ -1,19 +1,8 @@
 context("Annotations methods")
 
 test_that("annotateRanges", {
-
-    fds <- createTestFraserSettings()
-    fds <- countRNAData(fds)
-
-    # compute stats
-    fds <- calculatePSIValues(fds)
-    # filter junctions with low expression
-    fds <- filterExpressionAndVariability(fds, minExpressionInOneSample=20,
-					  minDeltaPsi=0.0, filter=TRUE)
-
-    txdb <- TxDb.Hsapiens.UCSC.hg19.knownGene
-    orgDb <- org.Hs.eg.db
-
+	fds <- getFraser()
+	
     # remove a splice site
     subset_fds <- fds[-c(1), , by = "ss"]
 
@@ -21,6 +10,8 @@ test_that("annotateRanges", {
     expect_false(1 %in% mcols(subset_fds, type="theta")$spliceSiteID)
 
     # annoate genes
+	txdb <- TxDb.Hsapiens.UCSC.hg19.knownGene
+    orgDb <- org.Hs.eg.db
     subset_fds <- annotateRangesWithTxDb(subset_fds, txdb=txdb, orgDb=orgDb)
 
     # check if the junction is annotated
