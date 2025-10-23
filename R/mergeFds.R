@@ -18,6 +18,7 @@
 #' @importFrom SummarizedExperiment rowRanges rowData assays
 mergeFDS <- function(fds1, fds2, join_type = c("outer", "inner"), fds_name="merged_fds") {
   join_type <- match.arg(join_type)
+  all_flag <- if (join_type == "outer") TRUE else FALSE
   
   create_junction_counts <- function(fds){
     chr_levels <- seqlevelsInUse(fds)
@@ -66,8 +67,10 @@ mergeFDS <- function(fds1, fds2, join_type = c("outer", "inner"), fds_name="merg
   
   
   
-  junction_counts_merged <- merge(junction_counts_1, junction_counts_2, by=c("start", "end", "seqnames", "width", "strand"), all=T, )
-  junction_counts_merged[is.na(junction_counts_merged)] <- 0
+  junction_counts_merged <- merge(junction_counts_1, junction_counts_2, by=c("start", "end", "seqnames", "width", "strand"), all = all_flag)
+  if (all_flag) {
+    junction_counts_merged[is.na(junction_counts_merged)] <- 0
+  }
   
   positions <- unique(rbind(
     junction_counts_merged[, .(seqnames, pos = start)],
