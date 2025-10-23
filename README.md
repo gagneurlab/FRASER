@@ -23,7 +23,7 @@ In version 2.4.5, we fixed a bug affecting unstranded paired-end data. We were c
 
 In version 2.4.3, instead of doing a grid search to determine the optimal encoding dimension of the denoising autoencoder, we now use the Optimal Hard Threshold (OHT). This makes the algorithm 6-10 times faster!
 
-⚠️ Also, since this version, FRASER is released under `CC-BY-NC 4.0`,  meaning it requires a license for any commercial use. If you want to use it for commercial purposes, please contact us.
+⚠️ Also, since this version, FRASER is released under `CC-BY-NC 4.0`,  meaning it requires a license for any commercial use. The commercial license is distributed by [OmicsDiscoveries](https://www.omicsdiscoveries.com). If you want to use it for commercial purposes, please write to license@omicsdiscoveries.com.
 
 FRASER 2.0, an improved version of FRASER, is now available and used by default (version 1.99.0 and above).
 FRASER 2.0 uses the Intron Jaccard Index as its splice metric instead of FRASER's 
