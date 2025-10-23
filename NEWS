@@ -1,3 +1,16 @@
+CHANGES IN VERSION 2.4.6
+-------------------------
+    o Fixing a bug in the annotation, where we miss the annotation for junction, 
+      where we do not have any splice site available at the time of annotation. 
+      Thanks to @AtaJadidAhari
+
+CHANGES IN VERSION 2.4.5
+-------------------------
+    o We fixed a bug affecting unstranded paired-end data. We were counting read 
+      fragments instead of read pairs. The counted split reads with the fixed 
+      method are, on average, lower by around 20%. If you have such data, please
+      rerun your entire analysis from the start (make sure you have recount=TRUE).
+
 CHANGES IN VERSION 2.4.4
 -------------------------
     o Bugfix: reading fragments instead of read pairs for unstranded paired-end data. 
