@@ -278,7 +278,7 @@
 #' plotVolcano(fds, "sample1", "jaccard", aggregate=TRUE, subsetName="testSet")
 #' 
 #' # dive into gene/sample level results
-#' res <- as.data.table(results(fds))
+#' res <- data.table::as.data.table(results(fds))
 #' res
 #' plotExpression(fds, result=res[1])
 #' plotQQ(fds, result=res[1])
@@ -319,7 +319,7 @@
 #'     orgDb <- org.Hs.eg.db
 #'  
 #'     res <- results(fds, padjCutoff=NA, deltaPsiCutoff=NA)
-#'     res_dt <- as.data.table(res)
+#'     res_dt <- data.table::as.data.table(res)
 #'     res_dt <- res_dt[sampleID == "sample2",]
 #'     
 #'     # plot full range of gene containing outlier junction

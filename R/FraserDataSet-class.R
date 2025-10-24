@@ -271,13 +271,13 @@ setMethod("show", "FraserDataSet", function(object) {
 #'   fraser <- FraserDataSet()
 #'   
 #'   # example sample annoation
-#'   sampleTable <- fread(system.file("extdata",
+#'   sampleTable <- data.table::fread(system.file("extdata",
 #'           "sampleTable_countTable.tsv", package="FRASER", mustWork=TRUE))
 #'  
 #'   # get raw counts 
-#'   junctionCts   <- fread(system.file("extdata", 
+#'   junctionCts   <- data.table::fread(system.file("extdata",
 #'           "raw_junction_counts.tsv.gz", package="FRASER", mustWork=TRUE))
-#'   spliceSiteCts <- fread(system.file("extdata", 
+#'   spliceSiteCts <- data.table::fread(system.file("extdata",
 #'           "raw_site_counts.tsv.gz", package="FRASER", mustWork=TRUE))
 #'   
 #'   # create FRASER object

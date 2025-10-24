@@ -311,6 +311,7 @@ If a \textbf{NA} is assigned, no P-values will be calculated. An example sample
 table is given within the package:
 
 <<sampleData Table, echo=TRUE>>=
+library(data.table)
 sampleTable <- fread(system.file(
     "extdata", "sampleTable.tsv", package="FRASER", mustWork=TRUE))
 head(sampleTable)
