@@ -35,7 +35,7 @@ intersecting regions and will drop any non overlapping features. This has to
 be kept in mind when analysing rare disease samples.
 }
 \examples{
-anno <- fread(system.file("extdata", "externalCounts", 
+anno <- data.table::fread(system.file("extdata", "externalCounts",
         "annotation.tsv.gz", package="FRASER"))
 ctsFiles <- list.files(full.names = TRUE, pattern="counts",
         system.file("extdata", "externalCounts", package="FRASER"))
