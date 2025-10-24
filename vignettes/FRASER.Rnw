@@ -226,6 +226,7 @@ fitted \fds{} object. These plotting functions are described in section
 <<quick_fraser_guide, echo=TRUE>>=
 # load FRASER library
 library(FRASER)
+library(data.table)
 
 # count raw data
 fds <- createTestFraserSettings()
