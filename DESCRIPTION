@@ -1,7 +1,7 @@
 Package: FRASER
 Type: Package
 Title: Find RAre Splicing Events in RNA-Seq Data
-Version: 2.5.3
+Version: 2.5.4
 Date: 2025-10-24
 Authors@R: c(
     person("Christian", "Mertes", role=c("aut", "cre"), 
@@ -10,7 +10,7 @@ Authors@R: c(
             comment=c(ORCID="0000-0003-4533-7857")),
     person("Karoline", "Lutz", role=c("ctb"), email="lutzk@in.tum.de"),
     person("Ata", "Jadid Ahari", role=c("ctb"), 
-            comments=c(ORCID="0009-0004-1577-7733")),
+            comment=c(ORCID="0009-0004-1577-7733")),
     person("Vicente", "Yepez", role=c("aut"), email="yepez@in.tum.de",
             comment=c(ORCID="0000-0001-7916-3643")),
     person("Julien", "Gagneur", role=c("aut"), email="gagneur@in.tum.de",
