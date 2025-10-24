@@ -1,7 +1,7 @@
 Package: FRASER
 Type: Package
 Title: Find RAre Splicing Events in RNA-Seq Data
-Version: 2.5.4
+Version: 2.5.5
 Date: 2025-10-24
 Authors@R: c(
     person("Christian", "Mertes", role=c("aut", "cre"), 
@@ -39,7 +39,6 @@ Encoding: UTF-8
 VignetteBuilder: knitr
 Depends:
     BiocParallel,
-    data.table,
     Rsamtools,
     SummarizedExperiment
 Imports:
@@ -50,6 +49,7 @@ Imports:
     biomaRt,
     BSgenome,
     cowplot,
+    data.table,
     DelayedArray (>= 0.5.11),
     DelayedMatrixStats,
     extraDistr,
