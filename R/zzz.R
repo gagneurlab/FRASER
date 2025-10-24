@@ -1,6 +1,3 @@
-#' @importFrom data.table fread
-NULL
-
 #'
 #' The .onLoad function which is run during package loading
 #' 
