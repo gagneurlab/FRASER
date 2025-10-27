@@ -120,6 +120,7 @@ Collate:
     getURLs.R
     helper-functions.R
     mergeExternalData.R
+    mergeFds.R
     saveHDF5Objects.R
     RcppExports.R
     autoencoder.R
