@@ -13,7 +13,6 @@
 #' @examples
 #' # merged_fds <- mergeFDS(fds1, fds2, join_type="outer")
 #' @export
-#' @importFrom data.table as.data.table setorder setnames fcoalesce
 #' @importFrom GenomeInfoDb seqlevelsInUse
 #' @importFrom SummarizedExperiment rowRanges rowData assays
 mergeFDS <- function(fds1, fds2, join_type = c("outer", "inner"), fds_name="merged_fds") {
