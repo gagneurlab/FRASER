@@ -4,7 +4,13 @@
 \alias{mergeFDS}
 \title{Merge two FraserDataSet objects with different splice sites and junctions}
 \usage{
-mergeFDS(fds1, fds2, join_type = c("outer", "inner"), fds_name = "merged_fds")
+mergeFDS(
+  fds1,
+  fds2,
+  join_type = c("outer", "inner"),
+  fds_name = "merged_fds",
+  workingDir = "FRASER_output"
+)
 }
 \arguments{
 \item{fds1}{First FraserDataSet object.}
@@ -14,6 +20,9 @@ mergeFDS(fds1, fds2, join_type = c("outer", "inner"), fds_name = "merged_fds")
 \item{join_type}{Type of join for rowRanges: "outer" (default) or "inner".}
 
 \item{fds_name}{Name for the merged FraserDataSet.}
+
+\item{workingDir}{Directory where to store HDF5 and RDS files. Defaults to
+\code{FRASER_output} in the current working directory.}
 }
 \value{
 A merged FraserDataSet object containing combined samples and assays.
