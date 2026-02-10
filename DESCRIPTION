@@ -78,6 +78,7 @@ Imports:
     stats,
     tibble,
     tools,
+    txdbmaker,
     utils,
     VGAM,
     RMTstat,
