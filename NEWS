@@ -1,4 +1,8 @@
-CHANGES IN VERSION 2.4.6
+CHANGES IN VERSION 2.6.1
+-------------------------
+    o Internal: use moved makeTxDbFromGFF function from txdbmaker instead from GenomicFeatures.
+
+    CHANGES IN VERSION 2.4.6
 -------------------------
     o Fixing a bug in the annotation, where we miss the annotation for junction, 
       where we do not have any splice site available at the time of annotation. 
