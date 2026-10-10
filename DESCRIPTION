@@ -51,6 +51,7 @@ Imports:
     cowplot,
     data.table,
     DelayedArray (>= 0.5.11),
+    S4Arrays,
     DelayedMatrixStats,
     extraDistr,
     generics,
