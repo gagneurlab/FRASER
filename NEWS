@@ -1,3 +1,8 @@
+CHANGES IN VERSION 2.8
+-------------------------
+    o Import `cbind` from `BiocGenerics` instead of `DelayedArray` as it is not
+      reexported anymore in BioC 3.24
+
 CHANGES IN VERSION 2.6.1
 -------------------------
     o Internal: use moved makeTxDbFromGFF function from txdbmaker instead from GenomicFeatures.
