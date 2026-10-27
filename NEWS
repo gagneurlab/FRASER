@@ -1,4 +1,4 @@
-CHANGES IN VERSION 2.8
+CHANGES IN VERSION 2.10
 -------------------------
     o Import `cbind` from `BiocGenerics` instead of `DelayedArray` as it is not
       reexported anymore in BioC 3.24
