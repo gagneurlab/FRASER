@@ -241,10 +241,8 @@
 #'
 #' @name plotFunctions
 #' @rdname plotFunctions
-#' @aliases plotFunctions plotAberrantPerSample plotVolcano plotQQ 
-#'             plotExpression plotCountCorHeatmap plotFilterExpression 
-#'             plotExpectedVsObservedPsi plotEncDimSearch plotManhattan
-#'             plotBamCoverage plotBamCoverageFromResultTable
+#' @aliases plotFunctions plotAberrantPerSample plotVolcano plotQQ plotExpression plotCountCorHeatmap plotFilterExpression plotExpectedVsObservedPsi plotEncDimSearch plotManhattan plotBamCoverage plotBamCoverageFromResultTable
+#'
 #' @examples
 #' \dontshow{set.seed(42)}
 #' # create full FRASER object 
