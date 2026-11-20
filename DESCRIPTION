@@ -1,8 +1,8 @@
 Package: FRASER
 Type: Package
 Title: Find RAre Splicing Events in RNA-Seq Data
-Version: 2.9.2
-Date: 2026-10-27
+Version: 2.9.3
+Date: 2026-11-20
 Authors@R: c(
     person("Christian", "Mertes", role=c("aut", "cre"), 
             email="mertes@in.tum.de", comment=c(ORCID="0000-0002-1091-205X")),
@@ -31,7 +31,7 @@ biocViews:
     Software,
     Genetics,
     Coverage
-License: file LICENSE
+License: MIT
 URL: https://github.com/gagneurlab/FRASER
 BugReports: https://github.com/gagneurlab/FRASER/issues
 Encoding: UTF-8

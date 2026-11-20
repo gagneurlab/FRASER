@@ -91,7 +91,7 @@
 #'          seqlengths seqlengths<- seqlevelsStyle<- seqlevelsStyle seqnames 
 #'          seqinfo standardChromosomes dropSeqlevels keepSeqlevels 
 #'          sortSeqlevels
-#' @importFrom DelayedArray rowMaxs rowMeans path<- plogis qlogis 
+#' @importFrom DelayedArray rowMaxs rowMeans path<- plogis qlogis
 #'          DelayedArray
 #' @importFrom DelayedMatrixStats colSds rowMedians rowSds colMeans2 rowMeans2
 #'          rowQuantiles
