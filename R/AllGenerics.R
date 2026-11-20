@@ -268,7 +268,7 @@ setReplaceMethod("nonSplicedReads", "FraserDataSet", function(object, value){
 #'     fds[1:10,by="ss"]
 #'
 #' @rdname subset
-subset.FRASER <- function(x, i, j, by=c("j", "ss"), ..., drop=FALSE){
+subsetFRASER <- function(x, i, j, by=c("j", "ss"), ..., drop=FALSE){
     if(length(by) == 1){
         by <- whichReadType(x, by)
     }
@@ -338,7 +338,7 @@ subset.FRASER <- function(x, i, j, by=c("j", "ss"), ..., drop=FALSE){
 }
 #' @rdname subset
 #' @export
-setMethod("[", c("FraserDataSet", "ANY", "ANY", drop="ANY"), subset.FRASER)
+setMethod("[", c("FraserDataSet", "ANY", "ANY", drop="ANY"), subsetFRASER)
 
 
 #'

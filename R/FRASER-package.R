@@ -21,7 +21,8 @@
 #' @importFrom pcaMethods pca loadings
 #'
 ### GRange/Experiment/bamFile packages
-#' @importFrom BiocGenerics updateObject counts counts<- strand strand<- which
+#' @importFrom BiocGenerics updateObject cbind counts counts<- strand strand<- 
+#'          which
 #' @importFrom GenomicFeatures intronsByTranscript genes exons
 #'          fiveUTRsByTranscript threeUTRsByTranscript seqlevels0
 #' @importFrom txdbmaker makeTxDbFromGFF
@@ -92,7 +93,6 @@
 #'          sortSeqlevels
 #' @importFrom DelayedArray rowMaxs rowMeans path<- plogis qlogis
 #'          DelayedArray
-#' @importFrom BiocGenerics cbind
 #' @importFrom DelayedMatrixStats colSds rowMedians rowSds colMeans2 rowMeans2
 #'          rowQuantiles
 #' @importFrom matrixStats colMaxs colMedians colMins colAnys
