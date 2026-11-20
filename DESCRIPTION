@@ -31,7 +31,7 @@ biocViews:
     Software,
     Genetics,
     Coverage
-License: file LICENSE
+License: MIT
 URL: https://github.com/gagneurlab/FRASER
 BugReports: https://github.com/gagneurlab/FRASER/issues
 Encoding: UTF-8
